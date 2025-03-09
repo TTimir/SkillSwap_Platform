@@ -1,0 +1,516 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="keywords" content="bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hiring, job board, job portal, job posting, jobs marketplace, peopleperhour, proposals, sell services, upwork">
+    <meta name="description" content="SkillSwap - Freelance Marketplace">
+    <meta name="CreativeLayers" content="ATFN">
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Title -->
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- Favicon -->
+    <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+</head>
+<body>
+    <div class="wrapper ovh">
+        @{
+            var isAuthenticated = User?.Identity != null && User.Identity.IsAuthenticated;
+        }
+        @if (isAuthenticated)
+        {
+            <section id="authBanner" class="header-top-home11 pt10 pb10">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12 position-relative">
+                            <p class="text-center dark-color mb-0 fw500">
+                                Welcome, @User.Identity.Name! You are successfully logged in.
+                            </p>
+                            <button type="button" class="btn-close" aria-label="Close"
+                                    style="position: absolute; right: 10px; top: 5px;"
+                                    onclick="document.getElementById('authBanner').style.display='none'">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        }
+        else if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+        {
+            <section id="regBanner" class="header-top-home11 pt10 pb10">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12 position-relative">
+                            <p class="text-center dark-color mb-0 fw500">
+                                @ViewBag.SuccessMessage <a href="@Url.Action("Login", "Home")"><u>Log in</u></a>
+                            </p>
+                            <button type="button" class="btn-close" aria-label="Close"
+                                    style="position: absolute; right: 10px; top: 5px;"
+                                    onclick="document.getElementById('regBanner').style.display='none'">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        }
+        <!-- Main Header Nav -->
+        <header class="header-nav nav-innerpage-style bg-transparent main-menu">
+            <!-- Ace Responsive Menu -->
+            <nav class="posr">
+                <div class="container posr">
+                    <div class="row align-items-center justify-content-between">
+                        <div class="col-auto px-0 px-xl-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="logos">
+                                    <a class="header-logo logo1" href="index.html">
+                                        <img src="~/template_assets/images/header-logo-dark.svg" alt="Header Logo">
+                                    </a>
+                                </div>
+                                <!-- Responsive Menu -->
+                                <ul id="respMenu" class="ace-responsive-menu" data-menu-style="horizontal">
+                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">Home</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">Services</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">How It Works</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">About Us</span></a></li>
+                                    <li><a class="list-item pe-0" href="page-contact.html">Contact</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        @if (User?.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <!-- LOGGED-IN UI (FIXED ALIGNMENT) -->
+                            <div class="col-6 col-lg-auto">
+                                <div class="text-center text-lg-end header_right_widgets">
+                                    <ul class="dashboard_dd_menu_list d-flex align-items-center justify-content-center justify-content-sm-end mb-0 p-0">
+                                        <li class="d-none d-sm-block">
+                                            <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href=""><span class="flaticon-notification"></span></a>
+                                            <div class="dropdown-menu">
+                                                <div class="dboard_notific_dd px30 pt10 pb15">
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-1.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your resume</p>
+                                                            <p class="text mb-0">updated!</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-2.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">You changed</p>
+                                                            <p class="text mb-0">password</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-3.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your account has been</p>
+                                                            <p class="text mb-0">created successfully</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-4.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">You applied for a job </p>
+                                                            <p class="text mb-0">Front-end Developer</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center">
+                                                        <img src="/template_assets/images/resource/notif-5.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your course uploaded</p>
+                                                            <p class="text mb-0">successfully</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="d-none d-sm-block">
+                                            <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href=""><span class="flaticon-mail"></span></a>
+                                            <div class="dropdown-menu">
+                                                <div class="dboard_notific_dd px30 pt20 pb15">
+                                                    <div class="notif_list d-flex align-items-start bdrb1 pb25 mb10">
+                                                        <img class="img-2" src="/template_assets/images/testimonials/testi-1.png" alt="">
+                                                        <div class="details ml15">
+                                                            <p class="dark-color fw500 mb-2">Ali Tufan</p>
+                                                            <p class="text mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
+                                                            <p class="mb-0 text-thm">4 hours ago</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-start mb25">
+                                                        <img class="img-2" src="/template_assets/images/testimonials/testi-2.png" alt="">
+                                                        <div class="details ml15">
+                                                            <p class="dark-color fw500 mb-2">Ali Tufan</p>
+                                                            <p class="text mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
+                                                            <p class="mb-0 text-thm">4 hours ago</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-grid">
+                                                        <a href="page-dashboard-message.html" class="ud-btn btn-thm w-100">View All Messages<i class="fal fa-arrow-right-long"></i></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="d-none d-sm-block">
+                                            <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href=""><span class="flaticon-like"></span></a>
+                                            <div class="dropdown-menu">
+                                                <div class="dboard_notific_dd px30 pt10 pb15">
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-1.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your resume</p>
+                                                            <p class="text mb-0">updated!</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-2.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">You changed</p>
+                                                            <p class="text mb-0">password</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-3.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your account has been</p>
+                                                            <p class="text mb-0">created successfully</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                                                        <img src="/template_assets/images/resource/notif-4.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">You applied for a job </p>
+                                                            <p class="text mb-0">Front-end Developer</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notif_list d-flex align-items-center">
+                                                        <img src="/template_assets/images/resource/notif-5.png" alt="">
+                                                        <div class="details ml10">
+                                                            <p class="text mb-0">Your course uploaded</p>
+                                                            <p class="text mb-0">successfully</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="user_setting">
+                                            <div class="dropdown">
+                                                <a class="btn" href="#" data-bs-toggle="dropdown">
+                                                   @*  @if (!string.IsNullOrEmpty(Model.User.ProfileImageUrl))
+                                                    {
+                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
+                                                    } *@
+                                                    <img src="/template_assets/images/anonymous_image.jpg" width="50" alt="user.png">
+                                                </a>
+                                                <div class="dropdown-menu">
+                                                    <div class="user_setting_content">
+                                                        <p class="fz15 fw400 ff-heading mb10 pl30">Start</p>
+                                                        <a class="dropdown-item" href="page-dashboard.html"><i class="flaticon-home mr10"></i>Dashboard</a>
+                                                        <a class="dropdown-item" href="page-dashboard-proposal.html"><i class="flaticon-document mr10"></i>My Proposals</a>
+                                                        <a class="dropdown-item" href="page-dashboard-save.html"><i class="flaticon-like mr10"></i>Saved</a>
+                                                        <a class="dropdown-item" href="page-dashboard-message.html"><i class="flaticon-chat mr10"></i>Message</a>
+                                                        <a class="dropdown-item" href="page-dashboard-reviews.html"><i class="flaticon-review-1 mr10"></i>Reviews</a>
+                                                        <a class="dropdown-item" href="page-dashboard-invoice.html"><i class="flaticon-receipt mr10"></i>Invoice</a>
+                                                        <a class="dropdown-item" href="page-dashboard-payouts.html"><i class="flaticon-dollar mr10"></i>Payouts</a>
+                                                        <a class="dropdown-item" href="page-dashboard-statement.html"><i class="flaticon-web mr10"></i>Statements</a>
+                                                        <p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p>
+                                                        <a class="dropdown-item" href="page-dashboard-manage-service.html"><i class="flaticon-presentation mr10"></i>Manage Services</a>
+                                                        <a class="dropdown-item" href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a>
+                                                        <a class="dropdown-item" href="page-dashboard-favorites.html"><i class="flaticon-content mr10"></i>Manage Project</a>
+                                                        <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
+                                                        <a class="dropdown-item active" href="page-dashboard-profile.html"><i class="flaticon-photo mr10"></i>My Profile</a>
+                                                        <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                                <i class="flaticon-logout mr10"></i> Logout
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- LOGGED-OUT UI -->
+                            <div class="col-auto pe-0 pe-xl-3">
+                                <div class="d-flex align-items-center">
+                                    <a class="login-info mx15-xl mx30" href="@Url.Action("BecomeSeller", "Home")">
+                                        <span class="d-none d-xl-inline-block">Become a</span> Seller
+                                    </a>
+                                    <a class="login-info mr15-xl mr10 ud-btn btn-dark add-joining bdrs12 dark-color bg-transparent" href="@Url.Action("Login", "Home")">Sign in</a>
+                                    <a class="ud-btn btn-dark add-joining bdrs12 text-white" href="@Url.Action("Register", "Home")">Join</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <!-- Main Header Nav End -->
+
+        <div class="hiddenbar-body-ovelay"></div>
+
+        <!-- Mobile Nav  -->
+        <div id="page" class="mobilie_header_nav stylehome1">
+            <div class="mobile-menu">
+                <div class="header bdrb1">
+                    <div class="menu_and_widgets">
+                        <div class="mobile_menu_bar d-flex justify-content-between align-items-center">
+                            <a class="mobile_logo" href="#"><img src="/template_assets/images/header-logo-dark.svg" alt=""></a>
+                            <div class="right-side text-end">
+                                <a class="" href="page-login.html">join</a>
+                                <a class="menubar ml30" href="#menu"><img src="/template_assets/images/mobile-dark-nav-icon.svg" alt=""></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="posr"><div class="mobile_menu_close_btn"><span class="far fa-times"></span></div></div>
+                </div>
+            </div>
+            <!-- /.mobile-menu -->
+            <nav id="menu" class="">
+                <ul>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Home</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Service</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">About</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Contact</span></a>
+                    </li>
+                    <!-- Only for Mobile View -->
+                </ul>
+            </nav>
+        </div>
+
+
+        <div class="body_content">
+            <section class="categories_list_section overflow-hidden">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="listings_category_nav_list_menu">
+                                <ul class="mb0 d-flex ps-0">
+                                    <li><a class="active" href="#">All Categories</a></li>
+                                    <li><a href="#">Graphics & Design</a></li>
+                                    <li><a href="#">Digital Marketing</a></li>
+                                    <li><a href="#">Writing & Translation</a></li>
+                                    <li><a href="#">Video & Animation</a></li>
+                                    <li><a href="#">Music & Audio</a></li>
+                                    <li><a href="#">Programming & Tech</a></li>
+                                    <li><a href="#">Business</a></li>
+                                    <li><a href="#">Lifestyle</a></li>
+                                    <li><a href="#">Trending</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            @RenderBody()
+            <!-- Our Footer -->
+            <section class="footer-style1 at-home2 pb-0 pt60">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="footer-widget mb-4 mb-lg-5">
+                                <div class="mailchimp-widget mb90">
+                                    <h6 class="title text-white mb20">Subscribe</h6>
+                                    <div class="mailchimp-style1 at-home9 bdrs60 overflow-hidden">
+                                        <input type="email" class="form-control" placeholder="Your email address">
+                                        <button class="text-white" type="submit">Send</button>
+                                    </div>
+                                </div>
+                                <div class="row justify-content-between">
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">About</h6>
+                                            <div class="link-list">
+                                                <a href="">Careers</a>
+                                                <a href="">Press & News</a>
+                                                <a href="">Partnerships</a>
+                                                <a href="">Privacy Policy</a>
+                                                <a href="">Terms of Service</a>
+                                                <a href="">Investor Relations</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">Categories</h6>
+                                            <ul class="ps-0">
+                                                <li><a href="">Graphics & Design</a></li>
+                                                <li><a href="">Digital Marketing</a></li>
+                                                <li><a href="">Writing & Translation</a></li>
+                                                <li><a href="">Video & Animation</a></li>
+                                                <li><a href="">Music & Audio</a></li>
+                                                <li><a href="">Programming & Tech</a></li>
+                                                <li><a href="">Data</a></li>
+                                                <li><a href="">Business</a></li>
+                                                <li><a href="">Lifestyle</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">Support</h6>
+                                            <ul class="ps-0">
+                                                <li><a href="">Help & Support</a></li>
+                                                <li><a href="">Trust & Safety</a></li>
+                                                <li><a href="">Selling on Freeio</a></li>
+                                                <li><a href="">Buying on Freeio</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-xl-4 offset-xl-2">
+                            <div class="footer-widget mb-4 mb-lg-5">
+                                <a class="footer-logo" href="index.html"><img class="mb40" src="/template_assets/images/header-logo-white.svg" alt=""></a>
+                                <div class="row mb-4 mb-lg-5">
+                                    <div class="col-auto">
+                                        <div class="contact-info">
+                                            <p class="info-title mb-2">Toll Free Customer Care</p>
+                                            <h5 class="info-phone"><a class="text-white" href="+(1)-123-456-7890">+(1) 123 456 7890</a></h5>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="contact-info">
+                                            <p class="info-title mb-2">Need live support?</p>
+                                            <h5 class="info-mail"><a class="text-white" href="mailto:hi@freeio.com">hi@freeio.com</a></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="app-widget at-home9">
+                                    <h5 class="title text-white mb20">Apps</h5>
+                                    <div class="row mb-4 mb-lg-5">
+                                        <div class="col-auto">
+                                            <a href="">
+                                                <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                    <div class="flex-shrink-0 pr15 border-0">
+                                                        <i class="fab fa-apple fz30 text-white"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="app-text text-white fz13 mb0">Download on the</p>
+                                                        <h6 class="app-title mb-1 text-white">Apple Store</h6>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="">
+                                                <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                    <div class="flex-shrink-0 pr15 border-0">
+                                                        <i class="fab fa-google-play fz24 text-white"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="app-text text-white fz13 mb0">Get in on</p>
+                                                        <h6 class="app-title mb-1 text-white">Google Play</h6>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="social-widget">
+                                    <h5 class="text-white mb20">Follow Us</h5>
+                                    <div class="social-style1">
+                                        <a href=""><i class="fab fa-facebook-f list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-twitter list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-instagram list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-linkedin-in list-inline-item"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container white-bdrt1 py-4">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="text-center text-lg-start">
+                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="footer_bottom_right_btns at-home9 text-center text-lg-end">
+                                <ul class="p-0 m-0">
+                                    <li class="list-inline-item">
+                                        <select class="selectpicker show-tick">
+                                            <option>US$ USD</option>
+                                            <option>Euro</option>
+                                            <option>Pound</option>
+                                        </select>
+                                    </li>
+                                    <li class="list-inline-item">
+                                        <select class="selectpicker show-tick">
+                                            <option>English</option>
+                                            <option>Frenc</option>
+                                            <option>Italian</option>
+                                            <option>Spanish</option>
+                                            <option>Turkey</option>
+                                        </select>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <a class="scrollToHome" href="#"><i class="fas fa-angle-up"></i></a>
+        </div>
+    </div>
+
+    <!-- Wrapper End -->
+    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+    <script src="/template_assets/js/jquery-migrate-3.0.0.min.js"></script>
+    <script src="/template_assets/js/popper.min.js"></script>
+    <script src="/template_assets/js/bootstrap.min.js"></script>
+    <script src="/template_assets/js/bootstrap-select.min.js"></script>
+    <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+    <script src="/template_assets/js/ace-responsive-menu.js"></script>
+    <script src="/template_assets/js/jquery-scrolltofixed-min.js"></script>
+    <script src="/template_assets/js/wow.min.js"></script>
+    <script src="/template_assets/js/owl.js"></script>
+    <script src="/template_assets/js/jquery.counterup.js"></script>
+    <script src="/template_assets/js/isotop.js"></script>
+    <!-- Custom script for all pages -->
+    <script src="/template_assets/js/script.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

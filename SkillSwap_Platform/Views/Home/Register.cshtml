@@ -1,0 +1,870 @@
+﻿@using SkillSwap_Platform.Models.ViewModels
+@model UserRegisterationVM
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Register Here";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hiring, job board, job portal, job posting, jobs marketplace, peopleperhour, proposals, sell services, upwork">
+    <meta name="description" content="Freeio - Freelance Marketplace HTML Template">
+    <meta name="CreativeLayers" content="ATFN">
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Title -->
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- Favicon -->
+    <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+
+    <!-- Custome Style -->
+    <style>
+        .text-danger ul {
+            list-style-type: disc !important;
+            margin-left: 20px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="bgc-thm4">
+    <div class="wrapper ovh">
+        <div class="preloader"></div>
+
+        <!-- Main Header Nav -->
+        <header class="header-nav nav-innerpage-style main-menu">
+            <!-- Ace Responsive Menu -->
+            <nav class="posr">
+                <div class="container-fluid posr menu_bdrt1">
+                    <div class="row align-items-center justify-content-between">
+                        <div class="col-auto pe-0">
+                            <div class="d-flex align-items-center">
+                                <a class="header-logo bdrr1 pr30 pr5-xl" href="index.html"><img src="/template_assets/images/header-logo-dark.svg" alt="Header Logo"></a>
+                                <div class="home1_style">
+                                    <div id="mega-menu">
+                                        <a class="btn-mega fw500" href="#"><span class="pl30 pl10-xl pr5 fz15 vam flaticon-menu"></span> Categories</a>
+                                        <ul class="menu ps-0">
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-developer"></span> <span class="menu-title">Development & IT</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-web-design-1"></span> <span class="menu-title">Design & Creative</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-digital-marketing"></span> <span class="menu-title">Digital Marketing</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-translator"></span> <span class="menu-title">Writing & Translation</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-microphone"></span> <span class="menu-title">Music & Audio</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-video-file"></span> <span class="menu-title">Video & Animation</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-ruler"></span> <span class="menu-title">Engineering & Architecture</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown" href="#"> <span class="menu-icn flaticon-goal"></span> <span class="menu-title">Finance & Accounting</span> </a>
+                                                <div class="drop-menu d-flex justify-content-between">
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Web & App Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Website Design</a></li>
+                                                            <li><a href="#">App DesignUX Design</a></li>
+                                                            <li><a href="#">Landing Page Design</a></li>
+                                                            <li><a href="#">Icon Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Marketing Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Social Media Design</a></li>
+                                                            <li><a href="#">Email Design</a></li>
+                                                            <li><a href="#">Web Banners</a></li>
+                                                            <li><a href="#">Signage Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Art & Illustration</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Illustration</a></li>
+                                                            <li><a href="#">NFT Art</a></li>
+                                                            <li><a href="#">Pattern Design</a></li>
+                                                            <li><a href="#">Portraits & Caricatures</a></li>
+                                                            <li><a href="#">Cartoons & Comics</a></li>
+                                                            <li><a href="#">Tattoo Design</a></li>
+                                                            <li><a href="#">Storyboards</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Gaming</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">Game Art</a></li>
+                                                            <li><a href="#">Graphics for Streamers</a></li>
+                                                            <li><a href="#">Twitch Store</a></li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="one-third">
+                                                        <div class="h6 cat-title">Visual Design</div>
+                                                        <ul class="ps-0 mb40">
+                                                            <li><a href="#">Image Editing</a></li>
+                                                            <li><a href="#">Presentation Design</a></li>
+                                                            <li><a href="#">Infographic Design</a></li>
+                                                            <li><a href="#">Vector Tracing</a></li>
+                                                            <li><a href="#">Resume Design</a></li>
+                                                        </ul>
+                                                        <div class="h6 cat-title">Print Design</div>
+                                                        <ul class="ps-0 mb-0">
+                                                            <li><a href="#">T-Shirts & Merchandise</a></li>
+                                                            <li><a href="#">Flyer Design</a></li>
+                                                            <li><a href="#">Brochure Design</a></li>
+                                                            <li><a href="#">Poster Design</a></li>
+                                                            <li><a href="#">Catalog Design</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="d-flex align-items-center">
+                                <!-- Responsive Menu Structure-->
+                                <ul id="respMenu" class="ace-responsive-menu" data-menu-style="horizontal">
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">Home</span></a>
+                                    </li>
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">Services</span></a>
+                                    </li>
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                                    </li>
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">About us</span></a>
+                                    </li>
+                                    <li> <a class="list-item pe-0" href="page-contact.html">Contact</a></li>
+                                </ul>
+                                <!-- Separator Icon (You can change the icon class as needed) -->
+
+                                @* <a class="login-info bdrl1 pl15-lg pl30" data-bs-toggle="modal" href="#exampleModalToggle" role="button"><span class="flaticon-loupe"></span></a> *@
+                                <a class="ud-btn btn-thm mx15-lg mx30" href="page-become-seller.html"><span class="d-none d-xl-inline-block">Become a</span> Seller</a>
+                                @* <a class="login-info mr15-lg mr30" href="page-login.html">Sign in</a>
+                                <a class="ud-btn btn-thm add-joining" href="page-register.html">Join</a> *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <div class="hiddenbar-body-ovelay"></div>
+
+        <!-- Mobile Nav  -->
+        <div id="page" class="mobilie_header_nav stylehome1">
+            <div class="mobile-menu">
+                <div class="header bdrb1">
+                    <div class="menu_and_widgets">
+                        <div class="mobile_menu_bar d-flex justify-content-between align-items-center">
+                            <a class="mobile_logo" href="#"><img src="/template_assets/images/header-logo-dark.svg" alt=""></a>
+                            <div class="right-side text-end">
+                                <a class="" href="page-login.html">join</a>
+                                <a class="menubar ml30" href="#menu"><img src="/template_assets/images/mobile-dark-nav-icon.svg" alt=""></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="posr"><div class="mobile_menu_close_btn"><span class="far fa-times"></span></div></div>
+                </div>
+            </div>
+            <!-- /.mobile-menu -->
+            <nav id="menu" class="">
+                <ul>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Home</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Service</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">About</span></a>
+                    </li>
+                    <li>
+                        <a class="list-item" href="#"><span class="title">Contact</span></a>
+                    </li>
+                    <!-- Only for Mobile View -->
+                </ul>
+            </nav>
+        </div>
+
+        <div class="body_content">
+            <!-- Our SignUp Area -->
+            <section class="our-register">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-6 m-auto wow fadeInUp" data-wow-delay="300ms">
+                            <div class="main-title text-center">
+                                <h2 class="title">Register</h2>
+                                <p class="paragraph">Give your visitor a smooth online experience with a solid UX design</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row wow fadeInRight" data-wow-delay="300ms">
+                        <div class="col-xl-6 mx-auto">
+                            <form asp-action="Register" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="log-reg-form search-modal form-style1 bgc-white p50 p30-sm default-box-shadow1 bdrs12">
+                                    <div class="mb30">
+                                        <h4>Let's create your account!</h4>
+                                        <p class="text mt20">Already have an account? <a href="@Url.ActionLink("Login","Home")" class="text-thm">Log In!</a></p>
+                                    </div>
+                                    @if (TempData["SuccessMessage"] != null)
+                                    {
+                                        <div class="message-alart-style1">
+                                            <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                                                @TempData["SuccessMessage"]
+                                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (TempData["ErrorMessage"] != null)
+                                    {
+                                        <div class="message-alart-style1">
+                                            <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                                @TempData["ErrorMessage"]
+                                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                            </div>
+                                        </div>
+                                    }
+                                    <!-- Row 1: First Name and Last Name -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb25">
+                                                <label class="form-label fw500 dark-color">Fisrt Name <span class="text-danger">*</span></label>
+                                                <input asp-for="FirstName" type="text" class="form-control" placeholder="John">
+                                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb25">
+                                                <label class="form-label fw500 dark-color">Last Name <span class="text-danger">*</span></label>
+                                                <input asp-for="LastName" type="text" class="form-control" placeholder="Doe">
+                                                <span asp-validation-for="LastName" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Row 2: UserName -->
+                                    <div class="mb25">
+                                        <label class="form-label fw500 dark-color">Username  <span class="text-danger">*</span></label>
+                                        <input asp-for="UserName" type="text" class="form-control" placeholder="jdoe">
+                                        <span asp-validation-for="UserName" class="text-danger"></span>
+                                    </div>
+                                    <!-- Row 3: Email -->
+                                    <div class="mb25">
+                                        <label class="form-label fw500 dark-color">Email</label>
+                                        <input asp-for="Email" type="email" class="form-control" placeholder="johndoe58@gmail.com">
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                    <!-- Row 4: Contact No (right column) -->
+                                    <div class="mb25">
+                                        <label class="form-label fw500 dark-color">Contact No <span class="text-danger">*</span></label>
+                                        <input asp-for="ContactNo" type="text" class="form-control" placeholder="012-345-6789">
+                                        <span asp-validation-for="ContactNo" class="text-danger"></span>
+                                    </div>
+                                    <!-- Row 5: Password fields (stacked in left column) -->
+                                    <div class="mb15">
+                                        <label class="form-label fw500 dark-color">Password <span class="text-danger">*</span></label>
+                                        <input asp-for="Password" type="password" class="form-control" placeholder="*******">
+                                        <span asp-validation-for="Password" class="text-danger"></span>
+                                    </div>
+                                    <div class="mb15">
+                                        <label class="form-label fw500 dark-color">Confirm Password <span class="text-danger">*</span></label>
+                                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="*******">
+                                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="d-grid mb20">
+                                        <button class="ud-btn btn-thm default-box-shadow2" type="submit">Creat Account <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                    <div class="hr_content mb20"><hr><span class="hr_top_text">OR</span></div>
+                                    <div class="d-md-flex justify-content-between">
+                                        <button class="ud-btn btn-fb fz14 fw400 mb-2 mb-md-0" type="button"><i class="fab fa-facebook-f pr10"></i> Continue Facebook</button>
+                                        <button class="ud-btn btn-google fz14 fw400 mb-2 mb-md-0" type="button"><i class="fab fa-google"></i> Continue Google</button>
+                                        <button class="ud-btn btn-apple fz14 fw400" type="button"><i class="fab fa-apple"></i> Continue Apple</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Our SignUp Area End -->
+            <!-- Our Footer -->
+            <section class="footer-style1 at-home2 pb-0 pt60">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="footer-widget mb-4 mb-lg-5">
+                                <div class="mailchimp-widget mb90">
+                                    <h6 class="title text-white mb20">Subscribe</h6>
+                                    <div class="mailchimp-style1 at-home9 bdrs60 overflow-hidden">
+                                        <input type="email" class="form-control" placeholder="Your email address">
+                                        <button class="text-white" type="submit">Send</button>
+                                    </div>
+                                </div>
+                                <div class="row justify-content-between">
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">About</h6>
+                                            <div class="link-list">
+                                                <a href="">Careers</a>
+                                                <a href="">Press & News</a>
+                                                <a href="">Partnerships</a>
+                                                <a href="">Privacy Policy</a>
+                                                <a href="">Terms of Service</a>
+                                                <a href="">Investor Relations</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">Categories</h6>
+                                            <ul class="ps-0">
+                                                <li><a href="">Graphics & Design</a></li>
+                                                <li><a href="">Digital Marketing</a></li>
+                                                <li><a href="">Writing & Translation</a></li>
+                                                <li><a href="">Video & Animation</a></li>
+                                                <li><a href="">Music & Audio</a></li>
+                                                <li><a href="">Programming & Tech</a></li>
+                                                <li><a href="">Data</a></li>
+                                                <li><a href="">Business</a></li>
+                                                <li><a href="">Lifestyle</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="link-style1 mb-3">
+                                            <h6 class="text-white mb25">Support</h6>
+                                            <ul class="ps-0">
+                                                <li><a href="">Help & Support</a></li>
+                                                <li><a href="">Trust & Safety</a></li>
+                                                <li><a href="">Selling on Freeio</a></li>
+                                                <li><a href="">Buying on Freeio</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-xl-4 offset-xl-2">
+                            <div class="footer-widget mb-4 mb-lg-5">
+                                <a class="footer-logo" href="index.html"><img class="mb40" src="/template_assets/images/header-logo-white.svg" alt=""></a>
+                                <div class="row mb-4 mb-lg-5">
+                                    <div class="col-auto">
+                                        <div class="contact-info">
+                                            <p class="info-title mb-2">Toll Free Customer Care</p>
+                                            <h5 class="info-phone"><a class="text-white" href="+(1)-123-456-7890">+(1) 123 456 7890</a></h5>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="contact-info">
+                                            <p class="info-title mb-2">Need live support?</p>
+                                            <h5 class="info-mail"><a class="text-white" href="mailto:hi@freeio.com">hi@freeio.com</a></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="app-widget at-home9">
+                                    <h5 class="title text-white mb20">Apps</h5>
+                                    <div class="row mb-4 mb-lg-5">
+                                        <div class="col-auto">
+                                            <a href="">
+                                                <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                    <div class="flex-shrink-0 pr15 border-0">
+                                                        <i class="fab fa-apple fz30 text-white"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="app-text text-white fz13 mb0">Download on the</p>
+                                                        <h6 class="app-title mb-1 text-white">Apple Store</h6>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="">
+                                                <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                    <div class="flex-shrink-0 pr15 border-0">
+                                                        <i class="fab fa-google-play fz24 text-white"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="app-text text-white fz13 mb0">Get in on</p>
+                                                        <h6 class="app-title mb-1 text-white">Google Play</h6>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="social-widget">
+                                    <h5 class="text-white mb20">Follow Us</h5>
+                                    <div class="social-style1">
+                                        <a href=""><i class="fab fa-facebook-f list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-twitter list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-instagram list-inline-item"></i></a>
+                                        <a href=""><i class="fab fa-linkedin-in list-inline-item"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container white-bdrt1 py-4">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="text-center text-lg-start">
+                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="footer_bottom_right_btns at-home9 text-center text-lg-end">
+                                <ul class="p-0 m-0">
+                                    <li class="list-inline-item">
+                                        <select class="selectpicker show-tick">
+                                            <option>US$ USD</option>
+                                            <option>Euro</option>
+                                            <option>Pound</option>
+                                        </select>
+                                    </li>
+                                    <li class="list-inline-item">
+                                        <select class="selectpicker show-tick">
+                                            <option>English</option>
+                                            <option>Frenc</option>
+                                            <option>Italian</option>
+                                            <option>Spanish</option>
+                                            <option>Turkey</option>
+                                        </select>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- Wrapper End -->
+    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+    <script src="/template_assets/js/jquery-migrate-3.0.0.min.js"></script>
+    <script src="/template_assets/js/popper.min.js"></script>
+    <script src="/template_assets/js/bootstrap.min.js"></script>
+    <script src="/template_assets/js/bootstrap-select.min.js"></script>
+    <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+    <script src="/template_assets/js/ace-responsive-menu.js"></script>
+    <script src="/template_assets/js/jquery-scrolltofixed-min.js"></script>
+    <script src="/template_assets/js/wow.min.js"></script>
+    <script src="js/pricing-slider.js"></script>
+    <!-- Custom script for all pages -->
+    <script src="/template_assets/js/script.js"></script>
+</body>
+</html>
