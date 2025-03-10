@@ -1,0 +1,273 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.CertificateDetailsVM
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Step 5: Certificate Details";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+</head>
+<body>
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline with extra spacing -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills &amp; Experience</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step active">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Please provide your certificate details to help verify your expertise.</p>
+
+        @using (Html.BeginForm("CertificateDetails", "Onboarding", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+
+                        @if (ViewBag.ErrorMessage != null)
+                        {
+                            <div class="col-lg-12">
+                                <div class="ui-content">
+                                    <div class="message-alart-style1">
+                                        <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                            @ViewBag.ErrorMessage
+                                            <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-lg-12">
+
+                            <div id="certificate-section">
+                                <div class="row gy-4 mb-4 certificate-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>Certificate Details</h4>
+                                        <a href="javascript:void(0);" class="ud-btn btn-light-thm mb25 add-entry">
+                                            <i class="far fa-x me-2"></i> Add Certificate
+                                        </a>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Certificate Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="certification[certificate_name][]" class="form-control" placeholder="Enter Certificate Name" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Institution/Organization <span class="text-danger">*</span></label>
+                                        <input type="text" name="certification[institution_name][]" class="form-control" placeholder="Issued By" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Completion Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="certification[completion_date][]" class="form-control" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Verification ID</label>
+                                        <input type="text" name="certification[verification_id][]" class="form-control" placeholder="Verification ID (optional)" />
+                                    </div>
+
+                                    <div class="col-xl-8">
+                                        <div class="profile-box d-sm-flex align-items-center mb30">
+                                            <div class="profile-content ml20 ml0-xs">
+                                                <label class="form-label">Upload Certificate</label>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <label for="certificateInput_1" class="upload-btn certificate-label" style="cursor: pointer;">
+                                                        Upload Certificate (PDF)
+                                                    </label>
+                                                    <input type="file" class="certificateInput" id="certificateInput_1" accept=".pdf" style="display: none;">
+                                                </div>
+                                                <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf)</p>
+                                                <small class="fileError text-danger mx-3"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-12 text-end">
+                                        <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
+                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="text-center my-4">
+                                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- Wrapper End -->
+        <!-- Correct order -->
+        <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+        <script src="/template_assets/js/popper.min.js"></script> <!-- Popper BEFORE bootstrap -->
+        <script src="/template_assets/js/bootstrap.min.js"></script>
+        <script src="/template_assets/js/bootstrap-select.min.js"></script>
+        <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+        <script src="/template_assets/js/ace-responsive-menu.js"></script>
+        <script src="/template_assets/js/dashboard-script.js"></script>
+        <!-- Custom script for all pages -->
+        <script src="/template_assets/js/script.js"></script>
+
+        <!-- JavaScript (jQuery) to Clone Sections -->
+        <script>
+                          $(document).ready(function () {
+
+                // Certificate Cloning functionality
+                function cloneCertificate(sectionSelector) {
+                    var $original = $(sectionSelector).find('.certificate-entry:first');
+                    var $clone = $original.clone(false, false);
+
+                    // Generate unique ID for cloned section
+                    var uniqueId = new Date().getTime();
+
+                    // Clear text inputs
+                    $clone.find('input[type="text"], input[type="date"]').val('');
+
+                    // Reset file input properly & assign unique IDs
+                    var newInputId = "certificateInput_" + uniqueId;
+                    var newErrorId = "fileError_" + uniqueId;
+                    var newLabelId = "certificateLabel_" + uniqueId;
+
+                    var $fileInput = $clone.find('.certificateInput');
+                    var $fileLabel = $clone.find('.certificate-label');
+                    var $fileError = $clone.find('.fileError');
+
+                    $fileInput.attr('id', newInputId).val('');
+                    $fileLabel.attr('id', newLabelId).text('Upload Certificate (PDF)').attr('for', newInputId);
+                    $fileError.attr('id', newErrorId).text('');
+
+                    // Remove "Add" button in cloned entries
+                    $clone.find('.add-entry').remove();
+
+                    // Show "Remove" button
+                    $clone.find('.remove-entry').removeClass('d-none');
+
+                    // Append cloned section
+                    $(sectionSelector).append($clone);
+                }
+
+                // Event listener for adding certificates
+                $(document).on('click', '#certificate-section .add-entry', function () {
+                    cloneCertificate('#certificate-section');
+                });
+
+                // Event listener for removing certificates
+                $(document).on('click', '#certificate-section .remove-entry', function () {
+                    $(this).closest('.certificate-entry').remove();
+                });
+
+                // File Validation for Certificates
+                $(document).on('change', '.certificateInput', function () {
+                    var file = this.files[0];
+                    var $container = $(this).closest('.certificate-entry');
+                    var $errorElement = $container.find('.fileError');
+                    var $labelElement = $container.find('.certificate-label');
+
+                    if (file) {
+                        var fileType = file.type;
+                        var fileSize = file.size / 1024 / 1024; // Convert bytes to MB
+
+                        if (fileType !== "application/pdf") {
+                            $errorElement.text("Only PDF files are allowed!");
+                            this.value = ""; // Clear input field
+                            $labelElement.text("Upload Certificate (PDF)");
+                        } else if (fileSize > 5) {
+                            $errorElement.text("File size exceeds 5MB!");
+                            this.value = ""; // Clear input field
+                            $labelElement.text("Upload Certificate (PDF)");
+                        } else {
+                            $errorElement.text(""); // Clear error message
+                            $labelElement.text(file.name); // Show file name
+                        }
+                    }
+                });
+
+            });
+
+        </script>
+</body>
+</html>

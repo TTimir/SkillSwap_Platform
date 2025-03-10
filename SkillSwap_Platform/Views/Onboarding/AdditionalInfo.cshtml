@@ -1,0 +1,304 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.AdditionalInfoVM
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Step 6: Additional Information";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+</head>
+<body>
+
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills & Experience</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step active">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Don’t worry, this can be changed later.</p>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-danger">
+                @ViewBag.ErrorMessage
+            </div>
+        }
+
+        @using (Html.BeginForm("AdditionalInfo", "Onboarding", FormMethod.Post, new { enctype = "multipart/form-data", id = "additionalInfoForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+
+                        <div class="col-lg-12">
+
+                            <!-- SOCIAL MEDIA SECTION -->
+                            <div id="social-section">
+                                <div class="row gy-4 mb-4 social-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>Social Media</h4>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Facebook</label>
+                                        <input type="text" name="facebook" class="form-control" placeholder="Facebook URL" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Instagram</label>
+                                        <input type="text" name="instagram" class="form-control" placeholder="Instagram URL" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">LinkedIn</label>
+                                        <input type="text" name="linkedin" class="form-control" placeholder="LinkedIn URL" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Behance</label>
+                                        <input type="text" name="behance" class="form-control" placeholder="Behance URL" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Pinterest</label>
+                                        <input type="text" name="pinterest" class="form-control" placeholder="Pinterest URL" />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Twitter</label>
+                                        <input type="text" name="twitter" class="form-control" placeholder="Twitter URL" />
+                                    </div>
+
+                                    <!-- Error Message -->
+                                    <div id="socialError" class="text-danger mt-2" style="display: none;">
+                                        Please provide at least one social media link.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PERSONAL WEBSITE -->
+                            <h4 class="mt-3">Personal Website</h4>
+                            <div class="input-block">
+                                <label class="form-label">Website URL</label>
+                                <input type="text" id="personalWebsite" name="personalWebsite" class="form-control" placeholder="Your Website" />
+                                <small id="websiteError" class="text-danger mt-1" style="display: none;">Please enter a valid URL (e.g., https://example.com).</small>
+                            </div>
+
+                            <!-- KYC DOCUMENT UPLOAD -->
+                            <h4 class="mt-4">KYC Upload</h4>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="ui-content">
+                                        <div class="form-style1">
+                                            <label class="form-label fw500 fz16 dark-color">Document Type</label>
+                                            <div class="bootselect-multiselect">
+                                                <select name="documentType" class="selectpicker">
+                                                    <option value="">Select</option>
+                                                    <option value="Passport">Passport</option>
+                                                    <option value="DriverLicense">Driver License</option>
+                                                    <option value="IDCard">ID Card</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Document Number</label>
+                                    <input type="text" name="documentNumber" class="form-control" placeholder="Document Number" />
+                                </div>
+
+                                <div class="col-xl-8 mt-4">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml0-xs">
+                                            <label class="form-label">Upload Document</label>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label for="certificateInput" class="upload-btn certificate-label" style="cursor: pointer;">
+                                                    Upload Document (PDF)
+                                                </label>
+                                                <input type="file" class="certificateInput" id="certificateInput" accept=".pdf" style="display: none;">
+                                            </div>
+                                            <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf)</p>
+                                            <small id="fileError" class="text-danger mt-1" style="display: none;"></small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Navigation Buttons -->
+                            <div class="text-center my-4">
+                                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                                    Completed ? <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Scripts -->
+    <!-- Correct order -->
+    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+    <script src="/template_assets/js/popper.min.js"></script> <!-- Popper BEFORE bootstrap -->
+    <script src="/template_assets/js/bootstrap.min.js"></script>
+    <script src="/template_assets/js/bootstrap-select.min.js"></script>
+    <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+    <script src="/template_assets/js/ace-responsive-menu.js"></script>
+    <script src="/template_assets/js/dashboard-script.js"></script>
+    <!-- Custom script for all pages -->
+    <script src="/template_assets/js/script.js"></script>
+    <script>
+        document.getElementById("additionalInfoForm").addEventListener("submit", function (e) {
+            // VALIDATE PERSONAL WEBSITE URL
+            var websiteInput = document.getElementById("personalWebsite");
+            var websiteError = document.getElementById("websiteError");
+            var urlPattern = /^(https?:\/\/)?([a-zA-Z0-9.-]+)\.[a-zA-Z]{2,}(\S*)$/;
+
+            if (websiteInput.value.trim() !== "" && !urlPattern.test(websiteInput.value.trim())) {
+                websiteError.style.display = "block";
+                e.preventDefault();
+            } else {
+                websiteError.style.display = "none";
+            }
+
+            // VALIDATE FILE UPLOAD (ONLY PDF ALLOWED)
+            var fileInput = document.getElementById("certificateInput");
+            var fileError = document.getElementById("fileError");
+
+            if (fileInput.files.length > 0) {
+                var file = fileInput.files[0];
+                var fileType = file.type;
+                var fileSize = file.size / 1024 / 1024; // Convert bytes to MB
+
+                if (fileType !== "application/pdf") {
+                    fileError.textContent = "Only PDF files are allowed!";
+                    fileError.style.display = "block";
+                    fileInput.value = ""; // Clear file input
+                    e.preventDefault();
+                } else if (fileSize > 5) {
+                    fileError.textContent = "File size exceeds 5MB!";
+                    fileError.style.display = "block";
+                    fileInput.value = ""; // Clear file input
+                    e.preventDefault();
+                } else {
+                    fileError.style.display = "none"; // Clear error if valid
+                }
+            }
+        });
+
+        // FILE NAME DISPLAY & VALIDATION (ONLY PDF ALLOWED)
+        document.getElementById("certificateInput").addEventListener("change", function () {
+            var fileLabel = document.querySelector(".certificate-label");
+            var fileError = document.getElementById("fileError");
+
+            if (this.files.length > 0) {
+                var file = this.files[0];
+                var fileType = file.type;
+                var fileSize = file.size / 1024 / 1024; // Convert bytes to MB
+
+                if (fileType !== "application/pdf") {
+                    fileError.textContent = "Only PDF files are allowed!";
+                    fileError.style.display = "block";
+                    fileLabel.textContent = "Upload Document (PDF)"; // Reset label
+                    this.value = ""; // Clear invalid file
+                } else if (fileSize > 5) {
+                    fileError.textContent = "File size exceeds 5MB!";
+                    fileError.style.display = "block";
+                    fileLabel.textContent = "Upload Document (PDF)"; // Reset label
+                    this.value = ""; // Clear invalid file
+                } else {
+                    fileError.style.display = "none"; // Hide error
+                    fileLabel.textContent = file.name; // Display file name
+                }
+            } else {
+                fileLabel.textContent = "Upload Document (PDF)"; // Reset label if no file selected
+                fileError.style.display = "none"; // Hide error message
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+﻿/* Overall Container */
+.container-custom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+/* Minimal Navigation Bar */
+.header-nav {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 15px 0;
+    margin-bottom: 30px;
+}
+
+    .header-nav .container-custom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header-nav .logo img {
+        max-height: 50px;
+    }
+
+    .header-nav nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+        .header-nav nav ul li {
+            margin-right: 30px;
+        }
+
+            .header-nav nav ul li a {
+                text-decoration: none;
+                font-size: 1rem;
+                color: #333;
+                font-weight: 500;
+                transition: color 0.3s;
+            }
+
+                .header-nav nav ul li a:hover,
+                .header-nav nav ul li a.active {
+                    color: #28a745;
+                }
+/* Onboarding Title */
+.onboarding-title {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: 50px; /* Extra space above title */
+    margin-bottom: 30px;
+    color: #333;
+}
+/* Progress Timeline */
+.progress-timeline {
+    position: relative;
+    margin: 40px auto 100px; /* Extra space below progress bar */
+    width: 90%;
+    max-width: 100%;
+}
+
+    .progress-timeline::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 5%;
+        right: 5%;
+        height: 4px;
+        background: linear-gradient(to right, #e0e0e0, #ccc);
+        border-radius: 2px;
+        z-index: 1;
+    }
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #999;
+    transition: all 0.3s ease;
+}
+    /* Wrap step number in a span for better control */
+    .progress-step .step-number {
+        display: inline;
+    }
+    /* Completed step: hide the number and show checkmark overlay */
+    .progress-step.completed {
+        background: #28a745;
+        border-color: #28a745;
+        color: #fff;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    }
+
+        .progress-step.completed .step-number {
+            display: none;
+        }
+
+        .progress-step.completed::after {
+            content: "\2714";
+            position: absolute;
+            font-size: 18px;
+            color: #fff;
+        }
+    /* Active step: scales up and pulses */
+    .progress-step.active {
+        background: #28a745;
+        border-color: #28a745;
+        color: #fff;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        transform: scale(1.1);
+        animation: pulse 1.5s infinite;
+    }
+
+        .progress-step.active::after {
+            content: "";
+        }
+
+    .progress-step .step-label {
+        position: absolute;
+        top: 70px;
+        width: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.8rem;
+        color: #555;
+        text-align: center;
+    }
+/* Role Selection Cards */
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.card-role {
+    width: 300px;
+    margin: 15px;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    background: #fff;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+    .card-role:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    }
+
+    .card-role img {
+        max-width: 100px;
+        margin-bottom: 15px;
+    }
+
+    .card-role h5 {
+        margin-bottom: 10px;
+        font-size: 1.25rem;
+        color: #333;
+    }
+
+    .card-role p {
+        color: #777;
+        font-size: 0.95rem;
+    }
+
+    .card-role input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .card-role.selected {
+        border: 2px solid #28a745;
+        box-shadow: 0 0 10px rgba(40,167,69,0.4);
+    }
+
+        .card-role.selected::after {
+            content: "\2714";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.8rem;
+            color: #28a745;
+        }
+/* Form & Button */
+.form-group {
+    margin-bottom: 20px;
+}

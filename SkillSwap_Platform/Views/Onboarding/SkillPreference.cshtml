@@ -1,0 +1,350 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.SkillPreferenceVM
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Step 4: Skill Preferences";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+
+    <style>
+        .skill-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            margin: 5px 5px 5px 0;
+            background: rgba(46, 204, 113, 0.15); /* glassed green effect */
+            color: #2ecc71;
+            border-radius: 20px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(5px);
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+
+            .skill-badge:hover {
+                background: rgba(46, 204, 113, 0.25);
+            }
+
+            .skill-badge .remove-skill {
+                margin-left: 8px;
+                cursor: pointer;
+            }
+
+                .skill-badge .remove-skill:hover {
+                    color: #e74c3c;
+                }
+
+    </style>
+</head>
+<body>
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline with extra spacing -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills &amp; Experience</div>
+                </div>
+                <div class="progress-step active">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Enter the skill areas you want to offer. You can add multiple entries. Choose a category or select "Other" to specify a custom category.</p>
+
+        @using (Html.BeginForm("SkillPreference", "Onboarding", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+
+                        @if (ViewBag.ErrorMessage != null)
+                        {
+                            <div class="col-lg-12">
+                                <div class="ui-content">
+                                    <div class="message-alart-style1">
+                                        <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                            @ViewBag.ErrorMessage
+                                            <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-lg-12">
+
+                            <!-- Skill Set Section -->
+                            <div id="skillset-section">
+                                <div class="row gy-4 mb-2 education-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>Skill Set</h4>
+                                        <a href="javascript:void(0);" class="ud-btn btn-light-thm mb25 add-entry">
+                                            <i class="far fa-x me-2"></i> Add Skill
+                                        </a>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Skill Area <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="skill[name][]" placeholder="e.g., UIUX Design" required />
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="ui-content">
+                                            <div class="form-style1">
+                                                <label class="form-label fw500 fz16 dark-color">Category <span class="text-danger">*</span></label>
+                                                <div class="bootselect-multiselect">
+                                                    <select name="skill[category][]" class="selectpicker skill-category">
+                                                        <option value="">Select Category</option>
+                                                        <option value="Technical">Technical</option>
+                                                        <option value="Design">Design</option>
+                                                        <option value="Marketing">Marketing</option>
+                                                        <option value="Data Science">Data Science</option>
+                                                        <option value="Mobile">Mobile</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4 custom-category-container" style="display:none;">
+                                        <label class="form-label">Specify Category <span class="text-danger">*</span></label>
+                                        <input type="text" name="skill[custom_category][]" class="form-control custom-category-input" placeholder="Enter custom category" />
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="ui-content">
+                                            <div class="form-style1">
+                                                <label class="form-label fw500 fz16 dark-color">Skill Level <span class="text-danger">*</span></label>
+                                                <div class="bootselect-multiselect">
+                                                    <select name="skill[level][]" class="selectpicker">
+                                                        <option value="">Choose Level</option>
+                                                        <option value="Basic">Basic</option>
+                                                        <option value="Intermediate">Intermediate</option>
+                                                        <option value="Proficient">Proficient</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
+                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 mb-4">
+                                <label class="form-label">Skills You Offer (Press Enter to add) <span class="text-danger">*</span></label>
+                                <input type="text" id="offeredSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
+                                <div id="offeredSkillsContainer" class="mt-2"></div>
+                                <small id="offeredSkillError" class="text-danger"></small>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Skills You Want to Learn (Press Enter to add) <span class="text-danger">*</span></label>
+                                <input type="text" id="willingSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
+                                <div id="willingSkillsContainer" class="mt-2"></div>
+                                <small id="willingSkillError" class="text-danger"></small>
+                            </div>
+
+
+                            <div class="text-center my-4">
+                                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- Wrapper End -->
+        <!-- Correct order -->
+        <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+        <script src="/template_assets/js/popper.min.js"></script> <!-- Popper BEFORE bootstrap -->
+        <script src="/template_assets/js/bootstrap.min.js"></script>
+        <script src="/template_assets/js/bootstrap-select.min.js"></script>
+        <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+        <script src="/template_assets/js/ace-responsive-menu.js"></script>
+        <script src="/template_assets/js/dashboard-script.js"></script>
+        <!-- Custom script for all pages -->
+        <script src="/template_assets/js/script.js"></script>
+
+        <!-- JavaScript (jQuery) to Clone Sections -->
+        <script>
+             $(document).ready(function () {
+
+                // Badge Addition Function (Reusable)
+                function addSkillBadge(inputSelector, containerSelector, hiddenInputName, errorSelector) {
+                    var skill = $(inputSelector).val().trim();
+                    var badgeCount = $(containerSelector).find('.skill-badge').length;
+
+                    if (skill !== '') {
+                        if (badgeCount >= 5) {
+                            $(errorSelector).text("Maximum of 5 skills allowed. Please remove one to add another.");
+                            $(inputSelector).val('');
+                            return;
+                        }
+
+                        var badge = `
+                            <span class="skill-badge">${skill}
+                                <i class="far fa-times remove-skill ms-2"></i>
+                                <input type="hidden" name="${hiddenInputName}" value="${skill}" />
+                            </span>`;
+
+                        $(containerSelector).append(badge);
+                        $(inputSelector).val('');
+                        $(errorSelector).text('');
+                    }
+                }
+
+                // Offered Skills Badge
+                $('#offeredSkillInput').keypress(function (e) {
+                    if (e.which === 13) {
+                        e.preventDefault();
+                        addSkillBadge('#offeredSkillInput', '#offeredSkillsContainer', 'skill[offeredSkills][]', '#offeredSkillError');
+                    }
+                });
+
+                // Willing Skills Badge
+                $('#willingSkillInput').keypress(function (e) {
+                    if (e.which === 13) {
+                        e.preventDefault();
+                        addSkillBadge('#willingSkillInput', '#willingSkillsContainer', 'skill[willingSkills][]', '#willingSkillError');
+                    }
+                });
+
+                // Remove Badge & Clear Error
+                $(document).on('click', '.remove-skill', function () {
+                    var container = $(this).closest('div');
+                    $(this).closest('.skill-badge').remove();
+
+                    if (container.attr('id') === 'offeredSkillsContainer' && container.find('.skill-badge').length < 5) {
+                        $('#offeredSkillError').text('');
+                    }
+                    if (container.attr('id') === 'willingSkillsContainer' && container.find('.skill-badge').length < 5) {
+                        $('#willingSkillError').text('');
+                    }
+                });
+
+                // Existing Clone functionality (unchanged)
+                function cloneEntry(sectionSelector) {
+                    var $original = $(sectionSelector).find('.row:first');
+                    var $clone = $original.clone(false, false);
+
+                    $clone.find('.bootstrap-select').replaceWith(function () {
+                        return $('select', this);
+                    });
+
+                    $clone.find('input').val('');
+                    $clone.find('.custom-category-container').hide();
+                    $clone.find('select.selectpicker').each(function () {
+                        $(this).removeAttr('multiple').val('');
+                        $(this).selectpicker('destroy').selectpicker();
+                    });
+
+                    $clone.find('.add-entry').remove();
+                    $clone.find('.remove-entry').removeClass('d-none');
+
+                    $(sectionSelector).append($clone);
+                }
+
+                $(document).on('click', '.add-entry', function () {
+                    var section = $(this).closest('[id$="-section"]');
+                    cloneEntry(section);
+                });
+
+                $(document).on('click', '.remove-entry', function () {
+                    $(this).closest('.row').remove();
+                });
+
+                // Category Visibility functionality
+                $(document).on('changed.bs.select', 'select[name="skill[category][]"]', function () {
+                    var selected = $(this).val();
+                    var container = $(this).closest('.row').find('.custom-category-container');
+                    if (selected === 'Other') {
+                        container.show().find('input').attr('required', true);
+                    } else {
+                        container.hide().find('input').val('').removeAttr('required');
+                    }
+                });
+
+            });
+        </script>
+
+</body>
+</html>

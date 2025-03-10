@@ -1,0 +1,166 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.SelectRoleVM
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+</head>
+<body>
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline with extra spacing -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step active">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills &amp; Experience</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Choose your role. You can change this later.</p>
+
+        @using (Html.BeginForm("SelectRole", "Onboarding", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="col-lg-12">
+                    <div class="ui-content">
+                        <div class="message-alart-style1">
+                            <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                @ViewBag.ErrorMessage
+                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="cards-container">
+                <div class="card-role" onclick="selectRole('Teacher', this)">
+                    <input type="radio" name="SelectedRole" value="Teacher" @(Model.SelectedRole == "Teacher" ? "checked" : "") />
+                    <img src="/template_assets/images/man_sitting.svg" alt="Teacher">
+                    <h5>Teacher</h5>
+                    <p>Offer your expertise to help others learn.</p>
+                </div>
+                <div class="card-role" onclick="selectRole('Student', this)">
+                    <input type="radio" name="SelectedRole" value="Student" @(Model.SelectedRole == "Student" ? "checked" : "") />
+                    <img src="/template_assets/images/Asset-8.svg" alt="Student">
+                    <h5>Student</h5>
+                    <p>Learn new skills and grow your knowledge.</p>
+                </div>
+                <div class="card-role" onclick="selectRole('Both', this)">
+                    <input type="radio" name="SelectedRole" value="Both" @(Model.SelectedRole == "Both" ? "checked" : "") />
+                    <img src="/template_assets/images/Right-bg-img.png" alt="Both">
+                    <h5>Both</h5>
+                    <p>Offer your expertise while learning new skills.</p>
+                </div>
+                <span asp-validation-for="SelectedRole" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="ReferralSource" class="form-label">How did you hear about us?</label>
+                <input type="text" name="ReferralSource" class="form-control" placeholder="E.g., Social media, friend referral..." value="@Model.ReferralSource" />
+                <span asp-validation-for="ReferralSource" class="text-danger"></span>
+            </div>
+            <div class="text-center my-4">
+                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                </button>
+                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+            </div>
+        }
+    </div>
+
+    <script>
+        function selectRole(role, element) {
+          var cards = document.querySelectorAll('.card-role');
+          cards.forEach(function(card) {
+            card.classList.remove('selected');
+            card.querySelector('input[type="radio"]').checked = false;
+          });
+          element.classList.add('selected');
+          element.querySelector('input[type="radio"]').checked = true;
+        }
+    </script>
+    <!-- Wrapper End -->
+    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+    <script src="/template_assets/js/bootstrap.min.js"></script>
+    <script src="/template_assets/js/bootstrap-select.min.js"></script>
+    <script src="/template_assets/js/ace-responsive-menu.js"></script>
+    <script src="/template_assets/js/dashboard-script.js"></script>
+    <!-- Custom script for all pages -->
+    <script src="/template_assets/js/script.js"></script>
+</body>
+</html>
