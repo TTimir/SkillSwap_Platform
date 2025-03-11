@@ -4,6 +4,7 @@ using Skill_Swap.Models;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.OnBoardVM;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -18,7 +19,15 @@ namespace SkillSwap_Platform.Controllers
         #region STEP 1: Select Role
 
         [HttpGet]
-        public IActionResult SelectRole() => View(new SelectRoleVM());
+        public IActionResult SelectRole()
+        {
+            // Get user ID from session
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Home"); // 🔥 Redirect if session expired
+
+            return View(new SelectRoleVM());
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -30,21 +39,20 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             // Clear existing roles.
             var existingRoles = await _context.TblUserRoles.Where(ur => ur.UserId == userId).ToListAsync();
             _context.TblUserRoles.RemoveRange(existingRoles);
 
             // Map SelectedRole to role IDs.
             if (model.SelectedRole == "Teacher")
-                _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 2 });
+                _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 2 });
             else if (model.SelectedRole == "Student")
-                _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 3 });
+                _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 3 });
             else if (model.SelectedRole == "Both")
             {
-                _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 2 });
-                _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 3 });
+                _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 2 });
+                _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 3 });
             }
 
             // Save referral info.
@@ -71,7 +79,11 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> ProfileCompletion()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Home"); // Redirect if session expired
+            }
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new ProfileCompletionVM();
             if (user != null)
@@ -96,11 +108,11 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
-                ViewBag.ErrorMessage = "User not found.";
+                ViewBag.ErrorMessage = "User not found. Please try to login again. Please try to login again!";
                 return View(model);
             }
 
@@ -117,7 +129,6 @@ namespace SkillSwap_Platform.Controllers
                 user.ProfileImageUrl = fileUrl;
             }
 
-            user.PersonalWebsite = model.PersonalWebsite;
             user.Location = model.Location;
             user.Address = model.Address;
             user.City = model.City;
@@ -143,7 +154,11 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> SkillsExperience()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value); ;
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Home"); // Redirect if session expired
+            }
             var user = await _context.TblUsers
                     .Include(u => u.TblEducations)
                     .Include(u => u.TblExperiences)
@@ -171,11 +186,11 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
-                ViewBag.ErrorMessage = "User not found.";
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
                 return View(model);
             }
 
@@ -244,7 +259,7 @@ namespace SkillSwap_Platform.Controllers
                 // Create a new education record.
                 var education = new TblEducation
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     Degree = degreeType,         // e.g., "School's", "Bachelor's", etc.
                     DegreeName = degreeName,       // e.g., "High School", "BMU"
                     UniversityName = institution,
@@ -301,7 +316,7 @@ namespace SkillSwap_Platform.Controllers
 
                 var language = new TblLanguage
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     Language = langName,
                     Proficiency = proficiency
                 };
@@ -380,7 +395,7 @@ namespace SkillSwap_Platform.Controllers
 
                 var experience = new TblExperience
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     CompanyName = companyName,
                     Position = position,
                     Description = totalExperienceYears.ToString(),
@@ -417,7 +432,11 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> SkillPreference()
         {
-            int userId = 21; // int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Home"); // Redirect if session expired
+            }
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new SkillPreferenceVM();
             if (user != null)
@@ -438,31 +457,45 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
-                ViewBag.ErrorMessage = "User not found.";
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
                 return View(model);
             }
+            // Prevent empty submissions
+            if (string.IsNullOrWhiteSpace(Request.Form["willingSkills"]) || string.IsNullOrWhiteSpace(Request.Form["offeredSkills"]))
+            {
+                ViewBag.ErrorMessage = "Please enter at least one skill in each field (Your Offering and Willing).";
+                return View(model);
+            }
+
+            // Get existing skills for the user
+            var existingUserSkills = await _context.TblUserSkills
+                .Where(s => s.UserId == userId)
+                .Select(s => new { s.Skill.SkillName, s.Skill.SkillCategory }) // Get only relevant fields
+                .ToListAsync();
 
             // Update basic skill preferences in TblUsers.
             // Here we update tag inputs.
             user.DesiredSkillAreas = Request.Form["willingSkills"];
-            user.OfferedSkillAreas = Request.Form["offerSkills"];
+            user.OfferedSkillAreas = Request.Form["offeredSkills"];
 
             // Remove previously stored offered skills.
-            var existingUserSkills = await _context.TblUserSkills
-                .Where(s => s.UserId == userId && s.IsOffering)
-                .ToListAsync();
-            if (existingUserSkills.Any())
-                _context.TblUserSkills.RemoveRange(existingUserSkills);
+            //var existingUserSkills = await _context.TblUserSkills
+            //    .Where(s => s.UserId == userId && s.IsOffering)
+            //    .ToListAsync();
+            //if (existingUserSkills.Any())
+            //    _context.TblUserSkills.RemoveRange(existingUserSkills);
 
             // Process dynamic offered skill rows.
             var offeredSkillNames = Request.Form["skill[name][]"].ToArray();
             var offeredSkillCategories = Request.Form["skill[category][]"].ToArray();
             var offeredSkillCustomCategories = Request.Form["skill[customCategory][]"].ToArray();
             var offeredSkillLevels = Request.Form["skill[level][]"].ToArray();
+
+            List<string> duplicateSkills = new List<string>();
 
             for (int i = 0; i < offeredSkillNames.Length; i++)
             {
@@ -475,6 +508,17 @@ namespace SkillSwap_Platform.Controllers
                 if (category == "Other")
                 {
                     category = offeredSkillCustomCategories.ElementAtOrDefault(i)?.Trim();
+                }
+
+                // Check if the skill already exists for this user (case-insensitive)
+                bool isDuplicate = existingUserSkills.Any(s =>
+                    s.SkillName.Equals(skillName, StringComparison.OrdinalIgnoreCase) &&
+                    s.SkillCategory.Equals(category, StringComparison.OrdinalIgnoreCase));
+
+                if (isDuplicate)
+                {
+                    duplicateSkills.Add($"{skillName} ({category})");
+                    continue; // Skip adding this skill
                 }
 
                 // Map level to integer.
@@ -499,7 +543,7 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
-                // Check if the skill exists (match by name and category).
+                // Check if the skill exists in the global skill table
                 var existingSkill = await _context.TblSkills
                     .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skillName.ToLower() && s.SkillCategory == category);
                 int skillId;
@@ -523,7 +567,7 @@ namespace SkillSwap_Platform.Controllers
                 // Create TblUserSkill record.
                 var userSkill = new TblUserSkill
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     SkillId = skillId,
                     ProficiencyLevel = proficiencyLevel,
                     IsOffering = true
@@ -531,6 +575,12 @@ namespace SkillSwap_Platform.Controllers
                 _context.TblUserSkills.Add(userSkill);
             }
 
+            // If there are duplicate skills, show an error message and return to the form
+            if (duplicateSkills.Any())
+            {
+                ViewBag.ErrorMessage = $"The following skills already exist in your profile: {string.Join(", ", duplicateSkills)}";
+                return View(model);
+            }
             try
             {
                 await _context.SaveChangesAsync();
@@ -566,7 +616,7 @@ namespace SkillSwap_Platform.Controllers
             var verificationIds = form["certification[verification_id][]"];
             var files = form.Files.GetFiles("certification[certificate_file][]");
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             bool hasValidCertificate = false;
 
             for (int i = 0; i < certificateNames.Count; i++)
@@ -594,7 +644,7 @@ namespace SkillSwap_Platform.Controllers
                 string fileUrl = await UploadFileAsync(files[i], "certificates");
                 var certificate = new TblUserCertificate
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     CertificateName = certificateNames[i],
                     VerificationId = verificationIds[i],
                     CertificateFilePath = fileUrl,
@@ -629,7 +679,7 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> AdditionalInfo()
         {
-            int userId = 21;
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new AdditionalInfoVM();
             if (user != null)
@@ -647,25 +697,104 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
-                ViewBag.ErrorMessage = "User not found.";
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
                 return View(model);
             }
 
+            // Function to validate URLs
+            bool IsValidUrl(string url)
+            {
+                if (string.IsNullOrWhiteSpace(url)) return false;
+                string pattern = @"^(https?:\/\/)?(www\.)?([\w\-]+)\.([a-z]{2,6})(\/[\w\-]*)*\/?$";
+                return Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
+            }
+
+            // Retrieve input values and convert StringValues to string
+            string personalWebsite = Request.Form["personalWebsite"].ToString().Trim();
+            string facebook = Request.Form["facebook"].ToString().Trim();
+            string instagram = Request.Form["instagram"].ToString().Trim();
+            string linkedIn = Request.Form["linkedin"].ToString().Trim();
+            string behance = Request.Form["behance"].ToString().Trim();
+            string pinterest = Request.Form["pinterest"].ToString().Trim();
+            string twitter = Request.Form["twitter"].ToString().Trim();
+            string github = Request.Form["github"].ToString().Trim();
+
+            // Validate all URLs before saving
+            if (!string.IsNullOrEmpty(personalWebsite) && !IsValidUrl(personalWebsite))
+            {
+                ViewBag.ErrorMessage = "Invalid Personal Website URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(facebook) && !IsValidUrl(facebook))
+            {
+                ViewBag.ErrorMessage = "Invalid Facebook URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(instagram) && !IsValidUrl(instagram))
+            {
+                ViewBag.ErrorMessage = "Invalid Instagram URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(linkedIn) && !IsValidUrl(linkedIn))
+            {
+                ViewBag.ErrorMessage = "Invalid LinkedIn URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(behance) && !IsValidUrl(behance))
+            {
+                ViewBag.ErrorMessage = "Invalid Behance URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(pinterest) && !IsValidUrl(pinterest))
+            {
+                ViewBag.ErrorMessage = "Invalid Pinterest URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(twitter) && !IsValidUrl(twitter))
+            {
+                ViewBag.ErrorMessage = "Invalid Twitter URL. Please enter a valid URL.";
+                return View(model);
+            }
+            if (!string.IsNullOrEmpty(github) && !IsValidUrl(github))
+            {
+                ViewBag.ErrorMessage = "Invalid GitHub URL. Please enter a valid URL.";
+                return View(model);
+            }
+
+            // Check if at least one social media is entered
+            if (string.IsNullOrEmpty(facebook) &&
+                string.IsNullOrEmpty(instagram) &&
+                string.IsNullOrEmpty(linkedIn) &&
+                string.IsNullOrEmpty(behance) &&
+                string.IsNullOrEmpty(pinterest) &&
+                string.IsNullOrEmpty(twitter) &&
+                string.IsNullOrEmpty(github))
+            {
+                ViewBag.ErrorMessage = "Please enter at least one social media account.";
+                return View(model);
+            }
+
+            // Store social media links in JSON format
             var socialMedia = new
             {
-                Facebook = Request.Form["facebook"],
-                Instagram = Request.Form["instagram"],
-                LinkedIn = Request.Form["linkedin"],
-                Behance = Request.Form["behance"],
-                Pinterest = Request.Form["pinterest"],
-                Twitter = Request.Form["twitter"]
+                Facebook = facebook,
+                Instagram = instagram,
+                LinkedIn = linkedIn,
+                Behance = behance,
+                Pinterest = pinterest,
+                Twitter = twitter,
+                GitHub = github 
             };
+
             user.SocialMediaLinks = Newtonsoft.Json.JsonConvert.SerializeObject(socialMedia);
-            user.PersonalWebsite = Request.Form["personalWebsite"];
+            user.PersonalWebsite = personalWebsite;
+
+            // 🚀 Mark onboarding as completed
+            user.IsOnboardingCompleted = true;
 
             try
             {
@@ -690,7 +819,7 @@ namespace SkillSwap_Platform.Controllers
                 string fileUrl = await UploadFileAsync(kycFile, "kyc");
                 var kycRecord = new TblKycUpload
                 {
-                    UserId = userId,
+                    UserId = userId.Value,
                     DocumentName = Request.Form["documentType"],
                     DocumentNumber = Request.Form["documentNumber"],
                     DocumentImageUrl = fileUrl,
@@ -714,7 +843,6 @@ namespace SkillSwap_Platform.Controllers
 
         #endregion
 
-
         #region STEP 7: Approval Pending
 
         [HttpGet]
@@ -722,7 +850,7 @@ namespace SkillSwap_Platform.Controllers
         public IActionResult ApprovalPending()
         {
             // Optionally, check if the user is in pending state.
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? userId = HttpContext.Session.GetInt32("TempUserId");
             var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
             if (user != null && user.IsVerified)
             {

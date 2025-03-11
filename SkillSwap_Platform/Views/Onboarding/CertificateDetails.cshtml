@@ -128,8 +128,8 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Institution/Organization <span class="text-danger">*</span></label>
-                                        <input type="text" name="certification[institution_name][]" class="form-control" placeholder="Issued By" required />
+                                        <label class="form-label">Institution/Organization </label>
+                                        <input type="text" name="certification[certified_from][]" class="form-control" placeholder="Issued By (optional)" />
                                     </div>
 
                                     <div class="col-md-4">
@@ -138,8 +138,8 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Verification ID</label>
-                                        <input type="text" name="certification[verification_id][]" class="form-control" placeholder="Verification ID (optional)" />
+                                        <label class="form-label">Verification ID <span class="text-danger">*</span></label>
+                                        <input type="text" name="certification[verification_id][]" class="form-control" placeholder="Verification ID" />
                                     </div>
 
                                     <div class="col-xl-8">
@@ -150,7 +150,7 @@
                                                     <label for="certificateInput_1" class="upload-btn certificate-label" style="cursor: pointer;">
                                                         Upload Certificate (PDF)
                                                     </label>
-                                                    <input type="file" class="certificateInput" id="certificateInput_1" accept=".pdf" style="display: none;">
+                                                    <input type="file" name="certification[certificate_file][]" class="certificateInput" id="certificateInput_1" accept=".pdf" style="display: none;">
                                                 </div>
                                                 <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf)</p>
                                                 <small class="fileError text-danger mx-3"></small>

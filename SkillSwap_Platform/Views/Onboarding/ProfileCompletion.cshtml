@@ -34,6 +34,15 @@
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+    <style>
+        #profileImage {
+            width: 100px; /* Fixed width */
+            height: 100px; /* Fixed height */
+            object-fit: contain; /* Ensures the image fits without cropping */
+            border: 2px dashed #ccc; /* Optional: border for clarity */
+            background-color: #f4f4f4; /* Optional: background for better visibility */
+        }
+    </style>
 </head>
 <body>
     <!-- Minimal Navigation Bar -->
@@ -95,19 +104,6 @@
         {
             @Html.AntiForgeryToken()
 
-            @if (ViewBag.ErrorMessage != null)
-            {
-                <div class="col-lg-12">
-                    <div class="ui-content">
-                        <div class="message-alart-style1">
-                            <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
-                                @ViewBag.ErrorMessage
-                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
             <div class="row">
                 <div class="col-xl-12">
                     <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
@@ -133,7 +129,7 @@
                                 <div class="profile-content ml20 ml0-xs">
                                     <div class="d-flex align-items-center mx-3 mb-2">
                                         <label for="fileInput" class="upload-btn ml10" style="cursor: pointer;">Upload Images</label>
-                                        <input type="file" id="fileInput" accept=".jpg, .jpeg, .png" style="display: none;">
+                                        <input asp-for="ProfileImageFile" type="file" id="fileInput" accept=".jpg, .jpeg, .png" style="display: none;">
                                     </div>
                                     <p class="text mb-0 mx-3">Max file size is 1MB, Minimum dimension: 330x300. Suitable files: .jpg & .png</p>
                                 </div>
@@ -146,14 +142,14 @@
                                 <!-- Location -->
                                 <div class="col-md-6">
                                     <label asp-for="Location" class="form-label">Location  <span class="text-danger">*</span></label>
-                                    <input asp-for="Location" type="text" class="form-control" name="Location" placeholder="Enter your location" required>
+                                    <input asp-for="Location" type="text" class="form-control" name="Location" placeholder="Enter your location">
                                     <span asp-validation-for="Location" class="text-danger"></span>
                                 </div>
 
                                 <!-- Address -->
                                 <div class="col-md-6">
                                     <label asp-for="Address" class="form-label">Address <span class="text-danger">*</span></label>
-                                    <input asp-for="Address" type="text" class="form-control" name="Address" placeholder="Enter your address" required>
+                                    <input asp-for="Address" type="text" class="form-control" name="Address" placeholder="Enter your address">
                                     <span asp-validation-for="Address" class="text-danger"></span>
                                 </div>
 
@@ -174,7 +170,7 @@
                                 <!-- Introduction -->
                                 <div class="col-md-12">
                                     <label asp-for="AboutMe" class="form-label">Introduce Yourself <span class="text-danger">*</span></label>
-                                    <textarea asp-for="AboutMe" name="Introduction" cols="30" rows="6" placeholder="Description"></textarea>
+                                    <textarea asp-for="AboutMe" cols="30" rows="6" placeholder="Describe yourself..."></textarea>
                                     <span asp-validation-for="AboutMe" class="text-danger"></span>
                                 </div>
                             </div>
@@ -216,7 +212,7 @@
     <script src="/template_assets/js/script.js"></script>
 
     <script>
-        document.getElementById('fileInput').addEventListener('change', function(event) {
+         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const img = document.getElementById('profileImage');
 
@@ -230,21 +226,12 @@
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const image = new Image();
-                    image.onload = function() {
-                        // Validate dimensions (Minimum 330x300)
-                        if (image.width < 330 || image.height < 300) {
-                            alert('Minimum image dimensions are 330x300 pixels.');
-                            event.target.value = '';
-                        } else {
-                            img.src = e.target.result;
-                        }
-                    };
-                    image.src = e.target.result;
+                    img.src = e.target.result; // Set the uploaded image
                 };
                 reader.readAsDataURL(file);
             }
         });
+
     </script>
 </body>
 </html>

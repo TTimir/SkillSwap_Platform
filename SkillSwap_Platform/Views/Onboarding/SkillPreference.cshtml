@@ -1,4 +1,5 @@
-﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.SkillPreferenceVM
+﻿@using SkillSwap_Platform.Models.ViewModels.OnBoardVM
+@model SkillPreferenceVM
 
 @{
     Layout = null;
@@ -162,7 +163,7 @@
                                             <div class="form-style1">
                                                 <label class="form-label fw500 fz16 dark-color">Category <span class="text-danger">*</span></label>
                                                 <div class="bootselect-multiselect">
-                                                    <select name="skill[category][]" class="selectpicker skill-category">
+                                                    <select name="skill[category][]" class="selectpicker skill-category" required>
                                                         <option value="">Select Category</option>
                                                         <option value="Technical">Technical</option>
                                                         <option value="Design">Design</option>
@@ -178,7 +179,7 @@
 
                                     <div class="col-lg-4 custom-category-container" style="display:none;">
                                         <label class="form-label">Specify Category <span class="text-danger">*</span></label>
-                                        <input type="text" name="skill[custom_category][]" class="form-control custom-category-input" placeholder="Enter custom category" />
+                                        <input type="text" name="skill[customCategory][]" class="form-control custom-category-input" placeholder="Enter custom category" />
                                     </div>
 
                                     <div class="col-lg-4">
@@ -186,7 +187,7 @@
                                             <div class="form-style1">
                                                 <label class="form-label fw500 fz16 dark-color">Skill Level <span class="text-danger">*</span></label>
                                                 <div class="bootselect-multiselect">
-                                                    <select name="skill[level][]" class="selectpicker">
+                                                    <select name="skill[level][]" class="selectpicker" required>
                                                         <option value="">Choose Level</option>
                                                         <option value="Basic">Basic</option>
                                                         <option value="Intermediate">Intermediate</option>
@@ -209,6 +210,7 @@
                                 <label class="form-label">Skills You Offer (Press Enter to add) <span class="text-danger">*</span></label>
                                 <input type="text" id="offeredSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
                                 <div id="offeredSkillsContainer" class="mt-2"></div>
+                                <input type="hidden" name="offeredSkills" id="offeredSkillsHidden">
                                 <small id="offeredSkillError" class="text-danger"></small>
                             </div>
 
@@ -216,6 +218,7 @@
                                 <label class="form-label">Skills You Want to Learn (Press Enter to add) <span class="text-danger">*</span></label>
                                 <input type="text" id="willingSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
                                 <div id="willingSkillsContainer" class="mt-2"></div>
+                                <input type="hidden" name="willingSkills" id="willingSkillsHidden">
                                 <small id="willingSkillError" class="text-danger"></small>
                             </div>
 
@@ -246,66 +249,104 @@
 
         <!-- JavaScript (jQuery) to Clone Sections -->
         <script>
-             $(document).ready(function () {
+                         $(document).ready(function () {
 
-                // Badge Addition Function (Reusable)
-                function addSkillBadge(inputSelector, containerSelector, hiddenInputName, errorSelector) {
+                // Function to add a skill badge
+                function addSkillBadge(inputSelector, containerSelector, hiddenInputSelector, errorSelector) {
                     var skill = $(inputSelector).val().trim();
-                    var badgeCount = $(containerSelector).find('.skill-badge').length;
+                    var container = $(containerSelector);
+                    var hiddenInput = $(hiddenInputSelector);
+                    var errorField = $(errorSelector);
+                    var badgeCount = container.find('.skill-badge').length;
 
                     if (skill !== '') {
-                        if (badgeCount >= 5) {
-                            $(errorSelector).text("Maximum of 5 skills allowed. Please remove one to add another.");
+                        // Prevent duplicate skills
+                        var duplicate = false;
+                        container.find('.skill-badge').each(function () {
+                            if ($(this).text().trim().toLowerCase().replace("×", "") === skill.toLowerCase()) {
+                                duplicate = true;
+                            }
+                        });
+
+                        if (duplicate) {
+                            errorField.text("This skill has already been added.");
                             $(inputSelector).val('');
                             return;
                         }
 
+                        // Limit skill badges to max 5
+                        if (badgeCount >= 5) {
+                            errorField.text("Maximum of 5 skills allowed.");
+                            $(inputSelector).val('');
+                            return;
+                        }
+
+                        // Create badge HTML
                         var badge = `
                             <span class="skill-badge">${skill}
                                 <i class="far fa-times remove-skill ms-2"></i>
-                                <input type="hidden" name="${hiddenInputName}" value="${skill}" />
                             </span>`;
 
-                        $(containerSelector).append(badge);
+                        container.append(badge);
+
+                        // Update hidden input with comma-separated values
+                        updateHiddenSkills(hiddenInput, container);
+
+                        // Clear input and error message
                         $(inputSelector).val('');
-                        $(errorSelector).text('');
+                        errorField.text('');
                     }
                 }
 
-                // Offered Skills Badge
+                // Function to update hidden input field with skills
+                function updateHiddenSkills(hiddenInput, container) {
+                    var skills = [];
+                    container.find('.skill-badge').each(function () {
+                        skills.push($(this).text().trim().replace("×", "").trim());
+                    });
+                    hiddenInput.val(skills.join(",")); // Store as comma-separated value
+                }
+
+                // Handle pressing Enter to add a skill for offered skills
                 $('#offeredSkillInput').keypress(function (e) {
                     if (e.which === 13) {
                         e.preventDefault();
-                        addSkillBadge('#offeredSkillInput', '#offeredSkillsContainer', 'skill[offeredSkills][]', '#offeredSkillError');
+                        addSkillBadge('#offeredSkillInput', '#offeredSkillsContainer', '#offeredSkillsHidden', '#offeredSkillError');
                     }
                 });
 
-                // Willing Skills Badge
+                // Handle pressing Enter to add a skill for willing skills
                 $('#willingSkillInput').keypress(function (e) {
                     if (e.which === 13) {
                         e.preventDefault();
-                        addSkillBadge('#willingSkillInput', '#willingSkillsContainer', 'skill[willingSkills][]', '#willingSkillError');
+                        addSkillBadge('#willingSkillInput', '#willingSkillsContainer', '#willingSkillsHidden', '#willingSkillError');
                     }
                 });
 
-                // Remove Badge & Clear Error
+                // Remove skill badge when clicking "×"
                 $(document).on('click', '.remove-skill', function () {
                     var container = $(this).closest('div');
-                    $(this).closest('.skill-badge').remove();
+                    var hiddenInput = container.attr('id') === 'offeredSkillsContainer' ? '#offeredSkillsHidden' : '#willingSkillsHidden';
 
-                    if (container.attr('id') === 'offeredSkillsContainer' && container.find('.skill-badge').length < 5) {
-                        $('#offeredSkillError').text('');
-                    }
-                    if (container.attr('id') === 'willingSkillsContainer' && container.find('.skill-badge').length < 5) {
-                        $('#willingSkillError').text('');
+                    $(this).parent().remove(); // Remove badge
+                    updateHiddenSkills($(hiddenInput), container); // Update hidden input
+                });
+
+                // Ensure at least one skill before form submission
+                $('form').submit(function (e) {
+                    if ($('#offeredSkillsHidden').val().trim() === '' || $('#willingSkillsHidden').val().trim() === '') {
+                        $('#offeredSkillError').text('Please enter at least one offered skill.');
+                        $('#willingSkillError').text('Please enter at least one willing skill.');
+                        e.preventDefault();
                     }
                 });
 
-                // Existing Clone functionality (unchanged)
+                // Clone skill entry section
                 function cloneEntry(sectionSelector) {
                     var $original = $(sectionSelector).find('.row:first');
                     var $clone = $original.clone(false, false);
 
+                    // Reset form inputs in the cloned section
                     $clone.find('.bootstrap-select').replaceWith(function () {
                         return $('select', this);
                     });
@@ -323,16 +364,18 @@
                     $(sectionSelector).append($clone);
                 }
 
+                // Add a new skill entry
                 $(document).on('click', '.add-entry', function () {
                     var section = $(this).closest('[id$="-section"]');
                     cloneEntry(section);
                 });
 
+                // Remove a skill entry
                 $(document).on('click', '.remove-entry', function () {
                     $(this).closest('.row').remove();
                 });
 
-                // Category Visibility functionality
+                // Show/hide custom category input based on selection
                 $(document).on('changed.bs.select', 'select[name="skill[category][]"]', function () {
                     var selected = $(this).val();
                     var container = $(this).closest('.row').find('.custom-category-container');

@@ -74,6 +74,8 @@ public partial class TblUser
 
     public string? TotpSecret { get; set; }
 
+    public bool IsOnboardingCompleted { get; set; }
+
     public virtual ICollection<TblEducation> TblEducations { get; set; } = new List<TblEducation>();
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
@@ -116,5 +118,4 @@ public partial class TblUser
 
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
-
 }

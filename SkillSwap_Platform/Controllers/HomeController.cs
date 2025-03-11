@@ -32,7 +32,6 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] TempData retrieval failed: {ex.Message}");
             ViewBag.ErrorMessage = "An unexpected error occurred.";
         }
 
@@ -74,9 +73,11 @@ public class HomeController : Controller
                 UserName = model.UserName,
                 Email = model.Email,
                 ContactNo = model.ContactNo,
-                TotpSecret = TotpSecret
+                TotpSecret = TotpSecret, // 🔥 Store plain Base32 secret
+                IsOnboardingCompleted = false // Ensure onboarding starts
             };
 
+            HttpContext.Session.SetInt32("TempUserId", tempUser.UserId);  // Store temporary user ID
             HttpContext.Session.SetObjectAsJson("TempUser", tempUser);
             HttpContext.Session.SetString("TempUser_Password", model.Password);
 
@@ -84,7 +85,6 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] Register failed: {ex.Message}");
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred during registration.";
             return View(model);
         }
@@ -133,6 +133,14 @@ public class HomeController : Controller
                 return View(model);
             }
 
+
+            // 🚀 CHECK IF USER COMPLETED ONBOARDING
+            if (!user.IsOnboardingCompleted)
+            {
+                HttpContext.Session.SetInt32("TempUserId", user.UserId); // 🔥 Store UserId for onboarding
+                return RedirectToAction("SelectRole", "Onboarding"); // 🚀 Redirect to first onboarding step
+            }
+
             if (!user.IsVerified)
             {
                 TempData["ApprovalMessage"] = "🔎 Your account is not yet approved.";
@@ -158,68 +166,66 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] Login failed: {ex.Message}");
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while logging in.";
             return View(model);
         }
     }
     #endregion
 
-    #region Login OTP Verification
+    #region Login OTP
 
-        // GET: /Home/LoginOtp
-        [HttpGet]
-        public IActionResult LoginOtp(string returnUrl = null)
+    // GET: /Home/LoginOtp
+    [HttpGet]
+    public IActionResult LoginOtp(string returnUrl = null)
+    {
+        var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
+        if (loginUser == null)
         {
-            var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
-            if (loginUser == null)
-            {
-                TempData["ErrorMessage"] = "Session expired. Please log in again.";
-                return RedirectToAction("Login");
-            }
-            ViewBag.ReturnUrl = returnUrl;
-            return View(loginUser);
+            TempData["ErrorMessage"] = "Session expired. Please log in again.";
+            return RedirectToAction("Login");
+        }
+        ViewBag.ReturnUrl = returnUrl;
+        return View(loginUser);
+    }
+
+    // POST: /Home/LoginOtp
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LoginOtp(string otp, string returnUrl = null)
+    {
+        var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
+        if (loginUser == null)
+        {
+            TempData["ErrorMessage"] = "Session expired. Please log in again.";
+            return RedirectToAction("Login");
         }
 
-        // POST: /Home/LoginOtp
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LoginOtp(string otp, string returnUrl = null)
+        try
         {
-            var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
-            if (loginUser == null)
-            {
-                TempData["ErrorMessage"] = "Session expired. Please log in again.";
-                return RedirectToAction("Login");
-            }
-
-            try
-            {
             // Verify OTP using the stored Base32 TotpSecret with IST time
             if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
             {
-                    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
-                    return RedirectToAction("LoginOtp", new { returnUrl });
-                }
-
-                // OTP is valid, sign in the user
-                await SignInUserAsync(loginUser, false);
-                HttpContext.Session.Remove("LoginUser");
-                HttpContext.Session.Remove("LoginUser_Password");
-                TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
-                return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
-                    ? Redirect(returnUrl)
-                    : RedirectToAction("Index", "Home");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[ERROR] OTP Login failed: {ex.Message}");
-                TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
+                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
                 return RedirectToAction("LoginOtp", new { returnUrl });
             }
-        }
 
-        #endregion
+            // OTP is valid, sign in the user
+            await SignInUserAsync(loginUser, false);
+            HttpContext.Session.Remove("LoginUser");
+            HttpContext.Session.Remove("LoginUser_Password");
+            TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
+            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? Redirect(returnUrl)
+                : RedirectToAction("Index", "Home");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
+            return RedirectToAction("LoginOtp", new { returnUrl });
+        }
+    }
+
+    #endregion
 
     #region Two-Factor Authentication (2FA)
 
@@ -269,7 +275,8 @@ public class HomeController : Controller
                 UserName = tempUser.UserName,
                 Email = tempUser.Email,
                 ContactNo = tempUser.ContactNo,
-                TotpSecret = tempUser.TotpSecret // ✅ Store plain Base32 secret
+                TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
+                IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
             };
 
             var result = await _userService.RegisterUserAsync(newUser, password);
@@ -280,15 +287,16 @@ public class HomeController : Controller
             }
 
             HttpContext.Session.Clear();
+
             // Remove automatic login
             // await SignInUserAsync(newUser, false);
+
             TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("SelectRole", "Onboarding"); // 🚀 Redirect to first onboarding step
         }
 
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] OTP Verification failed: {ex.Message}");
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
             return View("Setup2FA");
         }
@@ -309,7 +317,6 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] Logout failed: {ex.Message}");
             TempData["ErrorMessage"] = "⚠️ An error occurred during logout. Please try again.";
         }
         return RedirectToAction("Login", "Home");
@@ -326,11 +333,12 @@ public class HomeController : Controller
         try
         {
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(ClaimTypes.Email, user.Email)
-        };
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("OnboardingCompleted", user.IsOnboardingCompleted.ToString())
+            };
 
             var roles = await _userService.GetUserRolesAsync(user.UserId);
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
