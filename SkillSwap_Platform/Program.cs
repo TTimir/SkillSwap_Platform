@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using System.Diagnostics;
@@ -67,6 +68,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();  // 🔴 Must be before Authorization
 app.UseAuthorization();
+app.UseMiddleware<UpdateLastActiveMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

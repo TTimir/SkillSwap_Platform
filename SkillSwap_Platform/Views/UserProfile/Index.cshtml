@@ -1,0 +1,632 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.UserProfileVM
+@using System.Text.RegularExpressions
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+<style>
+    .tag {
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .approved-tag {
+        background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+        color: #2ecc71;
+        border-left: 5px solid #2ecc71;
+        border-right: 0.1px solid #2ecc71;
+        border-top: 0.1px solid #2ecc71;
+        border-bottom: 0.1px solid #2ecc71;
+    }
+
+    .not-approved-tag {
+        background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+        color: #e74c3c;
+        border-left: 5px solid #e74c3c;
+        border-right: 0.1px solid #e74c3c;
+        border-top: 0.1px solid #e74c3c;
+        border-bottom: 0.1px solid #e74c3c;
+    }
+
+    .approved-tag i {
+        color: #2ecc71; /* Green for approved */
+    }
+
+    .not-approved-tag i {
+        color: #e74c3c; /* Red for not approved */
+    }
+
+    .certificate-preview {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        max-width: 600px;
+    }
+
+    .pdf-preview {
+        width: 70%;
+        height: 180px;
+        border: none;
+        border-radius: 4px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* Prevents scrollbars */
+    }
+
+    .img-preview {
+        width: 50%;
+        max-height: 150px;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* Prevents scrollbars */
+    }
+
+</style>
+<div class="body_content bgc-thm3">
+    <!-- Breadcumb Sections -->
+    <section class="breadcumb-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-lg-10">
+                    <div class="breadcumb-style1 mb10-xs">
+                        <div class="breadcumb-list">
+                            <a href="">Home</a>
+                            <a href="">Services</a>
+                            <a href="">Design & Creative</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-lg-2">
+                    <div class="d-flex align-items-center justify-content-sm-end">
+                        <div class="share-save-widget d-flex align-items-center">
+                            <span class="icon flaticon-share dark-color fz12 mr10"></span>
+                            <div class="h6 mb-0">Share</div>
+                        </div>
+                        <div class="share-save-widget d-flex align-items-center ml15">
+                            <span class="icon flaticon-like dark-color fz12 mr10"></span>
+                            <div class="h6 mb-0">Save</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Details -->
+    <section class="pt0 pb90 pb30-md">
+        <div class="container">
+            <div class="row wrap wow fadeInUp">
+                <div class="col-lg-8">
+                    <div class="column">
+                        <div class="px30 pt30 pb-0 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                            <div class="position-relative overflow-hidden d-flex align-items-center">
+                                <div class="row">
+                                    <div class="col-xl-12">
+                                        <div class="position-relative">
+                                            <div class="list-meta d-sm-flex align-items-center">
+                                                <a class="position-relative freelancer-single-style" href="#!profileimage">
+                                                    <!-- Profile Image -->
+                                                    @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
+                                                    {
+                                                        <div>
+                                                            @if (Model?.IsOnline ?? false) 
+                                                            {
+                                                                <span class="online"></span>
+                                                            }
+                                                            <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="img-fluid rounded" style="max-width:100px;" />
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div>
+                                                            @if (Model.IsOnline)
+                                                            {
+                                                                <span class="online"></span>
+                                                            }
+                                                            <img src="/template_assets/images/anonymous_image.jpg" alt="anonymous_image.png" style="max-width:100px;">
+                                                        </div>
+                                                    }
+                                                    @*<span class="online"></span>
+                                                    <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
+                                                </a>
+                                                <div class="ml20 ml0-xs">
+                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName</h5>
+                                                    <p class="mb-0">@("@")@Model.User.UserName</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item mb5-sm"><i class="fas fa-star vam fz10 review-color me-2"></i> 4.82 94 reviews</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-place vam fz20 me-2"></i> @Model.User.City, @Model.User.Country</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToString("MMMM d, yyyy")</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="opacity-100 mt30">
+                            <div class="row mt30">
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-target"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Job Success</h5>
+                                            <p class="mb-0 text">98%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-goal"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Total Jobs</h5>
+                                            <p class="mb-0 text">921</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-fifteen"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Total Hours</h5>
+                                            <p class="mb-0 text">1,499</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-file-1"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">In Queue Service</h5>
+                                            <p class="mb-0 text">20</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-about">
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4>Description</h4>
+                                <p class="text mb30">@Model.User.AboutMe </p>
+                                <p class="text mb30">@Model.User.AboutMe</p>
+                            </div>
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Education</h4>
+                                <div class="educational-quality">
+                                    @foreach (var education in Model.Educations)
+                                    {
+                                        <div class="m-circle text-thm">M</div>
+                                        <div class="wrapper mb40">
+                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToString("yyyy")</span>
+                                            <h5 class="mt15">@education.DegreeName</h5>
+                                            <h6 class="text-thm">@education.InstitutionName</h6>
+                                            <p>@(string.IsNullOrWhiteSpace(education.Description) ? "No description available." : education.Description)</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Work & Experience</h4>
+                                <div class="educational-quality">
+                                    @foreach (var experience in Model.Experiences)
+                                    {
+                                        <div class="m-circle text-thm">M</div>
+                                        <div class="wrapper mb40">
+                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToString("MM/yyyy")</span>
+                                            <h5 class="mt15">@experience.Position</h5>
+                                            <h6 class="text-thm">@experience.CompanyName</h6>
+                                            <p>@(string.IsNullOrWhiteSpace(experience.Description) ? "No description available." : experience.Description)</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="p30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Awards and Certificates</h4>
+                                <div class="educational-quality ps-0">
+                                    <div class="container">
+                                        <div class="row">
+                                            @for (int i = 0; i < Model.Certificates.Count(); i++)
+                                            {
+                                                var certificate = Model.Certificates.ElementAt(i);
+                                                
+                                                <!-- Start New Row for Every Two Certificates -->
+                                                @if (i % 2 == 0 && i != 0)
+                                                {
+                                                    @:</div><div class="row">
+                                                }
+                            
+                                                <div class="col-md-6">
+                                                    <div class="wrapper mb40">
+                                                        <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
+                                                            @if (certificate.IsApproved)
+                                                            {
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToString("MMMM dd, yyyy")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span><i class="fas fa-times-circle"></i> Not Approved</span>
+                                                            }
+                                                        </span>
+                                                        <h5 class="mt15">
+                                                            @certificate.CertificateName
+                                                            @if (certificate.CompleteDate.HasValue)
+                                                            {
+                                                                <small>(Completed on @certificate.CompleteDate.Value.ToString("MMMM d, yyyy"))</small>
+                                                            }
+                                                        </h5>
+                                                        <h6 class="text-thm">@certificate.CertificateFrom</h6>
+                                                        <div class="certificate-preview">
+                                                            @if (!string.IsNullOrEmpty(certificate.CertificateFilePath))
+                                                            {
+                                                                string fileExtension = System.IO.Path.GetExtension(certificate.CertificateFilePath).ToLower();
+                            
+                                                                if (fileExtension == ".pdf")
+                                                                {
+                                                                    <!-- PDF Preview using iframe -->
+                                                                    <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
+                                                                    <br />
+                                                                    <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
+                                                                        <i class="fas fa-download me-2" style="transform:rotate(0)"></i> Download Certificate
+                                                                    </a>
+                                                                }
+                                                                else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                                                                {
+                                                                    <!-- Image Preview -->
+                                                                    <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
+                                                                    <br />
+                                                                    <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
+                                                                        <i class="fas fa-download me-2" style="transform:rotate(0)"></i> Download Certificate
+                                                                    </a>
+                                                                }
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                            
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Featured Services</h4>
+                                <div class="row">
+                                    <div class="col-sm-6 col-xl-4">
+                                        <div class="listing-style1">
+                                            <div class="list-thumb">
+                                                <img class="w-100" src="/template_assets/images/listings/g-1.jpg" alt="">
+                                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                            </div>
+                                            <div class="list-content">
+                                                <p class="list-text body-color fz14 mb-1">Web & App Design</p>
+                                                <h6 class="list-title"><a href="page-services-single.html">I will design modern websites in figma or adobe xd</a></h6>
+                                                <div class="review-meta d-flex align-items-center">
+                                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                                </div>
+                                                <hr class="my-2">
+                                                <div class="list-meta mt15">
+                                                    <div class="budget">
+                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-xl-4">
+                                        <div class="listing-style1">
+                                            <div class="list-thumb">
+                                                <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <img class="w-100" src="/template_assets/images/listings/g-2.jpg" alt="">
+                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                    </div>
+                                                    <div class="item">
+                                                        <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
+                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                    </div>
+                                                    <div class="item">
+                                                        <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
+                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                    </div>
+                                                    <div class="item">
+                                                        <img class="w-100" src="/template_assets/images/listings/g-5.jpg" alt="">
+                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="list-content">
+                                                <p class="list-text body-color fz14 mb-1">Art & Illustration</p>
+                                                <h6 class="list-title"><a href="page-services-single.html">I will create modern flat design illustration</a></h6>
+                                                <div class="review-meta d-flex align-items-center">
+                                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                                </div>
+                                                <hr class="my-2">
+                                                <div class="list-meta mt15">
+                                                    <div class="budget">
+                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-xl-4">
+                                        <div class="listing-style1">
+                                            <div class="list-thumb">
+                                                <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
+                                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                            </div>
+                                            <div class="list-content">
+                                                <p class="list-text body-color fz14 mb-1">Design & Creative</p>
+                                                <h6 class="list-title line-clamp2"><a href="page-services-single.html">I will build a fully responsive design in HTML,CSS, bootstrap, and javascript</a></h6>
+                                                <div class="review-meta d-flex align-items-center">
+                                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                                </div>
+                                                <hr class="my-2">
+                                                <div class="list-meta mt15">
+                                                    <div class="budget">
+                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="product_single_content mb30 p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <div class="mbp_pagination_comments">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="total_review mb30">
+                                                <h4>80 Reviews</h4>
+                                            </div>
+                                            <div class="d-md-flex align-items-center mb30">
+                                                <div class="total-review-box d-flex align-items-center text-center mb30-sm">
+                                                    <div class="wrapper mx-auto">
+                                                        <div class="t-review mb15">4.96</div>
+                                                        <h5>Exceptional</h5>
+                                                        <p class="text mb-0">3,014 reviews</p>
+                                                    </div>
+                                                </div>
+                                                <div class="wrapper ml60 ml0-sm">
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">5 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 90%;" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">58</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">4 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar w-75" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">20</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">3 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar w-50" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">15</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">2 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 30%;" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">2</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">1 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 20%;" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">1</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
+                                                <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
+                                                <div class="ml20">
+                                                    <h6 class="mt-0 mb-0">Bessie Cooper</h6>
+                                                    <div><span class="fz14">12 March 2022</span></div>
+                                                </div>
+                                            </div>
+                                            <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
+                                            <div class="review_cansel_btns d-flex">
+                                                <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
+                                                <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="mbp_first position-relative d-flex align-items-center justify-content-start mt30 mb30-sm">
+                                                <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
+                                                <div class="ml20">
+                                                    <h6 class="mt-0 mb-0">Darrell Steward</h6>
+                                                    <div><span class="fz14">12 March 2022</span></div>
+                                                </div>
+                                            </div>
+                                            <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
+                                            <div class="review_cansel_btns d-flex pb30">
+                                                <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
+                                                <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="position-relative">
+                                                <a href="page-service-single.html" class="ud-btn btn-light-thm">See More<i class="fal fa-arrow-right-long"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bsp_reveiw_wrt p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h6 class="fz17">Add a Review</h6>
+                                <p class="text">Your email address will not be published. Required fields are marked *</p>
+                                <h6>Your rating of this product</h6>
+                                <div class="d-flex">
+                                    <i class="fas fa-star review-color"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                </div>
+                                <form class="comments_form mt30 mb30-md">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-4">
+                                                <label class="fw500 fz16 ff-heading dark-color mb-2">Comment</label>
+                                                <textarea class="pt15" rows="6" placeholder="There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Name</label>
+                                                <input type="text" class="form-control" placeholder="Ali Tufan">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Email</label>
+                                                <input type="email" class="form-control" placeholder="creativelayers088">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="checkbox-style1 d-block d-sm-flex align-items-center justify-content-between mb20">
+                                                <label class="custom_checkbox fz15 ff-heading">
+                                                    Save my name, email, and website in this browser for the next time I comment.
+                                                    <input type="checkbox">
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </div>
+                                            <a href="" class="ud-btn btn-thm">Send<i class="fal fa-arrow-right-long"></i></a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="column">
+                        <div class="blog-sidebar ms-lg-auto">
+                            <div class="price-widget pt25 bdrs12 default-box-shadow1s">
+                                <h3 class="widget-title">
+                                    @if (Model.RecommendedPercentage > 0)
+                                    {
+                                        <small class="text-success fw-bold">@($"{Model.RecommendedPercentage:0.##}% Recommended")</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted fw-bold" style="font-size:16px;">⭐ Be the first to recommend!</small>
+                                    }
+                                </h3>
+                                <div class="category-list mt20">
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-place text-thm2 pe-2 vam"></i>Location</span> <span class="">@Model.User.City, @Model.User.Country</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToString("MMMM dd, yyyy")</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-calendar text-thm2 pe-2 vam"></i>Last Exchange</span> 
+                                        <span class=""> 
+                                            @if (Model.LastExchangeDays >= 0)
+                                            {
+                                                @if (Model.LastExchangeDays == 0)
+                                                {
+                                                    <span class="text-success fw-bold">🚀 Delivered today</span>
+                                                }
+                                                else if (Model.LastExchangeDays == 1)
+                                                {
+                                                    <span class="">Delivered yesterday</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@Model.LastExchangeDays days ago</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">🚀 Ready to deliver!</span>
+                                            }
+                                        </span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-briefcase text-thm2 pe-2 vam"></i>Years of Experience</span> 
+                                        <span class="">
+                                            @if (string.IsNullOrEmpty(Model.User.Experience) || Model.User.Experience == "0" || Model.User.Experience.Contains("0.0"))
+                                            {
+                                                <span class="text-muted">🌱 Growing fast!</span> <!-- 🌱 Encouraging message -->
+                                            }
+                                            else
+                                            {
+                                                <span class="">@Model.User.Experience</span>
+                                            }                                            
+                                         </span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        @{
+                                              // If user has languages, list them; otherwise, show a default message
+                                              var userLanguages = Model.Languages.Any()
+                                                  ? string.Join(", ", Model.Languages.Select(l => l.Language))
+                                                  : "<span class='text-muted'>🌍 No Languages Listed</span>";
+                                         }                               
+                                        <span class="text"><i class="flaticon-translator text-thm2 pe-2 vam"></i>Languages</span> <span class="">@Html.Raw(userLanguages)</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between mb-3" href="">
+                                        @{
+                                           // Loop through languages to find English
+                                            var englishEntry = Model.Languages.FirstOrDefault(l => l.Language.Equals("English", StringComparison.OrdinalIgnoreCase));
+
+                                            // Default message if English is missing
+                                            string englishLevel = "<span class='text-muted'>🌍 No English Proficiency Stated</span>";
+
+                                            if (englishEntry != null && !string.IsNullOrEmpty(englishEntry.Proficiency))
+                                            {
+                                                englishLevel = $"<span class='text-success'>{englishEntry.Proficiency}</span>"; // Show proficiency in green
+                                            }
+                                            else if (englishEntry != null)
+                                            {
+                                                englishLevel = "<span class='text-success'>🌱 Learning</span>"; // If English exists but no level is given
+                                            }
+                                        }                                       
+                                        <span class="text"><i class="flaticon-sliders text-thm2 pe-2 vam"></i>English Level</span> <span class="">@Html.Raw(englishLevel)</span>
+                                    </a>
+                                </div>
+                                <div class="d-grid">
+                                    <a href="page-contact.html" class="ud-btn btn-thm">Contact Me<i class="fal fa-arrow-right-long"></i></a>
+                                </div>
+                            </div>
+                            <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                <h4 class="widget-title">My Skills</h4>
+                                <div class="tag-list mt30">
+                                    <a href="">Figma</a>
+                                    <a href="">Sketch</a>
+                                    <a href="">HTML5</a>
+                                    <a href="">Software Design</a>
+                                    <a href="">Prototyping</a>
+                                    <a href="">SaaS</a>
+                                    <a href="">Design Writing</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

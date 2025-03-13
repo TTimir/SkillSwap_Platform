@@ -69,8 +69,8 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.EducationId).HasColumnName("EducationID");
             entity.Property(e => e.Degree).HasMaxLength(100);
             entity.Property(e => e.DegreeName).HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(100);
             entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.FieldOfStudy).HasMaxLength(100);
             entity.Property(e => e.InstitutionName).HasMaxLength(200);
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.UniversityName).HasMaxLength(200);
@@ -171,6 +171,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Role).HasMaxLength(100);
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.Years).HasColumnType("decimal(5, 2)");
 
             entity.HasOne(d => d.User).WithMany(p => p.TblExperiences)
                 .HasForeignKey(d => d.UserId)
@@ -434,7 +435,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ApprovedByAdminId).HasColumnName("ApprovedByAdminID");
             entity.Property(e => e.ApprovedDate).HasColumnType("datetime");
             entity.Property(e => e.CertificateFilePath).HasMaxLength(500);
+            entity.Property(e => e.CertificateFrom).HasMaxLength(100);
             entity.Property(e => e.CertificateName).HasMaxLength(200);
+            entity.Property(e => e.CompleteDate).HasColumnType("datetime");
             entity.Property(e => e.SkillId).HasColumnName("SkillID");
             entity.Property(e => e.SubmittedDate)
                 .HasDefaultValueSql("(getdate())")

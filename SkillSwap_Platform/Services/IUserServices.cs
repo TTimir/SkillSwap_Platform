@@ -6,7 +6,7 @@ namespace SkillSwap_Platform.Services
     {
         Task<bool> RegisterUserAsync(TblUser user, string password);
         Task<TblUser> ValidateUserCredentialsAsync(string login, string password);
-        Task<TblUser> GetUserByUserNameOrEmailAsync(string login);
+        Task<TblUser> GetUserByUserNameOrEmailAsync(string userName, string email);
         Task<string> GetTotpQrCodeAsync(string email);
         Task<bool> VerifyTotpAsync(string email, string otp);
         Task<bool> AuthenticateUserAsync(HttpContext httpContext, string login, string password);

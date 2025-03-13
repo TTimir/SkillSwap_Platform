@@ -8,17 +8,17 @@
     <meta name="CreativeLayers" content="ATFN">
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
     <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
     <link rel="stylesheet" href="/template_assets/css/menu.css">
     <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
     <link rel="stylesheet" href="/template_assets/css/flaticon.css">
     <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
     <link rel="stylesheet" href="/template_assets/css/animate.css">
     <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
     <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
     <link rel="stylesheet" href="/template_assets/css/style.css">
-    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
@@ -215,15 +215,18 @@
                                         <li class="user_setting">
                                             <div class="dropdown">
                                                 <a class="btn" href="#" data-bs-toggle="dropdown">
-                                                   @*  @if (!string.IsNullOrEmpty(Model.User.ProfileImageUrl))
+                                                    @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
                                                     {
-                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
+                                                        <img src="@ViewData["UserProfileImage"]" alt="Profile Image" width="50">
                                                     }
                                                     else
                                                     {
-                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
-                                                    } *@
-                                                    <img src="/template_assets/images/anonymous_image.jpg" width="50" alt="user.png">
+                                                        @if (Model.IsOnline)
+                                                        {
+                                                            <span class="online"></span>
+                                                        }
+                                                        <img src="/template_assets/images/anonymous_image.jpg" width="50" alt="anonymous_image.png">
+                                                    }
                                                 </a>
                                                 <div class="dropdown-menu">
                                                     <div class="user_setting_content">
@@ -241,7 +244,7 @@
                                                         <a class="dropdown-item" href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a>
                                                         <a class="dropdown-item" href="page-dashboard-favorites.html"><i class="flaticon-content mr10"></i>Manage Project</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
-                                                        <a class="dropdown-item active" href="page-dashboard-profile.html"><i class="flaticon-photo mr10"></i>My Profile</a>
+                                                        <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
                                                         <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                             @Html.AntiForgeryToken()
                                                             <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
@@ -508,9 +511,20 @@
     <script src="/template_assets/js/owl.js"></script>
     <script src="/template_assets/js/jquery.counterup.js"></script>
     <script src="/template_assets/js/isotop.js"></script>
+    <script src="/template_assets/js/scrollbalance.js"></script>
     <!-- Custom script for all pages -->
     <script src="/template_assets/js/script.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        $(function() {
+          var cols = $('.wrap .column');
+          var enabled = true;
+          var scrollbalance = new ScrollBalance(cols, {
+            minwidth: 1199
+          });
+          // bind to scroll and resize events
+          scrollbalance.bind();
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

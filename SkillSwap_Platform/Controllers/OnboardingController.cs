@@ -202,9 +202,10 @@ namespace SkillSwap_Platform.Controllers
             var institutions = form["education[institution_name][]"].ToArray();
             var eduStartDates = form["education[start_date][]"].ToArray();
             var eduEndDates = form["education[end_date][]"].ToArray();
+            var eduDescription = form["education[description][]"].ToArray();
 
             // Determine the maximum number of rows posted.
-            int eduCount = new int[] { degreeTypes.Length, degreeNames.Length, institutions.Length, eduStartDates.Length, eduEndDates.Length }.Max();
+            int eduCount = new int[] { degreeTypes.Length, degreeNames.Length, institutions.Length, eduStartDates.Length, eduEndDates.Length, eduDescription.Length }.Max();
 
             var educationSummaries = new List<string>();
 
@@ -216,13 +217,15 @@ namespace SkillSwap_Platform.Controllers
                 string institution = i < institutions.Length ? institutions[i]?.Trim() : "";
                 string startDateString = i < eduStartDates.Length ? eduStartDates[i]?.Trim() : "";
                 string endDateString = i < eduEndDates.Length ? eduEndDates[i]?.Trim() : "";
+                string eduDesc = i < eduDescription.Length ? eduDescription[i]?.Trim() : "";
 
                 // Skip rows that are completely empty.
                 if (string.IsNullOrWhiteSpace(degreeType) &&
                     string.IsNullOrWhiteSpace(degreeName) &&
                     string.IsNullOrWhiteSpace(institution) &&
                     string.IsNullOrWhiteSpace(startDateString) &&
-                    string.IsNullOrWhiteSpace(endDateString))
+                    string.IsNullOrWhiteSpace(endDateString) &&
+                        string.IsNullOrWhiteSpace(eduDesc))
                 {
                     continue;
                 }
@@ -265,7 +268,8 @@ namespace SkillSwap_Platform.Controllers
                     UniversityName = institution,
                     InstitutionName = institution,
                     StartDate = startDate,
-                    EndDate = endDate
+                    EndDate = endDate,
+                    Description = eduDesc
                 };
                 _context.TblEducations.Add(education);
             }
@@ -338,6 +342,7 @@ namespace SkillSwap_Platform.Controllers
             var positions = form["experience[position][]"].ToArray();
             var expStartDates = form["experience[start_date][]"].ToArray();
             var expEndDates = form["experience[end_date][]"].ToArray();
+            var expDescription = form["experience[description][]"].ToArray();
 
             int expCount = compNames.Length;
             if (expCount == 0)
@@ -354,10 +359,11 @@ namespace SkillSwap_Platform.Controllers
                 string position = positions[i]?.Trim();
                 string expStartDateStr = expStartDates[i]?.Trim();
                 string expEndDateStr = expEndDates[i]?.Trim();
+                string expDesc = expDescription[i]?.Trim();
 
                 // Skip completely empty rows.
                 if (string.IsNullOrWhiteSpace(companyName) && string.IsNullOrWhiteSpace(position) &&
-                    string.IsNullOrWhiteSpace(expStartDateStr) && string.IsNullOrWhiteSpace(expEndDateStr))
+                    string.IsNullOrWhiteSpace(expStartDateStr) && string.IsNullOrWhiteSpace(expEndDateStr) && string.IsNullOrWhiteSpace(expDesc))
                 {
                     continue;
                 }
@@ -398,7 +404,8 @@ namespace SkillSwap_Platform.Controllers
                     UserId = userId.Value,
                     CompanyName = companyName,
                     Position = position,
-                    Description = totalExperienceYears.ToString(),
+                    Years = totalExperienceYears > 0 ? (decimal?)Math.Round(totalExperienceYears, 2) : null,
+                    Description = expDesc,
                     StartDate = expStart,
                     EndDate = string.IsNullOrWhiteSpace(expEndDateStr) ? (DateTime?)null : expEnd
                 };
@@ -521,6 +528,13 @@ namespace SkillSwap_Platform.Controllers
                     continue; // Skip adding this skill
                 }
 
+                // If there are duplicate skills, show an error message and return to the form
+                if (duplicateSkills.Any())
+                {
+                    ViewBag.ErrorMessage = $"The following skills already exist in your profile: {string.Join(", ", duplicateSkills)}";
+                    return View(model);
+                }
+
                 // Map level to integer.
                 int? proficiencyLevel = null;
                 string levelStr = offeredSkillLevels.ElementAtOrDefault(i)?.Trim();
@@ -575,12 +589,6 @@ namespace SkillSwap_Platform.Controllers
                 _context.TblUserSkills.Add(userSkill);
             }
 
-            // If there are duplicate skills, show an error message and return to the form
-            if (duplicateSkills.Any())
-            {
-                ViewBag.ErrorMessage = $"The following skills already exist in your profile: {string.Join(", ", duplicateSkills)}";
-                return View(model);
-            }
             try
             {
                 await _context.SaveChangesAsync();
@@ -673,7 +681,7 @@ namespace SkillSwap_Platform.Controllers
         }
 
         #endregion
-        
+
         #region STEP 6: Additional Information
 
         [HttpGet]
@@ -709,7 +717,8 @@ namespace SkillSwap_Platform.Controllers
             bool IsValidUrl(string url)
             {
                 if (string.IsNullOrWhiteSpace(url)) return false;
-                string pattern = @"^(https?:\/\/)?(www\.)?([\w\-]+)\.([a-z]{2,6})(\/[\w\-]*)*\/?$";
+
+                string pattern = @"^(https?:\/\/)?(www\.)?(facebook|instagram|linkedin|behance|pinterest|twitter|github)\.com\/[A-Za-z0-9_\-\/]+$";
                 return Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
             }
 
@@ -723,58 +732,14 @@ namespace SkillSwap_Platform.Controllers
             string twitter = Request.Form["twitter"].ToString().Trim();
             string github = Request.Form["github"].ToString().Trim();
 
-            // Validate all URLs before saving
-            if (!string.IsNullOrEmpty(personalWebsite) && !IsValidUrl(personalWebsite))
-            {
-                ViewBag.ErrorMessage = "Invalid Personal Website URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(facebook) && !IsValidUrl(facebook))
-            {
-                ViewBag.ErrorMessage = "Invalid Facebook URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(instagram) && !IsValidUrl(instagram))
-            {
-                ViewBag.ErrorMessage = "Invalid Instagram URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(linkedIn) && !IsValidUrl(linkedIn))
-            {
-                ViewBag.ErrorMessage = "Invalid LinkedIn URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(behance) && !IsValidUrl(behance))
-            {
-                ViewBag.ErrorMessage = "Invalid Behance URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(pinterest) && !IsValidUrl(pinterest))
-            {
-                ViewBag.ErrorMessage = "Invalid Pinterest URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(twitter) && !IsValidUrl(twitter))
-            {
-                ViewBag.ErrorMessage = "Invalid Twitter URL. Please enter a valid URL.";
-                return View(model);
-            }
-            if (!string.IsNullOrEmpty(github) && !IsValidUrl(github))
-            {
-                ViewBag.ErrorMessage = "Invalid GitHub URL. Please enter a valid URL.";
-                return View(model);
-            }
+            bool hasAtLeastOneSocial = !string.IsNullOrEmpty(facebook) || !string.IsNullOrEmpty(instagram) ||
+                           !string.IsNullOrEmpty(linkedIn) || !string.IsNullOrEmpty(behance) ||
+                           !string.IsNullOrEmpty(pinterest) || !string.IsNullOrEmpty(twitter) ||
+                           !string.IsNullOrEmpty(github);
 
-            // Check if at least one social media is entered
-            if (string.IsNullOrEmpty(facebook) &&
-                string.IsNullOrEmpty(instagram) &&
-                string.IsNullOrEmpty(linkedIn) &&
-                string.IsNullOrEmpty(behance) &&
-                string.IsNullOrEmpty(pinterest) &&
-                string.IsNullOrEmpty(twitter) &&
-                string.IsNullOrEmpty(github))
+            if (!hasAtLeastOneSocial)
             {
-                ViewBag.ErrorMessage = "Please enter at least one social media account.";
+                ViewBag.ErrorMessage = "❌ Please enter at least one social media link.";
                 return View(model);
             }
 
@@ -787,7 +752,7 @@ namespace SkillSwap_Platform.Controllers
                 Behance = behance,
                 Pinterest = pinterest,
                 Twitter = twitter,
-                GitHub = github 
+                GitHub = github
             };
 
             user.SocialMediaLinks = Newtonsoft.Json.JsonConvert.SerializeObject(socialMedia);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using System.Security.Cryptography;
@@ -197,9 +198,10 @@ namespace SkillSwap_Platform.Services
             return user;
         }
 
-        public async Task<TblUser> GetUserByUserNameOrEmailAsync(string login)
+        public async Task<TblUser> GetUserByUserNameOrEmailAsync(string userName, string email)
         {
-            return await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.UserName == login || u.Email == login);
+            return await _dbcontext.TblUsers
+                .FirstOrDefaultAsync(u => u.UserName == userName || u.Email == email);
         }
 
         // Implementation of the new GetUserRolesAsync method.

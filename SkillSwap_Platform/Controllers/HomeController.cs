@@ -10,6 +10,7 @@ using SkillSwap_Platform.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using SkillSwap_Platform.HelperClass;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -22,6 +23,18 @@ public class HomeController : Controller
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public override void OnActionExecuting(ActionExecutingContext context)
+    {
+        base.OnActionExecuting(context);
+
+        int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        if (userId != null)
+        {
+            var user = _dbcontext.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            ViewData["UserProfileImage"] = user?.ProfileImageUrl;
+        }
     }
     public IActionResult Index()
     {
@@ -58,10 +71,15 @@ public class HomeController : Controller
         }
         try
         {
-            var existingUser = await _userService.GetUserByUserNameOrEmailAsync(model.UserName);
+            var existingUser = await _userService.GetUserByUserNameOrEmailAsync(model.UserName, model.Email);
             if (existingUser != null)
             {
-                TempData["ErrorMessage"] = "❌ Username or email is already taken.";
+                if (existingUser.Email == model.Email)
+                    TempData["ErrorMessage"] = "❌ This email is already registered.";
+
+                if (existingUser.UserName == model.UserName)
+                    TempData["ErrorMessage"] = "❌ This username is already taken.";
+
                 return View(model);
             }
 
@@ -312,7 +330,9 @@ public class HomeController : Controller
         try
         {
             await HttpContext.SignOutAsync("SkillSwapAuth");
+            HttpContext.Session.Clear(); // ✅ Clears session
             Response.Cookies.Delete(".AspNetCore.SkillSwapAuth");
+
             TempData["SuccessMessage"] = "✅ Successfully logged out.";
         }
         catch (Exception ex)
@@ -347,10 +367,18 @@ public class HomeController : Controller
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = isPersistent,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                AllowRefresh = true
             };
 
+            // ✅ Secure Authentication Cookie
             await HttpContext.SignInAsync("SkillSwapAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
+            Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
+            {
+                Secure = true, // 🔥 Ensures HTTPS only
+                HttpOnly = true, // Prevents JavaScript access (XSS protection)
+                SameSite = SameSiteMode.Strict
+            });
         }
         catch (Exception ex)
         {
