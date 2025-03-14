@@ -25,17 +25,26 @@ public class HomeController : Controller
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
     }
 
+    #region Global OnActionExecuting
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         base.OnActionExecuting(context);
 
-        int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-        if (userId != null)
+        // If the user is authenticated, load their profile image into ViewData.
+        if (User.Identity != null && User.Identity.IsAuthenticated)
         {
-            var user = _dbcontext.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            ViewData["UserProfileImage"] = user?.ProfileImageUrl;
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim != null)
+            {
+                if (int.TryParse(claim.Value, out int userId))
+                {
+                    var user = _dbcontext.TblUsers.FirstOrDefault(u => u.UserId == userId);
+                    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
+                }
+            }
         }
     }
+    #endregion
     public IActionResult Index()
     {
         try
@@ -69,20 +78,21 @@ public class HomeController : Controller
         {
             return View(model);
         }
+
         try
         {
+            // Check for duplicate username or email.
             var existingUser = await _userService.GetUserByUserNameOrEmailAsync(model.UserName, model.Email);
             if (existingUser != null)
             {
                 if (existingUser.Email == model.Email)
                     TempData["ErrorMessage"] = "❌ This email is already registered.";
-
                 if (existingUser.UserName == model.UserName)
                     TempData["ErrorMessage"] = "❌ This username is already taken.";
-
                 return View(model);
             }
 
+            // Generate TOTP secret (stored as plain Base32) for 2FA.
             string TotpSecret = TotpHelper.GenerateSecretKey(); // 🔥 Store plain Base32 TOTP secret
             var tempUser = new TblUser
             {
@@ -95,15 +105,18 @@ public class HomeController : Controller
                 IsOnboardingCompleted = false // Ensure onboarding starts
             };
 
-            HttpContext.Session.SetInt32("TempUserId", tempUser.UserId);  // Store temporary user ID
+            // Save temporary user info in session for 2FA setup.
+            HttpContext.Session.SetInt32("TempUserId", tempUser.UserId);
             HttpContext.Session.SetObjectAsJson("TempUser", tempUser);
             HttpContext.Session.SetString("TempUser_Password", model.Password);
 
-            return RedirectToAction("Setup2FA"); // ✅ Redirect to Setup2FA
+            // Redirect to 2FA setup.
+            return RedirectToAction("Setup2FA");
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred during registration.";
+            Debug.WriteLine($"[Register Error] {ex.Message}");
             return View(model);
         }
     }
@@ -126,10 +139,15 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(UserLoginVM model, string returnUrl = null)
     {
-        if (!ModelState.IsValid) return View(model);
+        ViewData["ReturnUrl"] = returnUrl;
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         try
         {
+            // Validate user credentials.
             var user = await _userService.ValidateUserCredentialsAsync(model.LoginName, model.Password);
             if (user == null)
             {
@@ -137,7 +155,7 @@ public class HomeController : Controller
                 return View(model);
             }
 
-            // ✅ Force fresh fetch from database
+            // Force a fresh DB fetch to ensure updated user data.
             user = await _userService.GetUserByIdAsync(user.UserId);
             if (user == null)
             {
@@ -145,30 +163,33 @@ public class HomeController : Controller
                 return View(model);
             }
 
+            // Check if the user is locked out.
             if (user.FailedOtpAttempts >= 5 && user.LockoutEndTime.HasValue && user.LockoutEndTime > DateTime.UtcNow)
             {
                 TempData["ErrorMessage"] = "🚫 Too many failed attempts. Try again later.";
                 return View(model);
             }
 
-
-            // 🚀 CHECK IF USER COMPLETED ONBOARDING
+            // Redirect to onboarding if not completed.
             if (!user.IsOnboardingCompleted)
             {
                 HttpContext.Session.SetInt32("TempUserId", user.UserId); // 🔥 Store UserId for onboarding
                 return RedirectToAction("SelectRole", "Onboarding"); // 🚀 Redirect to first onboarding step
             }
 
+            // If not approved by admin, do not allow login.
             if (!user.IsVerified)
             {
                 TempData["ApprovalMessage"] = "🔎 Your account is not yet approved.";
                 return View(model);
             }
 
-            // If TOTP is enabled (i.e. user has a TotpSecret), redirect to OTP verification step.
+            // Set TempData to show the banner once
+            TempData["ShowAuthBanner"] = true;
+
+            // If TOTP (2FA) is enabled, redirect to OTP verification.
             if (!string.IsNullOrEmpty(user.TotpSecret))
             {
-                // Store user info in session for OTP verification at login
                 HttpContext.Session.SetObjectAsJson("LoginUser", user);
                 HttpContext.Session.SetString("LoginUser_Password", model.Password);
                 TempData["InfoMessage"] = "Please enter your OTP.";
@@ -176,15 +197,17 @@ public class HomeController : Controller
             }
             else
             {
+                // Sign in the user.
                 await SignInUserAsync(user, model.RememberMe);
-                return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
-                    ? Redirect(returnUrl)
-                    : RedirectToAction("Index");
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction("Index", "Home");
             }
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while logging in.";
+            Debug.WriteLine($"[Login Error] {ex.Message}");
             return View(model);
         }
     }
@@ -220,7 +243,7 @@ public class HomeController : Controller
 
         try
         {
-            // Verify OTP using the stored Base32 TotpSecret with IST time
+            // Verify the OTP.
             if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
             {
                 TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
@@ -232,38 +255,39 @@ public class HomeController : Controller
             HttpContext.Session.Remove("LoginUser");
             HttpContext.Session.Remove("LoginUser_Password");
             TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
-            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
-                ? Redirect(returnUrl)
-                : RedirectToAction("Index", "Home");
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction("Index", "Home");
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
+            Debug.WriteLine($"[OTP Error] {ex.Message}");
             return RedirectToAction("LoginOtp", new { returnUrl });
         }
     }
 
     #endregion
 
-    #region Two-Factor Authentication (2FA)
+    #region Two-Factor Authentication (2FA) Setup
 
     [HttpGet]
     public async Task<IActionResult> Setup2FA(string email)
     {
-        // ✅ Retrieve user from session instead of DB
+        // Retrieve temporary user from session.
         var tempUser = HttpContext.Session.GetObjectFromJson<TblUser>("TempUser");
-
         if (tempUser == null)
         {
             TempData["ErrorMessage"] = "⚠️ User session expired. Please register again.";
             return RedirectToAction("Register");
         }
 
-        // ✅ Generate QR Code URL
+        // Generate QR Code URL for TOTP setup.
         string qrCodeUrl = TotpHelper.GenerateQrCodeUrl(tempUser.TotpSecret, tempUser.Email);
         ViewBag.QrCodeUrl = qrCodeUrl;
-        return View(tempUser); // ✅ Ensure model is passed to the view
+        return View(tempUser);
     }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyOtp(string email, string otp)
@@ -279,13 +303,14 @@ public class HomeController : Controller
                 return RedirectToAction("Register");
             }
 
-            // ✅ Verify directly using stored Base32 secret (no decryption needed)
+            // Verify OTP.
             if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
             {
                 TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
                 return View("Setup2FA");
             }
 
+            // Create and register the new user.
             var newUser = new TblUser
             {
                 FirstName = tempUser.FirstName,
@@ -316,6 +341,7 @@ public class HomeController : Controller
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
+            Debug.WriteLine($"[VerifyOtp Error] {ex.Message}");
             return View("Setup2FA");
         }
     }
@@ -329,24 +355,20 @@ public class HomeController : Controller
     {
         try
         {
-            await HttpContext.SignOutAsync("SkillSwapAuth");
-            HttpContext.Session.Clear(); // ✅ Clears session
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
             Response.Cookies.Delete(".AspNetCore.SkillSwapAuth");
-
             TempData["SuccessMessage"] = "✅ Successfully logged out.";
         }
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "⚠️ An error occurred during logout. Please try again.";
+            Debug.WriteLine($"[Logout Error] {ex.Message}");
         }
         return RedirectToAction("Login", "Home");
     }
     #endregion
 
-    /// <summary>
-    /// Encapsulates the sign-in process by creating a claims identity and issuing an authentication cookie.
-    /// This method is used by both Register and Login actions.
-    /// </summary>
     #region Helper Methods
     private async Task SignInUserAsync(TblUser user, bool isPersistent)
     {
@@ -360,6 +382,7 @@ public class HomeController : Controller
                 new Claim("OnboardingCompleted", user.IsOnboardingCompleted.ToString())
             };
 
+            // Retrieve roles from the user service.
             var roles = await _userService.GetUserRolesAsync(user.UserId);
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
@@ -371,8 +394,9 @@ public class HomeController : Controller
                 AllowRefresh = true
             };
 
-            // ✅ Secure Authentication Cookie
             await HttpContext.SignInAsync("SkillSwapAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
+
+            // Set a secure authentication cookie.
             Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
             {
                 Secure = true, // 🔥 Ensures HTTPS only
@@ -382,8 +406,19 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ERROR] Sign-in failed: {ex.Message}");
+            Debug.WriteLine($"[SignInUserAsync Error] {ex.Message}");
+            throw;
         }
+    }
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+        // Other service configurations...
     }
     #endregion
 }

@@ -38,14 +38,28 @@ builder.Services.AddSession(options =>
 });
 
 // ✅ Add Authentication and ensure scheme consistency
-builder.Services.AddAuthentication("SkillSwapAuth")
-    .AddCookie("SkillSwapAuth", options =>
-    {
-        options.LoginPath = "/Home/Login";   // Redirect to login if unauthorized
-        options.AccessDeniedPath = "/Home/AccessDenied"; // Redirect if forbidden
-        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    });
+//builder.Services.AddAuthentication("SkillSwapAuth")
+//    .AddCookie("SkillSwapAuth", options =>
+//    {
+//        options.LoginPath = "/Home/Login";   // Redirect to login if unauthorized
+//        options.AccessDeniedPath = "/Home/AccessDenied"; // Redirect if forbidden
+//        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
+//        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+//    });
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "SkillSwapAuth";
+    options.DefaultSignInScheme = "SkillSwapAuth";
+    options.DefaultChallengeScheme = "SkillSwapAuth";
+})
+.AddCookie("SkillSwapAuth", options =>
+{
+    options.LoginPath = "/Home/Login";
+    options.AccessDeniedPath = "/Home/AccessDenied";
+    options.Cookie.Name = "SkillSwapAuth";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+});
+
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled

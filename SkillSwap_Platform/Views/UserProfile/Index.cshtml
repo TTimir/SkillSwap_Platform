@@ -70,6 +70,13 @@
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         overflow: hidden; /* Prevents scrollbars */
     }
+/* ✅ Remove default style for offered skills */
+.offered-skill {
+    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+    color: #2ecc71 !important;
+    border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    backdrop-filter: blur(5px);
+}
 
 </style>
 <div class="body_content bgc-thm3">
@@ -614,13 +621,38 @@
                             <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
                                 <h4 class="widget-title">My Skills</h4>
                                 <div class="tag-list mt30">
-                                    <a href="">Figma</a>
-                                    <a href="">Sketch</a>
-                                    <a href="">HTML5</a>
-                                    <a href="">Software Design</a>
-                                    <a href="">Prototyping</a>
-                                    <a href="">SaaS</a>
-                                    <a href="">Design Writing</a>
+                                    @if (Model.Skills != null && Model.Skills.Any())
+                                    {
+                                        @foreach (var skill in Model.Skills)
+                                        {
+                                            <a href="#!" class="@(skill.IsOffered ? "offered-skill" : "")">
+                                                @skill.Name
+                                            </a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No skills added yet.</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                <h4 class="widget-title">Willing to Learn</h4>
+                                <div class="tag-list mt30">
+                                    @if (!string.IsNullOrWhiteSpace(Model.User.DesiredSkillAreas)) 
+                                    {
+                                        var willingSkills = Model.User.DesiredSkillAreas.Split(',');
+                                
+                                        @foreach (var skill in willingSkills)
+                                        {
+                                            <a href="#!">@skill.Trim()</a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No skills added yet.</p>
+                                    }
                                 </div>
                             </div>
                         </div>

@@ -11,6 +11,7 @@
         public IEnumerable<TblLanguage> Languages { get; set; }
         public IEnumerable<TblUserCertificate> Certificates { get; set; }
 
+        public List<SkillVM> Skills { get; set; }
         public int LastExchangeDays { get; set; }
         public double TotalYearsOfExperience { get; set; }
         public double RecommendedPercentage { get; set; }
@@ -28,5 +29,11 @@
                 return timeSinceLastActive.TotalSeconds < 60;
             }
         }
+    }
+
+    public class SkillVM
+    {
+        public string Name { get; set; }
+        public bool IsOffered { get; set; }
     }
 }
