@@ -52,31 +52,49 @@
         position: relative;
         max-width: 600px;
     }
-
-    .pdf-preview {
-        width: 70%;
-        height: 180px;
-        border: none;
-        border-radius: 4px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        overflow: hidden; /* Prevents scrollbars */
+     /* Consistent preview container for certificate previews */
+    .preview-container {
+      position: relative;
+      width: 100%;
+      max-width: 300px; /* forces a consistent width for all previews */
+      height: 180px;    /* fixed height */
+      overflow: hidden;
+      margin-bottom: 10px;
+      border: 1px solid #ddd; /* optional border */
+    }
+    /* Force images and iframes (PDFs) to fill the container while preserving aspect ratio */
+    .preview-container img.img-preview,
+    .preview-container iframe.pdf-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+      cursor: pointer;
+    }
+    /* Hover overlay styles */
+    .preview-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 48px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .preview-container:hover .preview-overlay {
+        cursor: pointer;
+        opacity: 1;
     }
 
-    .img-preview {
-        width: 50%;
-        max-height: 150px;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        overflow: hidden; /* Prevents scrollbars */
+    /* ✅ Remove default style for offered skills */
+    .offered-skill {
+        background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+        color: #2ecc71 !important;
+        border: 1px solid rgba(46, 204, 113, 0.3) !important;
+        backdrop-filter: blur(5px);
     }
-/* ✅ Remove default style for offered skills */
-.offered-skill {
-    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
-    color: #2ecc71 !important;
-    border: 1px solid rgba(46, 204, 113, 0.3) !important;
-    backdrop-filter: blur(5px);
-}
 
 </style>
 <div class="body_content bgc-thm3">
@@ -273,30 +291,34 @@
                                                             @if (!string.IsNullOrEmpty(certificate.CertificateFilePath))
                                                             {
                                                                 string fileExtension = System.IO.Path.GetExtension(certificate.CertificateFilePath).ToLower();
-                            
                                                                 if (fileExtension == ".pdf")
                                                                 {
-                                                                    <!-- PDF Preview using iframe -->
-                                                                    <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
+                                                                    <!-- PDF Preview wrapped with preview container -->
+                                                                    <div class="preview-container" data-preview-type="pdf" data-src="@certificate.CertificateFilePath">
+                                                                        <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
+                                                                        <div class="preview-overlay"><i class="fas fa-search-plus" style="color:#5BBB7B"></i></div>
+                                                                    </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
-                                                                        <i class="fas fa-download me-2" style="transform:rotate(0)"></i> Download Certificate
+                                                                        <i class="fas fa-download me-2"></i> Download Certificate
                                                                     </a>
                                                                 }
                                                                 else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
                                                                 {
-                                                                    <!-- Image Preview -->
-                                                                    <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
+                                                                    <!-- Image Preview wrapped with preview container -->
+                                                                    <div class="preview-container" data-preview-type="image" data-src="@certificate.CertificateFilePath">
+                                                                        <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
+                                                                        <div class="preview-overlay"><i class="flaticon-search " style="color:#5BBB7B"></i></div>
+                                                                    </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
-                                                                        <i class="fas fa-download me-2" style="transform:rotate(0)"></i> Download Certificate
+                                                                        <i class="fas fa-download me-2" style="transform:rotate(0deg)"></i> Download Certificate
                                                                     </a>
                                                                 }
                                                             }
                                                         </div>
                                                     </div>
                                                 </div>
-                            
                                             }
                                         </div>
                                     </div>
@@ -662,3 +684,18 @@
         </div>
     </section>
 </div>
+<!-- Modal for large preview -->
+<!-- Modal for Large Preview -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-0 position-relative">
+         <button type="button" class="close position-absolute top-0 end-0 m-2" data-dismiss="modal" aria-label="Close">
+           <span aria-hidden="true">&times;</span>
+         </button>
+         <div id="previewContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+

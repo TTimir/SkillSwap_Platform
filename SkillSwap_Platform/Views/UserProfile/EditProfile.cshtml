@@ -32,7 +32,59 @@
                 color: #e74c3c;
             }
 
+    .approved-tag {
+        background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+        color: #2ecc71;
+        border-left: 5px solid #2ecc71;
+        border-right: 0.1px solid #2ecc71;
+        border-top: 0.1px solid #2ecc71;
+        border-bottom: 0.1px solid #2ecc71;
+    }
+
+    .not-approved-tag {
+        background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+        color: #e74c3c;
+        border-left: 5px solid #e74c3c;
+        border-right: 0.1px solid #e74c3c;
+        border-top: 0.1px solid #e74c3c;
+        border-bottom: 0.1px solid #e74c3c;
+    }
+
+    .approved-tag i {
+        color: #2ecc71; /* Green for approved */
+    }
+
+    .not-approved-tag i {
+        color: #e74c3c; /* Red for not approved */
+    }
 </style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <div class="row">
     <div class="col-xl-12">
         @using (Html.BeginForm("UpdateProfile", "UserProfile", FormMethod.Post, new { enctype = "multipart/form-data" }))
@@ -44,32 +96,6 @@
                     <h5 class="list-title">Profile Details</h5>
                 </div>
 
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="col-lg-12">
-                        <div class="ui-content">
-                            <div class="message-alart-style1">
-                                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
-                                    @TempData["SuccessMessage"]
-                                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-                @if (ViewBag.ErrorMessage != null)
-                {
-                    <div class="col-lg-12">
-                        <div class="ui-content">
-                            <div class="message-alart-style1">
-                                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
-                                    @ViewBag.ErrorMessage
-                                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
                 <div class="col-xl-7">
                     <div class="profile-box d-sm-flex align-items-center mb30">
                         <div class="profile-img mb20-sm">
@@ -174,7 +200,7 @@
                 <div class="bdrb1 pb15 mb25">
                     <h5 class="list-title">Skills</h5>
                 </div>
-                <div class="col-lg-7">
+                <div class="col-lg-12">
                     <div class="row">
                         @for (int i = 0; i < 5; i++)
                         {
@@ -191,7 +217,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
                                     <div class="mb20">
                                         <div class="form-style1">
                                             <label class="heading-color ff-heading fw500 mb10">Category</label>
@@ -229,7 +255,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
                                     <div class="mb20">
                                         <div class="form-style1">
                                             <label class="heading-color ff-heading fw500 mb10">Proficiency</label>
@@ -242,9 +268,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Clear Button for this skill row -->
-                                <div class="col-12 text-end">
-                                    <input type="button" class="clear-skill-btn" data-index="@i" value="Clear" />
+                                <div class="col-2 text-end">
+                                    <button type="button" class="btn btn-link icon clear-skill-btn" style="background-color:#FFEDE8" data-index="@i">
+                                        <span class="flaticon-delete"></span>
+                                    </button>
                                 </div>
                             </div>
                         }
@@ -323,122 +350,304 @@
                     </div>
                 </div>
             </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Education</h5>
+                    <button type="button" id="addEducationBtn" class="add-more-btn text-thm" style="background:transparent;border:none">
+                        <i class="icon far fa-plus mr10"></i>Add Education
+                    </button>
+                    @* <a href="" class="add-more-btn text-thm"><i class="icon far fa-plus mr10"></i>Add Aducation</a> *@
+                </div>
+                <div class="position-relative" id="educationContainer">
+                    @for (int i = 0; i < Model.EducationEntries.Count; i++)
+                    {
+                        <div class="educational-quality education-entry" data-index="@i" id="eduRow_@i">
+                            @Html.HiddenFor(m => m.EducationEntries[i].EducationId)
+                            @Html.HiddenFor(m => m.EducationEntries[i].IsDeleted, new { id = "isDeleted_" + i })
+
+                            <div class="m-circle text-thm">E</div>
+                            <div class="wrapper mb40 position-relative">
+                                <div class="del-edit">
+                                    <div class="d-flex">
+                                        @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                        <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Delete" aria-label="Delete" onclick="markEducationDeleted(@i)">
+                                            <span class="flaticon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <sapn class="row col-sm-12">
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="EducationEntries[i].StartDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
+                                            <span asp-validation-for="EducationEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].EndDate" class="heading-color ff-heading fw500 mb10">End Date</label>
+                                            <input asp-for="EducationEntries[i].EndDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].EndDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </sapn>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].Degree" class="heading-color ff-heading fw500 mb10">Degree</label>
+                                            <input asp-for="EducationEntries[i].Degree" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].Degree" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].DegreeName" class="heading-color ff-heading fw500 mb10">Degree Name</label>
+                                            <input asp-for="EducationEntries[i].DegreeName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].DegreeName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12">
+                                    <div class="mb20">
+                                        <label asp-for="EducationEntries[i].Institution" class="heading-color ff-heading fw500 mb10">Institute Name</label>
+                                        <input asp-for="EducationEntries[i].Institution" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="EducationEntries[i].Institution" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb10">
+                                        <label asp-for="EducationEntries[i].Description" class="heading-color ff-heading fw500 mb10">Descrption</label>
+                                        <textarea asp-for="EducationEntries[i].Description" cols="30" rows="6" placeholder="Description"></textarea>
+                                        <span asp-validation-for="EducationEntries[i].Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Work & Experience</h5>
+                    <button type="button" id="addExperienceBtn" class="add-more-btn text-thm" style="background: transparent; border: none;">
+                        <i class="icon far fa-plus mr10"></i>Add Experience
+                    </button>
+                </div>
+                <div class="position-relative" id="experienceContainer">
+                    @for (int i = 0; i < Model.ExperienceEntries.Count; i++)
+                    {
+                        <div class="educational-quality experience-entry" data-index="@i" id="expRow_@i">
+                            @Html.HiddenFor(m => m.ExperienceEntries[i].ExperienceId)
+                            @Html.HiddenFor(m => m.ExperienceEntries[i].IsexpDeleted, new { id = "expIsDeleted_" + i })
+
+                            <div class="m-circle text-thm">X</div>
+                            <div class="wrapper mb40 position-relative">
+                                <div class="del-edit">
+                                    <div class="d-flex">
+                                        @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                        <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Delete" aria-label="Delete" onclick="markExperienceDeleted(@i)">
+                                            <span class="flaticon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <sapn class="row col-sm-12">
+                                    @* <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="EducationEntries[i].StartDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
+                                            <span asp-validation-for="EducationEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div> *@
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="ExperienceEntries[i].StartDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].EndDate" class="heading-color ff-heading fw500 mb10">End Date</label>
+                                            <input asp-for="ExperienceEntries[i].EndDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].EndDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </sapn>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].CompanyName" class="heading-color ff-heading fw500 mb10">Company Name</label>
+                                            <input asp-for="ExperienceEntries[i].CompanyName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].CompanyName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].Position" class="heading-color ff-heading fw500 mb10">Position</label>
+                                            <input asp-for="ExperienceEntries[i].Position" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].Position" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb10">
+                                        <label asp-for="ExperienceEntries[i].Description" class="heading-color ff-heading fw500 mb10">Descrption</label>
+                                        <textarea asp-for="ExperienceEntries[i].Description" cols="30" rows="6" placeholder="Description"></textarea>
+                                        <span asp-validation-for="ExperienceEntries[i].Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Awards & Certificates</h5>
+                    <button type="button" id="addCertificateBtn" class="add-more-btn text-thm" style="background:transparent;border:none">
+                        <i class="icon far fa-plus mr10"></i>Add Certificate
+                    </button>
+                </div>
+                <div class="position-relative" id="certificateContainer">
+                    @for (int i = 0; i < Model.CertificateEntries.Count; i++)
+                    {
+                        <div class="educational-quality experience-entry" data-index="@i" id="certRow_@i">
+                            @Html.HiddenFor(m => m.CertificateEntries[i].CertificateId)
+                            @Html.HiddenFor(m => m.CertificateEntries[i].CertificateFilePath)
+                            @Html.HiddenFor(m => m.CertificateEntries[i].IscertDeleted, new { id = "certIsDeleted_" + i })
+
+                            <div class="m-circle text-thm">C</div>
+                            <div class="wrapper mb40 position-relative">
+                                <span class="tag @(Model.CertificateEntries[i].IsApproved ? "approved-tag" : "not-approved-tag") mb20">
+                                    @if (Model.CertificateEntries[i].IsApproved)
+                                    {
+                                        <span class="">
+                                            <i class="fas fa-check-circle"></i> Approved on @Model.CertificateEntries[i].IsApproved
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="">
+                                            <i class="fas fa-check-circle"></i> Not Approved Yet
+                                        </span>
+                                    }
+                                    <div class="del-edit">
+                                        <div class="d-flex">
+                                            @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                            <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Delete" aria-label="Delete" onclick="markCertificateDeleted(@i)">
+                                                <span class="flaticon-delete"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </span>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateName" class="heading-color ff-heading fw500 mb10">Certificate Name</label>
+                                            <input asp-for="CertificateEntries[@i].CertificateName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateFrom" class="heading-color ff-heading fw500 mb10">Institution/Organization</label>
+                                            <input asp-for="CertificateEntries[@i].CertificateFrom" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateFrom" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateDate" class="heading-color ff-heading fw500 mb10">Completion Date</label>
+                                            <input asp-for="CertificateEntries[i].CertificateDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate.ToString("yyyy-MM-dd"))" />                                            <span asp-validation-for="CertificateEntries[@i].CertificateDate" class="text-danger"></span>
+                                            <span asp-validation-for="CertificateEntries[i].CertificateDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].VerificationId" class="heading-color ff-heading fw500 mb10">Verification Id</label>
+                                            <input asp-for="CertificateEntries[@i].VerificationId" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].VerificationId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-8">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml20 mr40 ml0-xs">
+                                            <label class="form-label">Upload Certificate</label>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label for="certificateInput_@i" class="upload-btn certificate-label" style="cursor: pointer;">
+                                                    Upload Certificate
+                                                </label>
+                                                @if (string.IsNullOrEmpty(Model.CertificateEntries[i].CertificateFilePath))
+                                                {
+                                                    <input type="file"
+                                                           asp-for="CertificateEntries[@i].CertificateFile"
+                                                           class="certificateInput"
+                                                           id="certificateInput_@i"
+                                                           style="display: none;"
+                                                           required="required" />
+                                                }
+                                                else
+                                                {
+                                                    <input type="file"
+                                                           asp-for="CertificateEntries[@i].CertificateFile"
+                                                           class="certificateInput"
+                                                           id="certificateInput_@i"
+                                                           style="display: none;" />
+                                                }
+                                            </div>
+                                            <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf, .jpg, .jpeg, .png)</p>
+                                            <small class="fileError text-danger mx-3"></small>
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateFile" class="text-danger"></span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(Model.CertificateEntries[i].CertificateFilePath))
+                                        {
+                                            <div class="certificate-preview mt-2">
+                                                @{
+                                                    string ext = System.IO.Path.GetExtension(Model.CertificateEntries[i].CertificateFilePath).ToLower();
+                                                    if (ext == ".pdf")
+                                                    {
+                                                        <iframe src="@Model.CertificateEntries[i].CertificateFilePath#toolbar=0" class="pdf-preview" width="150"></iframe>
+                                                    }
+                                                    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
+                                                    {
+                                                        <img src="@Model.CertificateEntries[i].CertificateFilePath" alt="Certificate Preview" class="img-preview" width="150" />
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
         }
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
-                <h5 class="list-title">Education</h5>
-                <a href="" class="add-more-btn text-thm"><i class="icon far fa-plus mr10"></i>Add Aducation</a>
-            </div>
-            <div class="position-relative">
-                <div class="educational-quality">
-                    <div class="m-circle text-thm">M</div>
-                    <div class="wrapper mb40 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2012 - 2014</span>
-                        <h5 class="mt15">Bachlors in Fine Arts</h5>
-                        <h6 class="text-thm">Modern College</h6>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                    <div class="m-circle before-none text-thm">M</div>
-                    <div class="wrapper mb30 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2008 - 2012</span>
-                        <h5 class="mt15">Computer Science</h5>
-                        <h6 class="text-thm">Harvartd University</h6>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                </div>
-                <div class="text-start">
-                    <a class="ud-btn btn-thm" href="">Save<i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
-                <h5 class="list-title">Work & Experience</h5>
-                <a href="" class="add-more-btn text-thm"><i class="icon far fa-plus mr10"></i>Add Experience</a>
-            </div>
-            <div class="position-relative">
-                <div class="educational-quality">
-                    <div class="m-circle text-thm">M</div>
-                    <div class="wrapper mb40 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2012 - 2014</span>
-                        <h5 class="mt15">UX Designer</h5>
-                        <h6 class="text-thm">Dropbox</h6>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                    <div class="m-circle before-none text-thm">M</div>
-                    <div class="wrapper mb30 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2008 - 2012</span>
-                        <h5 class="mt15">Art Director</h5>
-                        <h6 class="text-thm">amazon</h6>
-                        <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                </div>
-                <div class="text-start">
-                    <a class="ud-btn btn-thm" href="">Save<i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
-                <h5 class="list-title">Awards</h5>
-                <a href="" class="add-more-btn text-thm"><i class="icon far fa-plus mr10"></i>Add Awards</a>
-            </div>
-            <div class="position-relative">
-                <div class="educational-quality ps-0">
-                    <div class="wrapper mb40 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2012 - 2014</span>
-                        <h5 class="mt15">UI UX Design</h5>
-                        <h6 class="text-thm">Udemy</h6>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                    <div class="wrapper mb40 position-relative">
-                        <div class="del-edit">
-                            <div class="d-flex">
-                                <a href="" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Edit" aria-label="Edit"><span class="flaticon-pencil"></span></a>
-                                <a href="" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a>
-                            </div>
-                        </div>
-                        <span class="tag">2008 - 2012</span>
-                        <h5 class="mt15">App Design</h5>
-                        <h6 class="text-thm">Google</h6>
-                        <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a ipsum tellus. Interdum et malesuada fames ac ante ipsum <br class="d-none d-lg-block"> primis in faucibus.</p>
-                    </div>
-                </div>
-                <div class="text-start">
-                    <a class="ud-btn btn-thm" href="">Save<i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="bdrb1 pb15 mb25">
                 <h5 class="list-title">Change password</h5>

@@ -86,36 +86,56 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 
     public class EducationVM
     {
-        [Required]
+        public int EducationId { get; set; }
+        [Required(ErrorMessage = "Degree is required.")]
         public string Degree { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Degree Name is required.")]
         public string DegreeName { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Institution is required.")]
         public string Institution { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Start date is required.")]
+        [DataType(DataType.Date)]
         public DateTime StartDate { get; set; }
+        [Required(ErrorMessage = "End date is required.")]
+        [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }
         public string? Description { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class ExperienceVM
     {
-        [Required]
+        public int ExperienceId { get; set; }
+        [Required(ErrorMessage = "Company Name is required.")]
         public string CompanyName { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Position is required.")]
         public string Position { get; set; } = string.Empty;
-        [Required]
-        public DateTime StartDate { get; set; }
+        [Required(ErrorMessage = "Start date is required.")]
+        [DataType(DataType.Date)]
+        public DateTime? StartDate { get; set; }
+        [Required(ErrorMessage = "End date is required.")]
+        [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }
         public string? Description { get; set; }
+        public bool IsexpDeleted { get; set; }
     }
 
     public class CertificateVM
     {
-        [Required]
+        public int CertificateId { get; set; }
+        [Required(ErrorMessage = "Certificate Name is required.")]
         public string CertificateName { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Verification Id is required.")]
         public string? VerificationId { get; set; }
         public IFormFile? CertificateFile { get; set; }
+        public string? CertificateFilePath { get; set; }
+        [Required(ErrorMessage = "Certificate Completion Date is required.")]
+        public DateTime CertificateDate { get; set; }
+        [Required(ErrorMessage = "Certificate Issuer Name is required.")]
+        public string? CertificateFrom { get; set; }
+        public bool IsApproved { get; set; }
+        // Flag for deletion.
+        public bool IscertDeleted { get; set; }
     }
 
     public class SkillsVM

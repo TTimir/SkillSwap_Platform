@@ -17,11 +17,11 @@ namespace SkillSwap_Platform.Models.ViewModels.OnBoardVM
 
         [Required(ErrorMessage = "Certificate Start Date is required.")]
         [DataType(DataType.Date)]
-        [Display(Name = "Certificate Start Date")]
+        [Display(Name = "Certificate Date")]
         public DateTime CertificateStartDate { get; set; }
 
-        [Display(Name = "Certificate Description")]
-        public string? CertificateDescription { get; set; }
+        [Display(Name = "Certificate From")]
+        public string? CertificateFrom { get; set; }
 
         [Required(ErrorMessage = "Verification ID is required.")]
         [Display(Name = "Verification ID")]

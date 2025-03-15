@@ -158,6 +158,9 @@ namespace SkillSwap_Platform.Controllers
             var user = await _context.TblUsers
                 .Include(u => u.TblUserSkills)
                     .ThenInclude(us => us.Skill)
+                .Include(u => u.TblEducations)
+                .Include(u => u.TblExperiences)
+                .Include(u => u.TblUserCertificateUsers)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
                 return NotFound("User not found.");
@@ -172,6 +175,65 @@ namespace SkillSwap_Platform.Controllers
                     ProficiencyLevel = us.ProficiencyLevel
                 })
                 .ToList();
+            if (!userSkillEditList.Any())
+            {
+                userSkillEditList.Add(new SkillEditVM());
+            }
+
+
+            // Map existing education entries.
+            var educationEntries = user.TblEducations
+                .OrderByDescending(e => e.StartDate)
+                .Select(e => new EducationVM
+                {
+                    EducationId = e.EducationId,
+                    Degree = e.Degree,
+                    DegreeName = e.DegreeName,
+                    Institution = e.InstitutionName,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    Description = e.Description,
+                    IsDeleted = false
+                })
+                .ToList();
+            if (!educationEntries.Any())
+            {
+                educationEntries.Add(new EducationVM());
+            }
+
+            var experienceEntries = user.TblExperiences
+               .OrderByDescending(e => e.StartDate)
+               .Select(e => new ExperienceVM
+               {
+                   ExperienceId = e.ExperienceId,
+                   CompanyName = e.CompanyName,
+                   Position = e.Position,
+                   StartDate = e.StartDate,
+                   EndDate = e.EndDate,
+                   Description = e.Description,
+                   IsexpDeleted = false
+               }).ToList();
+            if (!experienceEntries.Any())
+            {
+                experienceEntries.Add(new ExperienceVM());
+            }
+
+            var certificateEntries = user.TblUserCertificateUsers
+                .Select(c => new CertificateVM
+                {
+                    CertificateId = c.CertificateId,
+                    CertificateName = c.CertificateName,
+                    CertificateFrom = c.CertificateFrom,
+                    VerificationId = c.VerificationId,
+                    CertificateFilePath = c.CertificateFilePath,
+                    CertificateDate = c.SubmittedDate,
+                    IsApproved = c.IsApproved,
+                    IscertDeleted = false
+                }).ToList();
+            if (!certificateEntries.Any())
+            {
+                certificateEntries.Add(new CertificateVM());
+            }
 
             // Prepare composite view model.
             var model = new EditProfileCompositeVM
@@ -202,10 +264,9 @@ namespace SkillSwap_Platform.Controllers
                         new SelectListItem { Value = "3", Text = "Proficient" }
                     }
                 },
-                // Optionally load education, experience, and certificate entries if needed.
-                EducationEntries = new List<EducationVM>(),
-                ExperienceEntries = new List<ExperienceVM>(),
-                CertificateEntries = new List<CertificateVM>()
+                EducationEntries = educationEntries,
+                ExperienceEntries = experienceEntries,
+                CertificateEntries = certificateEntries
             };
 
             // Pre-populate up to 5 rows.
@@ -224,17 +285,27 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(EditProfileCompositeVM model)
         {
-            
-    // Remove ModelState errors for cleared skill rows.
-    for (int i = 0; i < model.Skills.AllSkills.Count; i++)
-    {
-        if (string.IsNullOrWhiteSpace(model.Skills.AllSkills[i].SkillName))
-        {
-            ModelState.Remove($"Skills.AllSkills[{i}].SkillName");
-            ModelState.Remove($"Skills.AllSkills[{i}].Category");
-            ModelState.Remove($"Skills.AllSkills[{i}].ProficiencyLevel");
-        }
-    }
+
+            // Remove ModelState errors for cleared skill rows.
+            for (int i = 0; i < model.Skills.AllSkills.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(model.Skills.AllSkills[i].SkillName))
+                {
+                    ModelState.Remove($"Skills.AllSkills[{i}].SkillName");
+                    ModelState.Remove($"Skills.AllSkills[{i}].Category");
+                    ModelState.Remove($"Skills.AllSkills[{i}].ProficiencyLevel");
+                }
+            }
+            for (int i = 0; i < model.CertificateEntries.Count; i++)
+            {
+                var cert = model.CertificateEntries[i];
+
+                // If no new file is uploaded and no file exists, add a model error.
+                if (cert.CertificateFile == null && string.IsNullOrEmpty(cert.CertificateFilePath))
+                {
+                    ModelState.Remove($"CertificateEntries[{i}].CertificateFile");
+                }
+            }
             if (!ModelState.IsValid)
             {
                 return View("EditProfile", model);
@@ -272,7 +343,10 @@ namespace SkillSwap_Platform.Controllers
             {
                 UpdatePersonalDetails(model.PersonalDetails, userId);
                 await UpdateSkillsAsync(model.Skills, userId);
-                // Optionally, call UpdateEducationAsync, UpdateExperienceAsync, UpdateCertificatesAsync if you support editing those.
+                await UpdateEducationAsync(model.EducationEntries, userId);
+                await UpdateExperienceAsync(model.ExperienceEntries, userId);
+                await UpdateCertificatesAsync(model.CertificateEntries, userId);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -290,6 +364,7 @@ namespace SkillSwap_Platform.Controllers
 
         #region Helper Methods
 
+        #region Update Personal Details
         private void UpdatePersonalDetails(EditPersonalDetailsVM personal, int userId)
         {
             var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
@@ -317,7 +392,9 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
         }
+        #endregion
 
+        #region Update Skills
         private async Task UpdateSkillsAsync(EditSkillVM skills, int userId)
         {
             // Update summary fields.
@@ -422,7 +499,217 @@ namespace SkillSwap_Platform.Controllers
 
             }
         }
+        #endregion
 
+        #region Update Education
+        private async Task UpdateEducationAsync(IEnumerable<EducationVM> educationEntries, int userId)
+        {
+            // Remove all existing education entries for the user.
+            var existingExp = await _context.TblEducations.Where(e => e.UserId == userId).ToListAsync();
+            // Process each entry coming from the view.
+            foreach (var edu in educationEntries)
+            {
+                // If the entry is marked for deletion...
+                if (edu.IsDeleted)
+                {
+                    // If it exists in DB (has an EducationId), remove it.
+                    if (edu.EducationId > 0)
+                    {
+                        var recordToRemove = existingExp.FirstOrDefault(e => e.EducationId == edu.EducationId);
+                        if (recordToRemove != null)
+                        {
+                            _context.TblEducations.Remove(recordToRemove);
+                        }
+                    }
+                    // Skip further processing for this row.
+                    continue;
+                }
+
+                // Skip entries that are incomplete.
+                if (string.IsNullOrWhiteSpace(edu.Degree) ||
+                    string.IsNullOrWhiteSpace(edu.DegreeName) ||
+                    string.IsNullOrWhiteSpace(edu.Institution))
+                {
+                    continue;
+                }
+
+                // Check if this entry already exists.
+                var existingRecord = existingExp.FirstOrDefault(e => e.EducationId == edu.EducationId);
+
+                if (existingRecord != null)
+                {
+                    // Update existing record.
+                    existingRecord.Degree = edu.Degree;
+                    existingRecord.DegreeName = edu.DegreeName;
+                    existingRecord.InstitutionName = edu.Institution;
+                    existingRecord.StartDate = edu.StartDate;
+                    existingRecord.EndDate = edu.EndDate;
+                    existingRecord.Description = edu.Description;
+                }
+                else
+                {
+                    // Create new education record.
+                    var newRecord = new TblEducation
+                    {
+                        UserId = userId,
+                        Degree = edu.Degree,
+                        DegreeName = edu.DegreeName,
+                        InstitutionName = edu.Institution,
+                        StartDate = edu.StartDate,
+                        EndDate = edu.EndDate,
+                        Description = edu.Description
+                    };
+                    _context.TblEducations.Add(newRecord);
+                }
+            }
+
+            // Optionally update a summary field in the TblUsers table.
+            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user != null)
+            {
+                var summaries = educationEntries
+                    .Where(e => !e.IsDeleted && !string.IsNullOrWhiteSpace(e.DegreeName) && !string.IsNullOrWhiteSpace(e.Institution))
+                    .Select(e => $"{e.DegreeName} from {e.Institution}");
+                user.Education = string.Join("; ", summaries);
+            }
+        }
+        #endregion
+
+        #region Update Experience
+        private async Task UpdateExperienceAsync(IEnumerable<ExperienceVM> experienceEntries, int userId)
+        {
+            var existingExp = await _context.TblExperiences.Where(e => e.UserId == userId).ToListAsync();
+
+            double totalYears = 0;
+            foreach (var exp in experienceEntries)
+            {
+                if (exp.IsexpDeleted)
+                {
+                    if (exp.ExperienceId > 0)
+                    {
+                        var recordToRemove = existingExp.FirstOrDefault(e => e.ExperienceId == exp.ExperienceId);
+                        if (recordToRemove != null)
+                        {
+                            _context.TblExperiences.Remove(recordToRemove);
+                        }
+                    }
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(exp.CompanyName) || string.IsNullOrWhiteSpace(exp.Position))
+                    continue;
+
+                // Use the provided start date; if EndDate is null, use DateTime.Now.
+                DateTime startDate = (DateTime)exp.StartDate;
+                DateTime expEnd = exp.EndDate ?? DateTime.Now;
+
+                // Calculate the duration (in years) for this experience.
+                double duration = (expEnd - startDate).TotalDays / 365;
+                totalYears += duration;
+                var existingRecord = existingExp.FirstOrDefault(e => e.ExperienceId == exp.ExperienceId);
+                if (existingRecord != null)
+                {
+                    existingRecord.CompanyName = exp.CompanyName;
+                    existingRecord.Position = exp.Position;
+                    existingRecord.StartDate = exp.StartDate;
+                    existingRecord.EndDate = exp.EndDate;
+                    existingRecord.Description = exp.Description;
+                    existingRecord.Years = (decimal?)Math.Round(duration, 2);
+                    // You can recalculate total years if needed.
+                }
+                else
+                {
+                    var newRecord = new TblExperience
+                    {
+                        UserId = userId,
+                        CompanyName = exp.CompanyName,
+                        Position = exp.Position,
+                        StartDate = exp.StartDate,
+                        EndDate = exp.EndDate,
+                        Description = exp.Description,
+                        Years = (decimal?)Math.Round(duration, 2)
+                    };
+                    _context.TblExperiences.Add(newRecord);
+                }
+            }
+            // Optionally, update a summary field in TblUsers if you store total experience.
+            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user != null)
+            {
+                // For example, recalculate total years:
+                user.Experience = totalYears.ToString("0.0") + " years";
+            }
+        }
+        #endregion
+
+        #region Update Certificates
+        private async Task UpdateCertificatesAsync(IEnumerable<CertificateVM> certificateEntries, int userId)
+        {
+            // Remove certificates marked as deleted.
+            var existingCerts = await _context.TblUserCertificates.Where(c => c.UserId == userId).ToListAsync();
+            foreach (var cert in certificateEntries)
+            {
+                if (cert.IscertDeleted)
+                {
+                    if (cert.CertificateId > 0)
+                    {
+                        var recordToRemove = existingCerts.FirstOrDefault(c => c.CertificateId == cert.CertificateId);
+                        if (recordToRemove != null)
+                        {
+                            _context.TblUserCertificates.Remove(recordToRemove);
+                        }
+                    }
+                    continue;
+                }
+
+                // If certificate exists, update its details; otherwise, create a new record.
+                var existingRecord = existingCerts.FirstOrDefault(c => c.CertificateId == cert.CertificateId);
+                if (existingRecord != null)
+                {
+                    existingRecord.CertificateName = cert.CertificateName;
+                    existingRecord.VerificationId = cert.VerificationId;
+                    existingRecord.CertificateFrom = cert.CertificateFrom;
+                    existingRecord.CompleteDate = cert.CertificateDate;
+                    // If a new certificate file is uploaded, update the file path.
+                    if (cert.CertificateFile != null && cert.CertificateFile.Length > 0)
+                    {
+                        if (!ValidateFile(cert.CertificateFile, new[] { ".pdf", ".jpg", ".jpeg", ".png" }, 5 * 1024 * 1024, out string certError))
+                        {
+                            throw new Exception(certError);
+                        }
+                        string fileUrl = await UploadFileAsync(cert.CertificateFile, "certificates");
+                        existingRecord.CertificateFilePath = fileUrl;
+                        existingRecord.SubmittedDate = DateTime.Now;
+                        existingRecord.IsApproved = false;
+                    }
+                }
+                else
+                {
+                    // Only add new certificate if a file is provided.
+                    if (cert.CertificateFile != null && cert.CertificateFile.Length > 0)
+                    {
+                        if (!ValidateFile(cert.CertificateFile, new[] { ".pdf", ".jpg", ".jpeg", ".png" }, 5 * 1024 * 1024, out string certError))
+                        {
+                            throw new Exception(certError);
+                        }
+                        string fileUrl = await UploadFileAsync(cert.CertificateFile, "certificates");
+                        var newCert = new TblUserCertificate
+                        {
+                            UserId = userId,
+                            CertificateName = cert.CertificateName,
+                            CertificateFrom = cert.CertificateFrom,
+                            CompleteDate = cert.CertificateDate,
+                            VerificationId = cert.VerificationId,
+                            CertificateFilePath = fileUrl,
+                            SubmittedDate = DateTime.Now,
+                            IsApproved = false
+                        };
+                        _context.TblUserCertificates.Add(newCert);
+                    }
+                }
+            }
+        }
+        #endregion
         private bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeBytes, out string errorMessage)
         {
             errorMessage = string.Empty;

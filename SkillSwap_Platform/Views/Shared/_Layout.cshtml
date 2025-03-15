@@ -523,6 +523,24 @@
           scrollbalance.bind();
         });
     </script>
+
+    <script>
+        $(document).on('click', '.preview-container', function(){
+            var previewType = $(this).data('preview-type');
+            var src = $(this).data('src');
+            var contentHtml = '';
+
+            if(previewType === 'image'){
+                contentHtml = '<img src="'+src+'" class="img-fluid" style="width:100%;">';
+            } else if(previewType === 'pdf'){
+                contentHtml = '<iframe src="'+src+'#toolbar=0" style="width:100%; height:500px; border:none;"></iframe>';
+            }
+
+            $('#previewContent').html(contentHtml);
+            $('#previewModal').modal('show');
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

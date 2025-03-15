@@ -24,7 +24,7 @@ namespace SkillSwap_Platform.Controllers
         //public IActionResult SelectRole()
         //{
         //    // Get user ID from session
-        //    int? userId = HttpContext.Session.GetInt32("TempUserId");
+        //    int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
         //    if (userId == null)
         //        return RedirectToAction("Login", "Home"); // 🔥 Redirect if session expired
 
@@ -44,7 +44,7 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             try
             {
@@ -86,7 +86,7 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> ProfileCompletion()
         {
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new ProfileCompletionVM();
             if (user != null)
@@ -110,7 +110,7 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
@@ -890,10 +890,12 @@ namespace SkillSwap_Platform.Controllers
             }
 
             var certificateNames = form["certification[certificate_name][]"];
+            var certifiedFrom = form["certification[certified_from][]"];
+            var completionDate = form["certification[completion_date][]"];
             var verificationIds = form["certification[verification_id][]"];
             var files = form.Files.GetFiles("certification[certificate_file][]");
 
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             bool hasValidCertificate = false;
 
             for (int i = 0; i < certificateNames.Count; i++)
@@ -919,10 +921,13 @@ namespace SkillSwap_Platform.Controllers
 
                 hasValidCertificate = true;
                 string fileUrl = await UploadFileAsync(files[i], "certificates");
+                DateTime parsedDate;
                 var certificate = new TblUserCertificate
                 {
                     UserId = userId.Value,
                     CertificateName = certificateNames[i],
+                    CertificateFrom = certifiedFrom[i],
+                    CompleteDate = DateTime.TryParse(completionDate[i], out parsedDate) ? parsedDate : (DateTime?)null,
                     VerificationId = verificationIds[i],
                     CertificateFilePath = fileUrl,
                     SubmittedDate = DateTime.Now,
@@ -956,7 +961,7 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> AdditionalInfo()
         {
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new AdditionalInfoVM();
             if (user != null)
@@ -974,7 +979,7 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = HttpContext.Session.GetInt32("TempUserId");
+            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {

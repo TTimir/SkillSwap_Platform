@@ -128,7 +128,7 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Institution/Organization </label>
+                                        <label class="form-label">Institution/Organization <span class="text-danger">*</span> </label>
                                         <input type="text" name="certification[certified_from][]" class="form-control" placeholder="Issued By (optional)" />
                                     </div>
 
@@ -148,7 +148,7 @@
                                                 <label class="form-label">Upload Certificate</label>
                                                 <div class="d-flex align-items-center mb-2">
                                                     <label for="certificateInput_1" class="upload-btn certificate-label" style="cursor: pointer;">
-                                                        Upload Certificate (PDF)
+                                                        Upload Certificate
                                                     </label>
                                                     <input type="file" name="certification[certificate_file][]" class="certificateInput" id="certificateInput_1" style="display: none;">
                                                 </div>
@@ -247,25 +247,25 @@
                     var $errorElement = $container.find('.fileError');
                     var $labelElement = $container.find('.certificate-label');
 
-                    if (file) {
-                        var fileType = file.type;
-                        var fileSize = file.size / 1024 / 1024; // Convert bytes to MB
-
-                        if (fileType !== "application/pdf") {
-                            $errorElement.text("Only PDF files are allowed!");
-                            this.value = ""; // Clear input field
-                            $labelElement.text("Upload Certificate (PDF)");
-                        } else if (fileSize > 5) {
-                            $errorElement.text("File size exceeds 5MB!");
-                            this.value = ""; // Clear input field
-                            $labelElement.text("Upload Certificate (PDF)");
-                        } else {
-                            $errorElement.text(""); // Clear error message
-                            $labelElement.text(file.name); // Show file name
-                        }
-                    }
                 });
 
+            });
+
+        </script>
+        <script>
+                        // File Validation for Certificates
+            $(document).on('change', '.certificateInput', function () {
+                var file = this.files[0];
+                var $container = $(this).closest('.certificate-entry');
+                var $errorElement = $container.find('.fileError');
+                var $labelElement = $container.find('.certificate-label');
+
+                // If a file is selected, update the label with its name; otherwise, revert to default text
+                if (file) {
+                    $labelElement.text(file.name);
+                } else {
+                    $labelElement.text('Upload Certificate');
+                }
             });
 
         </script>
