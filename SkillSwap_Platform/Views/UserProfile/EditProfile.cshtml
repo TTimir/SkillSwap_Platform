@@ -176,16 +176,16 @@
                 </div>
                 <div class="col-lg-7">
                     <div class="row">
-                        <div class="row">
-                            @for (int i = 0; i < 5; i++)
-                            {
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <div class="row skill-row" data-index="@i">
                                 <div class="col-sm-4">
                                     <div class="mb20">
                                         <div class="form-style1">
                                             <div class="bootselect-multiselect">
                                                 <input asp-for="Skills.AllSkills[i].SkillId" type="hidden" />
                                                 <label asp-for="Skills.AllSkills[i].SkillName" class="heading-color ff-heading fw500 mb10">Skill Name</label>
-                                                <input asp-for="Skills.AllSkills[i].SkillName" type="text" class="form-control" placeholder="Enter skill name">
+                                                <input asp-for="Skills.AllSkills[i].SkillName" type="text" class="form-control skill-name" placeholder="Enter skill name">
                                                 <span asp-validation-for="Skills.AllSkills[i].SkillName" class="text-danger"></span>
                                             </div>
                                         </div>
@@ -217,7 +217,7 @@
                                                 @Html.DropDownListFor(m => m.Skills.AllSkills[i].Category,
                                                          unionCategories,
                                                          "Choose Category",
-                                                         new { @class = "form-control" })
+                                                         new { @class = "selectpicker skill-category" })
                                                 <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
                                                 <!-- Custom category input, hidden by default -->
                                                 <input type="text" class="form-control custom-category-input"
@@ -234,7 +234,7 @@
                                         <div class="form-style1">
                                             <label class="heading-color ff-heading fw500 mb10">Proficiency</label>
                                             <div class="bootselect-multiselect">
-                                                <select asp-for="Skills.AllSkills[i].ProficiencyLevel" asp-items="Model.Skills.ProficiencyOptions" class="selectpicker">
+                                                <select asp-for="Skills.AllSkills[i].ProficiencyLevel" asp-items="Model.Skills.ProficiencyOptions" class="selectpicker skill-proficiency">
                                                     <option value="">Select Level</option>
                                                 </select>
                                                 <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
@@ -242,11 +242,15 @@
                                         </div>
                                     </div>
                                 </div>
-                            }
-                            <div class="col-md-12">
-                                <div class="text-start">
-                                    <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                                <!-- Clear Button for this skill row -->
+                                <div class="col-12 text-end">
+                                    <input type="button" class="clear-skill-btn" data-index="@i" value="Clear" />
                                 </div>
+                            </div>
+                        }
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
                             </div>
                         </div>
                     </div>
@@ -263,6 +267,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Offered Skills</label>
                                 <input asp-for=Skills.OfferedSkillSummary type="text" id="offeredSkillInput" class="form-control" placeholder="Enter offered skills (comma separated)" value="@(Model.Skills.OfferedSkillSummary ?? "")" />
+                                <small class="form-text text-muted">
+                                    Please enter skills separated by commas (e.g., <em>C#, JavaScript, UI Design</em>).
+                                </small>
                                 <div id="offeredSkillsContainer" class="mt-2">
                                     @if (!string.IsNullOrWhiteSpace(Model.Skills.OfferedSkillSummary))
                                     {
@@ -286,6 +293,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Willing Skills</label>
                                 <input asp-for="Skills.WillingSkillSummary" type="text" id="willingSkillInput" class="form-control" placeholder="Enter willing skills (comma separated)" value="@(Model.Skills.WillingSkillSummary ?? "")" />
+                                <small class="form-text text-muted">
+                                    Please enter skills separated by commas (e.g., <em>C#, JavaScript, UI Design</em>).
+                                </small>
                                 <div id="willingSkillsContainer" class="mt-2">
                                     @if (!string.IsNullOrWhiteSpace(Model.Skills.WillingSkillSummary))
                                     {
@@ -494,102 +504,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        document.getElementById('fileInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('profileImage');
-
-            if (file) {
-                // Validate file size (1MB max)
-                if (file.size > 1024 * 1024) {
-                    alert('File size exceeds 1MB.');
-                    event.target.value = ''; // Reset the input if file is too large
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Update the image preview with the newly uploaded file
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    </script>
-    <script>
-        $(document).ready(function () {
-            // Update the hidden input with a comma‑separated list of current skills.
-            function updateHiddenInput(hiddenInputSelector, containerSelector) {
-                var skills = [];
-                $(containerSelector).find('.skill-badge').each(function () {
-                    var text = $(this).text().trim();
-                    skills.push(text);
-                });
-                $(hiddenInputSelector).val(skills.join(", "));
-            }
-
-            // Add skills from the input field into the container, but only if the total count is 5 or less.
-            function addSkills(inputSelector, containerSelector, hiddenInputSelector, errorSelector) {
-                var inputVal = $(inputSelector).val().trim();
-                var errorField = $(errorSelector);
-                if (inputVal === "") {
-                    errorField.text("Please enter at least one skill.");
-                    return;
-                }
-                var newSkills = inputVal.split(',')
-                    .map(function (s) { return s.trim(); })
-                    .filter(function (s) { return s !== ""; });
-                var container = $(containerSelector);
-                var currentCount = container.find('.skill-badge').length;
-                // If adding these new skills would exceed 5, show error and do not update badges.
-                if (currentCount + newSkills.length > 5) {
-                    errorField.text("You can only add up to 5 skills.");
-                    return;
-                }
-
-                newSkills.forEach(function (skill) {
-                    // Check for duplicates.
-                    var duplicate = false;
-                    container.find('.skill-badge').each(function () {
-                        if ($(this).text().trim().toLowerCase() === skill.toLowerCase()) {
-                            duplicate = true;
-                        }
-                    });
-                    if (!duplicate) {
-                        container.append('<span class="skill-badge">' + skill + '</span>');
-                    }
-                });
-                $(inputSelector).val('');
-                errorField.text('');
-                updateHiddenInput(hiddenInputSelector, containerSelector);
-            }
-
-            // Bind add buttons.
-            $("#addOfferedSkillButton").click(function () {
-                addSkills("#offeredSkillInput", "#offeredSkillsContainer", "#offeredSkillsHidden", "#offeredSkillError");
-            });
-            $("#addWillingSkillButton").click(function () {
-                addSkills("#willingSkillInput", "#willingSkillsContainer", "#willingSkillsHidden", "#willingSkillError");
-            });
-        });
-    </script>
-    <script>
-        $(document).ready(function () {
-            $('.category-dropdown').change(function () {
-                var selected = $(this).val();
-                // Find the custom category input in the same container.
-                var customInput = $(this).closest('.form-style1').find('.custom-category-input');
-                if (selected === 'Other') {
-                    customInput.show();
-                } else {
-                    customInput.hide();
-                    // Optionally, clear its value:
-                    customInput.val('');
-                }
-            });
-        });
-    </script>
-
 </div>
 

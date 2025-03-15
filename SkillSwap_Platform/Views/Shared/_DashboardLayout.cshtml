@@ -187,7 +187,7 @@
                                             }
                                             else
                                             {
-                                               @*  @if (Model.IsOnline)
+                                                @*  @if (Model.IsOnline)
                                                 {
                                                     <span class="online"></span>
                                                 } *@
@@ -410,5 +410,51 @@
     <script src="/template_assets/js/dashboard-script.js"></script>
     <!-- Custom script for all pages -->
     <script src="/template_assets/js/script.js"></script>
+
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const img = document.getElementById('profileImage');
+
+            if (file) {
+                // Validate file size (1MB max)
+                if (file.size > 1024 * 1024) {
+                    alert('File size exceeds 1MB.');
+                    event.target.value = ''; // Reset the input if file is too large
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Update the image preview with the newly uploaded file
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+    <script>
+          $(document).ready(function() {
+            $('.clear-skill-btn').on('click', function() {
+                // Get the specific skill row container.
+                var container = $(this).closest('.skill-row');
+
+                // Clear the Skill Name field.
+                container.find('.skill-name').val('');
+
+                // Reset the category and proficiency dropdowns.
+                // This targets elements with the classes 'skill-category' and 'skill-proficiency'
+                // and then triggers change events, and if you're using bootstrap-select, refresh the UI.
+                container.find('.skill-category, .skill-proficiency')
+                    .prop('selectedIndex', 0)
+                    .trigger('change')
+                    .selectpicker('refresh'); // Only necessary if you're using bootstrap-select.
+
+                // Hide and clear any custom category input.
+                container.find('.custom-category-input').hide().val('');
+            });
+        });
+    </script>
 </body>
 </html>

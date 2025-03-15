@@ -162,15 +162,16 @@ namespace SkillSwap_Platform.Controllers
             if (user == null)
                 return NotFound("User not found.");
 
-            // (Assumes TblSkill has a CategoryId property; adjust if needed.)
+            // Map the user's existing skills only.
             var userSkillEditList = user.TblUserSkills
                 .Select(us => new SkillEditVM
                 {
                     SkillId = us.Skill.SkillId,
                     SkillName = us.Skill.SkillName,
-                    ProficiencyLevel = us.ProficiencyLevel,
-                    Category = us.Skill.SkillCategory
-                }).ToList();
+                    Category = us.Skill.SkillCategory,
+                    ProficiencyLevel = us.ProficiencyLevel
+                })
+                .ToList();
 
             // Prepare composite view model.
             var model = new EditProfileCompositeVM
@@ -193,17 +194,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     OfferedSkillSummary = user.OfferedSkillAreas,
                     WillingSkillSummary = user.DesiredSkillAreas,
-                    // Retrieve all global skills and map the user's proficiency if available.
-                    AllSkills = (await _context.TblSkills.AsNoTracking()
-                    .OrderBy(s => s.SkillName)
-                    .ToListAsync())
-                    .Select(s => new SkillEditVM
-                    {
-                        SkillId = s.SkillId,
-                        SkillName = s.SkillName,
-                        Category = s.SkillCategory,
-                        ProficiencyLevel = user.TblUserSkills.FirstOrDefault(us => us.SkillId == s.SkillId)?.ProficiencyLevel
-                    }).ToList(),
+                    AllSkills = userSkillEditList,
                     ProficiencyOptions = new List<SelectListItem>
                     {
                         new SelectListItem { Value = "1", Text = "Basic" },
@@ -233,10 +224,22 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(EditProfileCompositeVM model)
         {
+            
+    // Remove ModelState errors for cleared skill rows.
+    for (int i = 0; i < model.Skills.AllSkills.Count; i++)
+    {
+        if (string.IsNullOrWhiteSpace(model.Skills.AllSkills[i].SkillName))
+        {
+            ModelState.Remove($"Skills.AllSkills[{i}].SkillName");
+            ModelState.Remove($"Skills.AllSkills[{i}].Category");
+            ModelState.Remove($"Skills.AllSkills[{i}].ProficiencyLevel");
+        }
+    }
             if (!ModelState.IsValid)
             {
                 return View("EditProfile", model);
             }
+
             // Validate that each summary contains at most 5 skills.
             var offeredSkillsList = (model.Skills.OfferedSkillSummary ?? "")
                                         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -353,10 +356,45 @@ namespace SkillSwap_Platform.Controllers
                 if (skill.SkillId != 0)
                 {
                     globalSkill = await _context.TblSkills.FirstOrDefaultAsync(s => s.SkillId == skill.SkillId);
+                    // If the skill name has been updated, assign the new value.
+                    if (globalSkill != null && !string.Equals(globalSkill.SkillName, skill.SkillName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Check if another skill already has this new name
+                        var existingSkill = await _context.TblSkills
+                            .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skill.SkillName.ToLower());
+
+                        if (existingSkill != null)
+                        {
+                            globalSkill = existingSkill;
+                        }
+                        else
+                        {
+                            // New skill entirely
+                            globalSkill = new TblSkill
+                            {
+                                SkillName = skill.SkillName,
+                                SkillCategory = skill.Category
+                            };
+                            _context.TblSkills.Add(globalSkill);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
                 }
                 else
                 {
-                    globalSkill = await _context.TblSkills.FirstOrDefaultAsync(s => s.SkillName.ToLower() == skill.SkillName.ToLower());
+                    globalSkill = await _context.TblSkills
+                        .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skill.SkillName.ToLower());
+
+                    if (globalSkill == null)
+                    {
+                        globalSkill = new TblSkill
+                        {
+                            SkillName = skill.SkillName,
+                            SkillCategory = skill.Category
+                        };
+                        _context.TblSkills.Add(globalSkill);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 if (globalSkill == null)
@@ -383,20 +421,6 @@ namespace SkillSwap_Platform.Controllers
                 });
 
             }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteUserSkill(int skillId)
-        {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var userSkill = await _context.TblUserSkills.FirstOrDefaultAsync(us => us.SkillId == skillId && us.UserId == userId);
-            if (userSkill != null)
-            {
-                _context.TblUserSkills.Remove(userSkill);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true });
-            }
-            return Json(new { success = false, message = "Skill not found or not authorized." });
         }
 
         private bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeBytes, out string errorMessage)
