@@ -307,11 +307,11 @@
                         <a href="page-dashboard-manage-jobs.html" class="items-center"><i class="flaticon-briefcase mr15"></i>Manage Jobs</a>
                     </div>
                     <div class="sidebar_list_item ">
-                        <a href="page-dashboard-manage-project.html" class="items-center"><i class="flaticon-content mr15"></i>Manage Project</a>
+                        <a href="@Url.ActionLink("Create","Offer")" class="items-center"><i class="flaticon-content mr15"></i>Manage Project</a>
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("EditProfile","UserDashboard")" class="items-center -is-active"><i class="flaticon-photo mr15"></i>My Profile</a>
+                        <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center -is-active"><i class="flaticon-photo mr15"></i>My Profile</a>
                     </div>
                     <div class="sidebar_list_item ">
                         <a href="page-login.html" class="items-center"><i class="flaticon-logout mr15"></i>Logout</a>
@@ -346,374 +346,64 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-9">
-                            <div class="dashboard_title_area">
-                                <h2>My Profile</h2>
-                                <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+                        @RenderBody()
+                    </div>
+                </div>
+            </div>
+
+            <a class="scrollToHome" href="#"><i class="fas fa-angle-up"></i></a>
+
+            <!-- Footer -->
+            <footer class="dashboard_footer pt30 pb30">
+                <div class="container">
+                    <div class="row align-items-center justify-content-center justify-content-md-between">
+                        <div class="col-auto">
+                            <div class="copyright-widget">
+                                <p class="mb-md-0">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="footer_bottom_right_btns at-home8 text-center text-lg-end">
+                                <ul class="p-0 m-0">
+                                    <li class="list-inline-item bg-white">
+                                        <select class="selectpicker show-tick">
+                                            <option>US$ USD</option>
+                                            <option>Euro</option>
+                                            <option>Pound</option>
+                                        </select>
+                                    </li>
+                                    <li class="list-inline-item bg-white">
+                                        <select class="selectpicker show-tick">
+                                            <option>English</option>
+                                            <option>Frenc</option>
+                                            <option>Italian</option>
+                                            <option>Spanish</option>
+                                            <option>Turkey</option>
+                                        </select>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    @RenderBody()
                 </div>
-            </div>
+            </footer>
         </div>
 
-        <a class="scrollToHome" href="#"><i class="fas fa-angle-up"></i></a>
-
-        <!-- Footer -->
-        <footer class="dashboard_footer pt30 pb30">
-            <div class="container">
-                <div class="row align-items-center justify-content-center justify-content-md-between">
-                    <div class="col-auto">
-                        <div class="copyright-widget">
-                            <p class="mb-md-0">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <div class="footer_bottom_right_btns at-home8 text-center text-lg-end">
-                            <ul class="p-0 m-0">
-                                <li class="list-inline-item bg-white">
-                                    <select class="selectpicker show-tick">
-                                        <option>US$ USD</option>
-                                        <option>Euro</option>
-                                        <option>Pound</option>
-                                    </select>
-                                </li>
-                                <li class="list-inline-item bg-white">
-                                    <select class="selectpicker show-tick">
-                                        <option>English</option>
-                                        <option>Frenc</option>
-                                        <option>Italian</option>
-                                        <option>Spanish</option>
-                                        <option>Turkey</option>
-                                    </select>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Wrapper End -->
-    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
-    <script src="/template_assets/js/jquery-migrate-3.0.0.min.js"></script>
-    <script src="/template_assets/js/popper.min.js"></script>
-    <script src="/template_assets/js/bootstrap.min.js"></script>
-    <script src="/template_assets/js/bootstrap-select.min.js"></script>
-    <script src="/template_assets/js/jquery.mmenu.all.js"></script>
-    <script src="/template_assets/js/ace-responsive-menu.js"></script>
-    <script src="/template_assets/js/chart.min.js"></script>
-    <script src="/template_assets/js/chart-custome.js"></script>
-    <script src="/template_assets/js/jquery-scrolltofixed-min.js"></script>
-    <script src="/template_assets/js/dashboard-script.js"></script>
-    <!-- Custom script for all pages -->
-    <script src="/template_assets/js/script.js"></script>
-
-    <script>
-        (function ($) {
-            "use strict";
-
-            var App = {
-                // Profile module updates both the preview image and the label (showing the selected file name)
-                profile: {
-                    init: function () {
-                        var fileInput = document.getElementById('fileInput');
-                        if (fileInput) {
-                            fileInput.addEventListener('change', function (event) {
-                                var file = event.target.files[0];
-                                var img = document.getElementById('profileImage');
-                                // Get the label using the "for" attribute on it
-                                var label = $('label[for="fileInput"]');
-                                if (file) {
-                                    // Validate file size (1MB max)
-                                    if (file.size > 1024 * 1024) {
-                                        alert('File size exceeds 1MB.');
-                                        event.target.value = ''; // Reset file input
-                                        label.text("Upload Images"); // Reset label text
-                                        return;
-                                    }
-                                    var reader = new FileReader();
-                                    reader.onload = function (e) {
-                                        // Update preview image and label with file name
-                                        img.src = e.target.result;
-                                        label.text(file.name);
-                                    };
-                                    reader.readAsDataURL(file);
-                                } else {
-                                    label.text("Upload Images");
-                                }
-                            });
-                        }
-                    }
-                },
-
-                // Skills module handles clearing of skill rows
-                skills: {
-                    init: function () {
-                        $('.clear-skill-btn').on('click', function () {
-                            var container = $(this).closest('.skill-row');
-                            container.find('.skill-name').val('');
-                            container.find('.skill-category, .skill-proficiency')
-                                .prop('selectedIndex', 0)
-                                .trigger('change')
-                                .selectpicker('refresh');
-                            container.find('.custom-category-input').hide().val('');
-                        });
-                    }
-                },
-
-                // Education module handles dynamic education entries
-                education: {
-                    educationIndex: @Model.EducationEntries.Count, // initial count from DB
-
-                    init: function () {
-                        var self = this;
-                        $("#addEducationBtn").click(function () {
-                            var newBlock = `
-                            <div class="clone-wrapper" data-index="${self.educationIndex}">
-                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
-                                    New Education Entry
-                                </div>
-                                <div class="educational-quality education-entry" data-index="${self.educationIndex}" id="eduRow_${self.educationIndex}" data-new="true">
-                                    <input type="hidden" name="EducationEntries[${self.educationIndex}].EducationId" value="0">
-                                    <input type="hidden" id="isDeleted_${self.educationIndex}" name="EducationEntries[${self.educationIndex}].IsDeleted" value="false">
-                                    <div class="m-circle text-thm">M</div>
-                                    <div class="wrapper mb40 position-relative">
-                                        <div class="del-edit">
-                                            <button type="button" class="btn btn-link icon delete-education-btn" data-index="${self.educationIndex}" title="Delete" aria-label="Delete">
-                                                <span class="flaticon-delete"></span>
-                                            </button>
-                                        </div>
-                                        <div class="row mb20">
-                                            <div class="col-sm-3">
-                                                <label class="heading-color ff-heading fw500 mb10">Start Date</label>
-                                                <input type="date" class="form-control" name="EducationEntries[${self.educationIndex}].StartDate" value="">
-                                            </div>
-                                            <div class="col-sm-3">
-                                                <label class="heading-color ff-heading fw500 mb10">End Date</label>
-                                                <input type="date" class="form-control" name="EducationEntries[${self.educationIndex}].EndDate" value="">
-                                            </div>
-                                        </div>
-                                        <div class="row mb20">
-                                            <div class="col-sm-6">
-                                                <label class="heading-color ff-heading fw500 mb10">Degree</label>
-                                                <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].Degree" placeholder="Enter Degree" value="">
-                                            </div>
-                                            <div class="col-sm-6">
-                                                <label class="heading-color ff-heading fw500 mb10">Degree Name</label>
-                                                <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].DegreeName" placeholder="Enter Degree Name" value="">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-12 mb20">
-                                            <label class="heading-color ff-heading fw500 mb10">Institute Name</label>
-                                            <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].Institution" placeholder="Enter Institute Name" value="">
-                                        </div>
-                                        <div class="col-md-12 mb20">
-                                            <label class="heading-color ff-heading fw500 mb10">Description</label>
-                                            <textarea class="form-control" cols="30" rows="6" name="EducationEntries[${self.educationIndex}].Description" placeholder="Enter description"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
-                            // Insert the new block before the save button (assumed as the last .text-start element)
-                            $("#educationContainer .text-start:last").before(newBlock);
-                            self.educationIndex++;
-                        });
-
-                        // Delegate click event for dynamically added education delete buttons
-                        $(document).on('click', '.delete-education-btn', function () {
-                            var index = $(this).data('index');
-                            App.education.markDeleted(index);
-                        });
-                    },
-
-                    markDeleted: function (index) {
-                        var element = $("#eduRow_" + index);
-                        if (element.attr("data-new") === "true") {
-                            element.closest(".clone-wrapper").remove();
-                        } else {
-                            $("#isDeleted_" + index).val("true");
-                            element.hide();
-                        }
-                    }
-                },
-
-                // Experience module handles dynamic experience entries
-                experience: {
-                    experienceIndex: @Model.ExperienceEntries.Count, // initial count from DB
-
-                    init: function () {
-                        var self = this;
-                        $("#addExperienceBtn").click(function () {
-                            var newBlock = `
-                            <div class="clone-wrapper" data-index="${self.experienceIndex}">
-                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
-                                    New Experience Entry
-                                </div>
-                                <div class="educational-quality experience-entry" data-index="${self.experienceIndex}" id="expRow_${self.experienceIndex}" data-new="true">
-                                    <input type="hidden" name="ExperienceEntries[${self.experienceIndex}].ExperienceId" value="0">
-                                    <input type="hidden" id="expIsDeleted_${self.experienceIndex}" name="ExperienceEntries[${self.experienceIndex}].IsDeleted" value="false">
-                                    <div class="m-circle text-thm">X</div>
-                                    <div class="wrapper mb40 position-relative">
-                                        <div class="del-edit">
-                                            <button type="button" class="btn btn-link icon delete-experience-btn" data-index="${self.experienceIndex}" title="Delete" aria-label="Delete">
-                                                <span class="flaticon-delete"></span>
-                                            </button>
-                                        </div>
-                                        <div class="row mb20">
-                                            <div class="col-sm-3">
-                                                <label class="heading-color ff-heading fw500 mb10">Start Date</label>
-                                                <input type="date" class="form-control" name="ExperienceEntries[${self.experienceIndex}].StartDate" value="">
-                                            </div>
-                                            <div class="col-sm-3">
-                                                <label class="heading-color ff-heading fw500 mb10">End Date</label>
-                                                <input type="date" class="form-control" name="ExperienceEntries[${self.experienceIndex}].EndDate" value="">
-                                            </div>
-                                        </div>
-                                        <div class="row mb20">
-                                            <div class="col-sm-6">
-                                                <label class="heading-color ff-heading fw500 mb10">Company Name</label>
-                                                <input type="text" class="form-control" name="ExperienceEntries[${self.experienceIndex}].CompanyName" placeholder="Enter company name">
-                                            </div>
-                                            <div class="col-sm-6">
-                                                <label class="heading-color ff-heading fw500 mb10">Position</label>
-                                                <input type="text" class="form-control" name="ExperienceEntries[${self.experienceIndex}].Position" placeholder="Enter position">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-12 mb20">
-                                            <label class="heading-color ff-heading fw500 mb10">Description</label>
-                                            <textarea class="form-control" cols="30" rows="4" name="ExperienceEntries[${self.experienceIndex}].Description" placeholder="Enter description"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
-                            $("#experienceContainer .text-start:last").before(newBlock);
-                            self.experienceIndex++;
-                        });
-
-                        // Delegate click event for experience delete buttons
-                        $(document).on('click', '.delete-experience-btn', function () {
-                            var index = $(this).data('index');
-                            App.experience.markDeleted(index);
-                        });
-                    },
-
-                    markDeleted: function (index) {
-                        var element = $('#expRow_' + index);
-                        if (element.attr("data-new") === "true") {
-                            element.closest(".clone-wrapper").remove();
-                        } else {
-                            $('#expIsDeleted_' + index).val('true');
-                            element.hide();
-                        }
-                    }
-                },
-
-                // Certificate module handles dynamic certificate entries and file upload label updates
-                certificate: {
-                    certificateIndex: @Model.CertificateEntries.Count, // initial count from DB
-
-                    init: function () {
-                        var self = this;
-                        $("#addCertificateBtn").click(function () {
-                            var newBlock = `
-                            <div class="clone-wrapper" data-index="${self.certificateIndex}">
-                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
-                                    New Certificate Entry
-                                </div>
-                                <div class="certificate-entry mb30" data-index="${self.certificateIndex}" id="certRow_${self.certificateIndex}" data-new="true">
-                                    <input type="hidden" name="CertificateEntries[${self.certificateIndex}].CertificateId" value="0" />
-                                    <input type="hidden" id="certIsDeleted_${self.certificateIndex}" name="CertificateEntries[${self.certificateIndex}].IsDeleted" value="false" />
-                                    <div class="del-edit">
-                                        <div class="d-flex">
-                                            <button type="button" class="btn btn-link icon delete-certificate-btn" data-index="${self.certificateIndex}" title="Delete" aria-label="Delete">
-                                                <span class="flaticon-delete"></span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row mb20">
-                                        <div class="col-sm-6">
-                                            <div class="mb20">
-                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateName" class="heading-color ff-heading fw500 mb10">Certificate Name</label>
-                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].CertificateName" id="CertificateEntries_${self.certificateIndex}__CertificateName" class="form-control" placeholder="Enter Certificate Name">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="mb20">
-                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateFrom" class="heading-color ff-heading fw500 mb10">Institution/Organization</label>
-                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].CertificateFrom" id="CertificateEntries_${self.certificateIndex}__CertificateFrom" class="form-control" placeholder="Enter Institution/Organization">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mb20">
-                                        <div class="col-sm-6">
-                                            <div class="mb20">
-                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateDate" class="heading-color ff-heading fw500 mb10">Completion Date</label>
-                                                <input type="date" name="CertificateEntries[${self.certificateIndex}].CertificateDate" id="CertificateEntries_${self.certificateIndex}__CertificateDate" class="form-control">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="mb20">
-                                                <label for="CertificateEntries_${self.certificateIndex}__VerificationId" class="heading-color ff-heading fw500 mb10">Verification Id</label>
-                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].VerificationId" id="CertificateEntries_${self.certificateIndex}__VerificationId" class="form-control" placeholder="Enter Verification Id">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="profile-content ml20 ml0-xs">
-                                        <label class="form-label">Upload Certificate</label>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <label for="certificateInput_${self.certificateIndex}" class="upload-btn certificate-label" style="cursor: pointer; background-color:#FBF7ED; padding:12px 35px; border-radius:4px">
-                                                Upload Certificate
-                                            </label>
-                                            <input type="file" name="CertificateEntries[${self.certificateIndex}].CertificateFile" id="certificateInput_${self.certificateIndex}" class="certificateInput" style="display: none;">
-                                        </div>
-                                        <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf, .jpg, .jpeg, .png)</p>
-                                        <small class="fileError text-danger mx-3"></small>
-                                    </div>
-                                </div>
-                            </div>`;
-                            $("#certificateContainer .text-start:last").before(newBlock);
-                            self.certificateIndex++;
-                        });
-                        $(document).on('click', '.delete-certificate-btn', function () {
-                            var index = $(this).data('index');
-                            App.certificate.markDeleted(index);
-                        });
-                        $(document).on('change', '.certificateInput', function () {
-                            var file = this.files[0];
-                            var inputId = $(this).attr('id');
-                            var label = $('label[for="' + inputId + '"]');
-                            label.text(file ? file.name : 'Upload Certificate');
-                        });
-                    },
-                    markDeleted: function (index) {
-                        var element = $("#certRow_" + index);
-                        if (element.attr("data-new") === "true") {
-                            element.closest(".clone-wrapper").remove();
-                        } else {
-                            $("#certIsDeleted_" + index).val("true");
-                            element.hide();
-                        }
-                    }
-                }
-            };
-
-            $(document).ready(function () {
-                App.profile.init();
-                App.skills.init();
-                App.education.init();
-                App.experience.init();
-                App.certificate.init();
-
-                // Expose deletion functions globally for inline event handlers in DB-rendered content
-                window.markEducationDeleted = App.education.markDeleted;
-                window.markExperienceDeleted = App.experience.markDeleted;
-                window.markCertificateDeleted = App.certificate.markDeleted;
-            });
-        })(jQuery);
-    </script>
-
+        <!-- Wrapper End -->
+        <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+        <script src="/template_assets/js/jquery-migrate-3.0.0.min.js"></script>
+        <script src="/template_assets/js/popper.min.js"></script>
+        <script src="/template_assets/js/bootstrap.min.js"></script>
+        <script src="/template_assets/js/bootstrap-select.min.js"></script>
+        <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+        <script src="/template_assets/js/ace-responsive-menu.js"></script>
+        <script src="/template_assets/js/chart.min.js"></script>
+        <script src="/template_assets/js/chart-custome.js"></script>
+        <script src="/template_assets/js/jquery-scrolltofixed-min.js"></script>
+        <script src="/template_assets/js/dashboard-script.js"></script>
+        <!-- Custom script for all pages -->
+        <script src="/template_assets/js/script.js"></script>
+        @RenderSection("ProfileEditScript", required: false)
+        @RenderSection("CreateOfferScript", required: false)
 </body>
 </html>

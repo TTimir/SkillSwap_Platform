@@ -1,0 +1,300 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferCreateVM
+
+
+@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    /* Container that forces a single row */
+    #imagePreview {
+        white-space: nowrap;
+        overflow-x: auto;
+        padding: 5px;
+        margin-bottom: 15px;
+    }
+
+        #imagePreview img {
+            display: inline-block;
+            width: 250px;
+            height: 200px;
+            object-fit: cover;
+            margin-right: 10px;
+            cursor: move;
+        }
+
+</style>
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>Creat Project</h2>
+        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="" class="ud-btn btn-dark">Save & Publish<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        @using (Html.BeginForm("Create", "Offer", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Basic Information</h5>
+                </div>
+                <div class="col-xl-8">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Project Title</label>
+                                <input asp-for="Title" type="text" class="form-control" placeholder="i will">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="TokenCost" class="heading-color ff-heading fw500 mb10">Token Cost</label>
+                                <div class="input-group">
+                                    <input asp-for="TokenCost" type="text" class="form-control" placeholder="Enter commitment">
+                                    <span class="input-group-text">.00</span>
+                                </div>
+                                <span asp-validation-for="TokenCost" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="TimeCommitmentDays" class="heading-color ff-heading fw500 mb10">Time Commitment Days</label>
+                                <div class="input-group">
+                                    <input asp-for="TimeCommitmentDays" type="text" class="form-control" placeholder="Enter commitment">
+                                    <span class="input-group-text">days</span>
+                                </div>
+                                <span asp-validation-for="TimeCommitmentDays" class="text-danger"></span>
+                                <span id="timeCommitmentError" class="text-danger"></span>
+                            </div>
+                        </div>
+                        @* <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="DigitalTokenValue" class="heading-color ff-heading fw500 mb10">Digital Token Value</label>
+                                <input asp-for="DigitalTokenValue" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="DigitalTokenValue" class="text-danger"></span>
+                            </div>
+                        </div> *@
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <div class="form-style1">
+                                    <label name="SelectedSkillId" class="heading-color ff-heading fw500 mb10">Select Your Offered Skill for this Offer</label>
+                                    <div class="bootselect-multiselect">
+                                        <select id="SelectedSkillId" name="SelectedSkillId" class="selectpicker">
+                                            <option value="">Select a skill</option>
+                                            @foreach (var skill in Model.UserSkills)
+                                            {
+                                                <option value="@skill.Value">@skill.Text</option>
+                                            }
+                                        </select>
+                                        <span class="text-danger" data-valmsg-for="SelectedSkillId" data-valmsg-replace="true"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <div class="form-style1">
+                                    <div class="bootselect-multiselect">
+                                        <label asp-for="Category" class="heading-color ff-heading fw500 mb10" asp-for="Category">Category</label>
+                                        <select asp-for="Category" class="selectpicker">
+                                            <option value="">Select</option>
+                                            <option value="Graphics & Design">Graphics & Design</option>
+                                            <option value="Digital Marketing">Digital Marketing</option>
+                                            <option value="Writing & Translation">Writing & Translation</option>
+                                            <option value="Video & Animation">Video & Animation</option>
+                                            <option value="Music & Audio">Music & Audio</option>
+                                            <option value="Programming & Tech">Programming & Tech</option>
+                                            <option value="Business">Business</option>
+                                            <option value="Lifestyle">Lifestyle</option>
+                                            <option value="Trending">Trending</option>
+                                        </select>
+                                        <span asp-validation-for="Category" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Description" class="heading-color ff-heading fw500 mb10">Describe your service or offer</label>
+                                <textarea asp-for="Description" cols="30" rows="6" placeholder="Description"></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+                        </div>
+                        @* <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div> *@
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Upload Attachments</h5>
+                </div>
+                <div class="row">
+                    <div class="col-12 col-xl-12">
+                        <div id="imagePreview" class="image-preview-container"></div>
+                    </div>
+
+                    <div class="col-6 col-xl-3">
+                        <input type="file" id="uploadImages" name="PortfolioFiles" class="upload-img" accept=".jpg,.jpeg,.png" multiple />
+                    </div>
+                </div>
+                <span id="uploadError" class="text-danger"></span>
+                <p class="text">Maximum file size: 10 MB</p>
+                <div class="text-start">
+                    @* <a class="ud-btn btn-thm" href="page-contact.html">Save & Publish<i class="fal fa-arrow-right-long"></i></a> *@
+                    <button type="submit" class="ud-btn btn-thm">Save & Publish<i class="fal fa-arrow-right-long"></i></button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+@section CreateOfferScript {
+    <script>
+        $(document).ready(function () {
+            $("#TimeCommitmentDays").on("blur", function () {
+                var val = $(this).val().trim();
+                var days = parseInt(val);
+                // Clear previous error message
+                $("#timeCommitmentError").text("");
+
+                // Check if the value is not a number or is less than 1.
+                if (isNaN(days) || days < 1) {
+                    $(this).addClass("is-invalid");
+                    $("#timeCommitmentError").text("Enter a value between 1 and 365 days.");
+                } else {
+                    $(this).removeClass("is-invalid");
+                }
+            });
+        });
+    </script>
+        <script>
+                 $(document).ready(function () {
+            var dt = new DataTransfer();
+            var maxFiles = 5;
+
+            $("#uploadImages").on("change", function () {
+                var files = this.files;
+                var previewContainer = $("#imagePreview");
+                var errorContainer = $("#uploadError");
+                errorContainer.text("");
+
+                if (dt.files.length + files.length > maxFiles) {
+                    errorContainer.text(`You can only add ${maxFiles - dt.files.length} more image(s).`);
+                    this.value = "";
+                    return;
+                }
+
+                $.each(files, function (index, file) {
+                    if (!file.type.match("image/jpeg") && !file.type.match("image/png")) {
+                        errorContainer.text("Only JPG, JPEG, and PNG images are allowed.");
+                        return false;
+                    }
+
+                    dt.items.add(file);
+                });
+
+                $("#uploadImages")[0].files = dt.files;
+                renderPreviews();
+                toggleUploadButton();
+            });
+
+            function renderPreviews() {
+                $("#imagePreview").empty();
+                $.each(dt.files, function (index, file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        var img = $("<img />", {
+                            src: e.target.result,
+                            alt: file.name,
+                            "data-index": index
+                        });
+                        $("#imagePreview").append(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            $("#imagePreview").sortable({
+                update: reorderFiles
+            });
+
+            function reorderFiles() {
+                var reorderedDt = new DataTransfer();
+                $("#imagePreview img").each(function () {
+                    reorderedDt.items.add(dt.files[$(this).data("index")]);
+                });
+                dt = reorderedDt;
+                $("#uploadImages")[0].files = dt.files;
+                updatePreviewDataIndices();
+            }
+
+            function updatePreviewDataIndices() {
+                $("#imagePreview img").each(function (i) {
+                    $(this).attr("data-index", i);
+                });
+            }
+
+            $("#imagePreview").on("dblclick", "img", function () {
+                dt.items.remove($(this).index());
+                $(this).remove();
+                $("#uploadImages")[0].files = dt.files;
+                toggleUploadButton();
+                updatePreviewDataIndices();
+            });
+
+            function toggleUploadButton() {
+                if (dt.files.length >= maxFiles) {
+                    $("#uploadImages").prop("disabled", true);
+                    $("#uploadError").text("You have reached the maximum limit of 5 images.");
+                } else {
+                    $("#uploadImages").prop("disabled", false);
+                    $("#uploadError").text("");
+                }
+            }
+
+            $("form").on("submit", function () {
+                $("#uploadImages")[0].files = dt.files;
+            });
+        });
+
+
+    </script>
+}

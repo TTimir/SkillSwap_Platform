@@ -34,6 +34,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOffer> TblOffers { get; set; }
 
+    public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
+
     public virtual DbSet<TblReview> TblReviews { get; set; }
 
     public virtual DbSet<TblRole> TblRoles { get; set; }
@@ -90,6 +92,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DigitalTokenExchange).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ExchangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -270,9 +273,11 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblOffers");
 
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
+            entity.Property(e => e.Category).HasMaxLength(100);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DigitalTokenValue).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.TimeCommitmentDays).HasDefaultValue(1);
             entity.Property(e => e.Title).HasMaxLength(200);
@@ -283,6 +288,25 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblOffers_Users");
+        });
+
+        modelBuilder.Entity<TblOfferPortfolio>(entity =>
+        {
+            entity.HasKey(e => e.PortfolioId).HasName("PK__tblOffer__6D3A139D4A53F9F0");
+
+            entity.ToTable("tblOfferPortfolio");
+
+            entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileUrl).HasMaxLength(255);
+            entity.Property(e => e.OfferId).HasColumnName("OfferID");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferPortfolios)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OfferPortfolio_Offers");
         });
 
         modelBuilder.Entity<TblReview>(entity =>

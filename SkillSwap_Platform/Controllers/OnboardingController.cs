@@ -758,6 +758,13 @@ namespace SkillSwap_Platform.Controllers
             // Update basic skill preferences in TblUsers.
             user.DesiredSkillAreas = Request.Form["willingSkills"];
             user.OfferedSkillAreas = Request.Form["offeredSkills"];
+          
+            // Extract offered skills list from the hidden input.
+            var offeredSkillsFromBadges = Request.Form["offeredSkills"]
+                .ToString()
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim().ToLowerInvariant())
+                .ToList();
 
             // Process dynamic offered skill rows.
             var offeredSkillNames = Request.Form["skill[name][]"].ToArray();
@@ -840,13 +847,16 @@ namespace SkillSwap_Platform.Controllers
                     skillId = newSkill.SkillId;
                 }
 
+                // Set IsOffering to true if the offered skills list (from badges) contains this skill.
+                bool isOffering = offeredSkillsFromBadges.Contains(skillName.ToLowerInvariant());
+
                 // Create TblUserSkill record.
                 var userSkill = new TblUserSkill
                 {
                     UserId = userId,
                     SkillId = skillId,
                     ProficiencyLevel = proficiencyLevel,
-                    IsOffering = true
+                    IsOffering = isOffering
                 };
                 _context.TblUserSkills.Add(userSkill);
             }

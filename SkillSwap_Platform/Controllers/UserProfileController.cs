@@ -32,14 +32,11 @@ namespace SkillSwap_Platform.Controllers
                     try
                     {
                         // Set the user profile image for the layout.
-                        var user = _context.TblUsers.AsNoTracking().FirstOrDefault(u => u.UserId == userId);
-                        ViewData["UserProfileImage"] = user?.ProfileImageUrl;
-
-                        // Update the user's LastActive field.
-                        var userToUpdate = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-                        if (userToUpdate != null)
+                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+                        if (user != null)
                         {
-                            userToUpdate.LastActive = DateTime.UtcNow;
+                            ViewData["UserProfileImage"] = user.ProfileImageUrl;
+                            user.LastActive = DateTime.UtcNow;
                             _context.SaveChanges();
                         }
                     }
@@ -50,7 +47,7 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
 
-            //int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            //int userId = GetUserId();
             //if (userId != null)
             //{
             //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
@@ -69,20 +66,20 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> Index()
         {
             // Retrieve current user's ID from claims.
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int userId = GetUserId();
 
             try
             {
                 // Load the user and related data.
                 var user = await _context.TblUsers
-                .Include(u => u.TblEducations)
-                .Include(u => u.TblExperiences)
-                .Include(u => u.TblLanguages)
-                .Include(u => u.TblUserCertificateUsers)
-                .Include(u => u.TblUserSkills) // ✅ Include user skills
-                    .ThenInclude(us => us.Skill) // ✅ Include related skills from TblSkills
-                .Include(u => u.TblReviewReviewees) // ✅ Fetch reviews received by the user
-                .FirstOrDefaultAsync(u => u.UserId == userId);
+                    .Include(u => u.TblEducations)
+                    .Include(u => u.TblExperiences)
+                    .Include(u => u.TblLanguages)
+                    .Include(u => u.TblUserCertificateUsers)
+                    .Include(u => u.TblUserSkills) // ✅ Include user skills
+                        .ThenInclude(us => us.Skill) // ✅ Include related skills from TblSkills
+                    .Include(u => u.TblReviewReviewees) // ✅ Fetch reviews received by the user
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
 
                 if (user == null)
                 {
@@ -91,7 +88,6 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch all available skills from tblSkills
                 var allSkills = await _context.TblSkills.Select(s => s.SkillName).ToListAsync();
-
                 // Extract offered skills stored in "OfferedSkillAreas" column (comma-separated)
                 var offeredSkills = user.OfferedSkillAreas?
                         .Split(',')
@@ -154,10 +150,9 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> EditProfile()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int userId = GetUserId();
             var user = await _context.TblUsers
-                .Include(u => u.TblUserSkills)
-                    .ThenInclude(us => us.Skill)
+                .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
                 .Include(u => u.TblEducations)
                 .Include(u => u.TblExperiences)
                 .Include(u => u.TblUserCertificateUsers)
@@ -282,10 +277,9 @@ namespace SkillSwap_Platform.Controllers
 
         // POST: /UserProfile/UpdateProfile
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]  
         public async Task<IActionResult> UpdateProfile(EditProfileCompositeVM model)
         {
-
             // Remove ModelState errors for cleared skill rows.
             for (int i = 0; i < model.Skills.AllSkills.Count; i++)
             {
@@ -337,11 +331,11 @@ namespace SkillSwap_Platform.Controllers
                 return View("EditProfile", model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int userId = GetUserId();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                UpdatePersonalDetails(model.PersonalDetails, userId);
+                await UpdatePersonalDetailsAsync(model.PersonalDetails, userId);
                 await UpdateSkillsAsync(model.Skills, userId);
                 await UpdateEducationAsync(model.EducationEntries, userId);
                 await UpdateExperienceAsync(model.ExperienceEntries, userId);
@@ -365,9 +359,9 @@ namespace SkillSwap_Platform.Controllers
         #region Helper Methods
 
         #region Update Personal Details
-        private void UpdatePersonalDetails(EditPersonalDetailsVM personal, int userId)
+        private async Task UpdatePersonalDetailsAsync(EditPersonalDetailsVM personal, int userId)
         {
-            var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user != null)
             {
                 user.FirstName = personal.FirstName;
@@ -387,7 +381,7 @@ namespace SkillSwap_Platform.Controllers
                     {
                         throw new Exception(errorMsg);
                     }
-                    string fileUrl = UploadFileAsync(personal.ProfileImageFile, "profile").Result;
+                    string fileUrl = await UploadFileAsync(personal.ProfileImageFile, "profile");
                     user.ProfileImageUrl = fileUrl;
                 }
             }
@@ -397,106 +391,121 @@ namespace SkillSwap_Platform.Controllers
         #region Update Skills
         private async Task UpdateSkillsAsync(EditSkillVM skills, int userId)
         {
-            // Update summary fields.
-            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
-            if (user != null)
+            try
             {
-                user.OfferedSkillAreas = skills.OfferedSkillSummary;
-                user.DesiredSkillAreas = skills.WillingSkillSummary;
-            }
+                if (skills == null)
+                    throw new ArgumentNullException(nameof(skills));
 
-            // Remove all existing user skill assignments.
-            var existingSkills = await _context.TblUserSkills.Where(us => us.UserId == userId).ToListAsync();
-            _context.TblUserSkills.RemoveRange(existingSkills);
-
-            // Process each global skill that is selected.
-            foreach (var skill in skills.AllSkills)
-            {
-                // Skip if the row is empty (no skill name entered).
-                if (string.IsNullOrWhiteSpace(skill.SkillName))
-                    continue;
-
-                if (!skill.ProficiencyLevel.HasValue)
+                // Update the user's offered and desired skill summary fields.
+                var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+                if (user != null)
                 {
-                    ViewBag.ErrorMessage = $"Please select a proficiency level for {skill.SkillName}.";
+                    user.OfferedSkillAreas = skills.OfferedSkillSummary;
+                    user.DesiredSkillAreas = skills.WillingSkillSummary;
                 }
 
-                // If the selected category is "Other" and a custom category is provided, use it.
-                var categoryToUse = skill.Category;
-                if (categoryToUse == "Other" && !string.IsNullOrWhiteSpace(skill.CustomCategory))
-                {
-                    categoryToUse = skill.CustomCategory;
-                }
+                // Remove all existing user-skill assignments.
+                var existingUserSkills = await _context.TblUserSkills.Where(us => us.UserId == userId).ToListAsync();
+                _context.TblUserSkills.RemoveRange(existingUserSkills);
 
-                // Look up or create the global skill. Use CategoryId as needed.
-                TblSkill? globalSkill = null;
-                if (skill.SkillId != 0)
+                // Create a cache for global skills (keyed by skill name in lowercase).
+                var globalSkillsCache = new Dictionary<string, TblSkill>(StringComparer.OrdinalIgnoreCase);
+                var newGlobalSkills = new List<TblSkill>();
+
+                // Build the offered skills list from the offered summary (comma-separated)
+                var offeredSkillList = (skills.OfferedSkillSummary ?? "")
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim().ToLowerInvariant())
+                    .ToList();
+
+                // Process each skill provided from the view model.
+                foreach (var skill in skills.AllSkills)
                 {
-                    globalSkill = await _context.TblSkills.FirstOrDefaultAsync(s => s.SkillId == skill.SkillId);
-                    // If the skill name has been updated, assign the new value.
-                    if (globalSkill != null && !string.Equals(globalSkill.SkillName, skill.SkillName, StringComparison.OrdinalIgnoreCase))
+                    // Skip if the skill row is empty.
+                    if (string.IsNullOrWhiteSpace(skill.SkillName))
+                        continue;
+
+                    if (!skill.ProficiencyLevel.HasValue)
                     {
-                        // Check if another skill already has this new name
-                        var existingSkill = await _context.TblSkills
-                            .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skill.SkillName.ToLower());
+                        throw new Exception($"Please select a proficiency level for {skill.SkillName}.");
+                    }
 
-                        if (existingSkill != null)
+                    // Determine the category to use (if "Other" and a custom category is provided, then use that).
+                    string categoryToUse = (string.Equals(skill.Category, "Other", StringComparison.OrdinalIgnoreCase) &&
+                                             !string.IsNullOrWhiteSpace(skill.CustomCategory))
+                                            ? skill.CustomCategory
+                                            : skill.Category;
+
+                    TblSkill globalSkill = null;
+                    string skillKey = skill.SkillName.ToLowerInvariant();
+
+                    // Check the cache first.
+                    if (globalSkillsCache.TryGetValue(skillKey, out globalSkill))
+                    {
+                        // Optionally update the category.
+                        globalSkill.SkillCategory = categoryToUse;
+                    }
+                    else
+                    {
+                        // Look up the global skill in the database (case-insensitive).
+                        globalSkill = await _context.TblSkills
+                                                    .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skillKey);
+
+                        if (globalSkill == null)
                         {
-                            globalSkill = existingSkill;
-                        }
-                        else
-                        {
-                            // New skill entirely
+                            // If not found, create a new global skill.
                             globalSkill = new TblSkill
                             {
                                 SkillName = skill.SkillName,
-                                SkillCategory = skill.Category
+                                SkillCategory = categoryToUse
                             };
                             _context.TblSkills.Add(globalSkill);
-                            await _context.SaveChangesAsync();
+                            newGlobalSkills.Add(globalSkill);
                         }
-                    }
-                }
-                else
-                {
-                    globalSkill = await _context.TblSkills
-                        .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skill.SkillName.ToLower());
-
-                    if (globalSkill == null)
-                    {
-                        globalSkill = new TblSkill
+                        else
                         {
-                            SkillName = skill.SkillName,
-                            SkillCategory = skill.Category
-                        };
-                        _context.TblSkills.Add(globalSkill);
-                        await _context.SaveChangesAsync();
+                            // Update the category if necessary.
+                            globalSkill.SkillCategory = categoryToUse;
+                        }
+                        // Cache the looked-up or created global skill.
+                        globalSkillsCache[skillKey] = globalSkill;
                     }
                 }
 
-                if (globalSkill == null)
+                // Save changes for any new global skills so that their SkillId is generated.
+                if (newGlobalSkills.Any())
                 {
-                    globalSkill = new TblSkill
-                    {
-                        SkillName = skill.SkillName,
-                        SkillCategory = skill.Category
-                    };
-                    _context.TblSkills.Add(globalSkill);
                     await _context.SaveChangesAsync();
                 }
-                else
+
+                // Second phase: Create user-skill relationships using the now-populated SkillIds.
+                foreach (var skill in skills.AllSkills)
                 {
-                    // Optionally update the category if needed.
-                    globalSkill.SkillCategory = categoryToUse;
+                    if (string.IsNullOrWhiteSpace(skill.SkillName))
+                        continue;
+
+                    string skillKey = skill.SkillName.ToLowerInvariant();
+                    if (globalSkillsCache.TryGetValue(skillKey, out var globalSkill))
+                    {
+                        // Mark IsOffering true if the offered skills list contains this skill.
+                        bool isOffering = offeredSkillList.Contains(skillKey); 
+                        _context.TblUserSkills.Add(new TblUserSkill
+                        {
+                            UserId = userId,
+                            SkillId = globalSkill.SkillId,  // Now non-zero because we've saved new skills.
+                            ProficiencyLevel = skill.ProficiencyLevel,
+                            IsOffering = isOffering
+                        });
+                    }
                 }
 
-                _context.TblUserSkills.Add(new TblUserSkill
-                {
-                    UserId = userId,
-                    SkillId = globalSkill.SkillId,
-                    ProficiencyLevel = skill.ProficiencyLevel,
-                });
 
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating skills for user {UserId}", userId);
+                throw; // Rethrow exception so the outer transaction can handle rollback.
             }
         }
         #endregion
@@ -743,5 +752,15 @@ namespace SkillSwap_Platform.Controllers
         }
 
         #endregion
+
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+            else
+                throw new Exception("Invalid user identifier claim.");
+        }
+
     }
 }

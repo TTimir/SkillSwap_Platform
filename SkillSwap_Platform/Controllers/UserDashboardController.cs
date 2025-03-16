@@ -22,28 +22,43 @@ namespace SkillSwap_Platform.Controllers
         {
             base.OnActionExecuting(context);
 
-            if (User.Identity?.IsAuthenticated == true &&
-                int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId))
+            if (User.Identity?.IsAuthenticated == true)
             {
-                try
+                if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId))
                 {
-                    // Set profile image for layout (read-only)
-                    var user = _context.TblUsers.AsNoTracking().FirstOrDefault(u => u.UserId == userId);
-                    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
-
-                    // Update LastActive timestamp
-                    var userToUpdate = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-                    if (userToUpdate != null)
+                    try
                     {
-                        userToUpdate.LastActive = DateTime.UtcNow;
-                        _context.SaveChanges();
+                        // Set the user profile image for the layout.
+                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+                        if (user != null)
+                        {
+                            ViewData["UserProfileImage"] = user.ProfileImageUrl;
+                            user.LastActive = DateTime.UtcNow;
+                            _context.SaveChanges();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error updating LastActive for user {UserId}", userId);
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in OnActionExecuting for user {UserId}", userId);
-                }
             }
+
+            //int userId = GetUserId();
+            //if (userId != null)
+            //{
+            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            //    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
+            //}
+            //if (userId > 0)
+            //{
+            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            //    if (user != null)
+            //    {
+            //        user.LastActive = DateTime.UtcNow; // ✅ Update LastActive
+            //        _context.SaveChanges();
+            //    }
+            //}
         }
         public IActionResult Index()
         {

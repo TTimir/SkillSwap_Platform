@@ -21,7 +21,17 @@ public partial class TblOffer
 
     public bool IsActive { get; set; }
 
+    public string? Category { get; set; }
+
+    public decimal? DigitalTokenValue { get; set; }
+
+    public string? Portfolio { get; set; }
+
+    public int? SkillIdOfferOwner { get; set; }
+
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
+
+    public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();
 
     public virtual TblUser User { get; set; } = null!;
 }
