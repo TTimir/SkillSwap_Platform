@@ -27,7 +27,15 @@ public partial class TblOffer
 
     public string? Portfolio { get; set; }
 
-    public int? SkillIdOfferOwner { get; set; }
+    public string? SkillIdOfferOwner { get; set; }
+
+    public string? FreelanceType { get; set; }
+
+    public string? RequiredSkillLevel { get; set; }
+
+    public int? RequiredLanguageId { get; set; }
+
+    public string? RequiredLanguageLevel { get; set; }
 
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 

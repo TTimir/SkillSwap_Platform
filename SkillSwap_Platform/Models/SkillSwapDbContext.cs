@@ -278,7 +278,11 @@ public partial class SkillSwapDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.DigitalTokenValue).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.FreelanceType).HasMaxLength(50);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.RequiredLanguageLevel).HasMaxLength(50);
+            entity.Property(e => e.RequiredSkillLevel).HasMaxLength(50);
+            entity.Property(e => e.SkillIdOfferOwner).HasMaxLength(100);
             entity.Property(e => e.TimeCommitmentDays).HasDefaultValue(1);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.TokenCost).HasColumnType("decimal(18, 2)");

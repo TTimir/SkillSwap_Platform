@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
+﻿using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
+
+namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 {
     public class UserProfileVM
     {
@@ -11,7 +13,8 @@
         public IEnumerable<TblLanguage> Languages { get; set; }
         public IEnumerable<TblUserCertificate> Certificates { get; set; }
 
-        public List<SkillVM> Skills { get; set; }
+        public IEnumerable<SkillVM> Skills { get; set; }
+        public List<OfferDetailsVM> Offers { get; set; }
         public int LastExchangeDays { get; set; }
         public double TotalYearsOfExperience { get; set; }
         public double RecommendedPercentage { get; set; }

@@ -117,7 +117,7 @@ public class HomeController : Controller
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred during registration.";
             Debug.WriteLine($"[Register Error] {ex.Message}");
-            return View(model);
+            return RedirectToAction("EP500", "EP");
         }
     }
 
@@ -208,7 +208,7 @@ public class HomeController : Controller
         {
             TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while logging in.";
             Debug.WriteLine($"[Login Error] {ex.Message}");
-            return View(model);
+            return RedirectToAction("EP500", "EP");
         }
     }
     #endregion

@@ -62,11 +62,15 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 
         public IEnumerable<SelectListItem> Categories { get; set; } = new List<SelectListItem>
         {
-            new SelectListItem { Value = "Technical", Text = "Technical" },
-            new SelectListItem { Value = "Design", Text = "Design" },
-            new SelectListItem { Value = "Marketing", Text = "Marketing" },
-            new SelectListItem { Value = "Data Science", Text = "Data Science" },
-            new SelectListItem { Value = "Mobile", Text = "Mobile" },
+            new SelectListItem { Value = "Graphics & Design", Text = "Graphics & Design" },
+            new SelectListItem { Value = "Digital Marketing", Text = "Digital Marketing" },
+            new SelectListItem { Value = "Writing & Translation", Text = "Writing & Translation" },
+            new SelectListItem { Value = "Video & Animation", Text = "Video & Animation" },
+            new SelectListItem { Value = "Music & Audio", Text = "Music & Audio" },
+            new SelectListItem { Value = "Programming & Tech", Text = "Programming & Tech" },
+            new SelectListItem { Value = "Business", Text = "Business" },
+            new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
+            new SelectListItem { Value = "Trending", Text = "Trending" },
             //new SelectListItem { Value = "Other", Text = "Other" }
         };
     }
@@ -78,7 +82,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public string SkillName { get; set; } = string.Empty;
         [Display(Name = "Category")]
         public string Category { get; set; }
-        [Display(Name = "Custom Category")] 
+        [Display(Name = "Custom Category")]
         public string? CustomCategory { get; set; }
         [Display(Name = "Proficiency Level")]
         public int? ProficiencyLevel { get; set; }

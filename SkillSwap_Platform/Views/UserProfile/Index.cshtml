@@ -6,96 +6,140 @@
 }
 <style>
     .tag {
-        display: inline-block;
-        padding: 5px 10px;
-        font-size: 14px;
-        font-weight: bold;
-        border-radius: 10px;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease-in-out;
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease-in-out;
     }
 
     .approved-tag {
-        background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
-        color: #2ecc71;
-        border-left: 5px solid #2ecc71;
-        border-right: 0.1px solid #2ecc71;
-        border-top: 0.1px solid #2ecc71;
-        border-bottom: 0.1px solid #2ecc71;
+    background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+    color: #2ecc71;
+    border-left: 5px solid #2ecc71;
+    border-right: 0.1px solid #2ecc71;
+    border-top: 0.1px solid #2ecc71;
+    border-bottom: 0.1px solid #2ecc71;
     }
 
     .not-approved-tag {
-        background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
-        color: #e74c3c;
-        border-left: 5px solid #e74c3c;
-        border-right: 0.1px solid #e74c3c;
-        border-top: 0.1px solid #e74c3c;
-        border-bottom: 0.1px solid #e74c3c;
+    background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+    color: #e74c3c;
+    border-left: 5px solid #e74c3c;
+    border-right: 0.1px solid #e74c3c;
+    border-top: 0.1px solid #e74c3c;
+    border-bottom: 0.1px solid #e74c3c;
     }
 
     .approved-tag i {
-        color: #2ecc71; /* Green for approved */
+    color: #2ecc71; /* Green for approved */
     }
 
     .not-approved-tag i {
-        color: #e74c3c; /* Red for not approved */
+    color: #e74c3c; /* Red for not approved */
     }
 
     .certificate-preview {
-        margin-top: 15px;
-        padding: 10px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        position: relative;
-        max-width: 600px;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    max-width: 600px;
     }
-     /* Consistent preview container for certificate previews */
+
+    /* Consistent preview container for certificate previews */
     .preview-container {
-      position: relative;
-      width: 100%;
-      max-width: 300px; /* forces a consistent width for all previews */
-      height: 180px;    /* fixed height */
-      overflow: hidden;
-      margin-bottom: 10px;
-      border: 1px solid #ddd; /* optional border */
+    position: relative;
+    width: 100%;
+    max-width: 300px; /* forces a consistent width for all previews */
+    height: 180px;    /* fixed height */
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid #ddd; /* optional border */
     }
+
     /* Force images and iframes (PDFs) to fill the container while preserving aspect ratio */
     .preview-container img.img-preview,
     .preview-container iframe.pdf-preview {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      border-radius: 8px;
-      display: block;
-      cursor: pointer;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
     }
+
     /* Hover overlay styles */
     .preview-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #fff;
-      font-size: 48px;
-      opacity: 0;
-      transition: opacity 0.3s;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 48px;
+    opacity: 0;
+    transition: opacity 0.3s;
     }
     .preview-container:hover .preview-overlay {
-        cursor: pointer;
-        opacity: 1;
+    cursor: pointer;
+    opacity: 1;
     }
 
     /* ✅ Remove default style for offered skills */
     .offered-skill {
-        background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
-        color: #2ecc71 !important;
-        border: 1px solid rgba(46, 204, 113, 0.3) !important;
-        backdrop-filter: blur(5px);
+    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+    color: #2ecc71 !important;
+    border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    backdrop-filter: blur(5px);
     }
 
+    /* Make the row a flex container so its children (columns) are equal height */
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    /* Make each column a flex container */
+    .row.equal-height > [class*="col-"] {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Ensure the card fills the available space */
+    .listing-style1 {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        /* Optional: set a min-height if needed */
+        min-height: 450px;
+    }
+    
+    /* Prevent the image area from stretching */
+    .list-thumb {
+        flex: 0 0 auto;
+    }
+    
+    /* Let the text content grow equally */
+    .list-content {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Optional: Limit the title text to two lines with ellipsis */
+    .list-content .list-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
 </style>
 <div class="body_content bgc-thm3">
     <!-- Breadcumb Sections -->
@@ -260,13 +304,13 @@
                                             @for (int i = 0; i < Model.Certificates.Count(); i++)
                                             {
                                                 var certificate = Model.Certificates.ElementAt(i);
-                                                
+
                                                 <!-- Start New Row for Every Two Certificates -->
                                                 @if (i % 2 == 0 && i != 0)
                                                 {
                                                     @:</div><div class="row">
                                                 }
-                            
+
                                                 <div class="col-md-6">
                                                     <div class="wrapper mb40">
                                                         <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
@@ -327,89 +371,59 @@
 
                             <div class="px30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
                                 <h4 class="mb30">Featured Services</h4>
-                                <div class="row">
-                                    <div class="col-sm-6 col-xl-4">
-                                        <div class="listing-style1">
-                                            <div class="list-thumb">
-                                                <img class="w-100" src="/template_assets/images/listings/g-1.jpg" alt="">
-                                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                            </div>
-                                            <div class="list-content">
-                                                <p class="list-text body-color fz14 mb-1">Web & App Design</p>
-                                                <h6 class="list-title"><a href="page-services-single.html">I will design modern websites in figma or adobe xd</a></h6>
-                                                <div class="review-meta d-flex align-items-center">
-                                                    <i class="fas fa-star fz10 review-color me-2"></i>
-                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                                                </div>
-                                                <hr class="my-2">
-                                                <div class="list-meta mt15">
-                                                    <div class="budget">
-                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
+                                <div class="row equal-height">
+                                    @if (Model.Offers != null && Model.Offers.Any())
+                                    {
+                                        foreach (var offer in Model.Offers)
+                                        {
+                                            <div class="col-sm-6 col-xl-4">
+                                                <div class="listing-style1">
+                                                    <div class="list-thumb">
+                                                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+                                                            @if (offer.PortfolioImages.Any())
+                                                            {
+                                                                foreach (var image in offer.PortfolioImages)
+                                                                {
+                                                                    <div class="item">
+                                                                        <img class="w-100" src="@image" alt="@offer.Title">
+                                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="item">
+                                                                        <img class="w-100" src="~/template_assets/images/No_image.png" style="width:329px;height:200px;" alt="@offer.Title">
+                                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div class="list-content">
+                                                        <p class="list-text body-color fz14 mb-1">@offer.Category</p>
+                                                        <h6 class="list-title line-clamp2"><a href="page-services-single.html">@offer.Title</a></h6>
+                                                        <div class="review-meta d-flex align-items-center">
+                                                            <i class="fas fa-star fz10 review-color me-2"></i>
+                                                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                                        </div>
+                                                        <hr class="my-2">
+                                                        <div class="list-meta mt15">
+                                                            <div class="budget">
+                                                                <p class="mb-0 body-color">Known skill is<span class="fz15 fw500 dark-color ms-1">@offer.SkillName</span></p>
+                                                                <p class="mb-0 body-color">Commitment days<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays</span></p>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="col-12">
+                                            <p class="text-muted">No offers available.</p>
                                         </div>
-                                    </div>
-                                    <div class="col-sm-6 col-xl-4">
-                                        <div class="listing-style1">
-                                            <div class="list-thumb">
-                                                <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
-                                                    <div class="item">
-                                                        <img class="w-100" src="/template_assets/images/listings/g-2.jpg" alt="">
-                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                                    </div>
-                                                    <div class="item">
-                                                        <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                                    </div>
-                                                    <div class="item">
-                                                        <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
-                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                                    </div>
-                                                    <div class="item">
-                                                        <img class="w-100" src="/template_assets/images/listings/g-5.jpg" alt="">
-                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="list-content">
-                                                <p class="list-text body-color fz14 mb-1">Art & Illustration</p>
-                                                <h6 class="list-title"><a href="page-services-single.html">I will create modern flat design illustration</a></h6>
-                                                <div class="review-meta d-flex align-items-center">
-                                                    <i class="fas fa-star fz10 review-color me-2"></i>
-                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                                                </div>
-                                                <hr class="my-2">
-                                                <div class="list-meta mt15">
-                                                    <div class="budget">
-                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 col-xl-4">
-                                        <div class="listing-style1">
-                                            <div class="list-thumb">
-                                                <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                                            </div>
-                                            <div class="list-content">
-                                                <p class="list-text body-color fz14 mb-1">Design & Creative</p>
-                                                <h6 class="list-title line-clamp2"><a href="page-services-single.html">I will build a fully responsive design in HTML,CSS, bootstrap, and javascript</a></h6>
-                                                <div class="review-meta d-flex align-items-center">
-                                                    <i class="fas fa-star fz10 review-color me-2"></i>
-                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                                                </div>
-                                                <hr class="my-2">
-                                                <div class="list-meta mt15">
-                                                    <div class="budget">
-                                                        <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    }
                                 </div>
                             </div>
                             <div class="product_single_content mb30 p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
@@ -684,18 +698,35 @@
         </div>
     </section>
 </div>
-<!-- Modal for large preview -->
 <!-- Modal for Large Preview -->
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-body p-0 position-relative">
-         <button type="button" class="close position-absolute top-0 end-0 m-2" data-dismiss="modal" aria-label="Close">
-           <span aria-hidden="true">&times;</span>
-         </button>
          <div id="previewContent"></div>
       </div>
     </div>
   </div>
 </div>
+
+@section ProfileScript {
+    
+    <script>
+        $(document).on('click', '.preview-container', function(){
+            var previewType = $(this).data('preview-type');
+            var src = $(this).data('src');
+            var contentHtml = '';
+
+            if(previewType === 'image'){
+                contentHtml = '<img src="'+src+'" class="img-fluid" style="width:100%;">';
+            } else if(previewType === 'pdf'){
+                contentHtml = '<iframe src="'+src+'#toolbar=0" style="width:100%; height:500px; border:none;"></iframe>';
+            }
+
+            $('#previewContent').html(contentHtml);
+            $('#previewModal').modal('show');
+        });
+    </script>
+}
+
 

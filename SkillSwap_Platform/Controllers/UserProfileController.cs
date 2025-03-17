@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 using System.Security.Claims;
 
@@ -46,6 +47,10 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
             }
+            else
+            {
+                context.Result = RedirectToAction("Login", "Home");
+            }
 
             //int userId = GetUserId();
             //if (userId != null)
@@ -65,8 +70,16 @@ namespace SkillSwap_Platform.Controllers
         }
         public async Task<IActionResult> Index()
         {
-            // Retrieve current user's ID from claims.
-            int userId = GetUserId();
+            int userId;
+            try
+            {
+                userId = GetUserId();
+            }
+            catch (Exception)
+            {
+                // No valid user id found; redirect to login.
+                return RedirectToAction("Login", "Home");
+            }
 
             try
             {
@@ -83,7 +96,7 @@ namespace SkillSwap_Platform.Controllers
 
                 if (user == null)
                 {
-                    return NotFound("User not found");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Fetch all available skills from tblSkills
@@ -123,6 +136,44 @@ namespace SkillSwap_Platform.Controllers
                     ? (DateTime.UtcNow - lastCompletedExchange.LastStatusChangeDate).Days
                     : -1; // Default if no completed jobs
 
+                // Load offers created by the user
+                var offers = await _context.TblOffers
+                    .Where(o => o.UserId == userId)
+                    .Include(o => o.TblOfferPortfolios)
+                    .Where(o => o.IsActive)
+                    .ToListAsync();
+
+                // Get the distinct skill IDs from the offers.
+                var skillIds = offers
+                    .Select(o => o.SkillIdOfferOwner)
+                    .Where(x => !string.IsNullOrEmpty(x))
+                    .SelectMany(x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    .Distinct()
+                    .ToList();
+
+                // Retrieve the matching skills from tblskill.
+                var skills = _context.TblSkills
+                    .AsEnumerable() // Switches to in-memory filtering
+                    .Where(s => skillIds.Contains(s.SkillId.ToString()))
+                    .ToList();
+
+
+                var offerVMs = offers.Select(o => new SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferDetailsVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    Category = o.Category,
+                    Description = o.Description,
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                    SkillName = string.Join(", ",
+                                    o.SkillIdOfferOwner
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                                     .Where(name => !string.IsNullOrEmpty(name))
+                                )
+                }).ToList();
+
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
                 {
@@ -133,7 +184,8 @@ namespace SkillSwap_Platform.Controllers
                     Certificates = user.TblUserCertificateUsers.ToList(),
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
-                    Skills = skillList
+                    Skills = skillList,
+                    Offers = offerVMs
                 };
 
                 return View(model);
@@ -142,7 +194,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading profile for user {UserId}", userId);
                 TempData["ErrorMessage"] = "An error occurred while loading your profile.";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -150,7 +202,16 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> EditProfile()
         {
-            int userId = GetUserId();
+            int userId;
+            try
+            {
+                userId = GetUserId();
+            }
+            catch (Exception)
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
             var user = await _context.TblUsers
                 .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
                 .Include(u => u.TblEducations)
@@ -158,7 +219,7 @@ namespace SkillSwap_Platform.Controllers
                 .Include(u => u.TblUserCertificateUsers)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
-                return NotFound("User not found.");
+                return RedirectToAction("EP404", "EP");
 
             // Map the user's existing skills only.
             var userSkillEditList = user.TblUserSkills
@@ -277,7 +338,7 @@ namespace SkillSwap_Platform.Controllers
 
         // POST: /UserProfile/UpdateProfile
         [HttpPost]
-        [ValidateAntiForgeryToken]  
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(EditProfileCompositeVM model)
         {
             // Remove ModelState errors for cleared skill rows.
@@ -331,7 +392,16 @@ namespace SkillSwap_Platform.Controllers
                 return View("EditProfile", model);
             }
 
-            int userId = GetUserId();
+            int userId;
+            try
+            {
+                userId = GetUserId();
+            }
+            catch (Exception)
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -352,7 +422,7 @@ namespace SkillSwap_Platform.Controllers
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
                 ModelState.AddModelError("", "An error occurred while updating your profile. Please try again.");
-                return View("EditProfile", model);
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -488,7 +558,7 @@ namespace SkillSwap_Platform.Controllers
                     if (globalSkillsCache.TryGetValue(skillKey, out var globalSkill))
                     {
                         // Mark IsOffering true if the offered skills list contains this skill.
-                        bool isOffering = offeredSkillList.Contains(skillKey); 
+                        bool isOffering = offeredSkillList.Contains(skillKey);
                         _context.TblUserSkills.Add(new TblUserSkill
                         {
                             UserId = userId,
