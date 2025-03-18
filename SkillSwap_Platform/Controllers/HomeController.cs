@@ -397,12 +397,12 @@ public class HomeController : Controller
             await HttpContext.SignInAsync("SkillSwapAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
 
             // Set a secure authentication cookie.
-            Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
-            {
-                Secure = true, // 🔥 Ensures HTTPS only
-                HttpOnly = true, // Prevents JavaScript access (XSS protection)
-                SameSite = SameSiteMode.Strict
-            });
+            //Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
+            //{
+            //    Secure = true, // 🔥 Ensures HTTPS only
+            //    HttpOnly = true, // Prevents JavaScript access (XSS protection)
+            //    SameSite = SameSiteMode.Strict
+            //});
         }
         catch (Exception ex)
         {

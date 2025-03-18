@@ -1,11 +1,12 @@
-﻿@{
-    ViewData["Title"] = "OfferList";
+﻿
+@{
+    ViewData["Title"] = "ActiveOffers";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="col-lg-9">
     <div class="dashboard_title_area">
-        <h2>All Services</h2>
+        <h2>Active Services</h2>
         <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
     </div>
 </div>
@@ -47,8 +48,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","Offer")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">All Offers</a>
-                        <a href="@Url.ActionLink("ActiveOffers","Offer")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("OfferList","Offer")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","Offer")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="true">Active Offers</a>
                         <a href="@Url.ActionLink("InactiveOffers","Offer")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
                         <a href="@Url.ActionLink("DeletedOffers","Offer")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
                     </div>
@@ -88,12 +89,12 @@
                                                             // Define the list of default images.
                                                             var defaultImages = new List<string>
                                                             {
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
                                                             };
 
                                                             // You can choose between a random image or a deterministic one.
@@ -196,6 +197,7 @@
         </div>
     </div>
 </div>
+
 @section DynamicScript {
     <script>
         $(document).ready(function () {

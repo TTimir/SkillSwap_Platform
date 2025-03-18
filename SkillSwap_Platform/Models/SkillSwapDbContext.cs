@@ -53,7 +53,7 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
-    
+
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -277,6 +277,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
             entity.Property(e => e.DigitalTokenValue).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.FreelanceType).HasMaxLength(50);
             entity.Property(e => e.IsActive).HasDefaultValue(true);

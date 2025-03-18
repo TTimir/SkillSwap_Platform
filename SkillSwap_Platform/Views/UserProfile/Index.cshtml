@@ -392,8 +392,24 @@
                                                             }
                                                             else
                                                             {
+                                                                // List of default images.
+                                                                var defaultImages = new List<string>
+                                                                {
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                                };
+
+                                                                // Use a deterministic approach:
+                                                                // Compute the index using the offer's unique identifier (OfferId) modulo the number of defaults.
+                                                                int index = offer.OfferId % defaultImages.Count;
+                                                                var selectedImage = defaultImages[index];
+                                                                
                                                                 <div class="item">
-                                                                        <img class="w-100" src="~/template_assets/images/No_image.png" style="width:329px;height:200px;" alt="@offer.Title">
+                                                                        <img class="w-100" src="@selectedImage" style="width:329px;height:200px;" alt="@offer.Title">
                                                                         <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
                                                                 </div>
                                                             }

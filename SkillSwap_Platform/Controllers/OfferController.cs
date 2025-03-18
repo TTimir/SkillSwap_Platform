@@ -72,6 +72,7 @@ namespace SkillSwap_Platform.Controllers
             //}
         }
 
+     
         #region Create Offer
 
         // GET: /Offer/Create
@@ -94,10 +95,10 @@ namespace SkillSwap_Platform.Controllers
 
                 // Retrieve the user's languages (from TblLanguages).
                 var userLanguages = await _context.TblLanguages
-                    .Where(l => l.UserId == userId)
                     .Select(l => new { l.LanguageId, l.Language })
                     .Distinct()
                     .ToListAsync();
+
 
                 var model = new OfferCreateVM
                 {
@@ -230,7 +231,7 @@ namespace SkillSwap_Platform.Controllers
                     {
                         if (file != null && file.Length > 0)
                         {
-                            if (!ValidateFile(file, new[] { ".jpg", ".jpeg", ".png", ".pdf" }, 5 * 1024 * 1024, out string errorMsg))
+                            if (!ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
                             {
                                 ModelState.AddModelError("PortfolioFiles", errorMsg);
                                 return View(model);
@@ -260,6 +261,369 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error creating offer for user {UserId}", currentUserId);
                 ModelState.AddModelError("", "An error occurred while creating your offer. Please try again.");
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        #endregion
+
+        #region Edit Offer
+
+        // GET: /Offer/Edit/{offerId}
+        [HttpGet]
+        public async Task<IActionResult> Edit(int offerId)
+        {
+            int userId = GetUserId();
+            try
+            {
+                var offer = await _context.TblOffers
+                    .Include(o => o.TblOfferPortfolios)
+                    .FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId);
+                if (offer == null)
+                {
+                    return NotFound("Offer not found");
+                }
+
+                // Deserialize portfolio JSON (if any)
+                List<string> portfolioUrls = new List<string>();
+                if (!string.IsNullOrWhiteSpace(offer.Portfolio))
+                {
+                    try
+                    {
+                        portfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio) ?? new List<string>();
+                    }
+                    catch { /* If deserialization fails, leave portfolioUrls empty */ }
+                }
+
+                // Create an edit model and prepopulate fields.
+                var model = new OfferEditVM
+                {
+                    OfferId = offer.OfferId,
+                    UserId = offer.UserId,
+                    Title = offer.Title,
+                    Description = offer.Description,
+                    TokenCost = offer.TokenCost,
+                    TimeCommitmentDays = offer.TimeCommitmentDays,
+                    Category = offer.Category,
+                    Portfolio = offer.Portfolio, // Stored as JSON string
+                    FreelanceType = offer.FreelanceType,
+                    RequiredSkillLevel = offer.RequiredSkillLevel,
+                    RequiredLanguageId = offer.RequiredLanguageId,
+                    RequiredLanguageLevel = offer.RequiredLanguageLevel,
+                    // Parse comma-separated skill IDs if available.
+                    SelectedSkillIds = string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner)
+                                       ? new List<int>()
+                                       : offer.SkillIdOfferOwner.Split(',').Select(int.Parse).ToList()
+                };
+
+                PopulateDropdownsForEdit(model, userId);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading offer for editing for user {UserId}", userId);
+                TempData["ErrorMessage"] = "An error occurred while loading the offer.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        // POST: /Offer/Edit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(OfferEditVM model)
+        {
+            ModelState.Remove("UserSkills");
+            ModelState.Remove("UserLanguages");
+            ModelState.Remove("CategoryOptions");
+            ModelState.Remove("FreelanceTypeOptions");
+            ModelState.Remove("RequiredSkillLevelOptions");
+            ModelState.Remove("RequiredLanguageLevelOptions");
+            if (!ModelState.IsValid)
+            {
+                foreach (var state in ModelState)
+                {
+                    foreach (var error in state.Value.Errors)
+                    {
+                        _logger.LogError("ModelState error in {Key}: {Error}", state.Key, error.ErrorMessage);
+                    }
+                }
+                // Re-populate the user skills list if validation fails.
+                PopulateDropdownsForEdit(model, GetUserId());
+                return View(model);
+            }
+
+            int userId = GetUserId();
+            try
+            {
+                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == model.OfferId && o.UserId == userId);
+                if (offer == null)
+                {
+                    return NotFound("Offer not found");
+                }
+
+                // Update the offer entity with values from the model.
+                offer.Title = model.Title;
+                offer.Description = model.Description;
+                offer.TokenCost = model.TokenCost;
+                offer.TimeCommitmentDays = model.TimeCommitmentDays;
+                offer.Category = model.Category;
+                offer.FreelanceType = model.FreelanceType;
+                offer.RequiredSkillLevel = model.RequiredSkillLevel;
+                offer.RequiredLanguageId = model.RequiredLanguageId;
+                offer.RequiredLanguageLevel = model.RequiredLanguageLevel;
+
+                // Store selected skill IDs as comma-separated.
+                if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
+                {
+                    offer.SkillIdOfferOwner = string.Join(",", model.SelectedSkillIds);
+                }
+                else
+                {
+                    offer.SkillIdOfferOwner = string.Empty;
+                }
+
+                // --- Merge Existing and New Portfolio Images ---
+                // Start by deserializing the existing portfolio from the hidden field.
+                var existingPortfolioUrls = new List<string>();
+                if (!string.IsNullOrWhiteSpace(model.Portfolio))
+                {
+                    try
+                    {
+                        existingPortfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(model.Portfolio)
+                                                ?? new List<string>();
+                    }
+                    catch
+                    {
+                        // Log the error if needed and proceed with an empty list.
+                    }
+                }
+
+                // Deserialize current offer portfolio as fallback.
+                var portfolioUrls = new List<string>();
+                if (!string.IsNullOrWhiteSpace(offer.Portfolio))
+                {
+                    try
+                    {
+                        portfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
+                                        ?? new List<string>();
+                    }
+                    catch { }
+                }
+                var mergedUrls = existingPortfolioUrls.Union(portfolioUrls).ToList();
+
+                // If new portfolio files are provided, process them.
+                if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
+                {
+                    foreach (var file in model.PortfolioFiles)
+                    {
+                        if (file != null && file.Length > 0)
+                        {
+                            if (!ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
+                            {
+                                ModelState.AddModelError("PortfolioFiles", errorMsg);
+                                PopulateDropdownsForEdit(model, userId);
+                                return View(model);
+                            }
+                            string fileUrl = await UploadFileAsync(file, "portfolio");
+                            mergedUrls.Add(fileUrl);
+
+                            // Optionally, add new portfolio entry in tblOfferPortfolio.
+                            var portfolio = new TblOfferPortfolio
+                            {
+                                OfferId = offer.OfferId,
+                                FileUrl = fileUrl,
+                                CreatedDate = DateTime.UtcNow
+                            };
+                            _context.TblOfferPortfolios.Add(portfolio);
+                        }
+                    }
+                    // Update the Portfolio JSON field.
+                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(mergedUrls);
+                }
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Offer updated successfully.";
+                return RedirectToAction("Edit", "Offer", new { offerId = offer.OfferId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating offer {OfferId} for user {UserId}", model.OfferId, userId);
+                ModelState.AddModelError("", "An error occurred while updating your offer. Please try again.");
+                PopulateDropdownsForEdit(model, userId);
+                return View(model);
+            }
+        }
+
+        #endregion
+
+        #region Delete & Restore Offer
+
+        // GET: /Offer/Delete/{offerId}
+        [HttpGet]
+        public async Task<IActionResult> Delete(int offerId)
+        {
+            int userId = GetUserId();
+            try
+            {
+                var offer = await _context.TblOffers
+                    .Include(o => o.TblOfferPortfolios)
+                    .FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && !o.IsDeleted);
+                if (offer == null)
+                {
+                    return NotFound("Offer not found or already deleted.");
+                }
+
+                // Prepare a view model for confirmation (you might reuse your OfferEditVM or create a specific DeleteOfferVM)
+                var model = new OfferDeleteVM
+                {
+                    OfferId = offer.OfferId,
+                    Title = offer.Title,
+                    TokenCost = offer.TokenCost,
+                    TimeCommitmentDays = offer.TimeCommitmentDays,
+                    Category = offer.Category,
+                    FreelanceType = offer.FreelanceType,
+                    CreatedDate = offer.CreatedDate,
+                    // Optionally, include first portfolio image (if available)
+                    ThumbnailUrl = !string.IsNullOrWhiteSpace(offer.Portfolio)
+                                    ? (Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio) ?? new List<string>()).FirstOrDefault()
+                                    : null
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading delete confirmation for offer {OfferId} for user {UserId}", offerId, userId);
+                TempData["ErrorMessage"] = "An error occurred while loading the offer.";
+                return RedirectToAction("OfferList", "Offer");
+            }
+        }
+
+        // POST: /Offer/DeleteConfirmed
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int offerId)
+        {
+            int userId = GetUserId();
+            try
+            {
+                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && !o.IsDeleted);
+                if (offer == null)
+                {
+                    return NotFound("Offer not found or already deleted.");
+                }
+
+                // Mark as deleted (soft delete) and record the deletion date.
+                offer.IsDeleted = true;
+                offer.DeletedDate = DateTime.UtcNow;
+
+                // Optionally, also set IsActive = false
+                offer.IsActive = false;
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
+                return RedirectToAction("OfferList", "Offer");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting offer {OfferId} for user {UserId}", offerId, userId);
+                TempData["ErrorMessage"] = "An error occurred while deleting the offer.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        // GET: /Offer/DeletedOffers
+        [HttpGet]
+        public async Task<IActionResult> DeletedOffers(int page = 1)
+        {
+            int userId = GetUserId();
+            try
+            {
+                int pageSize = 5; // Adjust page size as needed.
+                                  // Calculate the cutoff date (15 days ago)
+                var cutoffDate = DateTime.UtcNow.AddDays(-15);
+
+                // Get all deleted offers that are within the grace period.
+                var query = _context.TblOffers
+                    .Where(o => o.UserId == userId && o.IsDeleted && o.DeletedDate >= cutoffDate)
+                    .OrderByDescending(o => o.DeletedDate);
+
+                var totalOffers = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
+
+                var offers = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Map to view model objects.
+                var deletedOfferVMs = offers.Select(o => new OfferDeleteVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    TokenCost = o.TokenCost,
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+                    Category = o.Category,
+                    FreelanceType = o.FreelanceType,
+                    CreatedDate = o.CreatedDate,
+                    DeletedDate = o.DeletedDate,
+                    Portfolio = o.Portfolio,
+                    // For ThumbnailUrl, if Portfolio is not empty, try to deserialize and get the first image.
+                    ThumbnailUrl = !string.IsNullOrWhiteSpace(o.Portfolio)
+                        ? (Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>()).FirstOrDefault()
+                        : null
+                }).ToList();
+
+                var viewModel = new OfferRestoreListVM
+                {
+                    DeletedOffers = deletedOfferVMs,
+                    CurrentPage = page,
+                    TotalPages = totalPages
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching deleted offers for user {UserId}", userId);
+                TempData["ErrorMessage"] = "An error occurred while loading deleted offers.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        // POST: /Offer/Restore/{offerId}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Restore(int offerId)
+        {
+            int userId = GetUserId();
+            try
+            {
+                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && o.IsDeleted);
+                if (offer == null)
+                {
+                    return NotFound("Offer not found or cannot be restored.");
+                }
+
+                // Check if within grace period (15 days)
+                if (offer.DeletedDate.HasValue && offer.DeletedDate.Value.AddDays(15) < DateTime.UtcNow)
+                {
+                    TempData["ErrorMessage"] = "The offer can no longer be restored as the grace period has expired.";
+                    return RedirectToAction("CancelledOffers", "Offer");
+                }
+
+                // Restore the offer.
+                offer.IsDeleted = false;
+                offer.DeletedDate = null;
+                offer.IsActive = true; // Optionally, mark as active.
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Offer has been successfully restored.";
+                return RedirectToAction("OfferList", "Offer");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring offer {OfferId} for user {UserId}", offerId, userId);
+                TempData["ErrorMessage"] = "An error occurred while restoring the offer.";
                 return RedirectToAction("EP500", "EP");
             }
         }
@@ -299,6 +663,88 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error fetching offers for user.");
                 TempData["ErrorMessage"] = "An error occurred while loading offers.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        #endregion
+
+        #region Active & Inactive Offers
+
+        // GET: /Offer/ActiveOffers
+        [HttpGet]
+        public async Task<IActionResult> ActiveOffers(int page = 1)
+        {
+            try
+            {
+                int pageSize = 5;
+                int userId = GetUserId();
+
+                // Active offers only (exclude deleted)
+                var query = _context.TblOffers
+                    .Where(o => o.UserId == userId && !o.IsDeleted && o.IsActive)
+                    .OrderByDescending(o => o.CreatedDate);
+
+                int totalOffers = await query.CountAsync();
+                int totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
+
+                var offers = await query.Skip((page - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .Include(o => o.TblOfferPortfolios)
+                                        .ToListAsync();
+
+                var viewModel = new OfferDetailsVM
+                {
+                    Offers = offers,
+                    CurrentPage = page,
+                    TotalPages = totalPages
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching active offers for user.");
+                TempData["ErrorMessage"] = "An error occurred while loading active offers.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        // GET: /Offer/InactiveOffers
+        [HttpGet]
+        public async Task<IActionResult> InactiveOffers(int page = 1)
+        {
+            try
+            {
+                int pageSize = 5;
+                int userId = GetUserId();
+
+                // Inactive offers only (exclude deleted)
+                var query = _context.TblOffers
+                    .Where(o => o.UserId == userId && !o.IsDeleted && !o.IsActive)
+                    .OrderByDescending(o => o.CreatedDate);
+
+                int totalOffers = await query.CountAsync();
+                int totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
+
+                var offers = await query.Skip((page - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .Include(o => o.TblOfferPortfolios)
+                                        .ToListAsync();
+
+                var viewModel = new OfferDetailsVM
+                {
+                    Offers = offers,
+                    CurrentPage = page,
+                    TotalPages = totalPages
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching inactive offers for user.");
+                TempData["ErrorMessage"] = "An error occurred while loading inactive offers.";
                 return RedirectToAction("EP500", "EP");
             }
         }
@@ -355,9 +801,8 @@ namespace SkillSwap_Platform.Controllers
                 Text = s.SkillName
             }).ToList();
 
-            // Populate languages
+            // Fetch all languages (remove userId filtering)
             var userLanguages = _context.TblLanguages
-                .Where(l => l.UserId == userId)
                 .Select(l => new { l.LanguageId, l.Language })
                 .Distinct()
                 .ToList();
@@ -377,7 +822,7 @@ namespace SkillSwap_Platform.Controllers
 
             model.RequiredSkillLevelOptions = new List<SelectListItem>
             {
-                new SelectListItem { Value = "Entry", Text = "Entry" },
+                new SelectListItem { Value = "Beginner", Text = "Beginner" },
                 new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
                 new SelectListItem { Value = "Advanced", Text = "Advanced" },
             };
@@ -386,8 +831,70 @@ namespace SkillSwap_Platform.Controllers
             {
                 new SelectListItem { Value = "Basic", Text = "Basic" },
                 new SelectListItem { Value = "Conversational", Text = "Conversational" },
+                new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
+                new SelectListItem { Value = "Proficient", Text = "Proficient" },};
+
+            model.CategoryOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Graphics & Design", Text = "Graphics & Design" },
+                new SelectListItem { Value = "Digital Marketing", Text = "Digital Marketing" },
+                new SelectListItem { Value = "Writing & Translation", Text = "Writing & Translation" },
+                new SelectListItem { Value = "Video & Animation", Text = "Video & Animation" },
+                new SelectListItem { Value = "Music & Audio", Text = "Music & Audio" },
+                new SelectListItem { Value = "Programming & Tech", Text = "Programming & Tech" },
+                new SelectListItem { Value = "Business", Text = "Business" },
+                new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
+                new SelectListItem { Value = "Trending", Text = "Trending" }
+            };
+        }
+
+        private void PopulateDropdownsForEdit(OfferEditVM model, int userId)
+        {
+            // Populate UserSkills
+            var userSkills = _context.TblUserSkills
+                .Include(us => us.Skill)
+                .Where(us => us.UserId == userId && us.IsOffering)
+                .Select(us => new { us.Skill.SkillId, us.Skill.SkillName })
+                .ToList();
+
+            model.UserSkills = userSkills.Select(s => new SelectListItem
+            {
+                Value = s.SkillId.ToString(),
+                Text = s.SkillName
+            }).ToList();
+
+            // Populate languages
+            var allLanguages = _context.TblLanguages
+                .Select(l => new { l.LanguageId, l.Language })
+                .Distinct()
+                .ToList();
+
+            model.UserLanguages = allLanguages.Select(l => new SelectListItem
+            {
+                Value = l.LanguageId.ToString(),
+                Text = l.Language
+            }).ToList();
+
+            // Populate static options.
+            model.FreelanceTypeOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Full Time", Text = "Full Time" },
+                new SelectListItem { Value = "Part Time", Text = "Part Time" }
+            };
+
+            model.RequiredSkillLevelOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Beginner", Text = "Beginner" },
+                new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
+                new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
+                new SelectListItem { Value = "Proficient", Text = "Proficient" },
+            };
+
+            model.RequiredLanguageLevelOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Basic", Text = "Basic" },
+                new SelectListItem { Value = "Conversational", Text = "Conversational" },
                 new SelectListItem { Value = "Fluent", Text = "Fluent" },
-                new SelectListItem { Value = "Native", Text = "Native" }
             };
 
             model.CategoryOptions = new List<SelectListItem>
@@ -403,6 +910,7 @@ namespace SkillSwap_Platform.Controllers
                 new SelectListItem { Value = "Trending", Text = "Trending" }
             };
         }
+
 
         [HttpPost]
         public IActionResult ToggleActive(int offerId, bool isActive)
@@ -425,6 +933,15 @@ namespace SkillSwap_Platform.Controllers
                 _logger.LogError(ex, "Error toggling active state for offer {OfferId}", offerId);
                 return Json(new { success = false, message = "An error occurred." });
             }
+        }
+
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+            else
+                throw new Exception("Invalid user identifier claim.");
         }
 
         #endregion

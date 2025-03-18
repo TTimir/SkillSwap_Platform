@@ -77,14 +77,14 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="mb20">
-                                <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Project Title</label>
+                                <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Offer Title <span class="text-danger">*</span></label>
                                 <input asp-for="Title" type="text" class="form-control" placeholder="i will">
                                 <span asp-validation-for="Title" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="TokenCost" class="heading-color ff-heading fw500 mb10">Token Cost</label>
+                                <label asp-for="TokenCost" class="heading-color ff-heading fw500 mb10"> Token Cost</label>
                                 <div class="input-group">
                                     <input asp-for="TokenCost" type="text" class="form-control" placeholder="Enter commitment">
                                     <span class="input-group-text">.00</span>
@@ -94,7 +94,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="TimeCommitmentDays" class="heading-color ff-heading fw500 mb10">Time Commitment Days</label>
+                                <label asp-for="TimeCommitmentDays" class="heading-color ff-heading fw500 mb10">Time Commitment (Days) <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input asp-for="TimeCommitmentDays" type="text" class="form-control" placeholder="Enter commitment">
                                     <span class="input-group-text">days</span>
@@ -105,19 +105,19 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="FreelanceType" class="heading-color ff-heading fw500 mb10">Availability</label>
+                                <label asp-for="FreelanceType" class="heading-color ff-heading fw500 mb10">Availability <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="FreelanceType" asp-items="Model.FreelanceTypeOptions" class="selectpicker">
                                         <option value="">Select Availability Type</option>
                                     </select>
-                                    <span asp-validation-for="SelectedSkillIds" class="text-danger"></span>
-                                    <span class="text-danger" data-valmsg-for="SelectedSkillIds" data-valmsg-replace="true"></span>
+                                    <span asp-validation-for="FreelanceType" class="text-danger"></span>
+                                    <span class="text-danger" data-valmsg-for="FreelanceType" data-valmsg-replace="true"></span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="RequiredSkillLevel" class="heading-color ff-heading fw500 mb10">Required Skill Level</label>
+                                <label asp-for="RequiredSkillLevel" class="heading-color ff-heading fw500 mb10">Partner's Skill Level <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="RequiredSkillLevel" asp-items="Model.RequiredSkillLevelOptions" class="selectpicker">
                                         <option value="">Select Required Skill Level</option>
@@ -129,7 +129,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="RequiredLanguageId" class="heading-color ff-heading fw500 mb10">Required Language</label>
+                                <label asp-for="RequiredLanguageId" class="heading-color ff-heading fw500 mb10">Partner's Language <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="RequiredLanguageId" asp-items="Model.UserLanguages" class="selectpicker">
                                         <option value="">Select Required Language</option>
@@ -141,7 +141,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="RequiredLanguageLevel" class="heading-color ff-heading fw500 mb10">Language Proficiency</label>
+                                <label asp-for="RequiredLanguageLevel" class="heading-color ff-heading fw500 mb10">Partner's Proficiency <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="RequiredLanguageLevel" asp-items="Model.RequiredLanguageLevelOptions" class="selectpicker">
                                         <option value="">Select Language Proficiency</option>
@@ -154,7 +154,10 @@
                         <div class="col-sm-6">
                             <div class="mb20">
                                 <div class="form-style1">
-                                    <label name="SelectedSkillIds" class="heading-color ff-heading fw500 mb10">Offered Skill</label>
+                                    <label asp-for="SelectedSkillIds" name="SelectedSkillIds" class="heading-color ff-heading fw500 mb10">
+                                        Offered Skill
+                                        <span class="text-danger">*</span>
+                                    </label>
                                     <div class="bootselect-multiselect">
                                         <select id="SelectedSkillIds" name="SelectedSkillIds" data-live-search="true" class="selectpicker" multiple>
                                             @foreach (var skill in Model.UserSkills)
@@ -162,15 +165,15 @@
                                                 <option value="@skill.Value">@skill.Text</option>
                                             }
                                         </select>
-                                        <span class="text-danger" data-valmsg-for="SelectedSkillIds" data-valmsg-replace="true"></span>
                                         <span asp-validation-for="SelectedSkillIds" class="text-danger"></span>
+                                        <span class="text-danger" data-valmsg-for="SelectedSkillIds" data-valmsg-replace="true"></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Skill Category</label>
+                                <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Offer Category <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="Category" asp-items="Model.CategoryOptions" data-live-search="true" class="selectpicker">
                                         <option value="">Select Category</option>
@@ -182,7 +185,7 @@
                         </div>
                         <div class="col-md-12">
                             <div class="mb10">
-                                <label asp-for="Description" class="heading-color ff-heading fw500 mb10">Describe your service or offer</label>
+                                <label asp-for="Description" class="heading-color ff-heading fw500 mb10">Offer Description<span class="text-danger">*</span></label>
                                 <textarea asp-for="Description" cols="30" rows="6" placeholder="Description"></textarea>
                                 <span asp-validation-for="Description" class="text-danger"></span>
                             </div>
@@ -210,7 +213,7 @@
                 </div>
                 <span id="uploadError" class="text-danger"></span>
                 <p class="text">
-                    For optimal display, please use images with recommended dimensions of 329 x 245 pixels. Maximum file size per image: 5 MB.
+                    Max file size is 1MB, Minimum dimension: 329x245 And Suitable files are .jpg & .png
                 </p>
                 <div class="text-start">
                     @* <a class="ud-btn btn-thm" href="page-contact.html">Save & Publish<i class="fal fa-arrow-right-long"></i></a> *@
@@ -223,26 +226,9 @@
 @section DynamicScript {
     <script>
         $(document).ready(function () {
-            $("#TimeCommitmentDays").on("blur", function () {
-                var val = $(this).val().trim();
-                var days = parseInt(val);
-                // Clear previous error message
-                $("#timeCommitmentError").text("");
-                // Check if the value is not a number or is less than 1.
-                if (isNaN(days) || days < 1) {
-                    $(this).addClass("is-invalid");
-                    $("#timeCommitmentError").text("Common you also can not learn in 0 days");
-                } else {
-                    $(this).removeClass("is-invalid");
-                }
-            });
-        });
-    </script>
-    <script>
-        $(document).ready(function () {
             var dt = new DataTransfer();
             var maxFiles = 5;
-            var maxFileSize = 5 * 1024 * 1024; // 5 MB in bytes
+            var maxFileSize = 1 * 1024 * 1024; // 1 MB in bytes
             var recommendedWidth = 329;
             var recommendedHeight = 245;
 

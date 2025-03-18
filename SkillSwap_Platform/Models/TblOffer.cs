@@ -37,6 +37,10 @@ public partial class TblOffer
 
     public string? RequiredLanguageLevel { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedDate { get; set; }
+
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 
     public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();

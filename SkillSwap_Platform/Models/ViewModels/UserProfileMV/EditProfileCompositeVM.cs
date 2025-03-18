@@ -16,24 +16,36 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 
     public class EditPersonalDetailsVM
     {
-        [Required(ErrorMessage = "First name is required.")]
+        [Required(ErrorMessage = "Share your first name!")]
+        [Display(Name = "First Name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Last name is required.")]
+        [Required(ErrorMessage = "Add your last name!")]
+        [Display(Name = "Last Name")]
         public string LastName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Username is required.")]
+        [Required(ErrorMessage = "Set a cool username!")]
+        [Display(Name = "Username")]
         public string UserName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Invalid Email address.")]
+        [Required(ErrorMessage = "We need a valid email!")]
+        [EmailAddress(ErrorMessage = "Invalid email!")]
+        [Display(Name = "Email Address")]
         public string Email { get; set; } = string.Empty;
 
+        [Display(Name = "Personal Website")]
         public string? PersonalWebsite { get; set; }
+        [Required(ErrorMessage = "Tell us your location!")]
+        [Display(Name = "Location")]
         public string? Location { get; set; }
+        [Required(ErrorMessage = "Don't forget your address!")]
+        [Display(Name = "Address")]
         public string? Address { get; set; }
+        [Required(ErrorMessage = "City info, please!")]
         public string? City { get; set; }
+        [Required(ErrorMessage = "Country is required.")]
         public string? Country { get; set; }
+        [Display(Name = "About Me")]
         public string? AboutMe { get; set; }
         [Display(Name = "Profile Photo")]
         public IFormFile? ProfileImageFile { get; set; }
@@ -43,10 +55,10 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class EditSkillVM
     {
         // Summary fields stored in TblUsers.
-        [Display(Name = "Offered Skills Summary")]
+        [Display(Name = "Offered Skills")]
         public string? OfferedSkillSummary { get; set; }
 
-        [Display(Name = "Willing Skills Summary")]
+        [Display(Name = "Willing Skills")]
         public string? WillingSkillSummary { get; set; }
 
         // Detailed skills to be edited individually.
@@ -78,7 +90,8 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class SkillEditVM
     {
         public int SkillId { get; set; }
-        [Required(ErrorMessage = "Skill name is required.")]
+        [Required(ErrorMessage = "Skill name can't be blank!")]
+        [Display(Name = "Skill Name")]
         public string SkillName { get; set; } = string.Empty;
         [Display(Name = "Category")]
         public string Category { get; set; }
@@ -91,18 +104,24 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class EducationVM
     {
         public int EducationId { get; set; }
-        [Required(ErrorMessage = "Degree is required.")]
+        [Required(ErrorMessage = "Enter your degree!")]
+        [Display(Name = "Degree")]
         public string Degree { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Degree Name is required.")]
+        [Required(ErrorMessage = "Degree name is needed!")]
+        [Display(Name = "Degree Name")]
         public string DegreeName { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Institution is required.")]
+        [Required(ErrorMessage = "Name your institution!")]
+        [Display(Name = "Institution")]
         public string Institution { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Start date is required.")]
+        [Required(ErrorMessage = "Start date is needed!")]
         [DataType(DataType.Date)]
+        [Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
-        [Required(ErrorMessage = "End date is required.")]
+        [Required(ErrorMessage = "End date is needed!")]
         [DataType(DataType.Date)]
+        [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
+        [Display(Name = "Description")] 
         public string? Description { get; set; }
         public bool IsDeleted { get; set; }
     }
@@ -110,16 +129,21 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class ExperienceVM
     {
         public int ExperienceId { get; set; }
-        [Required(ErrorMessage = "Company Name is required.")]
+        [Required(ErrorMessage = "Enter company name!")]
+        [Display(Name = "Company Name")]
         public string CompanyName { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Position is required.")]
+        [Required(ErrorMessage = "Enter your position!")]
+        [Display(Name = "Position")]
         public string Position { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Start date is required.")]
+        [Required(ErrorMessage = "Select start date!")]
         [DataType(DataType.Date)]
+        [Display(Name = "Start Date")]
         public DateTime? StartDate { get; set; }
-        [Required(ErrorMessage = "End date is required.")]
+        [Required(ErrorMessage = "Select end date!")]
         [DataType(DataType.Date)]
+        [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
+        [Display(Name = "Description")]
         public string? Description { get; set; }
         public bool IsexpDeleted { get; set; }
     }
@@ -127,15 +151,20 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class CertificateVM
     {
         public int CertificateId { get; set; }
-        [Required(ErrorMessage = "Certificate Name is required.")]
+        [Required(ErrorMessage = "Name your certificate!")]
+        [Display(Name = "Certificate Name")]
         public string CertificateName { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Verification Id is required.")]
+        [Required(ErrorMessage = "Provide verification ID!")]
+        [Display(Name = "Verification ID")]
         public string? VerificationId { get; set; }
+        [Display(Name = "Certificate File")] 
         public IFormFile? CertificateFile { get; set; }
         public string? CertificateFilePath { get; set; }
-        [Required(ErrorMessage = "Certificate Completion Date is required.")]
+        [Required(ErrorMessage = "Set completion date!")]
+        [Display(Name = "Completion Date")]
         public DateTime CertificateDate { get; set; }
-        [Required(ErrorMessage = "Certificate Issuer Name is required.")]
+        [Required(ErrorMessage = "Enter issuer name!")]
+        [Display(Name = "Issuer Name")]
         public string? CertificateFrom { get; set; }
         public bool IsApproved { get; set; }
         // Flag for deletion.
@@ -145,7 +174,9 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
     public class SkillsVM
     {
         public int SkillId { get; set; }
+        [Display(Name = "Skill Name")] 
         public string SkillName { get; set; } = string.Empty;
+        [Display(Name = "Proficiency Level")]
         public int? ProficiencyLevel { get; set; }
     }
 }
