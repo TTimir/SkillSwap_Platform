@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using SkillSwap_Platform.HelperClass;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -25,26 +26,6 @@ public class HomeController : Controller
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    #region Global OnActionExecuting
-    public override void OnActionExecuting(ActionExecutingContext context)
-    {
-        base.OnActionExecuting(context);
-
-        // If the user is authenticated, load their profile image into ViewData.
-        if (User.Identity != null && User.Identity.IsAuthenticated)
-        {
-            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (claim != null)
-            {
-                if (int.TryParse(claim.Value, out int userId))
-                {
-                    var user = _dbcontext.TblUsers.FirstOrDefault(u => u.UserId == userId);
-                    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
-                }
-            }
-        }
-    }
-    #endregion
     public IActionResult Index()
     {
         try
@@ -63,6 +44,7 @@ public class HomeController : Controller
     #region Register
 
     // GET: /Home/Register
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Register()
     {
@@ -126,6 +108,7 @@ public class HomeController : Controller
     #region Login
 
     // GET: /Home/Login
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Login(string returnUrl = null)
     {
@@ -409,16 +392,6 @@ public class HomeController : Controller
             Debug.WriteLine($"[SignInUserAsync Error] {ex.Message}");
             throw;
         }
-    }
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-        // Other service configurations...
     }
     #endregion
 }

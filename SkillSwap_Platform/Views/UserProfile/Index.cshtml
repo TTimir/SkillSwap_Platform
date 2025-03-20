@@ -188,21 +188,21 @@
                                                     @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
                                                     {
                                                         <div>
-                                                            @if (Model?.IsOnline ?? false) 
+                                                            @if ((ViewData["IsOnline"] as bool?) ?? false)
                                                             {
                                                                 <span class="online"></span>
                                                             }
-                                                            <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="img-fluid rounded" style="max-width:100px;" />
+                                                            <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="img-fluid rounded" width="100" style="max-width:100%;" />
                                                         </div>
                                                     }
                                                     else
                                                     {
                                                         <div>
-                                                            @if (Model.IsOnline)
+                                                            @if ((ViewData["IsOnline"] as bool?) ?? false)
                                                             {
                                                                 <span class="online"></span>
                                                             }
-                                                            <img src="/template_assets/images/anonymous_image.jpg" alt="anonymous_image.png" style="max-width:100px;">
+                                                            <img src="/template_assets/images/No_Profile_img.png" alt="anonymous_image.png" width="100" style="max-width:100%;">
                                                         </div>
                                                     }
                                                     @*<span class="online"></span>
@@ -380,7 +380,7 @@
                                                 <div class="listing-style1">
                                                     <div class="list-thumb">
                                                         <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
-                                                            @if (offer.PortfolioImages.Any())
+                                                            @if (offer.PortfolioImages != null && offer.PortfolioImages.Any())
                                                             {
                                                                 foreach (var image in offer.PortfolioImages)
                                                                 {
@@ -417,7 +417,7 @@
                                                     </div>
                                                     <div class="list-content">
                                                         <p class="list-text body-color fz14 mb-1">@offer.Category</p>
-                                                        <h6 class="list-title line-clamp2"><a href="page-services-single.html">@offer.Title</a></h6>
+                                                        <h6 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOffer", new { offerId = offer.OfferId })">@offer.Title</a></h6>
                                                         <div class="review-meta d-flex align-items-center">
                                                             <i class="fas fa-star fz10 review-color me-2"></i>
                                                             <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>

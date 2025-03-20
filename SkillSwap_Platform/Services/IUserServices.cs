@@ -13,6 +13,7 @@ namespace SkillSwap_Platform.Services
 
         // New method to retrieve roles as strings
         Task<TblUser> GetUserByIdAsync(int userId);
+        Task<TblUser> GetUserByUsername(string username);
         Task<List<string>> GetUserRolesAsync(int userId);
 
     }

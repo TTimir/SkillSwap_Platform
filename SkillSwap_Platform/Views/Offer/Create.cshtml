@@ -117,6 +117,26 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
+                                <label asp-for="CollaborationMethod" class="heading-color ff-heading fw500 mb10">Collaboration Type <span class="text-danger">*</span></label>
+                                <div class="bootselect-multiselect">
+                                    <select asp-for="CollaborationMethod" asp-items="Model.CollaborationOptions" class="selectpicker">
+                                        <option value="">Select</option>
+                                    </select>
+                                    <span asp-validation-for="CollaborationMethod" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="AssistanceRounds" class="heading-color ff-heading fw500 mb10">Assistance Rounds <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="AssistanceRounds" type="number" class="form-control" placeholder="Enter Assistance Rounds" min="0">
+                                </div>
+                                <span asp-validation-for="AssistanceRounds" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
                                 <label asp-for="RequiredSkillLevel" class="heading-color ff-heading fw500 mb10">Partner's Skill Level <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="RequiredSkillLevel" asp-items="Model.RequiredSkillLevelOptions" class="selectpicker">
@@ -124,30 +144,6 @@
                                     </select>
                                     <span asp-validation-for="RequiredSkillLevel" class="text-danger"></span>
                                     <span class="text-danger" data-valmsg-for="RequiredSkillLevel" data-valmsg-replace="true"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="mb20">
-                                <label asp-for="RequiredLanguageId" class="heading-color ff-heading fw500 mb10">Partner's Language <span class="text-danger">*</span></label>
-                                <div class="bootselect-multiselect">
-                                    <select asp-for="RequiredLanguageId" asp-items="Model.UserLanguages" class="selectpicker">
-                                        <option value="">Select Required Language</option>
-                                    </select>
-                                    <span asp-validation-for="RequiredLanguageId" class="text-danger"></span>
-                                    <span class="text-danger" data-valmsg-for="RequiredLanguageId" data-valmsg-replace="true"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="mb20">
-                                <label asp-for="RequiredLanguageLevel" class="heading-color ff-heading fw500 mb10">Partner's Proficiency <span class="text-danger">*</span></label>
-                                <div class="bootselect-multiselect">
-                                    <select asp-for="RequiredLanguageLevel" asp-items="Model.RequiredLanguageLevelOptions" class="selectpicker">
-                                        <option value="">Select Language Proficiency</option>
-                                    </select>
-                                    <span asp-validation-for="RequiredLanguageLevel" class="text-danger"></span>
-                                    <span class="text-danger" data-valmsg-for="RequiredLanguageLevel" data-valmsg-replace="true"></span>
                                 </div>
                             </div>
                         </div>
@@ -183,11 +179,43 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="SelectedDevices" class="heading-color ff-heading fw500 mb10">Devices <span class="text-danger">*</span></label>
+                                <div class="bootselect-multiselect">
+                                    <select asp-for="SelectedDevices" asp-items="Model.DeviceOptions" multiple class="selectpicker">
+                                    </select>
+                                    <span asp-validation-for="SelectedDevices" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="Tools" class="heading-color ff-heading fw500 mb10">Tools <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="Tools" type="text" class="form-control" placeholder="e.g. Apache, Paint">
+                                </div>
+                                <small>*If no tool required then just type <i>' Not Required '</i></small>
+                                <span asp-validation-for="Tools" class="text-danger"></span>
+                                <span id="Tools" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="SelectedWillingSkill" class="heading-color ff-heading fw500 mb10">Devices <span class="text-danger">*</span></label>
+                                <div class="bootselect-multiselect">
+                                    <select asp-for="SelectedWillingSkill" asp-items="Model.WillingSkillOptions" class="selectpicker">
+                                        <option value="">-- Select a Willing Skill --</option>
+                                    </select>
+                                    <span asp-validation-for="SelectedWillingSkill" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12">
                             <div class="mb10">
-                                <label asp-for="Description" class="heading-color ff-heading fw500 mb10">Offer Description<span class="text-danger">*</span></label>
-                                <textarea asp-for="Description" cols="30" rows="6" placeholder="Description"></textarea>
-                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work</label>
+                                <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this offer"></textarea>
+                                <span asp-validation-for="ScopeOfWork" class="text-danger"></span>
                             </div>
                         </div>
                         @* <div class="col-md-12">

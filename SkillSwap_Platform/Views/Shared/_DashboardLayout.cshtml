@@ -183,15 +183,15 @@
                                         <a class="btn" href="#" data-bs-toggle="dropdown">
                                             @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
                                             {
-                                                <img src="@ViewData["UserProfileImage"]" alt="Profile Image" width="50">
+                                                <div>
+                                                    <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="circle-rounded" width="100" style="max-width:50%;" />
+                                                </div>
                                             }
                                             else
                                             {
-                                                @*  @if (Model.IsOnline)
-                                                {
-                                                    <span class="online"></span>
-                                                } *@
-                                                <img src="/template_assets/images/No_Profile_img.png" width="50" alt="anonymous_image.png">
+                                                <div>
+                                                    <img src="/template_assets/images/No_Profile_img.png" class="circle-rounded" alt="anonymous_image.png" width="100" style="max-width:50%;">
+                                                </div>
                                             }
                                         </a>
                                         <div class="dropdown-menu">

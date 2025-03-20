@@ -11,7 +11,7 @@ public partial class TblOffer
 
     public string Title { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
 
     public decimal TokenCost { get; set; }
 
@@ -33,17 +33,35 @@ public partial class TblOffer
 
     public string? RequiredSkillLevel { get; set; }
 
-    public int? RequiredLanguageId { get; set; }
-
-    public string? RequiredLanguageLevel { get; set; }
-
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDate { get; set; }
 
+    public string? Device { get; set; }
+
+    public string? Tools { get; set; }
+
+    public string? ScopeOfWork { get; set; }
+
+    public int? AssistanceRounds { get; set; }
+
+    public bool? ProvidesSourceFiles { get; set; }
+
+    public int? DeliveryTimeDays { get; set; }
+
+    public string? CollaborationMethod { get; set; }
+
+    public string WillingSkill { get; set; } = null!;
+
+    public double? JobSuccessRate { get; set; }
+
+    public double? RecommendedPercentage { get; set; }
+
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 
     public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();
+
+    public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 
     public virtual TblUser User { get; set; } = null!;
 }

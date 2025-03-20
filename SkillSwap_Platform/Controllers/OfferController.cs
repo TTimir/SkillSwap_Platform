@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
+using SkillSwap_Platform.Services;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -15,77 +16,39 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<OfferController> _logger;
         private readonly IWebHostEnvironment _env;
+        private readonly IFileService _fileService;
 
-        public OfferController(SkillSwapDbContext context, ILogger<OfferController> logger, IWebHostEnvironment env)
+        public OfferController(SkillSwapDbContext context, ILogger<OfferController> logger, IWebHostEnvironment env, IFileService fileService)
         {
             _context = context;
             _logger = logger;
             _env = env;
+            _fileService = fileService;
         }
 
-        public override void OnActionExecuting(ActionExecutingContext context)
-        {
-            base.OnActionExecuting(context);
-
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId))
-                {
-                    try
-                    {
-                        // Set the user profile image for the layout.
-                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-                        if (user != null)
-                        {
-                            ViewData["UserProfileImage"] = user.ProfileImageUrl;
-                            user.LastActive = DateTime.UtcNow;
-                            _context.SaveChanges();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error updating LastActive for user {UserId}", userId);
-                        context.Result = RedirectToAction("EP500", "EP");
-                    }
-                }
-                else
-                {
-                    // If we cannot parse the user ID, redirect to EP500.
-                    context.Result = RedirectToAction("EP500", "EP");
-                }
-            }
-
-            //int userId = GetUserId();
-            //if (userId != null)
-            //{
-            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            //    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
-            //}
-            //if (userId > 0)
-            //{
-            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            //    if (user != null)
-            //    {
-            //        user.LastActive = DateTime.UtcNow; // ✅ Update LastActive
-            //        _context.SaveChanges();
-            //    }
-            //}
-        }
-
-     
         #region Create Offer
 
         // GET: /Offer/Create
         public async Task<IActionResult> Create()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId) || userId == 0)
-            {
-                return RedirectToAction("EP500", "EP");
-            }
-
+            int userId = GetUserId();
             try
             {
+                // Retrieve the user to fetch their willing skills
+                var currentUser = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+
+                // Get willing skills from the user (assumes a comma-separated string is stored in currentUser.WillingSkills)
+                var willingSkillOptions = new List<SelectListItem>();
+                if (currentUser != null && !string.IsNullOrWhiteSpace(currentUser.DesiredSkillAreas))
+                {
+                    var skills = currentUser.DesiredSkillAreas.Split(',')
+                                    .Select(s => s.Trim())
+                                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                                    .ToList();
+
+                    willingSkillOptions = skills.Select(s => new SelectListItem { Value = s, Text = s }).ToList();
+                }
+
                 // Retrieve the user's offered skills (from TblUserSkills joined with TblSkills).
                 var userSkills = await _context.TblUserSkills
                 .Include(us => us.Skill)
@@ -99,6 +62,20 @@ namespace SkillSwap_Platform.Controllers
                     .Distinct()
                     .ToListAsync();
 
+                // Create device options (you can add more as needed)
+                var deviceOptions = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "Desktop", Text = "Desktop" },
+                    new SelectListItem { Value = "Mobile", Text = "Mobile" },
+                    new SelectListItem { Value = "iOS", Text = "iOS" },
+                    new SelectListItem { Value = "Linux", Text = "Linux" }
+                };
+
+                var collaborationMethod = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "In-Person", Text = "In-Person" },
+                    new SelectListItem { Value = "Online", Text = "Online" }
+                };
 
                 var model = new OfferCreateVM
                 {
@@ -106,13 +83,6 @@ namespace SkillSwap_Platform.Controllers
                     {
                         Value = s.SkillId.ToString(),
                         Text = s.SkillName
-                    }).ToList(),
-
-                    // Populate language dropdown.
-                    UserLanguages = userLanguages.Select(l => new SelectListItem
-                    {
-                        Value = l.LanguageId.ToString(),
-                        Text = l.Language
                     }).ToList(),
 
                     // Populate static options.
@@ -124,16 +94,9 @@ namespace SkillSwap_Platform.Controllers
 
                     RequiredSkillLevelOptions = new List<SelectListItem>
                     {
-                        new SelectListItem { Value = "Entry", Text = "Entry" },
+                        new SelectListItem { Value = "Beginner", Text = "Beginner" },
                         new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
                         new SelectListItem { Value = "Advanced", Text = "Advanced" },
-                    },
-
-                    RequiredLanguageLevelOptions = new List<SelectListItem>
-                    {
-                        new SelectListItem { Value = "Basic", Text = "Basic" },
-                        new SelectListItem { Value = "Conversational", Text = "Conversational" },
-                        new SelectListItem { Value = "Fluent", Text = "Fluent" },
                     },
 
                     CategoryOptions = new List<SelectListItem>
@@ -147,7 +110,10 @@ namespace SkillSwap_Platform.Controllers
                         new SelectListItem { Value = "Business", Text = "Business" },
                         new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
                         new SelectListItem { Value = "Trending", Text = "Trending" }
-                    }
+                    },
+                    DeviceOptions = deviceOptions,
+                    CollaborationOptions = collaborationMethod,
+                    WillingSkillOptions = willingSkillOptions
                 };
                 return View(model);
             }
@@ -164,6 +130,8 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> Create(OfferCreateVM model)
         {
             ModelState.Remove("UserSkills");
+            ModelState.Remove("DeviceOptions");
+            ModelState.Remove("CollaborationOptions");
             if (!ModelState.IsValid)
             {
                 foreach (var state in ModelState)
@@ -174,17 +142,17 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
                 // Re-populate the user skills list if validation fails.
-                int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                int userId = GetUserId();
                 PopulateDropdowns(model, userId); // Repopulate dropdowns here
                 return View(model);
             }
 
-            int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            int currentUserId = GetUserId();
             // Check if the user already has 6 offers
             var userOfferCount = await _context.TblOffers.CountAsync(o => o.UserId == currentUserId);
-            if (userOfferCount >= 6)
+            if (userOfferCount >= 5)
             {
-                ViewBag.ErrorMessage = "You have reached the maximum number of offers allowed (6). You cannot create more than 6 offers.";
+                ViewBag.ErrorMessage = "You have reached the maximum number of offers allowed (5). You cannot create more than 5 offers.";
                 PopulateDropdowns(model, currentUserId);
                 return View(model);
             }
@@ -194,22 +162,30 @@ namespace SkillSwap_Platform.Controllers
                                 ? string.Join(",", model.SelectedSkillIds)
                                 : string.Empty;
 
+                // Join the selected device values into a comma-separated string.
+                string devices = (model.SelectedDevices != null && model.SelectedDevices.Any())
+                    ? string.Join(",", model.SelectedDevices)
+                    : string.Empty;
+
                 // Create a new offer entity.
                 var offer = new TblOffer
                 {
                     UserId = currentUserId,
                     Title = model.Title,
-                    Description = model.Description,
                     TokenCost = model.TokenCost,
                     TimeCommitmentDays = model.TimeCommitmentDays,
                     Category = model.Category,
                     CreatedDate = DateTime.UtcNow,
                     IsActive = true,
                     FreelanceType = model.FreelanceType,
+                    ScopeOfWork = model.ScopeOfWork,
+                    AssistanceRounds = model.AssistanceRounds,
+                    CollaborationMethod = model.CollaborationMethod,
                     RequiredSkillLevel = model.RequiredSkillLevel,
-                    RequiredLanguageId = model.RequiredLanguageId,
-                    RequiredLanguageLevel = model.RequiredLanguageLevel,
-                    SkillIdOfferOwner = SkillIds
+                    SkillIdOfferOwner = SkillIds,
+                    Device = devices,
+                    Tools = model.Tools,
+                    WillingSkill = model.SelectedWillingSkill
                 };
 
                 // Convert selected skill IDs into a comma-separated string and store it.
@@ -231,12 +207,12 @@ namespace SkillSwap_Platform.Controllers
                     {
                         if (file != null && file.Length > 0)
                         {
-                            if (!ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
+                            if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
                             {
                                 ModelState.AddModelError("PortfolioFiles", errorMsg);
                                 return View(model);
                             }
-                            string fileUrl = await UploadFileAsync(file, "portfolio");
+                            string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
                             portfolioUrls.Add(fileUrl);
 
                             // Optionally, also save each portfolio file in tblOfferPortfolio:
@@ -295,25 +271,50 @@ namespace SkillSwap_Platform.Controllers
                     catch { /* If deserialization fails, leave portfolioUrls empty */ }
                 }
 
+                // Create a list of selected devices by splitting the stored comma-separated string.
+                var selectedDevices = string.IsNullOrWhiteSpace(offer.Device)
+                    ? new List<string>()
+                    : offer.Device.Split(',').Select(s => s.Trim()).ToList();
+
+                // Prepare device options.
+                var deviceOptions = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "Desktop", Text = "Desktop" },
+                    new SelectListItem { Value = "Mobile", Text = "Mobile" },
+                    new SelectListItem { Value = "iOS", Text = "iOS" },
+                    new SelectListItem { Value = "Linux", Text = "Linux" }
+                };
+
+                var collaborationMethod = new List<SelectListItem>
+                 {
+                     new SelectListItem { Value = "In=Person", Text = "InPerson" },
+                     new SelectListItem { Value = "Online", Text = "Online" }
+                 };
+                
                 // Create an edit model and prepopulate fields.
                 var model = new OfferEditVM
                 {
                     OfferId = offer.OfferId,
                     UserId = offer.UserId,
                     Title = offer.Title,
-                    Description = offer.Description,
                     TokenCost = offer.TokenCost,
                     TimeCommitmentDays = offer.TimeCommitmentDays,
                     Category = offer.Category,
                     Portfolio = offer.Portfolio, // Stored as JSON string
                     FreelanceType = offer.FreelanceType,
+                    ScopeOfWork = offer.ScopeOfWork,
+                    AssistanceRounds = offer.AssistanceRounds,
+                    CollaborationMethod = offer.CollaborationMethod,
                     RequiredSkillLevel = offer.RequiredSkillLevel,
-                    RequiredLanguageId = offer.RequiredLanguageId,
-                    RequiredLanguageLevel = offer.RequiredLanguageLevel,
                     // Parse comma-separated skill IDs if available.
                     SelectedSkillIds = string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner)
                                        ? new List<int>()
-                                       : offer.SkillIdOfferOwner.Split(',').Select(int.Parse).ToList()
+                                       : offer.SkillIdOfferOwner.Split(',').Select(int.Parse).ToList(),
+                    SelectedDevices = selectedDevices,
+                    Tools = offer.Tools,
+                    DeviceOptions = deviceOptions,
+                    CollaborationOptions = collaborationMethod,
+                    SelectedWillingSkill = offer.WillingSkill,
                 };
 
                 PopulateDropdownsForEdit(model, userId);
@@ -338,6 +339,23 @@ namespace SkillSwap_Platform.Controllers
             ModelState.Remove("FreelanceTypeOptions");
             ModelState.Remove("RequiredSkillLevelOptions");
             ModelState.Remove("RequiredLanguageLevelOptions");
+            ModelState.Remove("FinalPortfolioOrder");
+            ModelState.Remove("DeviceOptions");
+            ModelState.Remove("Tools");
+            ModelState.Remove("DeviceOptions");
+            ModelState.Remove("CollaborationOptions");
+
+            // If there are no new files provided, remove ModelState errors for PortfolioFiles
+            if (model.PortfolioFiles == null || !model.PortfolioFiles.Any())
+            {
+                ModelState.Remove("PortfolioFiles");
+            }
+            else if (!string.IsNullOrWhiteSpace(model.Portfolio) && ModelState.ContainsKey("PortfolioFiles"))
+            {
+                // Clear errors if existing portfolio is present
+                ModelState["PortfolioFiles"].Errors.Clear();
+            }
+
             if (!ModelState.IsValid)
             {
                 foreach (var state in ModelState)
@@ -363,14 +381,19 @@ namespace SkillSwap_Platform.Controllers
 
                 // Update the offer entity with values from the model.
                 offer.Title = model.Title;
-                offer.Description = model.Description;
                 offer.TokenCost = model.TokenCost;
                 offer.TimeCommitmentDays = model.TimeCommitmentDays;
                 offer.Category = model.Category;
                 offer.FreelanceType = model.FreelanceType;
                 offer.RequiredSkillLevel = model.RequiredSkillLevel;
-                offer.RequiredLanguageId = model.RequiredLanguageId;
-                offer.RequiredLanguageLevel = model.RequiredLanguageLevel;
+                offer.ScopeOfWork = model.ScopeOfWork;
+                offer.AssistanceRounds = model.AssistanceRounds;
+                offer.Device = model.SelectedDevices != null && model.SelectedDevices.Any()
+                       ? string.Join(",", model.SelectedDevices)
+                       : string.Empty;
+                offer.Tools = model.Tools;
+                offer.CollaborationMethod = model.CollaborationMethod;
+                offer.WillingSkill = model.SelectedWillingSkill;
 
                 // Store selected skill IDs as comma-separated.
                 if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
@@ -382,50 +405,44 @@ namespace SkillSwap_Platform.Controllers
                     offer.SkillIdOfferOwner = string.Empty;
                 }
 
-                // --- Merge Existing and New Portfolio Images ---
-                // Start by deserializing the existing portfolio from the hidden field.
-                var existingPortfolioUrls = new List<string>();
+                // Deserialize the existing portfolio from the hidden field (updated by the client)
+                var updatedPortfolioUrls = new List<string>();
                 if (!string.IsNullOrWhiteSpace(model.Portfolio))
                 {
                     try
                     {
-                        existingPortfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(model.Portfolio)
+                        updatedPortfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(model.Portfolio)
                                                 ?? new List<string>();
                     }
                     catch
                     {
-                        // Log the error if needed and proceed with an empty list.
+                        // Log error if needed; continue with empty list.
                     }
                 }
-
-                // Deserialize current offer portfolio as fallback.
-                var portfolioUrls = new List<string>();
-                if (!string.IsNullOrWhiteSpace(offer.Portfolio))
-                {
-                    try
-                    {
-                        portfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
-                                        ?? new List<string>();
-                    }
-                    catch { }
-                }
-                var mergedUrls = existingPortfolioUrls.Union(portfolioUrls).ToList();
 
                 // If new portfolio files are provided, process them.
                 if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
                 {
+                    // (Optional) Remove old portfolio entries from tblOfferPortfolio if you wish to replace them.
+                    var existingPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
+                    foreach (var entry in existingPortfolios)
+                    {
+                        _context.TblOfferPortfolios.Remove(entry);
+                    }
+                    updatedPortfolioUrls.Clear(); // Clear old URLs if replacing completely.
+
                     foreach (var file in model.PortfolioFiles)
                     {
                         if (file != null && file.Length > 0)
                         {
-                            if (!ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
+                            if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
                             {
                                 ModelState.AddModelError("PortfolioFiles", errorMsg);
                                 PopulateDropdownsForEdit(model, userId);
                                 return View(model);
                             }
-                            string fileUrl = await UploadFileAsync(file, "portfolio");
-                            mergedUrls.Add(fileUrl);
+                            string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
+                            updatedPortfolioUrls.Add(fileUrl);
 
                             // Optionally, add new portfolio entry in tblOfferPortfolio.
                             var portfolio = new TblOfferPortfolio
@@ -438,8 +455,25 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
                     // Update the Portfolio JSON field.
-                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(mergedUrls);
+                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
                 }
+                else
+                {
+                    // No new files provided.
+                    // Use the updated portfolio URLs from the hidden field (which reflects removals).
+                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
+
+                    // Optionally, update tblOfferPortfolios to reflect removals.
+                    var currentPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
+                    foreach (var entry in currentPortfolios)
+                    {
+                        if (!updatedPortfolioUrls.Contains(entry.FileUrl))
+                        {
+                            _context.TblOfferPortfolios.Remove(entry);
+                        }
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Offer updated successfully.";
                 return RedirectToAction("Edit", "Offer", new { offerId = offer.OfferId });
@@ -752,42 +786,27 @@ namespace SkillSwap_Platform.Controllers
         #endregion
 
         #region Helper Methods
-
-        private bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeBytes, out string errorMessage)
-        {
-            errorMessage = string.Empty;
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!allowedExtensions.Contains(extension))
-            {
-                errorMessage = $"File type {extension} is not allowed. Allowed types: {string.Join(", ", allowedExtensions)}.";
-                return false;
-            }
-            if (file.Length > maxSizeBytes)
-            {
-                errorMessage = $"File size exceeds the maximum allowed size of {maxSizeBytes / (1024 * 1024)} MB.";
-                return false;
-            }
-            return true;
-        }
-
-        private async Task<string> UploadFileAsync(IFormFile file, string folderName)
-        {
-            string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", folderName);
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-            string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-            return $"/uploads/{folderName}/{uniqueFileName}";
-        }
-
         private void PopulateDropdowns(OfferCreateVM model, int userId)
         {
+            // Retrieve the current user to get their willing skills.
+            var currentUser = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            if (currentUser != null && !string.IsNullOrWhiteSpace(currentUser.DesiredSkillAreas))
+            {
+                var willingSkills = currentUser.DesiredSkillAreas.Split(',')
+                                        .Select(s => s.Trim())
+                                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                                        .ToList();
+                model.WillingSkillOptions = willingSkills.Select(ws => new SelectListItem
+                {
+                    Value = ws,
+                    Text = ws
+                }).ToList();
+            }
+            else
+            {
+                model.WillingSkillOptions = new List<SelectListItem>();
+            }
+
             // Populate UserSkills
             var userSkills = _context.TblUserSkills
                 .Include(us => us.Skill)
@@ -807,12 +826,6 @@ namespace SkillSwap_Platform.Controllers
                 .Distinct()
                 .ToList();
 
-            model.UserLanguages = userLanguages.Select(l => new SelectListItem
-            {
-                Value = l.LanguageId.ToString(),
-                Text = l.Language
-            }).ToList();
-
             // Populate static options.
             model.FreelanceTypeOptions = new List<SelectListItem>
             {
@@ -827,13 +840,6 @@ namespace SkillSwap_Platform.Controllers
                 new SelectListItem { Value = "Advanced", Text = "Advanced" },
             };
 
-            model.RequiredLanguageLevelOptions = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "Basic", Text = "Basic" },
-                new SelectListItem { Value = "Conversational", Text = "Conversational" },
-                new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
-                new SelectListItem { Value = "Proficient", Text = "Proficient" },};
-
             model.CategoryOptions = new List<SelectListItem>
             {
                 new SelectListItem { Value = "Graphics & Design", Text = "Graphics & Design" },
@@ -846,10 +852,42 @@ namespace SkillSwap_Platform.Controllers
                 new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
                 new SelectListItem { Value = "Trending", Text = "Trending" }
             };
+
+            model.DeviceOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Desktop", Text = "Desktop" },
+                new SelectListItem { Value = "Mobile", Text = "Mobile" },
+                new SelectListItem { Value = "iOS", Text = "iOS" },
+                new SelectListItem { Value = "Linux", Text = "Linux" }
+            };
+
+            model.CollaborationOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "In-Person", Text = "In-Person" },
+                new SelectListItem { Value = "Online", Text = "Online" }
+            };
         }
 
         private void PopulateDropdownsForEdit(OfferEditVM model, int userId)
         {
+            var currentUser = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            if (currentUser != null && !string.IsNullOrWhiteSpace(currentUser.DesiredSkillAreas))
+            {
+                var willingSkills = currentUser.DesiredSkillAreas.Split(',')
+                                        .Select(s => s.Trim())
+                                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                                        .ToList();
+                model.WillingSkillOptions = willingSkills.Select(ws => new SelectListItem
+                {
+                    Value = ws,
+                    Text = ws
+                }).ToList();
+            }
+            else
+            {
+                model.WillingSkillOptions = new List<SelectListItem>();
+            }
+
             // Populate UserSkills
             var userSkills = _context.TblUserSkills
                 .Include(us => us.Skill)
@@ -886,7 +924,6 @@ namespace SkillSwap_Platform.Controllers
             {
                 new SelectListItem { Value = "Beginner", Text = "Beginner" },
                 new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
-                new SelectListItem { Value = "Intermediate", Text = "Intermediate" },
                 new SelectListItem { Value = "Proficient", Text = "Proficient" },
             };
 
@@ -908,6 +945,20 @@ namespace SkillSwap_Platform.Controllers
                 new SelectListItem { Value = "Business", Text = "Business" },
                 new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
                 new SelectListItem { Value = "Trending", Text = "Trending" }
+            };
+
+            model.DeviceOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "Desktop", Text = "Desktop" },
+                new SelectListItem { Value = "Mobile", Text = "Mobile" },
+                new SelectListItem { Value = "iOS", Text = "iOS" },
+                new SelectListItem { Value = "Linux", Text = "Linux" }
+            };
+
+            model.CollaborationOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "In-Person", Text = "In-Person" },
+                new SelectListItem { Value = "Online", Text = "Online" }
             };
         }
 

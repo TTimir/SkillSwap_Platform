@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Controllers;
 using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
@@ -28,6 +29,14 @@ builder.Services.AddDbContext<SkillSwapDbContext>(item =>
 
 // Register user service
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<UserProfilesFilter>();
+
+builder.Services.AddControllersWithViews(options =>
+{
+    // Add the custom filter globally
+    options.Filters.AddService<UserProfilesFilter>();
+});
 
 builder.Services.AddDistributedMemoryCache(); // Stores session in memory
 builder.Services.AddSession(options =>
@@ -58,6 +67,13 @@ builder.Services.AddAuthentication(options =>
     options.AccessDeniedPath = "/Home/AccessDenied";
     options.Cookie.Name = "SkillSwapAuth";
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.Events.OnRedirectToLogin = context =>
+    {
+        // Log the redirect URL for debugging.
+        Console.WriteLine($"Redirecting to login from {context.Request.Path}");
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 
@@ -66,8 +82,11 @@ builder.Services.AddSession(); // ✅ Ensure session is enabled
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();

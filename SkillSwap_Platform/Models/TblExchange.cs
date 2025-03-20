@@ -35,6 +35,8 @@ public partial class TblExchange
 
     public decimal? DigitalTokenExchange { get; set; }
 
+    public bool IsSuccessful { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;

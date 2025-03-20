@@ -22,52 +22,6 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
         }
 
-        public override void OnActionExecuting(ActionExecutingContext context)
-        {
-            base.OnActionExecuting(context);
-
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId))
-                {
-                    try
-                    {
-                        // Set the user profile image for the layout.
-                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-                        if (user != null)
-                        {
-                            ViewData["UserProfileImage"] = user.ProfileImageUrl;
-                            user.LastActive = DateTime.UtcNow;
-                            _context.SaveChanges();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error updating LastActive for user {UserId}", userId);
-                    }
-                }
-            }
-            else
-            {
-                context.Result = RedirectToAction("Login", "Home");
-            }
-
-            //int userId = GetUserId();
-            //if (userId != null)
-            //{
-            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            //    ViewData["UserProfileImage"] = user?.ProfileImageUrl;
-            //}
-            //if (userId > 0)
-            //{
-            //    var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            //    if (user != null)
-            //    {
-            //        user.LastActive = DateTime.UtcNow; // ✅ Update LastActive
-            //        _context.SaveChanges();
-            //    }
-            //}
-        }
         public async Task<IActionResult> Index()
         {
             int userId;
@@ -116,12 +70,11 @@ namespace SkillSwap_Platform.Controllers
 
                 // Calculate the recommended percentage from reviews.
                 double recommendedPercentage = 0;
-                if (user.TblReviewReviewees.Any())
+                int totalReviews = user.TblReviewReviewees.Count();
+                if (totalReviews > 0)
                 {
-                    int totalReviews = user.TblReviewReviewees.Count();
                     int positiveReviews = user.TblReviewReviewees.Count(r => r.Rating >= 4);
-                    decimal? percentage = (decimal?)positiveReviews / totalReviews * 100;
-                    recommendedPercentage = percentage.HasValue ? (double)percentage.Value : 0;
+                    recommendedPercentage = positiveReviews * 100.0 / totalReviews;
                 }
 
                 // Fetch the most recent completed exchange (job)

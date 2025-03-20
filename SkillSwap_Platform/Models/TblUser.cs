@@ -76,6 +76,10 @@ public partial class TblUser
 
     public bool IsOnboardingCompleted { get; set; }
 
+    public double? JobSuccessRate { get; set; }
+
+    public double? RecommendedPercentage { get; set; }
+
     public virtual ICollection<TblEducation> TblEducations { get; set; } = new List<TblEducation>();
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
@@ -100,6 +104,8 @@ public partial class TblUser
 
     public virtual ICollection<TblReview> TblReviewReviewers { get; set; } = new List<TblReview>();
 
+    public virtual ICollection<TblReview> TblReviewUsers { get; set; } = new List<TblReview>();
+
     public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
 
     public virtual ICollection<TblUserCertificate> TblUserCertificateApprovedByAdmins { get; set; } = new List<TblUserCertificate>();
@@ -118,4 +124,5 @@ public partial class TblUser
 
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
+
 }

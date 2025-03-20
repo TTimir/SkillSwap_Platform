@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SkillSwap_Platform.Controllers
 {
+    [AllowAnonymous]
     public class EPController : Controller
     {
         // GET: EP

@@ -214,6 +214,11 @@ namespace SkillSwap_Platform.Services
                 .ToListAsync();
         }
 
+        public async Task<TblUser> GetUserByUsername(string username)
+        {
+            return await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.UserName == username);
+        }
+
         public async Task<TblUser> GetUserByIdAsync(int userId)
         {
             return await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);

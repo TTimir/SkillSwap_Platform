@@ -18,20 +18,6 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public int LastExchangeDays { get; set; }
         public double TotalYearsOfExperience { get; set; }
         public double RecommendedPercentage { get; set; }
-        public bool IsOnline
-        {
-            get
-            {
-                if (User == null || User.LastActive == null)
-                    return false; // If there's no record of activity, assume offline
-
-                // Calculate the time difference between now and the user's last activity
-                TimeSpan timeSinceLastActive = DateTime.UtcNow - User.LastActive.Value;
-
-                // If the last activity was within the last 10 minutes, the user is online
-                return timeSinceLastActive.TotalSeconds < 60;
-            }
-        }
     }
 
     public class SkillVM

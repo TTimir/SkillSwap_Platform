@@ -53,7 +53,6 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
-
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -273,21 +272,34 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblOffers");
 
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
+            entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
             entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.CollaborationMethod).HasMaxLength(50);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeliveryTimeDays).HasDefaultValue(3);
+            entity.Property(e => e.Device)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.DigitalTokenValue).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.FreelanceType).HasMaxLength(50);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.RequiredLanguageLevel).HasMaxLength(50);
+            entity.Property(e => e.ProvidesSourceFiles).HasDefaultValue(false);
             entity.Property(e => e.RequiredSkillLevel).HasMaxLength(50);
+            entity.Property(e => e.ScopeOfWork).HasColumnType("text");
             entity.Property(e => e.SkillIdOfferOwner).HasMaxLength(100);
             entity.Property(e => e.TimeCommitmentDays).HasDefaultValue(1);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.TokenCost).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Tools)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.WillingSkill)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
 
             entity.HasOne(d => d.User).WithMany(p => p.TblOffers)
                 .HasForeignKey(d => d.UserId)
@@ -333,6 +345,11 @@ public partial class SkillSwapDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblReviews_Exchanges");
 
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblReviews)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblReview_Offer");
+
             entity.HasOne(d => d.Reviewee).WithMany(p => p.TblReviewReviewees)
                 .HasForeignKey(d => d.RevieweeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -342,6 +359,11 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.ReviewerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblReviews_Reviewer");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblReviewUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblReview_User");
         });
 
         modelBuilder.Entity<TblRole>(entity =>
