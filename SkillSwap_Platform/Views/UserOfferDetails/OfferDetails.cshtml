@@ -44,22 +44,17 @@
                                 <div class="list-meta mt30">
                                     <a class="mb5-sm" style="margin-right: 10px;" href="">
                                         <span class="position-relative mr10">
-                                            <!-- Profile Image -->
-                                            @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
+                                            @if (Model.UserDetails != null)
                                             {
-                                                @if ((ViewData["IsOnline"] as bool?) ?? false)
+                                                <!-- Profile Image -->
+                                                @foreach (var user in Model.UserDetails)
                                                 {
-                                                    <span class="online-badge"></span>
+                                                    @if ((ViewData["IsOnline"] as bool?) ?? false)
+                                                    {
+                                                        <span class="online-badge"></span>
+                                                    }
+                                                    <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:6%;" />
                                                 }
-                                                <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:6%;" />
-                                            }
-                                            else
-                                            {
-                                                @if (Model.IsOnline)
-                                                {
-                                                    <span class="online-badge"></span>
-                                                }
-                                                <img src="/template_assets/images/No_Profile_img.png" class="rounded-circle" alt="anonymous_image.png" width="100" style="max-width:6%;" />
                                             }
                                         </span>
                                         <span class="fz14">
@@ -131,22 +126,63 @@
                             </div>
                         </div>
                     </div>
+                    @{
+                        // List of default images.
+                        var defaultImages = new List<string>
+                        {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                        };
+
+                        // Check if the model has any portfolio images.
+                        // Check if PortfolioUrls is non-null and has at least one element.
+                        bool hasPortfolioImages = (Model.PortfolioUrls?.Count ?? 0) > 0;
+
+                        // Determine the thumbnail to show.
+                        string thumbnailToShow = hasPortfolioImages
+                        ? ((IEnumerable<string>)Model.PortfolioUrls).First()
+                        : defaultImages[Model.OfferId % defaultImages.Count];
+                    }
+
+
                     <!-- Main Slider -->
                     <div id="sync1" class="owl-carousel owl-theme slider-1-grid mb50">
-                        @foreach (var imageUrl in Model.PortfolioUrls)
+                        @if (hasPortfolioImages)
+                        {
+                            foreach (var imageUrl in Model.PortfolioUrls)
+                            {
+                                <div class="item">
+                                    <img src="@imageUrl" alt="Main Slide" class="w-100">
+                                </div>
+                            }
+                        }
+                        else
                         {
                             <div class="item">
-                                <img src="@imageUrl" alt="Main Slide" class="w-100">
+                                <img src="@thumbnailToShow" alt="Main Slide" class="w-100">
                             </div>
                         }
                     </div>
 
                     <!-- Thumbnail Preview Slider -->
                     <div id="sync2" class="owl-carousel owl-theme mb20">
-                        @foreach (var imageUrl in Model.PortfolioUrls)
+                        @if (hasPortfolioImages)
+                        {
+                            foreach (var imageUrl in Model.PortfolioUrls)
+                            {
+                                <div class="item">
+                                    <img src="@imageUrl" alt="Thumbnail" class="w-100">
+                                </div>
+                            }
+                        }
+                        else
                         {
                             <div class="item">
-                                <img src="@imageUrl" alt="Thumbnail" class="w-100">
+                                <img src="@thumbnailToShow" alt="Thumbnail" class="w-100">
                             </div>
                         }
                     </div>
@@ -331,10 +367,10 @@
                                         </tr>
                                         <tr>
                                             <th scope="row"></th>
-                                            <td><a href="@Url.Action("OfferDetails", "UserOffer", new { offerId = Model.OfferId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
+                                            <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = Model.OfferId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
-                                                <td><a href="@Url.Action("OfferDetails", "UserOffer", new { offerId = compareOffer.OfferId })" class="ud-btn btn-thm">Select<i class="fal fa-arrow-right-long"></i></a></td>
+                                                <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = compareOffer.OfferId })" class="ud-btn btn-thm">Select<i class="fal fa-arrow-right-long"></i></a></td>
                                             }
                                         </tr>
                                     </tbody>
@@ -582,25 +618,20 @@
                         <div class="freelancer-style1 service-single mb-0">
                             <div class="wrapper d-flex align-items-center">
                                 <div class="thumb position-relative mb25">
-                                    <!-- Profile Image -->
-                                    @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
+                                    @if (Model.UserDetails != null)
                                     {
-                                        <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="rounded-circle mx-auto" width="100" style="max-width:100%;" />
-                                        @if ((ViewData["IsOnline"] as bool?) ?? false)
+                                        <!-- Profile Image -->
+                                        @foreach (var user in Model.UserDetails)
                                         {
-                                            <span class="online"></span>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <img src="/template_assets/images/No_Profile_img.png" class="rounded-circle mx-auto" alt="anonymous_image.png" width="100" style="max-width:100%;" />
-                                        @if (Model.IsOnline)
-                                        {
-                                            <span class="online"></span>
+                                            @if ((ViewData["IsOnline"] as bool?) ?? false)
+                                            {
+                                                <span class="online"></span>
+                                            }
+                                            <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:70%;" />
                                         }
                                     }
                                 </div>
-                                <div class="ml20">
+                                <div class="ml10">
                                     @if (Model.UserDetails != null)
                                     {
                                         foreach (var details in Model.UserDetails)

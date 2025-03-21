@@ -11,14 +11,14 @@ using System.Security.Claims;
 namespace SkillSwap_Platform.Controllers
 {
     [Authorize]
-    public class OfferController : Controller
+    public class UserOfferManageController : Controller
     {
         private readonly SkillSwapDbContext _context;
-        private readonly ILogger<OfferController> _logger;
+        private readonly ILogger<UserOfferManageController> _logger;
         private readonly IWebHostEnvironment _env;
         private readonly IFileService _fileService;
 
-        public OfferController(SkillSwapDbContext context, ILogger<OfferController> logger, IWebHostEnvironment env, IFileService fileService)
+        public UserOfferManageController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IWebHostEnvironment env, IFileService fileService)
         {
             _context = context;
             _logger = logger;
@@ -231,7 +231,7 @@ namespace SkillSwap_Platform.Controllers
                 }
 
                 TempData["SuccessMessage"] = "Offer created successfully.";
-                return RedirectToAction("Create", "Offer");
+                return RedirectToAction("Create", "UserOfferManage");
             }
             catch (Exception ex)
             {
@@ -476,7 +476,7 @@ namespace SkillSwap_Platform.Controllers
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Offer updated successfully.";
-                return RedirectToAction("Edit", "Offer", new { offerId = offer.OfferId });
+                return RedirectToAction("Edit", "UserOfferManage", new { offerId = offer.OfferId });
             }
             catch (Exception ex)
             {
@@ -528,7 +528,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading delete confirmation for offer {OfferId} for user {UserId}", offerId, userId);
                 TempData["ErrorMessage"] = "An error occurred while loading the offer.";
-                return RedirectToAction("OfferList", "Offer");
+                return RedirectToAction("OfferList", "UserOfferManage");
             }
         }
 
@@ -555,7 +555,7 @@ namespace SkillSwap_Platform.Controllers
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
-                return RedirectToAction("OfferList", "Offer");
+                return RedirectToAction("OfferList", "UserOfferManage");
             }
             catch (Exception ex)
             {
@@ -642,7 +642,7 @@ namespace SkillSwap_Platform.Controllers
                 if (offer.DeletedDate.HasValue && offer.DeletedDate.Value.AddDays(15) < DateTime.UtcNow)
                 {
                     TempData["ErrorMessage"] = "The offer can no longer be restored as the grace period has expired.";
-                    return RedirectToAction("CancelledOffers", "Offer");
+                    return RedirectToAction("CancelledOffers", "UserOfferManage");
                 }
 
                 // Restore the offer.
@@ -652,7 +652,7 @@ namespace SkillSwap_Platform.Controllers
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Offer has been successfully restored.";
-                return RedirectToAction("OfferList", "Offer");
+                return RedirectToAction("OfferList", "UserOfferManage");
             }
             catch (Exception ex)
             {

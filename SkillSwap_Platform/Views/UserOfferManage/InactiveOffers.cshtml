@@ -12,7 +12,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.ActionLink("Create","Offer")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -48,10 +48,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","Offer")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
-                        <a href="@Url.ActionLink("ActiveOffers","Offer")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
-                        <a href="@Url.ActionLink("InactiveOffers","Offer")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Offers</a>
-                        <a href="@Url.ActionLink("DeletedOffers","Offer")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -117,7 +117,7 @@
                                                         }
                                                     </div>
                                                     <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                        <h6 class="list-title mb-0"><a href="page-services-single.html">@offer.Title</a></h6>
+                                                        <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
                                                         <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                             <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
                                                             <li>Availability Set: @offer.FreelanceType</li>
@@ -138,8 +138,8 @@
                                             <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
                                             <td class="align-top">
                                                 <div class="d-flex">
-                                                    <a href="@Url.Action("Edit", "Offer", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
-                                                    <a href="@Url.Action("Delete", "Offer", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
+                                                    <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                    <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
                                                 </div>
                                             </td>
                                         </tr>
@@ -207,7 +207,7 @@
                 var statusTextElem = $(this).closest('td').find('.status-text');
 
                 $.ajax({
-                    url: '@Url.Action("ToggleActive", "Offer")',
+                    url: '@Url.Action("ToggleActive", "UserOfferManage")',
                     type: 'POST',
                     data: { offerId: offerId, isActive: isActive },
                     success: function (response) {

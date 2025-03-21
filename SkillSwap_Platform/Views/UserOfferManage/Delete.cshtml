@@ -13,7 +13,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.Action("OfferList", "Offer")" class="ud-btn btn-dark default-box-shadow2">Back to Offers <i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Back to Offers <i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -52,11 +52,11 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","Offer")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
-                        <a href="@Url.ActionLink("ActiveOffers","Offer")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
-                        <a href="@Url.ActionLink("InactiveOffers","Offer")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
-                        <a href="@Url.ActionLink("DeletedOffers","Offer")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="true">Deleted Offers</a>
-                        <a href="@Url.ActionLink("Deleted","Offer")" class="nav-link active fw500" id="nav-item4-tab" type="button" aria-selected="true">Confirm Your Action</a>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="true">Deleted Offers</a>
+                        <a href="@Url.ActionLink("Deleted","UserOfferManage")" class="nav-link active fw500" id="nav-item4-tab" type="button" aria-selected="true">Confirm Your Action</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -118,12 +118,12 @@
                     </div>
                 </div>
             </div>
-            @using (Html.BeginForm("DeleteConfirmed", "Offer", FormMethod.Post))
+            @using (Html.BeginForm("DeleteConfirmed", "UserOfferManage", FormMethod.Post))
             {
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.OfferId)
                 <div class="form-group text-end">
-                    <button type="submit" class="ud-btn btn-danger">Confirm Delete</button>
+                    <button type="submit" class="btn-danger p10">Confirm Delete</button>
                 </div>
             }
         </div>

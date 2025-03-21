@@ -1,18 +1,17 @@
-﻿
-@{
-    ViewData["Title"] = "ActiveOffers";
+﻿@{
+    ViewData["Title"] = "OfferList";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="col-lg-9">
     <div class="dashboard_title_area">
-        <h2>Active Services</h2>
+        <h2>All Services</h2>
         <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
     </div>
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.ActionLink("Create","Offer")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -48,10 +47,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","Offer")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
-                        <a href="@Url.ActionLink("ActiveOffers","Offer")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="true">Active Offers</a>
-                        <a href="@Url.ActionLink("InactiveOffers","Offer")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
-                        <a href="@Url.ActionLink("DeletedOffers","Offer")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -89,12 +88,12 @@
                                                             // Define the list of default images.
                                                             var defaultImages = new List<string>
                                                             {
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                                 Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
                                                             };
 
                                                             // You can choose between a random image or a deterministic one.
@@ -117,7 +116,7 @@
                                                         }
                                                     </div>
                                                     <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                        <h6 class="list-title mb-0"><a href="page-services-single.html">@offer.Title</a></h6>
+                                                        <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
                                                         <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                             <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
                                                             <li>Availability Set: @offer.FreelanceType</li>
@@ -138,58 +137,47 @@
                                             <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
                                             <td class="align-top">
                                                 <div class="d-flex">
-                                                    <a href="@Url.Action("Edit", "Offer", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
-                                                    <a href="@Url.Action("Delete", "Offer", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
+                                                    <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                    <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
                                                 </div>
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
-                            <div class="mbp_pagination text-center mt30">
-                                <ul class="page_navigation">
-                                    @if (Model.CurrentPage > 1)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })">
-                                                <span class="fas fa-angle-left"></span>
-                                            </a>
-                                        </li>
-                                    }
-                                    @{
-                                        // Calculate the pagination group: display only 5 page links at a time
-                                        int groupSize = 5;
-                                        int currentGroup = (Model.CurrentPage - 1) / groupSize;
-                                        int startPage = currentGroup * groupSize + 1;
-                                        int endPage = Math.Min(startPage + groupSize - 1, Model.TotalPages);
-                                    }
-                                    @for (int i = startPage; i <= endPage; i++)
-                                    {
-                                        if (i == Model.CurrentPage)
-                                        {
-                                            <li class="page-item active" aria-current="page">
-                                                <a class="page-link" href="#">@i <span class="sr-only">(current)</span></a>
-                                            </li>
-                                        }
-                                        else
+                            @if (Model.TotalPages > 1)
+                            {
+                                var start = ((Model.CurrentPage - 1) * 5) + 1;
+                                var end = Math.Min(start + 4, Model.Offers.Count + ((Model.TotalPages - 1) * 5)); // This ensures last page shows correct count
+
+                                <nav aria-label="Offer pagination">
+                                    <ul class="pagination justify-content-center mt-4">
+                                        @if (Model.CurrentPage > 1)
                                         {
                                             <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })"><span class="fas fa-angle-left"></span></a>
+                                            </li>
+                                        }
+
+                                        @for (int i = 1; i <= Model.TotalPages; i++)
+                                        {
+                                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                                                 <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
                                             </li>
                                         }
-                                    }
 
-                                    @if (Model.CurrentPage < Model.TotalPages)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })">
-                                                <span class="fas fa-angle-right"></span>
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                                <p class="mt10 mb-0 pagination_page_count text-center">Showing page @Model.CurrentPage of @Model.TotalPages offers listed</p>
-                            </div>
+                                        @if (Model.CurrentPage < Model.TotalPages)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })"><span class="fas fa-angle-right"></span></a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt-2 mb-0 pagination_page_count text-center text-dark fw-semibold">
+                                        @start – @end of @((Model.TotalPages * 5)) offers available
+                                    </p>
+                                </nav>
+                            }
                         </div>
                     </div>
                 </div>
@@ -197,7 +185,6 @@
         </div>
     </div>
 </div>
-
 @section DynamicScript {
     <script>
         $(document).ready(function () {
@@ -208,7 +195,7 @@
                 var statusTextElem = $(this).closest('td').find('.status-text');
 
                 $.ajax({
-                    url: '@Url.Action("ToggleActive", "Offer")',
+                    url: '@Url.Action("ToggleActive", "UserOfferManage")',
                     type: 'POST',
                     data: { offerId: offerId, isActive: isActive },
                     success: function (response) {

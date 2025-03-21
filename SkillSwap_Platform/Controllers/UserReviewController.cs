@@ -7,7 +7,7 @@ namespace SkillSwap_Platform.Controllers
     public class UserReviewController : Controller
     {
         private readonly SkillSwapDbContext _context;
-        private readonly ILogger<OfferController> _logger;
+        private readonly ILogger<UserOfferManageController> _logger;
         public IActionResult Index()
         {
             return View();

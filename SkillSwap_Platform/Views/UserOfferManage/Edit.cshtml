@@ -13,7 +13,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.Action("OfferList", "Offer")" class="ud-btn btn-dark default-box-shadow2">Back to Offers<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Back to Offers<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -44,7 +44,7 @@
     </div>
 }
 
-@using (Html.BeginForm("Edit", "Offer", FormMethod.Post, new { enctype = "multipart/form-data" }))
+@using (Html.BeginForm("Edit", "UserOfferManage", FormMethod.Post, new { enctype = "multipart/form-data" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.OfferId)

@@ -370,7 +370,7 @@
                             </div>
 
                             <div class="px30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
-                                <h4 class="mb30">Featured Services</h4>
+                                <h4 class="mb30">Featured Offers</h4>
                                 <div class="row equal-height">
                                     @if (Model.Offers != null && Model.Offers.Any())
                                     {
@@ -417,7 +417,10 @@
                                                     </div>
                                                     <div class="list-content">
                                                         <p class="list-text body-color fz14 mb-1">@offer.Category</p>
-                                                        <h6 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOffer", new { offerId = offer.OfferId })">@offer.Title</a></h6>
+                                                        @{
+                                                            string encryptedId = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(offer.OfferId.ToString()));
+                                                        }
+                                                        <h6 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = encryptedId })">@offer.Title</a></h6>
                                                         <div class="review-meta d-flex align-items-center">
                                                             <i class="fas fa-star fz10 review-color me-2"></i>
                                                             <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>

@@ -1,7 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferRestoreListVM
 
 @{
-    ViewData["Title"] = "Restore";
+    ViewData["Title"] = "DeletedOffers";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -12,13 +12,13 @@
     </div>
 </div>
 <div class="col-lg-3">
-    <a href="@Url.Action("OfferList", "Offer")" class="ud-btn btn-dark default-box-shadow2">
+    <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">
         Back to Offers <i class="fal fa-arrow-right-long"></i>
     </a>
 </div>
 </div>
 <div class="alert alert-warning">
-    <strong>Warning:</strong> The offers below have been deleted. You can restore any offer within 15 days of deletion.
+    <strong>Warning:</strong> Below are the offers you deleted. You can restore any offer within 15 days of deletion.
 </div>
 @if (TempData["SuccessMessage"] != null)
 {
@@ -52,11 +52,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <button class="nav-link active fw500 ps-0" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Active Services</button>
-                        <button class="nav-link fw500" id="nav-item2-tab" data-bs-toggle="tab" data-bs-target="#nav-item2" type="button" role="tab" aria-controls="nav-item2" aria-selected="false">Pending Services</button>
-                        <button class="nav-link fw500" id="nav-item3-tab" data-bs-toggle="tab" data-bs-target="#nav-item3" type="button" role="tab" aria-controls="nav-item3" aria-selected="false">Ongoing Services</button>
-                        <button class="nav-link fw500" id="nav-item4-tab" data-bs-toggle="tab" data-bs-target="#nav-item4" type="button" role="tab" aria-controls="nav-item4" aria-selected="false">Completed Services</button>
-                        <button class="nav-link fw500" id="nav-item5-tab" data-bs-toggle="tab" data-bs-target="#nav-item5" type="button" role="tab" aria-controls="nav-item5" aria-selected="false">Canceled Services</button>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item4-tab" type="button" aria-selected="true">Deleted Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -76,7 +75,7 @@
                                     @foreach (var offer in Model.DeletedOffers)
                                     {
                                         // Calculate how many days have passed since deletion and how many remain.
-                                        int daysSinceDelete = (DateTime.UtcNow - offer.DeletedDate.Value).Days;
+                                        var daysSinceDelete = (DateTime.UtcNow - (offer.DeletedDate ?? DateTime.UtcNow)).Days;
                                         int daysLeft = 15 - daysSinceDelete;
                                         <tr>
                                             <th class="dashboard-img-service" scope="row">
@@ -90,26 +89,25 @@
                                                         {
                                                             // If no thumbnail is available, use a default image based on the offer ID.
                                                             var defaultImages = new List<string>
-                                                            {
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
-                                                            };
+                                                    {
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                    };
                                                             int index = offer.OfferId % defaultImages.Count;
                                                             var selectedImage = defaultImages[index];
                                                             <img src="@selectedImage" class="img-fluid rounded-start" alt="Default Offer Image">
                                                         }
                                                     </div>
                                                     <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                        <h6 class="list-title mb-0"><a href="page-services-single.html">@offer.Title</a></h6>
+                                                        <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
                                                         <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                             <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
                                                             <li>Availability Set: @offer.FreelanceType</li>
                                                             <li>Created Date: @offer.CreatedDate?.ToString("MMMM dd,yyyy")</li>
-                                                            <li>Deleted On: @offer.DeletedDate?.ToString("MMMM dd,yyyy")</li>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -118,10 +116,17 @@
                                             <td class="align-top"><span class="fz15 fw400">@offer.DeletedDate?.ToString("MMMM dd, yyyy")</span></td>
                                             <td class="align-top"><span class="fz14 fw400">@(daysLeft > 0 ? daysLeft.ToString() : "Expired")</span></td>
                                             <td class="align-top">
-                                                <div class="d-flex">
-                                                    <a href="@Url.Action("Restore", "Offer", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-flaticon-pencil"></span></a>
-                                                </div>
-                                            </td>
+                                                @using (Html.BeginForm("Restore", "UserOfferManage", new { offerId = offer.OfferId }, FormMethod.Post))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <div class="d-flex">
+                                                        <button type="submit" class="icon me-2" style="border:none" data-bs-toggle="tooltip" data-bs-placement="top" title="Restore" @(daysLeft <= 0 ? "disabled" : "")>
+                                                            <span class="fa fa-history"></span>
+                                                        </button>
+                                                    </div>
+                                                }
+                                                @*<a href="@Url.Action("Restore", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-flaticon-pencil"></span></a>
+ *@                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -133,7 +138,7 @@
                                         @if (Model.CurrentPage > 1)
                                         {
                                             <li class="page-item">
-                                                <a class="page-link" href="@Url.Action("OfferRestoreList", "Offer", new { page = Model.CurrentPage - 1 })">
+                                                <a class="page-link" href="@Url.Action("OfferRestoreList", "UserOfferManage", new { page = Model.CurrentPage - 1 })">
                                                     <span class="fas fa-angle-left"></span>
                                                 </a>
                                             </li>
@@ -155,14 +160,14 @@
                                             else
                                             {
                                                 <li class="page-item">
-                                                    <a class="page-link" href="@Url.Action("OfferRestoreList", "Offer", new { page = i })">@i</a>
+                                                    <a class="page-link" href="@Url.Action("OfferRestoreList", "UserOfferManage", new { page = i })">@i</a>
                                                 </li>
                                             }
                                         }
                                         @if (Model.CurrentPage < Model.TotalPages)
                                         {
                                             <li class="page-item">
-                                                <a class="page-link" href="@Url.Action("OfferRestoreList", "Offer", new { page = Model.CurrentPage + 1 })">
+                                                <a class="page-link" href="@Url.Action("OfferRestoreList", "UserOfferManage", new { page = Model.CurrentPage + 1 })">
                                                     <span class="fas fa-angle-right"></span>
                                                 </a>
                                             </li>
@@ -180,4 +185,6 @@
         </div>
     </div>
 </div>
+
+
 

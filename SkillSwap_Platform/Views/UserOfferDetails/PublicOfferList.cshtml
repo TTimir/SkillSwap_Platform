@@ -1,0 +1,468 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferFilterVM
+
+@{
+    ViewData["Title"] = "PublicOfferList";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .offer-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .offer-card .list-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .offer-card .list-title {
+            min-height: 48px; /* Ensure consistent spacing for title */
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .offer-card .budget {
+            text-align: right;
+        }
+
+</style>
+
+<!-- Breadcumb Sections -->
+<section class="breadcumb-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcumb-style1">
+                    <div class="breadcumb-list">
+                        <a href="">Home</a>
+                        <a href="">Services</a>
+                        <a href="">Design & Creative</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Breadcumb Sections -->
+<section class="breadcumb-section pt-0">
+    <div class="cta-service-v1 cta-banner mx-auto maxw1700 pt120 pb120 bdrs16 position-relative overflow-hidden d-flex align-items-center mx20-lg px30-lg">
+        <img class="left-top-img wow zoomIn" src="/template_assets/images/vector-img/left-top.png" alt="">
+        <img class="right-bottom-img wow zoomIn" src="/template_assets/images/vector-img/right-bottom.png" alt="">
+        <img class="service-v1-vector bounce-y d-none d-lg-block" src="/template_assets/images/vector-img/vector-service-v1.png" alt="">
+        <div class="container">
+            <div class="row wow fadeInUp">
+                <div class="col-xl-5">
+                    <div class="position-relative">
+                        <h2>Design & Creative</h2>
+                        <p class="text mb30">Give your visitor a smooth online experience with a solid UX design</p>
+                        <div class="d-flex align-items-center">
+                            <a class="video-btn mr10 popup-iframe popup-youtube" href="https://www.youtube.com/watch?v=7EHnQ0VM4KY"><i class="fal fa-play"></i></a>
+                            <h6 class="mb-0">How Freeio Works</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Listings All Lists -->
+<section class="pt30 pb90">
+    <div class="container">
+        <form method="get" action="@Url.Action("PublicOfferList", "UserOfferDetails")">
+            <div class="row align-items-center mb20">
+                <div class="col-6 col-sm-6 col-lg-9 pe-0">
+                    <div class="text-center text-sm-start">
+                        <div class="dropdown-lists">
+                            <ul class="p-0 mb-0 text-center text-sm-start">
+                                <li class="list-inline-item">
+                                    <!-- Advance Features modal trigger -->
+                                    <button type="button" class="open-btn filter-btn-left mb10"> <img class="me-2" src="images/icon/all-filter-icon.svg" alt=""> All Filter</button>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.Category) ? "Category" : Model.Category)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element" id="category-options">
+                                                @foreach (var option in Model.CategoryOptions)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10 option-item">
+                                                        <input class="form-check-input" type="radio" name="categoryRadio" id="category_@option.Value"
+                                                        @(Model.Category == option.Value ? "checked" : "") data-value="@option.Value" />
+                                                        <label class="form-check-label" for="category_@option.Value">@option.Text</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <a href="javascript:void(0);" class="toggle-options" data-target="category-options" data-visible-count="5"></a>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply<i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.FreelanceType) ? "Freelance Type" : Model.FreelanceType)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element" id="freelance-type-options">
+                                                @foreach (var option in Model.FreelanceTypeOptions)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="freelanceType" id="freelance_@option.Value" value="@option.Value" @(option.Selected ? "checked" : "") />
+                                                        <label class="form-check-label" for="freelance_@option.Value">@option.Text</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply<i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.InteractionMode) ? "Mode" : Model.InteractionMode)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element">
+                                                @{
+                                                    var modes = new[] { "Online", "In-Person" };
+                                                }
+                                                @foreach (var mode in modes)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="interactionMode" id="interactionMode_@mode" value="@mode" @(Model.InteractionMode == mode ? "checked" : "") />
+                                                        <label class="form-check-label" for="interactionMode_@mode">@mode</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply<i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @("Skill")
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="checkbox-style1" id="skill-options">
+                                                @foreach (var option in Model.SkillOptions)
+                                                {
+                                                    <label class="custom_checkbox option-item">
+                                                        @option.Text
+                                                        <input type="checkbox" name="skillId" value="@option.Value" @(Model.SkillId.ToString() == option.Value ? "checked" : "")>
+                                                        <span class="checkmark"></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <a href="javascript:void(0);" class="toggle-options" data-target="skill-options" data-visible-count="5"></a>
+                                        <button class="done-btn ud-btn btn-thm dropdown-toggle">Apply<i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Skill Level <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element">
+                                                @{
+                                                    var levels = new[] { "Beginner", "Intermediate", "Expert" };
+                                                    foreach (var level in levels)
+                                                    {
+                                                        string id = $"skillLevel_{level.Replace(" ", "")}";
+                                                        <div class="form-check d-flex align-items-center mb10">
+                                                            <input class="form-check-input" type="radio" name="SkillLevel" id="@id" value="@level" @(Model.SkillLevel == level ? "checked" : "")>
+                                                            <label class="form-check-label" for="@id">@level</label>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Tools <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="checkbox-style1" id="designTool-options">
+                                                @{
+                                                    var tools = new[] { "Figma", "Adobe Photoshop", "Adobe XD", "Sketch", "Balsamiq" };
+                                                    foreach (var tool in tools)
+                                                    {
+                                                        string id = $"tool_{tool.Replace(" ", "")}";
+                                                        <label class="custom_checkbox option-item">
+                                                            @tool
+                                                            <input type="checkbox" name="DesignTool" value="@tool" @(Model.DesignTool == tool ? "checked" : "") />
+                                                            <span class="checkmark"></span>
+                                                        </label>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @("Speaks")
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu dd4 pb20">
+                                        <div class="widget-wrapper pr20">
+                                            <div class="checkbox-style1" id="language-options">
+                                                @foreach (var option in Model.LanguageOptions)
+                                                {
+                                                    <label class="custom_checkbox option-item">
+                                                        @option.Text
+                                                        <input type="checkbox" name="FilterLanguage" value="@option.Value" @(Model.FilterLanguage == option.Value ? "checked" : "")>
+                                                        <span class="checkmark"></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <a href="javascript:void(0);" class="toggle-options" data-target="language-options" data-visible-count="5"></a>
+                                        <button class="done-btn ud-btn btn-thm drop_btn4">
+                                            Apply <i class="fal fa-arrow-right-long"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Time Commitment <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element" id="timecommitment-options">
+                                                @{
+                                                    int maxDays = Model.Offers.Any() ? Model.Offers.Max(o => o.TimeCommitmentDays) : 30;
+                                                    int rangeSize = 10;
+                                                    int selected = Model.MaxTimeCommitment ?? 0;
+
+                                                    for (int start = 1; start <= maxDays; start += rangeSize)
+                                                    {
+                                                        int end = Math.Min(start + rangeSize - 1, maxDays);
+                                                        int val = end;
+                                                        string label = $"Up to {end} days";
+                                                        string id = $"tc_{start}_{end}";
+                                                        <div class="form-check d-flex align-items-center mb10">
+                                                            <input class="form-check-input" type="radio" name="MaxTimeCommitment" id="@id" value="@val" @(selected == val ? "checked" : "")>
+                                                            <label class="form-check-label" for="@id">@label</label>
+                                                        </div>
+                                                    }
+                                                }
+                                                <div class="form-check d-flex align-items-center">
+                                                    <input class="form-check-input" type="radio" name="MaxTimeCommitment" id="tc_any" value="" @(selected == 0 ? "checked" : "")>
+                                                    <label class="form-check-label" for="tc_any">Anytime</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @("Location")
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu dd4 pb20">
+                                        <div class="widget-wrapper pr20">
+                                            <div class="checkbox-style1" id="location-options">
+                                                @foreach (var option in Model.LocationOptions)
+                                                {
+                                                    <label class="custom_checkbox option-item">
+                                                        @option.Text
+                                                        <input type="checkbox" name="FilterLanguage" value="@option.Value" @(Model.FilterLocation == option.Value ? "checked" : "")>
+                                                        <span class="checkmark"></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <a href="javascript:void(0);" class="toggle-options" data-target="location-options" data-visible-count="5"></a>
+                                        <button class="done-btn ud-btn btn-thm drop_btn4">
+                                            Apply <i class="fal fa-arrow-right-long"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6 col-lg-3 px-0">
+                    <div class="page_control_shorting mb10 d-flex align-items-center justify-content-center justify-content-sm-end">
+                        <div class="pcs_dropdown dark-color pr10 pr0-xs">
+                            @{
+                                var sortOption = ViewContext.HttpContext.Request.Query["sortOption"].ToString();
+                                var optionsHtml = new List<string>
+                            {
+                            $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
+                            $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
+                            $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
+                            };
+                            }
+                            <span>Sort by</span>
+                            <select name="sortOption" class="selectpicker show-tick" onchange="this.form.submit()">
+                                @Html.Raw(string.Join("", optionsHtml))
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="row ">
+            @if (Model.Offers != null && Model.Offers.Any())
+            {
+                foreach (var offer in Model.Offers)
+                {
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="listing-style1 style3 offer-card">
+                            <div class="list-thumb">
+                                @{
+                                    string thumbnailToShow;
+
+                                    // Define fallback images
+                                    var defaultImages = new List<string>
+                        {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                        };
+
+                                    // Define a reusable check
+                                    bool IsValidImage(string path) =>
+                                    !string.IsNullOrWhiteSpace(path) &&
+                                    !path.Trim().Equals("/");
+
+                                    if (IsValidImage(offer.Thumbnail))
+                                    {
+                                        thumbnailToShow = offer.Thumbnail;
+                                    }
+                                    else
+                                    {
+                                        int index = offer.OfferId % defaultImages.Count;
+                                        thumbnailToShow = defaultImages[index];
+                                    }
+                                }
+
+                                <img class="w-100" src="@thumbnailToShow" alt="offer_image">
+                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                            </div>
+                            <div class="list-content">
+                                <p class="list-text body-color fz14 mb-1">@offer.Category</p>
+                                <h5 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId  })">@offer.Title</a></h5>
+                                <div class="review-meta d-flex align-items-center">
+                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                </div>
+                                <hr class="my-2">
+                                <div class="list-meta d-flex justify-content-between align-items-center mt15">
+                                    <a href="">
+                                        <span class="position-relative mr10">
+                                            <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:25%">
+                                            <span class="online-badge"></span>
+                                        </span>
+                                        <span class="fz14">@offer.UserName</span>
+                                    </a>
+                                    <div class="budget">
+                                        <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@offer.Country</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        @if (Model.TotalPages > 1)
+        {
+            var start = ((Model.CurrentPage - 1) * 20) + 1;
+            var end = Math.Min(start + 4, Model.Offers.Count + ((Model.TotalPages - 1) * 20)); // This ensures last page shows correct count
+
+            <nav aria-label="Offer pagination">
+                <ul class="pagination justify-content-center mt-4">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = Model.CurrentPage - 1 })"><span class="fas fa-angle-left"></span></a>
+                        </li>
+                    }
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = i })">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = Model.CurrentPage + 1 })"><span class="fas fa-angle-right"></span></a>
+                        </li>
+                    }
+                </ul>
+                <p class="mt-2 mb-0 pagination_page_count text-center text-dark fw-semibold">
+                    @start – @end of @((Model.TotalPages * 20)) offers available
+                </p>
+            </nav>
+        }
+    </div>
+</section>
+
+@section ProfileScript {
+    <script>
+        $(document).ready(function() {
+            // For each toggle link with the class "toggle-options"
+            $('.toggle-options').each(function() {
+                var $toggle = $(this);
+                // Get the target container ID and the number of visible items from data attributes
+                var targetId = $toggle.data('target');
+                var visibleCount = parseInt($toggle.data('visible-count')) || 5;
+                // Select all option items within the target container
+                var $options = $('#' + targetId + ' .option-item');
+                var extraCount = $options.length - visibleCount;
+
+                // If there are more items than the visible count, hide extras and update the toggle text dynamically
+                if ($options.length > visibleCount) {
+                    $options.slice(visibleCount).hide();
+                    // Set the toggle text to the number of hidden items (e.g., "3+ view")
+                    $toggle.show().text(extraCount + "+ view");
+
+                    $toggle.on('click', function(e) {
+                        e.preventDefault();
+                        if ($toggle.text().trim() === extraCount + "+ view") {
+                            $options.slice(visibleCount).slideDown();
+                            $toggle.text("Show Less");
+                        } else {
+                            $options.slice(visibleCount).slideUp(function() {
+                                $toggle.text(extraCount + "+ view");
+                            });
+                        }
+                    });
+                } else {
+                    $toggle.hide();
+                }
+            });
+        });
+    </script>
+}
