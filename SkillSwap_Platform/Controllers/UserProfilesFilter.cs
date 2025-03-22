@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using System.Security.Claims;
 
@@ -18,12 +19,13 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
         }
 
-        public override void OnActionExecuting(ActionExecutingContext context)
+        #region Async Action Execution
+        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            base.OnActionExecuting(context);
-
+            // Check if the controller is a Controller (for ViewData access).
             if (context.Controller is Controller controller)
             {
+                // Proceed only if the user is authenticated.
                 if (context.HttpContext.User.Identity?.IsAuthenticated == true)
                 {
                     var userIdClaim = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -31,18 +33,21 @@ namespace SkillSwap_Platform.Controllers
                     {
                         try
                         {
-                            var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+                            // Asynchronously fetch the user.
+                            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
                             if (user != null)
                             {
-                                // Update Profile Image in ViewData
+                                // Update ViewData with Profile Image.
                                 controller.ViewData["UserProfileImage"] =
-                                    string.IsNullOrEmpty(user.ProfileImageUrl) ? null : $"/uploads/profile/{Path.GetFileName(user.ProfileImageUrl)}";
+                                    string.IsNullOrEmpty(user.ProfileImageUrl)
+                                        ? null
+                                        : $"/uploads/profile/{Path.GetFileName(user.ProfileImageUrl)}";
 
-                                // Update last active time
+                                // Update last active time.
                                 user.LastActive = DateTime.UtcNow;
-                                _context.SaveChanges();
+                                await _context.SaveChangesAsync();
 
-                                // Calculate online status (e.g., within the last 10 minutes)
+                                // Calculate online status (user is online if updated within the last 10 minutes).
                                 bool isOnline = (DateTime.UtcNow - user.LastActive.Value).TotalMinutes < 10;
                                 controller.ViewData["IsOnline"] = isOnline;
                             }
@@ -53,14 +58,22 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
                 }
+                else
+                {
+                    // If not authenticated, redirect to Login.
+                    context.Result = new RedirectToActionResult("Login", "Home", null);
+                    return;
+                }
             }
             else
             {
-                // If not authenticated, redirect to Login.
+                // If the controller is not of type Controller, redirect to Login.
                 context.Result = new RedirectToActionResult("Login", "Home", null);
                 return;
             }
-            base.OnActionExecuting(context);
+            // Continue to the action.
+            await next();
         }
+        #endregion
     }
 }

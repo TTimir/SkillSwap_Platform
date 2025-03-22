@@ -44,38 +44,45 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            try
+            // Use transaction for consistency when updating multiple tables.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                // Clear existing roles.
-                var existingRoles = await _context.TblUserRoles.Where(ur => ur.UserId == userId).ToListAsync();
-                _context.TblUserRoles.RemoveRange(existingRoles);
-
-                // Map SelectedRole to role IDs.
-                if (model.SelectedRole == "Teacher")
-                    _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 2 });
-                else if (model.SelectedRole == "Student")
-                    _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 3 });
-                else if (model.SelectedRole == "Both")
+                try
                 {
-                    _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 2 });
-                    _context.TblUserRoles.Add(new TblUserRole { UserId = userId.Value, RoleId = 3 });
+                    // Remove existing roles.
+                    var existingRoles = await _context.TblUserRoles.Where(ur => ur.UserId == userId).ToListAsync();
+                    _context.TblUserRoles.RemoveRange(existingRoles);
+
+                    // Map SelectedRole to role IDs.
+                    if (model.SelectedRole == "Teacher")
+                        _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 2 });
+                    else if (model.SelectedRole == "Student")
+                        _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 3 });
+                    else if (model.SelectedRole == "Both")
+                    {
+                        _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 2 });
+                        _context.TblUserRoles.Add(new TblUserRole { UserId = userId, RoleId = 3 });
+                    }
+
+                    // Save referral info in the user record.
+                    var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+                    if (user != null)
+                        user.Description = "Referral: " + model.ReferralSource;
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    
+                    return RedirectToAction(nameof(ProfileCompletion));
                 }
-
-                // Save referral info in the user record.
-                var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
-                if (user != null)
-                    user.Description = "Referral: " + model.ReferralSource;
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(ProfileCompletion));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving role selection for user {UserId}", userId);
-                ViewBag.ErrorMessage = "An error occurred while saving your role selection.";
-                return View(model);
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error saving role selection for user {UserId}", userId);
+                    ViewBag.ErrorMessage = "An error occurred while saving your role selection.";
+                    return View(model);
+                }
             }
         }
 
@@ -471,243 +478,6 @@ namespace SkillSwap_Platform.Controllers
             //    return RedirectToAction(nameof(SkillPreference));
         }
 
-        // Helper method to process education entries.
-        private List<string> ProcessEducationEntries(IFormCollection form, int userId, out bool isValid, out string error)
-        {
-            isValid = true;
-            error = string.Empty;
-            var summaries = new List<string>();
-
-            var degreeTypes = form["education[degree][]"].ToArray();
-            var degreeNames = form["education[degree_name][]"].ToArray();
-            var institutions = form["education[institution_name][]"].ToArray();
-            var eduStartDates = form["education[start_date][]"].ToArray();
-            var eduEndDates = form["education[end_date][]"].ToArray();
-            var eduDescriptions = form["education[description][]"].ToArray();
-
-            int eduCount = new int[] { degreeTypes.Length, degreeNames.Length, institutions.Length, eduStartDates.Length, eduEndDates.Length, eduDescriptions.Length }.Max();
-
-            for (int i = 0; i < eduCount; i++)
-            {
-                string degreeType = i < degreeTypes.Length ? degreeTypes[i]?.Trim() : "";
-                string degreeName = i < degreeNames.Length ? degreeNames[i]?.Trim() : "";
-                string institution = i < institutions.Length ? institutions[i]?.Trim() : "";
-                string startDateStr = i < eduStartDates.Length ? eduStartDates[i]?.Trim() : "";
-                string endDateStr = i < eduEndDates.Length ? eduEndDates[i]?.Trim() : "";
-                string eduDesc = i < eduDescriptions.Length ? eduDescriptions[i]?.Trim() : "";
-
-                // Skip completely empty rows.
-                if (string.IsNullOrWhiteSpace(degreeType) &&
-                    string.IsNullOrWhiteSpace(degreeName) &&
-                    string.IsNullOrWhiteSpace(institution) &&
-                    string.IsNullOrWhiteSpace(startDateStr) &&
-                    string.IsNullOrWhiteSpace(endDateStr) &&
-                    string.IsNullOrWhiteSpace(eduDesc))
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(degreeType) || string.IsNullOrWhiteSpace(degreeName) ||
-                    string.IsNullOrWhiteSpace(institution))
-                {
-                    isValid = false;
-                    error = $"Degree, Degree Name, and Institution are required for education entry {i + 1}.";
-                    break;
-                }
-
-                if (!DateTime.TryParse(startDateStr, out DateTime startDate))
-                {
-                    isValid = false;
-                    error = $"Invalid Start Date for education entry {i + 1}.";
-                    break;
-                }
-
-                DateTime? endDate = null;
-                if (!string.IsNullOrWhiteSpace(endDateStr))
-                {
-                    if (DateTime.TryParse(endDateStr, out DateTime parsedEnd))
-                        endDate = parsedEnd;
-                    else
-                    {
-                        isValid = false;
-                        error = $"Invalid End Date for education entry {i + 1}.";
-                        break;
-                    }
-                }
-
-                summaries.Add($"{degreeName} from {institution}");
-
-                var education = new TblEducation
-                {
-                    UserId = userId,
-                    Degree = degreeType,
-                    DegreeName = degreeName,
-                    UniversityName = institution, // Or use a different property if needed
-                    InstitutionName = institution,
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    Description = eduDesc
-                };
-                _context.TblEducations.Add(education);
-            }
-
-            if (!summaries.Any())
-            {
-                isValid = false;
-                error = "At least one valid education entry must be provided.";
-            }
-            return summaries;
-        }
-
-        // Helper method to process language entries.
-        private List<string> ProcessLanguageEntries(IFormCollection form, int userId, out bool isValid, out string error)
-        {
-            isValid = true;
-            error = string.Empty;
-            var summaries = new List<string>();
-
-            var languageNames = form["language[name][]"].ToArray();
-            var languageLevels = form["language[level][]"].ToArray();
-            int langCount = languageNames.Length;
-
-            if (langCount == 0)
-            {
-                isValid = false;
-                error = "At least one language entry is required.";
-                return summaries;
-            }
-
-            for (int i = 0; i < langCount; i++)
-            {
-                string langName = languageNames[i]?.Trim();
-                string proficiency = languageLevels.ElementAtOrDefault(i)?.Trim();
-
-                if (string.IsNullOrWhiteSpace(langName) && string.IsNullOrWhiteSpace(proficiency))
-                    continue;
-
-                if (string.IsNullOrWhiteSpace(langName))
-                {
-                    isValid = false;
-                    error = $"Language name is required for language entry {i + 1}.";
-                    break;
-                }
-
-                summaries.Add(!string.IsNullOrWhiteSpace(proficiency)
-                    ? $"{langName} ({proficiency})"
-                    : langName);
-
-                var language = new TblLanguage
-                {
-                    UserId = userId,
-                    Language = langName,
-                    Proficiency = proficiency
-                };
-                _context.TblLanguages.Add(language);
-            }
-
-            if (!summaries.Any())
-            {
-                isValid = false;
-                error = "At least one valid language entry must be provided.";
-            }
-            return summaries;
-        }
-
-        // Helper method to process experience entries and calculate total years.
-        private double ProcessExperienceEntries(IFormCollection form, int userId, out bool isValid, out string error)
-        {
-            isValid = true;
-            error = string.Empty;
-            double totalYears = 0;
-            int validCount = 0;
-
-            var compNames = form["experience[company_name][]"].ToArray();
-            var positions = form["experience[position][]"].ToArray();
-            var expStartDates = form["experience[start_date][]"].ToArray();
-            var expEndDates = form["experience[end_date][]"].ToArray();
-            var expDescriptions = form["experience[description][]"].ToArray();
-
-            int expCount = new int[] { compNames.Length, positions.Length, expStartDates.Length, expEndDates.Length, expDescriptions.Length }.Max();
-
-            if (expCount == 0)
-            {
-                isValid = false;
-                error = "At least one experience entry is required.";
-                return totalYears;
-            }
-
-            for (int i = 0; i < expCount; i++)
-            {
-                string companyName = i < compNames.Length ? compNames[i]?.Trim() : "";
-                string position = i < positions.Length ? positions[i]?.Trim() : "";
-                string startDateStr = i < expStartDates.Length ? expStartDates[i]?.Trim() : "";
-                string endDateStr = i < expEndDates.Length ? expEndDates[i]?.Trim() : "";
-                string expDesc = i < expDescriptions.Length ? expDescriptions[i]?.Trim() : "";
-
-                if (string.IsNullOrWhiteSpace(companyName) &&
-                    string.IsNullOrWhiteSpace(position) &&
-                    string.IsNullOrWhiteSpace(startDateStr) &&
-                    string.IsNullOrWhiteSpace(endDateStr) &&
-                    string.IsNullOrWhiteSpace(expDesc))
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(position))
-                {
-                    isValid = false;
-                    error = $"Both Company and Position are required for experience entry {i + 1}.";
-                    break;
-                }
-
-                if (!DateTime.TryParse(startDateStr, out DateTime expStart))
-                {
-                    isValid = false;
-                    error = $"Invalid Start Date for experience entry {i + 1}.";
-                    break;
-                }
-
-                DateTime expEnd;
-                if (!string.IsNullOrWhiteSpace(endDateStr))
-                {
-                    if (!DateTime.TryParse(endDateStr, out expEnd))
-                    {
-                        isValid = false;
-                        error = $"Invalid End Date for experience entry {i + 1}.";
-                        break;
-                    }
-                }
-                else
-                {
-                    expEnd = DateTime.Now;
-                }
-
-                validCount++;
-                double duration = (expEnd - expStart).TotalDays / 365;
-                totalYears += duration;
-
-                var experience = new TblExperience
-                {
-                    UserId = userId,
-                    CompanyName = companyName,
-                    Position = position,
-                    Description = expDesc,
-                    StartDate = expStart,
-                    EndDate = string.IsNullOrWhiteSpace(endDateStr) ? (DateTime?)null : expEnd,
-                    Years = validCount > 0 ? (decimal?)Math.Round(totalYears, 2) : null
-                };
-                _context.TblExperiences.Add(experience);
-            }
-
-            if (validCount == 0)
-            {
-                isValid = false;
-                error = "At least one valid experience entry must be provided.";
-            }
-
-            return totalYears;
-        }
-
         #endregion
 
         #region STEP 4: Skill Preference
@@ -758,7 +528,7 @@ namespace SkillSwap_Platform.Controllers
             // Update basic skill preferences in TblUsers.
             user.DesiredSkillAreas = Request.Form["willingSkills"];
             user.OfferedSkillAreas = Request.Form["offeredSkills"];
-          
+
             // Extract offered skills list from the hidden input.
             var offeredSkillsFromBadges = Request.Form["offeredSkills"]
                 .ToString()
@@ -1000,7 +770,7 @@ namespace SkillSwap_Platform.Controllers
             // Validate social media URLs (for selected platforms)
             bool IsValidUrl(string url)
             {
-                if (string.IsNullOrWhiteSpace(url)) 
+                if (string.IsNullOrWhiteSpace(url))
                     return false; // Optional field
                 string pattern = @"^(https?:\/\/)?(www\.)?(facebook|instagram|linkedin|behance|pinterest|twitter|github)\.com\/[A-Za-z0-9_\-\/]+$";
                 return System.Text.RegularExpressions.Regex.IsMatch(url, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -1146,6 +916,243 @@ namespace SkillSwap_Platform.Controllers
             }
 
             return $"/uploads/{folderName}/{uniqueFileName}";
+        }
+
+        // Helper method to process education entries.
+        private List<string> ProcessEducationEntries(IFormCollection form, int userId, out bool isValid, out string error)
+        {
+            isValid = true;
+            error = string.Empty;
+            var summaries = new List<string>();
+
+            var degreeTypes = form["education[degree][]"].ToArray();
+            var degreeNames = form["education[degree_name][]"].ToArray();
+            var institutions = form["education[institution_name][]"].ToArray();
+            var eduStartDates = form["education[start_date][]"].ToArray();
+            var eduEndDates = form["education[end_date][]"].ToArray();
+            var eduDescriptions = form["education[description][]"].ToArray();
+
+            int eduCount = new int[] { degreeTypes.Length, degreeNames.Length, institutions.Length, eduStartDates.Length, eduEndDates.Length, eduDescriptions.Length }.Max();
+
+            for (int i = 0; i < eduCount; i++)
+            {
+                string degreeType = i < degreeTypes.Length ? degreeTypes[i]?.Trim() : "";
+                string degreeName = i < degreeNames.Length ? degreeNames[i]?.Trim() : "";
+                string institution = i < institutions.Length ? institutions[i]?.Trim() : "";
+                string startDateStr = i < eduStartDates.Length ? eduStartDates[i]?.Trim() : "";
+                string endDateStr = i < eduEndDates.Length ? eduEndDates[i]?.Trim() : "";
+                string eduDesc = i < eduDescriptions.Length ? eduDescriptions[i]?.Trim() : "";
+
+                // Skip completely empty rows.
+                if (string.IsNullOrWhiteSpace(degreeType) &&
+                    string.IsNullOrWhiteSpace(degreeName) &&
+                    string.IsNullOrWhiteSpace(institution) &&
+                    string.IsNullOrWhiteSpace(startDateStr) &&
+                    string.IsNullOrWhiteSpace(endDateStr) &&
+                    string.IsNullOrWhiteSpace(eduDesc))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(degreeType) || string.IsNullOrWhiteSpace(degreeName) ||
+                    string.IsNullOrWhiteSpace(institution))
+                {
+                    isValid = false;
+                    error = $"Degree, Degree Name, and Institution are required for education entry {i + 1}.";
+                    break;
+                }
+
+                if (!DateTime.TryParse(startDateStr, out DateTime startDate))
+                {
+                    isValid = false;
+                    error = $"Invalid Start Date for education entry {i + 1}.";
+                    break;
+                }
+
+                DateTime? endDate = null;
+                if (!string.IsNullOrWhiteSpace(endDateStr))
+                {
+                    if (DateTime.TryParse(endDateStr, out DateTime parsedEnd))
+                        endDate = parsedEnd;
+                    else
+                    {
+                        isValid = false;
+                        error = $"Invalid End Date for education entry {i + 1}.";
+                        break;
+                    }
+                }
+
+                summaries.Add($"{degreeName} from {institution}");
+
+                var education = new TblEducation
+                {
+                    UserId = userId,
+                    Degree = degreeType,
+                    DegreeName = degreeName,
+                    UniversityName = institution, // Or use a different property if needed
+                    InstitutionName = institution,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Description = eduDesc
+                };
+                _context.TblEducations.Add(education);
+            }
+
+            if (!summaries.Any())
+            {
+                isValid = false;
+                error = "At least one valid education entry must be provided.";
+            }
+            return summaries;
+        }
+
+        // Helper method to process language entries.
+        private List<string> ProcessLanguageEntries(IFormCollection form, int userId, out bool isValid, out string error)
+        {
+            isValid = true;
+            error = string.Empty;
+            var summaries = new List<string>();
+
+            var languageNames = form["language[name][]"].ToArray();
+            var languageLevels = form["language[level][]"].ToArray();
+            int langCount = languageNames.Length;
+
+            if (langCount == 0)
+            {
+                isValid = false;
+                error = "At least one language entry is required.";
+                return summaries;
+            }
+
+            for (int i = 0; i < langCount; i++)
+            {
+                string langName = languageNames[i]?.Trim();
+                string proficiency = languageLevels.ElementAtOrDefault(i)?.Trim();
+
+                if (string.IsNullOrWhiteSpace(langName) && string.IsNullOrWhiteSpace(proficiency))
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(langName))
+                {
+                    isValid = false;
+                    error = $"Language name is required for language entry {i + 1}.";
+                    break;
+                }
+
+                summaries.Add(!string.IsNullOrWhiteSpace(proficiency)
+                    ? $"{langName} ({proficiency})"
+                    : langName);
+
+                var language = new TblLanguage
+                {
+                    UserId = userId,
+                    Language = langName,
+                    Proficiency = proficiency
+                };
+                _context.TblLanguages.Add(language);
+            }
+
+            if (!summaries.Any())
+            {
+                isValid = false;
+                error = "At least one valid language entry must be provided.";
+            }
+            return summaries;
+        }
+
+        // Helper method to process experience entries and calculate total years.
+        private double ProcessExperienceEntries(IFormCollection form, int userId, out bool isValid, out string error)
+        {
+            isValid = true;
+            error = string.Empty;
+            double totalYears = 0;
+            int validCount = 0;
+
+            var compNames = form["experience[company_name][]"].ToArray();
+            var positions = form["experience[position][]"].ToArray();
+            var expStartDates = form["experience[start_date][]"].ToArray();
+            var expEndDates = form["experience[end_date][]"].ToArray();
+            var expDescriptions = form["experience[description][]"].ToArray();
+
+            int expCount = new int[] { compNames.Length, positions.Length, expStartDates.Length, expEndDates.Length, expDescriptions.Length }.Max();
+
+            if (expCount == 0)
+            {
+                isValid = false;
+                error = "At least one experience entry is required.";
+                return totalYears;
+            }
+
+            for (int i = 0; i < expCount; i++)
+            {
+                string companyName = i < compNames.Length ? compNames[i]?.Trim() : "";
+                string position = i < positions.Length ? positions[i]?.Trim() : "";
+                string startDateStr = i < expStartDates.Length ? expStartDates[i]?.Trim() : "";
+                string endDateStr = i < expEndDates.Length ? expEndDates[i]?.Trim() : "";
+                string expDesc = i < expDescriptions.Length ? expDescriptions[i]?.Trim() : "";
+
+                if (string.IsNullOrWhiteSpace(companyName) &&
+                    string.IsNullOrWhiteSpace(position) &&
+                    string.IsNullOrWhiteSpace(startDateStr) &&
+                    string.IsNullOrWhiteSpace(endDateStr) &&
+                    string.IsNullOrWhiteSpace(expDesc))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(position))
+                {
+                    isValid = false;
+                    error = $"Both Company and Position are required for experience entry {i + 1}.";
+                    break;
+                }
+
+                if (!DateTime.TryParse(startDateStr, out DateTime expStart))
+                {
+                    isValid = false;
+                    error = $"Invalid Start Date for experience entry {i + 1}.";
+                    break;
+                }
+
+                DateTime expEnd;
+                if (!string.IsNullOrWhiteSpace(endDateStr))
+                {
+                    if (!DateTime.TryParse(endDateStr, out expEnd))
+                    {
+                        isValid = false;
+                        error = $"Invalid End Date for experience entry {i + 1}.";
+                        break;
+                    }
+                }
+                else
+                {
+                    expEnd = DateTime.Now;
+                }
+
+                validCount++;
+                double duration = (expEnd - expStart).TotalDays / 365;
+                totalYears += duration;
+
+                var experience = new TblExperience
+                {
+                    UserId = userId,
+                    CompanyName = companyName,
+                    Position = position,
+                    Description = expDesc,
+                    StartDate = expStart,
+                    EndDate = string.IsNullOrWhiteSpace(endDateStr) ? (DateTime?)null : expEnd,
+                    Years = validCount > 0 ? (decimal?)Math.Round(totalYears, 2) : null
+                };
+                _context.TblExperiences.Add(experience);
+            }
+
+            if (validCount == 0)
+            {
+                isValid = false;
+                error = "At least one valid experience entry must be provided.";
+            }
+
+            return totalYears;
         }
 
         #endregion

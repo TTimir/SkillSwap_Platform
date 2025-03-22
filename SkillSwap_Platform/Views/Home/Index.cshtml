@@ -481,14 +481,14 @@
                                                 {
                                                     // List of default images.
                                                     var defaultImages = new List<string>
-                                                    {
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
-                                                    };
+                                        {
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                        };
 
                                                     // Use a deterministic approach:
                                                     int index = offer.OfferId % defaultImages.Count;
@@ -1149,68 +1149,72 @@
                 </div>
             </div>
         </div>
-        <div class="row wow fadeInUp" data-wow-delay="300ms">
-            <div class="col-lg-12">
-                <div class="vam_nav_style dots_none slider-4-grid2 owl-carousel owl-theme">
-                    @if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
-                    {
-                        foreach (var freelancer in Model.HighestRatedFreelancers)
-                        {
-                            <div class="item">
-                                <div class="freelancer-style1 text-center bdr1 bdrs16 hover-box-shadow">
-                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle">
-                                        <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" />
+        <div class="row wow fadeInUp equal-height" data-wow-delay="300ms">
+            @if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
+            {
+                foreach (var freelancer in Model.HighestRatedFreelancers)
+                {
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="item">
+                            <div class="listing-style1 text-center style3 offer-card hover-box-shadow">
+                                <div class="list-thumb">
+                                    <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
+                                        <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" style="max-width:100%;" />
                                         <span class="online"></span>
                                     </div>
-                                    <div class="details">
-                                        <h5 class="title mb-1">@freelancer.Name</h5>
-                                        <p class="mb-0">@freelancer.Location</p>
-                                        <div class="skill-tags d-flex align-items-center justify-content-center mb5">
-                                            @{
-                                                int count = freelancer.Skills != null ? freelancer.Skills.Count : 0;
-                                                int maxDisplay = count < 3 ? count : 3;
-                                            }
-                                            @for (int i = 0; i < maxDisplay; i++)
-                                            {
-                                                <span class="tag me-2">@freelancer.Skills[i]</span>
-                                            }
-                                        </div>
+                                </div>
+                                <div class="list-content">
+                                    <h5 class="title mb-1">@freelancer.Name</h5>
+                                    <p class="mb-0">@freelancer.Location</p>
+                                    <div class="skill-tags d-flex align-items-center justify-content-center mb5">
+                                        @{
+                                            int count = freelancer.OfferedSkillAreas != null ? freelancer.OfferedSkillAreas.Count : 0;
+                                            int maxDisplay = count < 3 ? count : 3;
+                                        }
+                                        @for (int i = 0; i < maxDisplay; i++)
+                                        {
+                                            <span class="tag me-2">@freelancer.OfferedSkillAreas[i]</span>
+                                        }
+                                    </div>
 
-                                        <div class="review">
-                                            <p>
-                                                <i class="fas fa-star fz10 review-color pr10"></i>
-                                                <span class="dark-color fw500">@freelancer.Rating</span> (@freelancer.JobSuccess reviews)
-                                            </p>
-                                        </div>
-                                        <hr class="opacity-100 mt20 mb15">
-                                        <div class="fl-meta d-flex align-items-center justify-content-between">
-                                            <a class="meta fw500 text-start">
-                                                Location<br>
-                                                <span class="fz14 fw400">@freelancer.Location</span>
-                                            </a>
-                                            <a class="meta fw500 text-start">
-                                                Job Success<br>
-                                                <span class="fz14 fw400">% @freelancer.JobSuccess</span>
-                                            </a>
-                                        </div>
-                                        <div class="d-grid mt15">
-                                            <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = freelancer.Name })" class="ud-btn btn-white2 bdrs90">
-                                                View Profile <i class="fal fa-arrow-right-long"></i>
-                                            </a>
-                                        </div>
+                                    <div class="review">
+                                        <p>
+                                            <i class="fas fa-star fz10 review-color pr10"></i>
+                                            <span class="dark-color fw500">@freelancer.Rating</span> (@freelancer.JobSuccess reviews)
+                                        </p>
+                                    </div>
+                                    <hr class="opacity-100 mt20 mb15">
+                                    <div class="fl-meta d-flex align-items-center justify-content-between">
+                                        <a class="meta fw500 text-start">
+                                            Location<br>
+                                            <span class="fz14 fw400">@freelancer.Location</span>
+                                        </a>
+                                        <a class="meta fw500 text-start">
+                                            Recommendation<br>
+                                            <span class="fz14 fw400">% @freelancer.Recommendation</span>
+                                        </a>
+                                        <a class="meta fw500 text-start">
+                                            Job Success<br>
+                                            <span class="fz14 fw400">% @freelancer.JobSuccess</span>
+                                        </a>
+                                    </div>
+                                    <div class="d-grid mt15">
+                                        <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = freelancer.Name })" class="ud-btn btn-white2 bdrs90">
+                                            View Profile <i class="fal fa-arrow-right-long"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="item">
-                            <p>No freelancers available.</p>
                         </div>
-                    }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="item">
+                    <p>No freelancers available.</p>
                 </div>
-            </div>
+            }
         </div>
     </div>
 </section>

@@ -156,88 +156,95 @@ namespace SkillSwap_Platform.Controllers
                 PopulateDropdowns(model, currentUserId);
                 return View(model);
             }
-            try
+            // Wrap the multi-step process in a transaction.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                var SkillIds = (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
-                                ? string.Join(",", model.SelectedSkillIds)
-                                : string.Empty;
-
-                // Join the selected device values into a comma-separated string.
-                string devices = (model.SelectedDevices != null && model.SelectedDevices.Any())
-                    ? string.Join(",", model.SelectedDevices)
-                    : string.Empty;
-
-                // Create a new offer entity.
-                var offer = new TblOffer
+                try
                 {
-                    UserId = currentUserId,
-                    Title = model.Title,
-                    TokenCost = model.TokenCost,
-                    TimeCommitmentDays = model.TimeCommitmentDays,
-                    Category = model.Category,
-                    CreatedDate = DateTime.UtcNow,
-                    IsActive = true,
-                    FreelanceType = model.FreelanceType,
-                    ScopeOfWork = model.ScopeOfWork,
-                    AssistanceRounds = model.AssistanceRounds,
-                    CollaborationMethod = model.CollaborationMethod,
-                    RequiredSkillLevel = model.RequiredSkillLevel,
-                    SkillIdOfferOwner = SkillIds,
-                    Device = devices,
-                    Tools = model.Tools,
-                    WillingSkill = model.SelectedWillingSkill
-                };
+                    var SkillIds = (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
+                                    ? string.Join(",", model.SelectedSkillIds)
+                                    : string.Empty;
 
-                // Convert selected skill IDs into a comma-separated string and store it.
-                if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
-                {
-                    offer.SkillIdOfferOwner = string.Join(",", model.SelectedSkillIds);
-                }
+                    // Join the selected device values into a comma-separated string.
+                    string devices = (model.SelectedDevices != null && model.SelectedDevices.Any())
+                        ? string.Join(",", model.SelectedDevices)
+                        : string.Empty;
 
-                // Save the offer first to generate a valid OfferID
-                _context.TblOffers.Add(offer);
-                await _context.SaveChangesAsync();
-
-                // If portfolio files are provided, process them.
-                if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
-                {
-                    // We store portfolio as a JSON array (or you could use a delimited string).
-                    var portfolioUrls = new List<string>();
-                    foreach (var file in model.PortfolioFiles)
+                    // Create a new offer entity.
+                    var offer = new TblOffer
                     {
-                        if (file != null && file.Length > 0)
-                        {
-                            if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
-                            {
-                                ModelState.AddModelError("PortfolioFiles", errorMsg);
-                                return View(model);
-                            }
-                            string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
-                            portfolioUrls.Add(fileUrl);
+                        UserId = currentUserId,
+                        Title = model.Title,
+                        TokenCost = model.TokenCost,
+                        TimeCommitmentDays = model.TimeCommitmentDays,
+                        Category = model.Category,
+                        CreatedDate = DateTime.UtcNow,
+                        IsActive = true,
+                        FreelanceType = model.FreelanceType,
+                        ScopeOfWork = model.ScopeOfWork,
+                        AssistanceRounds = model.AssistanceRounds,
+                        CollaborationMethod = model.CollaborationMethod,
+                        RequiredSkillLevel = model.RequiredSkillLevel,
+                        SkillIdOfferOwner = SkillIds,
+                        Device = devices,
+                        Tools = model.Tools,
+                        WillingSkill = model.SelectedWillingSkill
+                    };
 
-                            // Optionally, also save each portfolio file in tblOfferPortfolio:
-                            var portfolio = new TblOfferPortfolio
-                            {
-                                OfferId = offer.OfferId, // Note: OfferID is generated after saving; you might need to save offer first.
-                                FileUrl = fileUrl,
-                                CreatedDate = DateTime.UtcNow
-                            };
-                            _context.TblOfferPortfolios.Add(portfolio);
-                        }
+                    // Convert selected skill IDs into a comma-separated string and store it.
+                    if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
+                    {
+                        offer.SkillIdOfferOwner = string.Join(",", model.SelectedSkillIds);
                     }
-                    // Optionally, update the offer's Portfolio JSON field.
-                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
-                    await _context.SaveChangesAsync();
-                }
 
-                TempData["SuccessMessage"] = "Offer created successfully.";
-                return RedirectToAction("Create", "UserOfferManage");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating offer for user {UserId}", currentUserId);
-                ModelState.AddModelError("", "An error occurred while creating your offer. Please try again.");
-                return RedirectToAction("EP500", "EP");
+                    // Save the offer first to generate a valid OfferID
+                    _context.TblOffers.Add(offer);
+                    await _context.SaveChangesAsync();
+
+                    // If portfolio files are provided, process them.
+                    if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
+                    {
+                        // We store portfolio as a JSON array (or you could use a delimited string).
+                        var portfolioUrls = new List<string>();
+                        foreach (var file in model.PortfolioFiles)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
+                                {
+                                    ModelState.AddModelError("PortfolioFiles", errorMsg);
+                                    return View(model);
+                                }
+                                string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
+                                portfolioUrls.Add(fileUrl);
+
+                                // Optionally, also save each portfolio file in tblOfferPortfolio:
+                                var portfolio = new TblOfferPortfolio
+                                {
+                                    OfferId = offer.OfferId, // Note: OfferID is generated after saving; you might need to save offer first.
+                                    FileUrl = fileUrl,
+                                    CreatedDate = DateTime.UtcNow
+                                };
+                                _context.TblOfferPortfolios.Add(portfolio);
+                            }
+                        }
+                        // Optionally, update the offer's Portfolio JSON field.
+                        offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
+                        await _context.SaveChangesAsync();
+                    }
+                    // Commit the transaction when all steps succeed.
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Offer created successfully.";
+                    return RedirectToAction("Create", "UserOfferManage");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating offer for user {UserId}", currentUserId);
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("", "An error occurred while creating your offer. Please try again.");
+                    return RedirectToAction("EP500", "EP");
+                }
             }
         }
 
@@ -290,7 +297,7 @@ namespace SkillSwap_Platform.Controllers
                      new SelectListItem { Value = "In=Person", Text = "InPerson" },
                      new SelectListItem { Value = "Online", Text = "Online" }
                  };
-                
+
                 // Create an edit model and prepopulate fields.
                 var model = new OfferEditVM
                 {
@@ -371,119 +378,127 @@ namespace SkillSwap_Platform.Controllers
             }
 
             int userId = GetUserId();
-            try
+            // Wrap the multi-step process in a transaction.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == model.OfferId && o.UserId == userId);
-                if (offer == null)
+                try
                 {
-                    return NotFound("Offer not found");
-                }
-
-                // Update the offer entity with values from the model.
-                offer.Title = model.Title;
-                offer.TokenCost = model.TokenCost;
-                offer.TimeCommitmentDays = model.TimeCommitmentDays;
-                offer.Category = model.Category;
-                offer.FreelanceType = model.FreelanceType;
-                offer.RequiredSkillLevel = model.RequiredSkillLevel;
-                offer.ScopeOfWork = model.ScopeOfWork;
-                offer.AssistanceRounds = model.AssistanceRounds;
-                offer.Device = model.SelectedDevices != null && model.SelectedDevices.Any()
-                       ? string.Join(",", model.SelectedDevices)
-                       : string.Empty;
-                offer.Tools = model.Tools;
-                offer.CollaborationMethod = model.CollaborationMethod;
-                offer.WillingSkill = model.SelectedWillingSkill;
-
-                // Store selected skill IDs as comma-separated.
-                if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
-                {
-                    offer.SkillIdOfferOwner = string.Join(",", model.SelectedSkillIds);
-                }
-                else
-                {
-                    offer.SkillIdOfferOwner = string.Empty;
-                }
-
-                // Deserialize the existing portfolio from the hidden field (updated by the client)
-                var updatedPortfolioUrls = new List<string>();
-                if (!string.IsNullOrWhiteSpace(model.Portfolio))
-                {
-                    try
+                    var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == model.OfferId && o.UserId == userId);
+                    if (offer == null)
                     {
-                        updatedPortfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(model.Portfolio)
-                                                ?? new List<string>();
+                        return NotFound("Offer not found");
                     }
-                    catch
-                    {
-                        // Log error if needed; continue with empty list.
-                    }
-                }
 
-                // If new portfolio files are provided, process them.
-                if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
-                {
-                    // (Optional) Remove old portfolio entries from tblOfferPortfolio if you wish to replace them.
-                    var existingPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
-                    foreach (var entry in existingPortfolios)
-                    {
-                        _context.TblOfferPortfolios.Remove(entry);
-                    }
-                    updatedPortfolioUrls.Clear(); // Clear old URLs if replacing completely.
+                    // Update the offer entity with values from the model.
+                    offer.Title = model.Title;
+                    offer.TokenCost = model.TokenCost;
+                    offer.TimeCommitmentDays = model.TimeCommitmentDays;
+                    offer.Category = model.Category;
+                    offer.FreelanceType = model.FreelanceType;
+                    offer.RequiredSkillLevel = model.RequiredSkillLevel;
+                    offer.ScopeOfWork = model.ScopeOfWork;
+                    offer.AssistanceRounds = model.AssistanceRounds;
+                    offer.Device = model.SelectedDevices != null && model.SelectedDevices.Any()
+                           ? string.Join(",", model.SelectedDevices)
+                           : string.Empty;
+                    offer.Tools = model.Tools;
+                    offer.CollaborationMethod = model.CollaborationMethod;
+                    offer.WillingSkill = model.SelectedWillingSkill;
 
-                    foreach (var file in model.PortfolioFiles)
+                    // Store selected skill IDs as comma-separated.
+                    if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
                     {
-                        if (file != null && file.Length > 0)
+                        offer.SkillIdOfferOwner = string.Join(",", model.SelectedSkillIds);
+                    }
+                    else
+                    {
+                        offer.SkillIdOfferOwner = string.Empty;
+                    }
+
+                    // Deserialize the existing portfolio from the hidden field (updated by the client)
+                    var updatedPortfolioUrls = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(model.Portfolio))
+                    {
+                        try
                         {
-                            if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
-                            {
-                                ModelState.AddModelError("PortfolioFiles", errorMsg);
-                                PopulateDropdownsForEdit(model, userId);
-                                return View(model);
-                            }
-                            string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
-                            updatedPortfolioUrls.Add(fileUrl);
-
-                            // Optionally, add new portfolio entry in tblOfferPortfolio.
-                            var portfolio = new TblOfferPortfolio
-                            {
-                                OfferId = offer.OfferId,
-                                FileUrl = fileUrl,
-                                CreatedDate = DateTime.UtcNow
-                            };
-                            _context.TblOfferPortfolios.Add(portfolio);
+                            updatedPortfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(model.Portfolio)
+                                                    ?? new List<string>();
+                        }
+                        catch
+                        {
+                            // Log error if needed; continue with empty list.
                         }
                     }
-                    // Update the Portfolio JSON field.
-                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
-                }
-                else
-                {
-                    // No new files provided.
-                    // Use the updated portfolio URLs from the hidden field (which reflects removals).
-                    offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
 
-                    // Optionally, update tblOfferPortfolios to reflect removals.
-                    var currentPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
-                    foreach (var entry in currentPortfolios)
+                    // If new portfolio files are provided, process them.
+                    if (model.PortfolioFiles != null && model.PortfolioFiles.Any())
                     {
-                        if (!updatedPortfolioUrls.Contains(entry.FileUrl))
+                        // (Optional) Remove old portfolio entries from tblOfferPortfolio if you wish to replace them.
+                        var existingPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
+                        foreach (var entry in existingPortfolios)
                         {
                             _context.TblOfferPortfolios.Remove(entry);
                         }
-                    }
-                }
+                        updatedPortfolioUrls.Clear(); // Clear old URLs if replacing completely.
 
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Offer updated successfully.";
-                return RedirectToAction("Edit", "UserOfferManage", new { offerId = offer.OfferId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating offer {OfferId} for user {UserId}", model.OfferId, userId);
-                ModelState.AddModelError("", "An error occurred while updating your offer. Please try again.");
-                PopulateDropdownsForEdit(model, userId);
-                return View(model);
+                        foreach (var file in model.PortfolioFiles)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                if (!_fileService.ValidateFile(file, new[] { ".jpg", ".jpeg", ".png" }, 1 * 1024 * 1024, out string errorMsg))
+                                {
+                                    ModelState.AddModelError("PortfolioFiles", errorMsg);
+                                    PopulateDropdownsForEdit(model, userId);
+                                    return View(model);
+                                }
+                                string fileUrl = await _fileService.UploadFileAsync(file, "portfolio");
+                                updatedPortfolioUrls.Add(fileUrl);
+
+                                // Optionally, add new portfolio entry in tblOfferPortfolio.
+                                var portfolio = new TblOfferPortfolio
+                                {
+                                    OfferId = offer.OfferId,
+                                    FileUrl = fileUrl,
+                                    CreatedDate = DateTime.UtcNow
+                                };
+                                _context.TblOfferPortfolios.Add(portfolio);
+                            }
+                        }
+                        // Update the Portfolio JSON field.
+                        offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
+                    }
+                    else
+                    {
+                        // No new files provided.
+                        // Use the updated portfolio URLs from the hidden field (which reflects removals).
+                        offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(updatedPortfolioUrls);
+
+                        // Optionally, update tblOfferPortfolios to reflect removals.
+                        var currentPortfolios = _context.TblOfferPortfolios.Where(p => p.OfferId == offer.OfferId).ToList();
+                        foreach (var entry in currentPortfolios)
+                        {
+                            if (!updatedPortfolioUrls.Contains(entry.FileUrl))
+                            {
+                                _context.TblOfferPortfolios.Remove(entry);
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    // Commit the transaction when all steps succeed.
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Offer updated successfully.";
+                    return RedirectToAction("Edit", "UserOfferManage", new { offerId = offer.OfferId });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating offer {OfferId} for user {UserId}", model.OfferId, userId);
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("", "An error occurred while updating your offer. Please try again.");
+                    PopulateDropdownsForEdit(model, userId);
+                    return View(model);
+                }
             }
         }
 
@@ -538,30 +553,37 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> DeleteConfirmed(int offerId)
         {
             int userId = GetUserId();
-            try
+            // Wrap the multi-step process in a transaction.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && !o.IsDeleted);
-                if (offer == null)
+                try
                 {
-                    return NotFound("Offer not found or already deleted.");
+                    var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && !o.IsDeleted);
+                    if (offer == null)
+                    {
+                        return NotFound("Offer not found or already deleted.");
+                    }
+
+                    // Mark as deleted (soft delete) and record the deletion date.
+                    offer.IsDeleted = true;
+                    offer.DeletedDate = DateTime.UtcNow;
+
+                    // Optionally, also set IsActive = false
+                    offer.IsActive = false;
+
+                    await _context.SaveChangesAsync();
+                    // Commit the transaction when all steps succeed.
+                    await transaction.CommitAsync();
+                    TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
+                    return RedirectToAction("OfferList", "UserOfferManage");
                 }
-
-                // Mark as deleted (soft delete) and record the deletion date.
-                offer.IsDeleted = true;
-                offer.DeletedDate = DateTime.UtcNow;
-
-                // Optionally, also set IsActive = false
-                offer.IsActive = false;
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
-                return RedirectToAction("OfferList", "UserOfferManage");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting offer {OfferId} for user {UserId}", offerId, userId);
-                TempData["ErrorMessage"] = "An error occurred while deleting the offer.";
-                return RedirectToAction("EP500", "EP");
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deleting offer {OfferId} for user {UserId}", offerId, userId);
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "An error occurred while deleting the offer.";
+                    return RedirectToAction("EP500", "EP");
+                }
             }
         }
 
@@ -630,35 +652,42 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> Restore(int offerId)
         {
             int userId = GetUserId();
-            try
+            // Wrap the multi-step process in a transaction.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && o.IsDeleted);
-                if (offer == null)
+                try
                 {
-                    return NotFound("Offer not found or cannot be restored.");
-                }
+                    var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId && o.IsDeleted);
+                    if (offer == null)
+                    {
+                        return NotFound("Offer not found or cannot be restored.");
+                    }
 
-                // Check if within grace period (15 days)
-                if (offer.DeletedDate.HasValue && offer.DeletedDate.Value.AddDays(15) < DateTime.UtcNow)
+                    // Check if within grace period (15 days)
+                    if (offer.DeletedDate.HasValue && offer.DeletedDate.Value.AddDays(15) < DateTime.UtcNow)
+                    {
+                        TempData["ErrorMessage"] = "The offer can no longer be restored as the grace period has expired.";
+                        return RedirectToAction("CancelledOffers", "UserOfferManage");
+                    }
+
+                    // Restore the offer.
+                    offer.IsDeleted = false;
+                    offer.DeletedDate = null;
+                    offer.IsActive = true; // Optionally, mark as active.
+
+                    await _context.SaveChangesAsync();
+                    // Commit the transaction when all steps succeed.
+                    await transaction.CommitAsync(); 
+                    TempData["SuccessMessage"] = "Offer has been successfully restored.";
+                    return RedirectToAction("OfferList", "UserOfferManage");
+                }
+                catch (Exception ex)
                 {
-                    TempData["ErrorMessage"] = "The offer can no longer be restored as the grace period has expired.";
-                    return RedirectToAction("CancelledOffers", "UserOfferManage");
+                    _logger.LogError(ex, "Error restoring offer {OfferId} for user {UserId}", offerId, userId);
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "An error occurred while restoring the offer.";
+                    return RedirectToAction("EP500", "EP");
                 }
-
-                // Restore the offer.
-                offer.IsDeleted = false;
-                offer.DeletedDate = null;
-                offer.IsActive = true; // Optionally, mark as active.
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Offer has been successfully restored.";
-                return RedirectToAction("OfferList", "UserOfferManage");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error restoring offer {OfferId} for user {UserId}", offerId, userId);
-                TempData["ErrorMessage"] = "An error occurred while restoring the offer.";
-                return RedirectToAction("EP500", "EP");
             }
         }
 

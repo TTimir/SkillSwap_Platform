@@ -628,34 +628,38 @@
                                             }                                            
                                          </span>
                                     </a>
-                                    @* <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
-                                        @{
-                                              // If user has languages, list them; otherwise, show a default message
-                                              var userLanguages = Model.Languages.Any()
-                                                  ? string.Join(", ", Model.Languages.Select(l => l.Language))
-                                                  : "<span class='text-muted'>🌍 No Languages Listed</span>";
-                                         }                               
-                                        <span class="text"><i class="flaticon-translator text-thm2 pe-2 vam"></i>Languages</span> <span class="">@Html.Raw(userLanguages)</span>
-                                    </a>
-                                    <a class="d-flex align-items-center justify-content-between mb-3" href="">
-                                        @{
-                                           // Loop through languages to find English
-                                            var englishEntry = Model.Languages.FirstOrDefault(l => l.Language.Equals("English", StringComparison.OrdinalIgnoreCase));
-
-                                            // Default message if English is missing
-                                            string englishLevel = "<span class='text-muted'>🌍 No English Proficiency Stated</span>";
-
-                                            if (englishEntry != null && !string.IsNullOrEmpty(englishEntry.Proficiency))
-                                            {
-                                                englishLevel = $"<span class='text-success'>{englishEntry.Proficiency}</span>"; // Show proficiency in green
-                                            }
-                                            else if (englishEntry != null)
-                                            {
-                                                englishLevel = "<span class='text-success'>🌱 Learning</span>"; // If English exists but no level is given
-                                            }
-                                        }                                       
-                                        <span class="text"><i class="flaticon-sliders text-thm2 pe-2 vam"></i>English Level</span> <span class="">@Html.Raw(englishLevel)</span>
-                                    </a> *@
+                                    @{
+                                    var languages = (IEnumerable<TblLanguage>)Model.Languages;
+                                
+                                    // For listing languages:
+                                    var userLanguages = languages.Any()
+                                        ? string.Join(", ", languages.Select(l => l.Language))
+                                        : "<span class='text-muted'>🌍 No Languages Listed</span>";
+                                }
+                                <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                    <span class="text"><i class="flaticon-translator text-thm2 pe-2 vam"></i>Languages</span>
+                                    <span class="">@Html.Raw(userLanguages)</span>
+                                </a>
+                                @{
+                                    // Loop through languages to find English
+                                    var englishEntry = languages.FirstOrDefault(l => l.Language.Equals("English", StringComparison.OrdinalIgnoreCase));
+                                
+                                    // Default message if English is missing
+                                    string englishLevel = "<span class='text-muted'>🌍 No English Proficiency Stated</span>";
+                                
+                                    if (englishEntry != null && !string.IsNullOrEmpty(englishEntry.Proficiency))
+                                    {
+                                        englishLevel = $"<span class='text-success'>{englishEntry.Proficiency}</span>"; // Show proficiency in green
+                                    }
+                                    else if (englishEntry != null)
+                                    {
+                                        englishLevel = "<span class='text-success'>🌱 Learning</span>"; // If English exists but no level is given
+                                    }
+                                }
+                                <a class="d-flex align-items-center justify-content-between mb-3" href="">
+                                    <span class="text"><i class="flaticon-translator text-thm2 pe-2 vam"></i>English Proficiency</span>
+                                    <span class="">@Html.Raw(englishLevel)</span>
+                                </a>
                                 </div>
                                 <div class="d-grid">
                                     <a href="page-contact.html" class="ud-btn btn-thm">Contact Me<i class="fal fa-arrow-right-long"></i></a>

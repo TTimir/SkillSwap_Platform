@@ -256,7 +256,7 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
-                // Time Commitment Buckets (Dynamic)
+                // Build time commitment ranges dynamically.
                 var timeCommitmentRanges = new List<SelectListItem>();
                 int maxDays = await _context.TblOffers.MaxAsync(o => o.TimeCommitmentDays);
                 int step = 10;
@@ -309,7 +309,6 @@ namespace SkillSwap_Platform.Controllers
                         break;
                     case "newArrivals":
                     default:
-                        _logger.LogDebug("Sorting by newArrivals");
                         offersQuery = offersQuery.OrderByDescending(o => o.CreatedDate);
                         break;
                 }
@@ -349,8 +348,7 @@ namespace SkillSwap_Platform.Controllers
                     };
                 }).ToList();
 
-                var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
-
+                var textInfo = CultureInfo.CurrentCulture.TextInfo;
                 // Load filter options
                 var vm = new OfferFilterVM
                 {

@@ -29,6 +29,6 @@ namespace SkillSwap_Platform.Models.ViewModels
         public double Rating { get; set; }
         public double? JobSuccess { get; set; }
         public double? Recommendation { get; set; }
-        public List<string> Skills { get; set; } = new List<string>();
+        public List<string> OfferedSkillAreas { get; set; } = new List<string>();
     }
 }

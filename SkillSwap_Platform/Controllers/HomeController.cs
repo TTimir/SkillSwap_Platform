@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using Newtonsoft.Json;
+using SkillSwap_Platform.Models.ViewModels.FreelancersVM;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -32,6 +33,7 @@ public class HomeController : Controller
     {
         try
         {
+            // Retrieve trending offers with eager loading for related User
             var trendingOffers = await _dbcontext.TblOffers
                 .Include(o => o.User)  // Eager load the related User
                 .Where(o => o.IsActive)
@@ -73,12 +75,17 @@ public class HomeController : Controller
                 ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
                     ? "/template_assets/images/No_Profile_img.png"
                     : u.ProfileImageUrl,
-                Location = u.Location,
+                Location = u.Country,
                 Rating = u.TblReviewReviewees != null && u.TblReviewReviewees.Any()
                     ? u.TblReviewReviewees.Average(r => r.Rating)
                     : 0,
                 JobSuccess = u.JobSuccessRate,
-                Skills = u.TblUserSkills.Select(us => us.Skill.SkillName).ToList(),
+                OfferedSkillAreas = u.TblUserSkills
+                    .Where(us => us.IsOffering)
+                    .OrderByDescending(us => us.ProficiencyLevel)
+                    .Take(3)
+                    .Select(us => us.Skill.SkillName)
+                    .ToList(),
                 Recommendation = u.RecommendedPercentage
             }).ToList();
 
@@ -121,45 +128,55 @@ public class HomeController : Controller
             return View(model);
         }
 
-        try
+        // Start a transaction for registration flow.
+        using (var transaction = await _dbcontext.Database.BeginTransactionAsync())
         {
-            // Check for duplicate username or email.
-            var existingUser = await _userService.GetUserByUserNameOrEmailAsync(model.UserName, model.Email);
-            if (existingUser != null)
+            try
             {
-                if (existingUser.Email == model.Email)
-                    TempData["ErrorMessage"] = "❌ This email is already registered.";
-                if (existingUser.UserName == model.UserName)
-                    TempData["ErrorMessage"] = "❌ This username is already taken.";
-                return View(model);
+                // Check for duplicate username or email.
+                var existingUser = await _userService.GetUserByUserNameOrEmailAsync(model.UserName, model.Email);
+                if (existingUser != null)
+                {
+                    if (existingUser.Email == model.Email)
+                        TempData["ErrorMessage"] = "❌ This email is already registered.";
+                    if (existingUser.UserName == model.UserName)
+                        TempData["ErrorMessage"] = "❌ This username is already taken.";
+                    return View(model);
+                }
+
+                // Generate TOTP secret (stored as plain Base32) for 2FA.
+                string TotpSecret = TotpHelper.GenerateSecretKey(); // 🔥 Store plain Base32 TOTP secret
+
+                // Create a temporary user object.
+                var tempUser = new TblUser
+                {
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    UserName = model.UserName,
+                    Email = model.Email,
+                    ContactNo = model.ContactNo,
+                    TotpSecret = TotpSecret, // 🔥 Store plain Base32 secret
+                    IsOnboardingCompleted = false // Ensure onboarding starts
+                };
+
+                // Save temporary user info in session for 2FA setup.
+                HttpContext.Session.SetInt32("TempUserId", tempUser.UserId);
+                HttpContext.Session.SetObjectAsJson("TempUser", tempUser);
+                HttpContext.Session.SetString("TempUser_Password", model.Password);
+
+                // Commit transaction since session state is not transactional but registration flow is completed.
+                await transaction.CommitAsync();
+
+                // Redirect to 2FA setup.
+                return RedirectToAction("Setup2FA");
             }
-
-            // Generate TOTP secret (stored as plain Base32) for 2FA.
-            string TotpSecret = TotpHelper.GenerateSecretKey(); // 🔥 Store plain Base32 TOTP secret
-            var tempUser = new TblUser
+            catch (Exception ex)
             {
-                FirstName = model.FirstName,
-                LastName = model.LastName,
-                UserName = model.UserName,
-                Email = model.Email,
-                ContactNo = model.ContactNo,
-                TotpSecret = TotpSecret, // 🔥 Store plain Base32 secret
-                IsOnboardingCompleted = false // Ensure onboarding starts
-            };
-
-            // Save temporary user info in session for 2FA setup.
-            HttpContext.Session.SetInt32("TempUserId", tempUser.UserId);
-            HttpContext.Session.SetObjectAsJson("TempUser", tempUser);
-            HttpContext.Session.SetString("TempUser_Password", model.Password);
-
-            // Redirect to 2FA setup.
-            return RedirectToAction("Setup2FA");
-        }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = "⚠️ An unexpected error occurred during registration.";
-            Debug.WriteLine($"[Register Error] {ex.Message}");
-            return RedirectToAction("EP500", "EP");
+                await transaction.RollbackAsync();
+                TempData["ErrorMessage"] = "⚠️ An unexpected error occurred during registration.";
+                Debug.WriteLine($"[Register Error] {ex.Message}");
+                return RedirectToAction("EP500", "EP");
+            }
         }
     }
 
@@ -335,57 +352,65 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyOtp(string email, string otp)
     {
-        try
+        // Use a transaction for the critical registration steps.
+        using (var transaction = await _dbcontext.Database.BeginTransactionAsync())
         {
-            var tempUser = HttpContext.Session.GetObjectFromJson<TblUser>("TempUser");
-            string password = HttpContext.Session.GetString("TempUser_Password");
-
-            if (tempUser == null || tempUser.Email != email)
+            try
             {
-                TempData["ErrorMessage"] = "⚠️ Session expired. Please register again.";
-                return RedirectToAction("Register");
+                var tempUser = HttpContext.Session.GetObjectFromJson<TblUser>("TempUser");
+                string password = HttpContext.Session.GetString("TempUser_Password");
+
+                if (tempUser == null || tempUser.Email != email)
+                {
+                    TempData["ErrorMessage"] = "⚠️ Session expired. Please register again.";
+                    return RedirectToAction("Register");
+                }
+
+                // Verify OTP.
+                if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+                {
+                    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+                    return View("Setup2FA");
+                }
+
+                // Create and register the new user.
+                var newUser = new TblUser
+                {
+                    FirstName = tempUser.FirstName,
+                    LastName = tempUser.LastName,
+                    UserName = tempUser.UserName,
+                    Email = tempUser.Email,
+                    ContactNo = tempUser.ContactNo,
+                    TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
+                    IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
+                };
+
+                var result = await _userService.RegisterUserAsync(newUser, password);
+                if (!result)
+                {
+                    TempData["ErrorMessage"] = "⚠️ Registration failed. Please try again.";
+                    return View("Setup2FA");
+                }
+
+                // Commit the registration transaction.
+                await transaction.CommitAsync();
+
+                HttpContext.Session.Clear();
+
+                // Remove automatic login
+                // await SignInUserAsync(newUser, false);
+
+                TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
+                return RedirectToAction("SelectRole", "Onboarding"); // 🚀 Redirect to first onboarding step
             }
 
-            // Verify OTP.
-            if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+            catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+                await transaction.RollbackAsync();
+                TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
+                Debug.WriteLine($"[VerifyOtp Error] {ex.Message}");
                 return View("Setup2FA");
             }
-
-            // Create and register the new user.
-            var newUser = new TblUser
-            {
-                FirstName = tempUser.FirstName,
-                LastName = tempUser.LastName,
-                UserName = tempUser.UserName,
-                Email = tempUser.Email,
-                ContactNo = tempUser.ContactNo,
-                TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
-                IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
-            };
-
-            var result = await _userService.RegisterUserAsync(newUser, password);
-            if (!result)
-            {
-                TempData["ErrorMessage"] = "⚠️ Registration failed. Please try again.";
-                return View("Setup2FA");
-            }
-
-            HttpContext.Session.Clear();
-
-            // Remove automatic login
-            // await SignInUserAsync(newUser, false);
-
-            TempData["SuccessMessage"] = "✅ OTP verification successful! You can log in now.";
-            return RedirectToAction("SelectRole", "Onboarding"); // 🚀 Redirect to first onboarding step
-        }
-
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = "⚠️ An unexpected error occurred while verifying OTP.";
-            Debug.WriteLine($"[VerifyOtp Error] {ex.Message}");
-            return View("Setup2FA");
         }
     }
     #endregion

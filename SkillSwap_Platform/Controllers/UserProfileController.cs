@@ -22,6 +22,8 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
         }
 
+        #region Public Profile
+        // GET: /UserProfile/PublicProfileByUsername
         [AllowAnonymous]
         public async Task<IActionResult> PublicProfileByUsername(string username)
         {
@@ -145,7 +147,10 @@ namespace SkillSwap_Platform.Controllers
                 return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
+        #region Authenticated Profile (Index & Edit)
+        // GET: /UserProfile/Index
         public async Task<IActionResult> Index()
         {
             int userId;
@@ -414,6 +419,9 @@ namespace SkillSwap_Platform.Controllers
             return View(model);
         }
 
+        #endregion
+
+        #region Update Profile (Transactional)
         // POST: /UserProfile/UpdateProfile
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -480,29 +488,45 @@ namespace SkillSwap_Platform.Controllers
                 return RedirectToAction("Login", "Home");
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            // Wrap the entire update process in a transaction.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                await UpdatePersonalDetailsAsync(model.PersonalDetails, userId);
-                await UpdateSkillsAsync(model.Skills, userId);
-                await UpdateEducationAsync(model.EducationEntries, userId);
-                await UpdateExperienceAsync(model.ExperienceEntries, userId);
-                await UpdateCertificatesAsync(model.CertificateEntries, userId);
+                try
+                {
+                    await UpdatePersonalDetailsAsync(model.PersonalDetails, userId);
+                    await UpdateSkillsAsync(model.Skills, userId);
+                    await UpdateEducationAsync(model.EducationEntries, userId);
+                    await UpdateExperienceAsync(model.ExperienceEntries, userId);
+                    await UpdateCertificatesAsync(model.CertificateEntries, userId);
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
-                TempData["SuccessMessage"] = "Profile updated successfully.";
-                return RedirectToAction("EditProfile", "UserProfile");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
-                ModelState.AddModelError("", "An error occurred while updating your profile. Please try again.");
-                return RedirectToAction("EP500", "EP");
+                    // Now update the user’s OfferedSkillAreas in TblUsers and sync the TblUserSkills flags.
+                    var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+                    if (user != null)
+                    {
+                        user.OfferedSkillAreas = model.Skills.OfferedSkillSummary;
+                        user.DesiredSkillAreas = model.Skills.WillingSkillSummary;
+                        await _context.SaveChangesAsync();
+
+                        // Synchronize the IsOffering flag on each TblUserSkill.
+                        await UpdateUserOfferSkillFlagsAsync(userId, user.OfferedSkillAreas);
+                    }
+
+                    TempData["SuccessMessage"] = "Profile updated successfully.";
+                    return RedirectToAction("EditProfile", "UserProfile");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error updating profile for user {UserId}", userId);
+                    ModelState.AddModelError("", "An error occurred while updating your profile. Please try again.");
+                    return RedirectToAction("EP500", "EP");
+                }
             }
         }
+        #endregion
 
         #region Helper Methods
 
@@ -867,6 +891,7 @@ namespace SkillSwap_Platform.Controllers
             }
         }
         #endregion
+
         private bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeBytes, out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -900,6 +925,29 @@ namespace SkillSwap_Platform.Controllers
         }
 
         #endregion
+
+        private async Task UpdateUserOfferSkillFlagsAsync(int userId, string updatedOfferedSkillAreas)
+        {
+            var offeredSkillsList = !string.IsNullOrWhiteSpace(updatedOfferedSkillAreas)
+                ? updatedOfferedSkillAreas
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim().ToLowerInvariant())
+                    .ToList()
+                : new List<string>();
+
+            var userSkills = await _context.TblUserSkills
+                .Include(us => us.Skill)
+                .Where(us => us.UserId == userId)
+                .ToListAsync();
+
+            foreach (var userSkill in userSkills)
+            {
+                // Set IsOffering to true if the global skill name exists in the offered skills list.
+                userSkill.IsOffering = offeredSkillsList.Contains(userSkill.Skill.SkillName.ToLowerInvariant());
+            }
+
+            await _context.SaveChangesAsync();
+        }
 
         private int GetUserId()
         {
