@@ -154,9 +154,7 @@ namespace SkillSwap_Platform.Controllers
                             JobSuccessRate = jobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
-                            ProfileImage = o.User != null && !string.IsNullOrEmpty(o.User.ProfileImageUrl)
-                                ? o.User.ProfileImageUrl
-                                : "/template_assets/images/No_Profile_img.png"
+                            ProfileImage = portfolioUrls
                         };
                     }).ToList();
 
@@ -211,7 +209,6 @@ namespace SkillSwap_Platform.Controllers
             int? maxTimeCommitment, string skillLevel, string designTool,
             string freelanceType, string interactionMode, int page = 1, int pageSize = 20)
         {
-            _logger.LogDebug("PublicOfferList called with sortOption: {SortOption}", sortOption);
             try
             {
                 var offersQuery = _context.TblOffers
@@ -274,13 +271,20 @@ namespace SkillSwap_Platform.Controllers
                     });
                 }
 
-                // Skill Level Options (Static)
-                var skillLevelOptions = new List<SelectListItem>
-                {
-                    new SelectListItem { Text = "Beginner", Value = "Beginner", Selected = skillLevel == "Beginner" },
-                    new SelectListItem { Text = "Intermediate", Value = "Intermediate", Selected = skillLevel == "Intermediate" },
-                    new SelectListItem { Text = "Expert", Value = "Expert", Selected = skillLevel == "Expert" }
-                };
+                // Dynamic Skill Level Options
+                var skillLevelOptions = await _context.TblOffers
+                    .Select(o => o.RequiredSkillLevel)
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Distinct()
+                    .OrderBy(s => s)
+                    .Select(s => new SelectListItem
+                    {
+                        Text = s,
+                        Value = s,
+                        Selected = s == skillLevel
+                    })
+                    .ToListAsync();
+
 
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
@@ -297,15 +301,10 @@ namespace SkillSwap_Platform.Controllers
                 switch (sortOption)
                 {
                     case "bestSeller":
-                        // Assuming TblOffers has a JobSuccessRate field.
-                        _logger.LogDebug("Sorting by bestSeller");
                         offersQuery = offersQuery.OrderByDescending(o => o.JobSuccessRate)
                                                  .ThenByDescending(o => o.TokenCost);
                         break;
                     case "recommended":
-                        // If you have a RecommendedPercentage or similar property, you can use it.
-                        // For now, we'll use TokenCost descending as a placeholder.
-                        _logger.LogDebug("Sorting by recommended");
                         offersQuery = offersQuery.OrderByDescending(o => o.TokenCost);
                         break;
                     case "newArrivals":
@@ -345,7 +344,8 @@ namespace SkillSwap_Platform.Controllers
                         UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
                                             ? "/template_assets/images/No_Profile_img.png"
                                             : o.User.ProfileImageUrl,
-                        Thumbnail = portfolio.FirstOrDefault()
+                        Thumbnail = portfolio.FirstOrDefault(),
+                        PortfolioImages = portfolio 
                     };
                 }).ToList();
 
@@ -394,7 +394,6 @@ namespace SkillSwap_Platform.Controllers
                             Selected = f == freelanceType
                         })
                         .ToListAsync(),
-
 
                     DesignToolOptions = toolSet.Select(t => new SelectListItem { Text = t, Value = t }).ToList(),
                     SkillLevelOptions = skillLevelOptions,

@@ -20,12 +20,7 @@ namespace SkillSwap_Platform.Controllers
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            // If the action (or controller) allows anonymous access, skip this filter.
-            if (context.ActionDescriptor.EndpointMetadata.Any(em => em is AllowAnonymousAttribute))
-            {
-                base.OnActionExecuting(context);
-                return;
-            }
+            base.OnActionExecuting(context);
 
             if (context.Controller is Controller controller)
             {
@@ -40,7 +35,8 @@ namespace SkillSwap_Platform.Controllers
                             if (user != null)
                             {
                                 // Update Profile Image in ViewData
-                                controller.ViewData["UserProfileImage"] = user.ProfileImageUrl;
+                                controller.ViewData["UserProfileImage"] =
+                                    string.IsNullOrEmpty(user.ProfileImageUrl) ? null : $"/uploads/profile/{Path.GetFileName(user.ProfileImageUrl)}";
 
                                 // Update last active time
                                 user.LastActive = DateTime.UtcNow;

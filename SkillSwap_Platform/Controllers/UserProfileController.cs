@@ -22,6 +22,130 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
+        public async Task<IActionResult> PublicProfileByUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return RedirectToAction("EP404", "EP");
+            }
+
+            try
+            {
+                // Look up the user by username (case-insensitive using ToLower).
+                var user = await _context.TblUsers
+                    .Include(u => u.TblEducations)
+                    .Include(u => u.TblExperiences)
+                    .Include(u => u.TblLanguages)
+                    .Include(u => u.TblUserCertificateUsers)
+                    .Include(u => u.TblUserSkills)
+                        .ThenInclude(us => us.Skill)
+                    .Include(u => u.TblReviewReviewees)
+                    .FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower());
+
+                if (user == null)
+                {
+                    return RedirectToAction("EP404", "EP");
+                }
+
+                // Fetch all available skills from tblSkills.
+                var allSkills = await _context.TblSkills.Select(s => s.SkillName).ToListAsync();
+
+                // Extract offered skills stored as comma-separated values.
+                var offeredSkills = user.OfferedSkillAreas?
+                        .Split(',')
+                        .Select(s => s.Trim())
+                        .ToList() ?? new List<string>();
+
+                // Map global skills to SkillVM objects.
+                var skillList = allSkills.Select(skill => new SkillVM
+                {
+                    Name = skill,
+                    IsOffered = offeredSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)
+                }).ToList();
+
+                // Calculate the recommended percentage from reviews.
+                double recommendedPercentage = 0;
+                int totalReviews = user.TblReviewReviewees.Count();
+                if (totalReviews > 0)
+                {
+                    int positiveReviews = user.TblReviewReviewees.Count(r => r.Rating >= 4);
+                    recommendedPercentage = positiveReviews * 100.0 / totalReviews;
+                }
+
+                // Fetch the most recent completed exchange (job) for the user.
+                var lastCompletedExchange = await _context.TblExchanges
+                    .Where(e => e.RequesterId == user.UserId || e.LastStatusChangedBy == user.UserId)
+                    .Where(e => e.Status == "Completed")
+                    .OrderByDescending(e => e.LastStatusChangeDate)
+                    .FirstOrDefaultAsync();
+
+                int lastDeliveryDays = lastCompletedExchange != null
+                    ? (DateTime.UtcNow - lastCompletedExchange.LastStatusChangeDate).Days
+                    : -1;
+
+                // Load offers created by the user.
+                var offers = await _context.TblOffers
+                    .Where(o => o.UserId == user.UserId)
+                    .Include(o => o.TblOfferPortfolios)
+                    .Where(o => o.IsActive)
+                    .ToListAsync();
+
+                // Get the distinct skill IDs from the offers.
+                var skillIds = offers
+                    .Select(o => o.SkillIdOfferOwner)
+                    .Where(x => !string.IsNullOrEmpty(x))
+                    .SelectMany(x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    .Distinct()
+                    .ToList();
+
+                // Retrieve the matching skills from tblSkills using in-memory filtering.
+                var skills = _context.TblSkills
+                    .AsEnumerable()
+                    .Where(s => skillIds.Contains(s.SkillId.ToString()))
+                    .ToList();
+
+                // Map each offer to its view model.
+                var offerVMs = offers.Select(o => new OfferDetailsVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    Category = o.Category,
+                    Description = o.Description,
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                    SkillName = string.Join(", ",
+                        o.SkillIdOfferOwner
+                         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                         .Where(name => !string.IsNullOrEmpty(name))
+                    )
+                }).ToList();
+
+                // Build the public user profile view model.
+                var model = new UserProfileVM
+                {
+                    User = user,
+                    Educations = user.TblEducations.OrderByDescending(e => e.StartDate).ToList(),
+                    Experiences = user.TblExperiences.OrderByDescending(e => e.StartDate).ToList(),
+                    Languages = user.TblLanguages.ToList(),
+                    Certificates = user.TblUserCertificateUsers.ToList(),
+                    LastExchangeDays = lastDeliveryDays,
+                    RecommendedPercentage = recommendedPercentage,
+                    Skills = skillList,
+                    Offers = offerVMs
+                };
+
+                return View("PublicProfile", model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading public profile for username {username}", username);
+                TempData["ErrorMessage"] = "An error occurred while loading the profile.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
         public async Task<IActionResult> Index()
         {
             int userId;
@@ -171,6 +295,7 @@ namespace SkillSwap_Platform.Controllers
                 .Include(u => u.TblExperiences)
                 .Include(u => u.TblUserCertificateUsers)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
+
             if (user == null)
                 return RedirectToAction("EP404", "EP");
 

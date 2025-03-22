@@ -12,6 +12,8 @@ using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pag
 using SkillSwap_Platform.HelperClass;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authorization;
+using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
+using Newtonsoft.Json;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -26,19 +28,77 @@ public class HomeController : Controller
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         try
         {
+            var trendingOffers = await _dbcontext.TblOffers
+                .Include(o => o.User)  // Eager load the related User
+                .Where(o => o.IsActive)
+                .OrderByDescending(o => o.JobSuccessRate)
+                .ThenByDescending(o => o.TokenCost)
+                .Take(8)
+                .ToListAsync();
+
+            var trendingOfferVMs = trendingOffers.Select(o => new OfferCardVM
+            {
+                OfferId = o.OfferId,
+                Title = o.Title,
+                ShortTitle = o.Title?.Length > 35 ? o.Title.Substring(0, 35) + "..." : o.Title,
+                UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
+                     ? "/template_assets/images/No_Profile_img.png"
+                     : o.User.ProfileImageUrl,
+                // Deserialize the portfolio JSON string into a List<string>.
+                PortfolioImages = !string.IsNullOrWhiteSpace(o.Portfolio)
+                 ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
+                 : new List<string>(),
+                Category = o.Category,
+                UserName = o.User?.UserName ?? "Unknown",
+                TimeCommitmentDays = o.TimeCommitmentDays
+            }).ToList();
+
+            // Query highest rated freelancers (limit to 10)
+            // Adjust the filtering criteria as needed (e.g. only active, and only freelancers)
+            var highestRatedUsers = await _dbcontext.TblUsers
+                .Include(u => u.TblReviewReviewees)
+                .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
+                .Where(u => u.IsActive)
+                .Take(10)
+                .ToListAsync();
+
+            var highestRatedFreelancersVM = highestRatedUsers.Select(u => new FreelancerCardVM
+            {
+                UserId = u.UserId,
+                Name = u.UserName,
+                ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
+                    ? "/template_assets/images/No_Profile_img.png"
+                    : u.ProfileImageUrl,
+                Location = u.Location,
+                Rating = u.TblReviewReviewees != null && u.TblReviewReviewees.Any()
+                    ? u.TblReviewReviewees.Average(r => r.Rating)
+                    : 0,
+                JobSuccess = u.JobSuccessRate,
+                Skills = u.TblUserSkills.Select(us => us.Skill.SkillName).ToList(),
+                Recommendation = u.RecommendedPercentage
+            }).ToList();
+
+            var vm = new HomePageVM
+            {
+                TrendingOffers = trendingOfferVMs,
+                HighestRatedFreelancers = highestRatedFreelancersVM
+            };
+
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
             ViewBag.ErrorMessage = TempData.ContainsKey("ErrorMessage") ? TempData["ErrorMessage"] : null;
+
+            return View(vm);
         }
         catch (Exception ex)
         {
             ViewBag.ErrorMessage = "An unexpected error occurred.";
+            return RedirectToAction("EP500", "EP");
         }
 
-        return View();
     }
 
     #region Register
@@ -338,7 +398,7 @@ public class HomeController : Controller
     {
         try
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync("SkillSwapAuth");
             HttpContext.Session.Clear();
             Response.Cookies.Delete(".AspNetCore.SkillSwapAuth");
             TempData["SuccessMessage"] = "✅ Successfully logged out.";

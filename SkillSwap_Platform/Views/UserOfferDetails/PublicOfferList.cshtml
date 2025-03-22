@@ -84,7 +84,10 @@
                             <ul class="p-0 mb-0 text-center text-sm-start">
                                 <li class="list-inline-item">
                                     <!-- Advance Features modal trigger -->
-                                    <button type="button" class="open-btn filter-btn-left mb10"> <img class="me-2" src="images/icon/all-filter-icon.svg" alt=""> All Filter</button>
+                                    @* <button type="button" class="open-btn filter-btn-left mb10"> <img class="me-2" src="/template_assets/images/icon/all-filter-icon.svg" alt=""> All Filter</button> *@
+                                    <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" style="padding:12px;">
+                                        <img class="me-2" src="/template_assets/images/icon/all-filter-icon.svg" alt="">Clear Filters
+                                    </a>
                                 </li>
                                 <li class="list-inline-item position-relative d-none d-xl-inline-block">
                                     <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -180,16 +183,13 @@
                                     <div class="dropdown-menu">
                                         <div class="widget-wrapper pb25 mb0">
                                             <div class="radio-element">
-                                                @{
-                                                    var levels = new[] { "Beginner", "Intermediate", "Expert" };
-                                                    foreach (var level in levels)
-                                                    {
-                                                        string id = $"skillLevel_{level.Replace(" ", "")}";
-                                                        <div class="form-check d-flex align-items-center mb10">
-                                                            <input class="form-check-input" type="radio" name="SkillLevel" id="@id" value="@level" @(Model.SkillLevel == level ? "checked" : "")>
-                                                            <label class="form-check-label" for="@id">@level</label>
-                                                        </div>
-                                                    }
+                                                @foreach (var option in Model.SkillLevelOptions)
+                                                {
+                                                    string id = $"skillLevel_{option.Value.Replace(" ", "")}";
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="SkillLevel" id="@id" value="@option.Value" @(Model.SkillLevel == option.Value ? "checked" : "")>
+                                                        <label class="form-check-label" for="@id">@option.Text</label>
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
@@ -203,17 +203,13 @@
                                     <div class="dropdown-menu">
                                         <div class="widget-wrapper pb25 mb0">
                                             <div class="checkbox-style1" id="designTool-options">
-                                                @{
-                                                    var tools = new[] { "Figma", "Adobe Photoshop", "Adobe XD", "Sketch", "Balsamiq" };
-                                                    foreach (var tool in tools)
-                                                    {
-                                                        string id = $"tool_{tool.Replace(" ", "")}";
-                                                        <label class="custom_checkbox option-item">
-                                                            @tool
-                                                            <input type="checkbox" name="DesignTool" value="@tool" @(Model.DesignTool == tool ? "checked" : "") />
-                                                            <span class="checkmark"></span>
-                                                        </label>
-                                                    }
+                                                @foreach (var option in Model.DesignToolOptions)
+                                                {
+                                                    <label class="custom_checkbox option-item">
+                                                        @option.Text
+                                                        <input type="checkbox" name="DesignTool" value="@option.Value" @(Model.DesignTool == option.Value ? "checked" : "") />
+                                                        <span class="checkmark"></span>
+                                                    </label>
                                                 }
                                             </div>
                                         </div>
@@ -311,11 +307,11 @@
                             @{
                                 var sortOption = ViewContext.HttpContext.Request.Query["sortOption"].ToString();
                                 var optionsHtml = new List<string>
-                            {
-                            $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
-                            $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
-                            $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
-                            };
+                                {
+                                     $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
+                                     $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
+                                     $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
+                                };
                             }
                             <span>Sort by</span>
                             <select name="sortOption" class="selectpicker show-tick" onchange="this.form.submit()">
@@ -334,38 +330,47 @@
                     <div class="col-sm-6 col-xl-3">
                         <div class="listing-style1 style3 offer-card">
                             <div class="list-thumb">
-                                @{
-                                    string thumbnailToShow;
+                                @if (offer.PortfolioImages != null && offer.PortfolioImages.Count > 0)
+                                {
+                                    <div class="list-thumb">
+                                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
 
-                                    // Define fallback images
-                                    var defaultImages = new List<string>
-                        {
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
-                        };
-
-                                    // Define a reusable check
-                                    bool IsValidImage(string path) =>
-                                    !string.IsNullOrWhiteSpace(path) &&
-                                    !path.Trim().Equals("/");
-
-                                    if (IsValidImage(offer.Thumbnail))
-                                    {
-                                        thumbnailToShow = offer.Thumbnail;
-                                    }
-                                    else
-                                    {
-                                        int index = offer.OfferId % defaultImages.Count;
-                                        thumbnailToShow = defaultImages[index];
-                                    }
+                                            @foreach (var image in offer.PortfolioImages)
+                                            {
+                                                <div class="item">
+                                                    <img class="w-100" src="@image" alt="@offer.Title" />
+                                                    <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })" class="listing-fav fz12">
+                                                        <span class="far fa-heart"></span>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
                                 }
+                                else
+                                {
+                                    // List of default images.
+                                    var defaultImages = new List<string>
+                                    {
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                    };
 
-                                <img class="w-100" src="@thumbnailToShow" alt="offer_image">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                    // Use a deterministic approach:
+                                    int index = offer.OfferId % defaultImages.Count;
+                                    var selectedImage = defaultImages[index];
+
+                                    <div class="list-thumb">
+                                        <img class="w-100" src="@selectedImage" alt="@offer.Title" />
+                                        <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })" class="listing-fav fz12">
+                                            <span class="far fa-heart"></span>
+                                        </a>
+                                    </div>
+                                }
                             </div>
                             <div class="list-content">
                                 <p class="list-text body-color fz14 mb-1">@offer.Category</p>
@@ -376,7 +381,7 @@
                                 </div>
                                 <hr class="my-2">
                                 <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                                    <a href="">
+                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                         <span class="position-relative mr10">
                                             <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:25%">
                                             <span class="online-badge"></span>
@@ -463,6 +468,24 @@
                     $toggle.hide();
                 }
             });
+        });
+    </script>
+    <script>
+        document.getElementById("clearFilters").addEventListener("click", function () {
+            // Clear all input/select fields in the form
+            var form = document.getElementById("filterForm");
+            // Loop over form elements and clear their value
+            Array.from(form.elements).forEach(function (el) {
+                if (el.tagName.toLowerCase() === "select") {
+                    el.selectedIndex = 0;
+                } else if (el.type === "checkbox" || el.type === "radio") {
+                    el.checked = false;
+                } else {
+                    el.value = "";
+                }
+            });
+            // Optionally, submit the form after clearing
+            form.submit();
         });
     </script>
 }

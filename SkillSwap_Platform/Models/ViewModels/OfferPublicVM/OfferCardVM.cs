@@ -2,6 +2,7 @@
 {
     public class OfferCardVM
     {
+        public int UserId { get; set; }
         public int OfferId { get; set; }
         public string Title { get; set; }
         public string ShortTitle { get; set; }
@@ -15,8 +16,6 @@
         public string Location { get; set; }
         public string Country { get; set; }
         public string Thumbnail { get; set; }
-
-
+        public List<string> PortfolioImages { get; set; }
     }
-
 }

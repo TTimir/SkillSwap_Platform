@@ -15,10 +15,9 @@
         public int AssistanceRounds { get; set; }
         public string RecommendedPercentage { get; set; }
         public double JobSuccessRate { get; set; }
-        public List<string> CompareWillingSkills { get; set; }
-
         public string Username { get; set; }
-        public string ProfileImage { get; set; } 
+        public List<string> CompareWillingSkills { get; set; }
+        public List<string> ProfileImage { get; set; }
 
     }
 }

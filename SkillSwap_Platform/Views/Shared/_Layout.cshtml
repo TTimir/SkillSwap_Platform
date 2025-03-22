@@ -217,14 +217,12 @@
                                             <div class="dropdown">
                                                 <a class="btn" href="#" data-bs-toggle="dropdown">
                                                     <!-- Profile Image -->
-                                                    @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
-                                                    {
-                                                        <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:60%;" />
+                                                    @{
+                                                        var profileUrl = ViewData["UserProfileImage"] as string;
                                                     }
-                                                    else
-                                                    {
-                                                        <img src="/template_assets/images/No_Profile_img.png" class="rounded-circle" alt="anonymous_image.png" width="100" style="max-width:60%;" />
-                                                    }
+                                                    <div>
+                                                        <img src="@(!string.IsNullOrEmpty(profileUrl) ? Url.Content(profileUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                    </div>
                                                 </a>
                                                 <div class="dropdown-menu">
                                                     <div class="user_setting_content">

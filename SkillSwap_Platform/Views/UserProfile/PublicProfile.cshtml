@@ -1,9 +1,9 @@
-﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.UserProfileVM
-@using System.Text.RegularExpressions
-
+﻿
 @{
-    ViewData["Title"] = "My Profile";
+    ViewData["Title"] = "Public Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 <style>
     .tag {
     display: inline-block;
@@ -186,7 +186,7 @@
                                                 <a class="position-relative freelancer-single-style" href="#!profileimage">
                                                     <!-- Profile Image -->
                                                     @{
-                                                        var profileUrl = ViewData["UserProfileImage"] as string;
+                                                        // var profileUrl = ViewData["UserProfileImage"] as string;
                                                         var isOnline = (ViewData["IsOnline"] as bool?) ?? false;
                                                     }
                                                     <div>
@@ -194,9 +194,8 @@
                                                         {
                                                             <span class="online"></span>
                                                         }
-                                                        <img src="@(!string.IsNullOrEmpty(profileUrl) ? Url.Content(profileUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:100%;" />
+                                                        <img src="@(!string.IsNullOrEmpty(Model.User.ProfileImageUrl) ? Url.Content(Model.User.ProfileImageUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:100%;" />
                                                     </div>
-                                                    
                                                     @*<span class="online"></span>
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
                                                 </a>
@@ -293,9 +292,9 @@
                                 <div class="educational-quality ps-0">
                                     <div class="container">
                                         <div class="row">
-                                            @for (int i = 0; i < Model.Certificates.Count(); i++)
+                                            @for (int i = 0; i < Model.Certificates.Count; i++)
                                             {
-                                                var certificate = Model.Certificates.ElementAt(i);
+                                                var certificate = Model.Certificates[i];
 
                                                 <!-- Start New Row for Every Two Certificates -->
                                                 @if (i % 2 == 0 && i != 0)
@@ -317,9 +316,9 @@
                                                         </span>
                                                         <h5 class="mt15">
                                                             @certificate.CertificateName
-                                                            @if (certificate.CompleteDate.HasValue)
+                                                            @if (certificate.CompleteDate != DateTime.MinValue)
                                                             {
-                                                                <small>(Completed on @certificate.CompleteDate.Value.ToString("MMMM d, yyyy"))</small>
+                                                                <small>(Completed on @certificate.CompleteDate.ToString("MMMM d, yyyy"))</small>
                                                             }
                                                         </h5>
                                                         <h6 class="text-thm">@certificate.CertificateFrom</h6>
@@ -364,7 +363,7 @@
                             <div class="px30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
                                 <h4 class="mb30">Featured Offers</h4>
                                 <div class="row equal-height">
-                                    @if (Model.Offers != null && Model.Offers.Any())
+                                    @if (Model.Offers != null)
                                     {
                                         foreach (var offer in Model.Offers)
                                         {
@@ -372,7 +371,7 @@
                                                 <div class="listing-style1">
                                                     <div class="list-thumb">
                                                         <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
-                                                            @if (offer.PortfolioImages != null && offer.PortfolioImages.Any())
+                                                            @if (offer.PortfolioImages != null && offer.PortfolioImages.Count > 0)
                                                             {
                                                                 foreach (var image in offer.PortfolioImages)
                                                                 {
@@ -629,7 +628,7 @@
                                             }                                            
                                          </span>
                                     </a>
-                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                    @* <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
                                         @{
                                               // If user has languages, list them; otherwise, show a default message
                                               var userLanguages = Model.Languages.Any()
@@ -656,7 +655,7 @@
                                             }
                                         }                                       
                                         <span class="text"><i class="flaticon-sliders text-thm2 pe-2 vam"></i>English Level</span> <span class="">@Html.Raw(englishLevel)</span>
-                                    </a>
+                                    </a> *@
                                 </div>
                                 <div class="d-grid">
                                     <a href="page-contact.html" class="ud-btn btn-thm">Contact Me<i class="fal fa-arrow-right-long"></i></a>
@@ -665,7 +664,7 @@
                             <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
                                 <h4 class="widget-title">My Skills</h4>
                                 <div class="tag-list mt30">
-                                    @if (Model.Skills != null && Model.Skills.Any())
+                                    @if (Model.Skills != null)
                                     {
                                         @foreach (var skill in Model.Skills)
                                         {
@@ -736,5 +735,3 @@
         });
     </script>
 }
-
-
