@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Services;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -85,10 +87,10 @@ namespace SkillSwap_Platform.Controllers
                         Username = u.UserName,
                         FirstName = u.FirstName,
                         LastName = u.LastName,
-                        Location = u.Location,
+                        Location = u.CurrentLocation,
                         City = u.City,
                         Country = u.Country,
-                        ProfileImage = u.ProfileImageUrl // ✅ Fetch profile image if available
+                        ProfileImage = u.ProfileImageUrl
                     })
                     .ToListAsync();
 
@@ -154,7 +156,7 @@ namespace SkillSwap_Platform.Controllers
                             JobSuccessRate = jobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
-                            ProfileImage = portfolioUrls
+                            ProfileImage = portfolioUrls.FirstOrDefault()
                         };
                     }).ToList();
 
@@ -239,7 +241,40 @@ namespace SkillSwap_Platform.Controllers
                     offersQuery = offersQuery.Where(o => o.CollaborationMethod == interactionMode);
 
                 if (!string.IsNullOrWhiteSpace(keyword))
-                    offersQuery = offersQuery.Where(o => o.Title.Contains(keyword) || o.ScopeOfWork.Contains(keyword));
+                {
+                    // Remove spaces and convert the search term to lower-case.
+                    string normalizedKeyword = keyword.Replace(" ", "").ToLower();
+
+                    offersQuery = offersQuery.Where(o =>
+                        // Search in offer fields:
+                        (o.Title != null && o.Title.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.ScopeOfWork != null && o.ScopeOfWork.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.Category != null && o.Category.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.TokenCost.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.TimeCommitmentDays.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.WillingSkill != null && o.WillingSkill.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.SkillIdOfferOwner != null && o.SkillIdOfferOwner.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.CollaborationMethod != null && o.CollaborationMethod.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.JobSuccessRate.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.RecommendedPercentage.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.Tools != null && o.Tools.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.Device != null && o.Device.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.FreelanceType != null && o.FreelanceType.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                        (o.RequiredSkillLevel != null && o.RequiredSkillLevel.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+
+                        // Search in related user fields:
+                        (o.User != null && (
+                            (o.User.UserName != null && o.User.UserName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.FirstName != null && o.User.FirstName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.LastName != null && o.User.LastName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.Designation != null && o.User.Designation.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.City != null && o.User.City.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.Country != null && o.User.Country.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.CurrentLocation != null && o.User.CurrentLocation.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
+                            (o.User.Languages != null && o.User.Languages.Replace(" ", "").ToLower().Contains(normalizedKeyword))
+                        ))
+                    );
+                }
 
                 // Design Tool Options
                 var allTools = await _context.TblOffers
@@ -284,12 +319,6 @@ namespace SkillSwap_Platform.Controllers
                         Selected = s == skillLevel
                     })
                     .ToListAsync();
-
-
-                if (!string.IsNullOrWhiteSpace(keyword))
-                {
-                    offersQuery = offersQuery.Where(o => o.Title.Contains(keyword) || o.ScopeOfWork.Contains(keyword));
-                }
 
                 if (string.IsNullOrEmpty(sortOption))
                 {

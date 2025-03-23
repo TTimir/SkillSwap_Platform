@@ -1,7 +1,8 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.EditProfileCompositeVM
 
 @{
-    ViewData["Title"] = "EditProfile";
+    ViewData["Title"] = "My Profile";
+    ViewData["SubTitle"] = "Share a bit about yourself, this is your personal space.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 <style>
@@ -60,8 +61,8 @@
 </style>
 <div class="col-lg-9">
     <div class="dashboard_title_area">
-        <h2>My Profile</h2>
-        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
 </div>

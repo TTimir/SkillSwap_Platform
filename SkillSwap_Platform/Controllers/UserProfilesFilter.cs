@@ -22,10 +22,18 @@ namespace SkillSwap_Platform.Controllers
         #region Async Action Execution
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
+            // If the endpoint has [AllowAnonymous], skip the filter logic.
+            var endpoint = context.HttpContext.GetEndpoint();
+            if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
+            {
+                await next();
+                return;
+            }
+
             // Check if the controller is a Controller (for ViewData access).
             if (context.Controller is Controller controller)
             {
-                // Proceed only if the user is authenticated.
+                // Only perform updates if the user is authenticated.
                 if (context.HttpContext.User.Identity?.IsAuthenticated == true)
                 {
                     var userIdClaim = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -39,15 +47,15 @@ namespace SkillSwap_Platform.Controllers
                             {
                                 // Update ViewData with Profile Image.
                                 controller.ViewData["UserProfileImage"] =
-                                    string.IsNullOrEmpty(user.ProfileImageUrl)
-                                        ? null
-                                        : $"/uploads/profile/{Path.GetFileName(user.ProfileImageUrl)}";
+                                string.IsNullOrEmpty(user.ProfileImageUrl)
+                                    ? null
+                                    : $"/uploads/profile/{Path.GetFileName(user.ProfileImageUrl)}";
 
                                 // Update last active time.
                                 user.LastActive = DateTime.UtcNow;
                                 await _context.SaveChangesAsync();
 
-                                // Calculate online status (user is online if updated within the last 10 minutes).
+                                // Calculate online status (online if updated within 10 minutes).
                                 bool isOnline = (DateTime.UtcNow - user.LastActive.Value).TotalMinutes < 10;
                                 controller.ViewData["IsOnline"] = isOnline;
                             }
@@ -58,18 +66,7 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
                 }
-                else
-                {
-                    // If not authenticated, redirect to Login.
-                    context.Result = new RedirectToActionResult("Login", "Home", null);
-                    return;
-                }
-            }
-            else
-            {
-                // If the controller is not of type Controller, redirect to Login.
-                context.Result = new RedirectToActionResult("Login", "Home", null);
-                return;
+                // If the user is not authenticated, simply continue without redirecting.
             }
             // Continue to the action.
             await next();

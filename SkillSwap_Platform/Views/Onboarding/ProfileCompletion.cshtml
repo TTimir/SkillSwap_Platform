@@ -139,6 +139,13 @@
                         <div class="col-lg-12">
 
                             <div class="row gy-4">
+                                <!-- Designation -->
+                                <div class="col-md-6">
+                                    <label asp-for="Designation" class="form-label">Designation  <span class="text-danger">*</span></label>
+                                    <input asp-for="Designation" type="text" class="form-control" name="Designation" placeholder="Enter your designation">
+                                    <span asp-validation-for="Designation" class="text-danger"></span>
+                                </div>
+
                                 <!-- Location -->
                                 <div class="col-md-6">
                                     <label asp-for="Location" class="form-label">Location  <span class="text-danger">*</span></label>
@@ -165,6 +172,13 @@
                                     <label asp-for="Country" class="form-label">Country <span class="text-danger">*</span></label>
                                     <input asp-for="Country" type="text" class="form-control" name="Country" placeholder="Enter your country">
                                     <span asp-validation-for="Country" class="text-danger"></span>
+                                </div>
+
+                                <!-- Zip Code -->
+                                <div class="col-md-6">
+                                    <label asp-for="Zip" class="form-label">Zip Code <span class="text-danger">*</span></label>
+                                    <input asp-for="Zip" type="text" class="form-control" name="Zip" placeholder="Enter your postal code">
+                                    <span asp-validation-for="Zip" class="text-danger"></span>
                                 </div>
 
                                 <!-- Introduction -->

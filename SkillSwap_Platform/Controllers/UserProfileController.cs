@@ -60,11 +60,15 @@ namespace SkillSwap_Platform.Controllers
                         .ToList() ?? new List<string>();
 
                 // Map global skills to SkillVM objects.
-                var skillList = allSkills.Select(skill => new SkillVM
-                {
-                    Name = skill,
-                    IsOffered = offeredSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)
-                }).ToList();
+                var skillList = user.TblUserSkills
+                    .Where(us => us.Skill != null)
+                    .Select(us => new SkillVM
+                    {
+                        Name = us.Skill.SkillName,
+                        // Mark as offered based on the IsOffering flag from the relationship.
+                        IsOffered = us.IsOffering
+                    })
+                    .ToList();
 
                 // Calculate the recommended percentage from reviews.
                 double recommendedPercentage = 0;
@@ -112,6 +116,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     OfferId = o.OfferId,
                     Title = o.Title,
+                   Designation = user.Designation,
                     Category = o.Category,
                     Description = o.Description,
                     TimeCommitmentDays = o.TimeCommitmentDays,
@@ -191,11 +196,15 @@ namespace SkillSwap_Platform.Controllers
                         .ToList() ?? new List<string>();
 
                 // Map skills to SkillVM objects
-                var skillList = allSkills.Select(skill => new SkillVM
-                {
-                    Name = skill,
-                    IsOffered = offeredSkills.Contains(skill, StringComparer.OrdinalIgnoreCase) // Case-insensitive match
-                }).ToList();
+                var skillList = user.TblUserSkills
+                        .Where(us => us.Skill != null)
+                        .Select(us => new SkillVM
+                        {
+                            Name = us.Skill.SkillName,
+                            IsOffered = us.IsOffering
+                        })
+                        .ToList();
+
 
                 // Calculate the recommended percentage from reviews.
                 double recommendedPercentage = 0;
@@ -240,10 +249,11 @@ namespace SkillSwap_Platform.Controllers
                     .ToList();
 
 
-                var offerVMs = offers.Select(o => new SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferDetailsVM
+                var offerVMs = offers.Select(o => new OfferDetailsVM
                 {
                     OfferId = o.OfferId,
                     Title = o.Title,
+                    Designation = user.Designation,
                     Category = o.Category,
                     Description = o.Description,
                     TimeCommitmentDays = o.TimeCommitmentDays,
@@ -384,7 +394,7 @@ namespace SkillSwap_Platform.Controllers
                     UserName = user.UserName,
                     Email = user.Email,
                     PersonalWebsite = user.PersonalWebsite,
-                    Location = user.Location,
+                    Location = user.CurrentLocation,
                     Address = user.Address,
                     City = user.City,
                     Country = user.Country,
@@ -541,7 +551,7 @@ namespace SkillSwap_Platform.Controllers
                 user.UserName = personal.UserName;
                 user.Email = personal.Email;
                 user.PersonalWebsite = personal.PersonalWebsite;
-                user.Location = personal.Location;
+                user.CurrentLocation = personal.Location;
                 user.Address = personal.Address;
                 user.City = personal.City;
                 user.Country = personal.Country;

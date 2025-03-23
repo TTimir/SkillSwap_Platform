@@ -7,6 +7,7 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         public int OfferId { get; set; }
         public int UserId { get; set; }
         public string Title { get; set; }
+        public string Designation { get; set; }
         public string Category { get; set; }
         public string Description { get; set; }
         public string SkillName { get; set; }

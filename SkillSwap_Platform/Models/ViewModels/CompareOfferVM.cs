@@ -17,7 +17,7 @@
         public double JobSuccessRate { get; set; }
         public string Username { get; set; }
         public List<string> CompareWillingSkills { get; set; }
-        public List<string> ProfileImage { get; set; }
+        public string ProfileImage { get; set; }
 
     }
 }

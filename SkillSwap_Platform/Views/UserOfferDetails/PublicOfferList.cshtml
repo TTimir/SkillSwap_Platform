@@ -1,7 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferFilterVM
 
 @{
-    ViewData["Title"] = "PublicOfferList";
+    ViewData["Title"] = "Offer List";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -32,6 +32,18 @@
             text-align: right;
         }
 
+    /* Make the row a flex container so its children (columns) are equal height */
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+        /* Make each column a flex container */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+
 </style>
 
 <!-- Breadcumb Sections -->
@@ -41,9 +53,8 @@
             <div class="col-lg-12">
                 <div class="breadcumb-style1">
                     <div class="breadcumb-list">
-                        <a href="">Home</a>
-                        <a href="">Services</a>
-                        <a href="">Design & Creative</a>
+                        <a href="@Url.Action("Index", "Home")">Home</a>
+                        <a href="#!offers">@ViewData["Title"]</a>
                     </div>
                 </div>
             </div>
@@ -322,7 +333,7 @@
                 </div>
             </div>
         </form>
-        <div class="row ">
+        <div class="row equal-height">
             @if (Model.Offers != null && Model.Offers.Any())
             {
                 foreach (var offer in Model.Offers)

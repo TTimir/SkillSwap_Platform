@@ -273,7 +273,6 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
             entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
-            entity.Property(e => e.Category).HasMaxLength(100);
             entity.Property(e => e.CollaborationMethod).HasMaxLength(50);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
@@ -288,10 +287,8 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.ProvidesSourceFiles).HasDefaultValue(false);
             entity.Property(e => e.RequiredSkillLevel).HasMaxLength(50);
-            entity.Property(e => e.ScopeOfWork).HasColumnType("text");
             entity.Property(e => e.SkillIdOfferOwner).HasMaxLength(100);
             entity.Property(e => e.TimeCommitmentDays).HasDefaultValue(1);
-            entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.TokenCost).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Tools)
                 .HasMaxLength(255)
@@ -434,7 +431,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.CurrentLocation).HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Designation).HasMaxLength(50);
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FailedOtpAttempts).HasDefaultValue(0);
             entity.Property(e => e.FirstName).HasMaxLength(100);
@@ -443,7 +442,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.LastActive).HasColumnType("datetime");
             entity.Property(e => e.LastFailedOtpAttempt).HasColumnType("datetime");
             entity.Property(e => e.LastName).HasMaxLength(100);
-            entity.Property(e => e.Location).HasMaxLength(200);
             entity.Property(e => e.LockoutEndTime).HasColumnType("datetime");
             entity.Property(e => e.ModifiedDate).HasColumnType("datetime");
             entity.Property(e => e.PasswordHash).HasMaxLength(200);
@@ -455,6 +453,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Salt).HasMaxLength(200);
             entity.Property(e => e.TotpSecret).HasMaxLength(100);
             entity.Property(e => e.UserName).HasMaxLength(100);
+            entity.Property(e => e.Zip).HasMaxLength(20);
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(

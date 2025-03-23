@@ -24,6 +24,7 @@ namespace SkillSwap_Platform.Models.ViewModels
     {
         public int UserId { get; set; }
         public string Name { get; set; }
+        public string Designation { get; set; }
         public string ProfileImage { get; set; }
         public string Location { get; set; }
         public double Rating { get; set; }

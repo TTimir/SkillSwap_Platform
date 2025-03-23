@@ -53,13 +53,13 @@
                     <h1 class="title animate-up-1 mb25">Find the right <span>freelance</span> <br class="d-none d-xl-block"><span>service,</span> right away.</h1>
                     <p class="text animate-up-2">Work with talented people at the most affordable price to get the most <br class="d-none d-lg-block">out of your time and cost</p>
                     <div class="advance-search-tab bgc-white bdrs60 p10 bdrs4-sm bdr1 position-relative zi9 mt30 animate-up-3">
-                        <div class="row">
-                            <div class="col-md-5 col-lg-6 col-xl-6">
-                                <div class="advance-search-field mb10-sm bdrr1 bdrn-sm">
-                                    <form class="form-search position-relative">
+                        <form method="get" action="@Url.Action("PublicOfferList", "UserOfferDetails")" class="form-search position-relative">
+                            <div class="row">
+                                <div class="col-md-9 col-lg-10 col-xl-10">
+                                    <div class="advance-search-field mb10-sm bdrr1 bdrn-sm">
                                         <div class="box-search">
                                             <span class="icon far fa-magnifying-glass"></span>
-                                            <input class="form-control" type="text" name="search" placeholder="What are you looking for?">
+                                            <input class="form-control" type="text" name="keyword" placeholder="What are you looking for?">
                                             <div class="search-suggestions">
                                                 <h6 class="fz14 ml30 mt25 mb-3">Popular Search</h6>
                                                 <div class="box-suggestions">
@@ -98,64 +98,55 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </form>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4 col-lg-4 col-xl-4">
-                                <div class="bselect-style1">
-                                    <select class="selectpicker" data-width="100%">
-                                        <option>City, state, or zip</option>
-                                        <option data-tokens="Miami">Miami</option>
-                                        <option data-tokens="NewYork">New York</option>
-                                    </select>
+                                <div class="col-md-3 col-lg-2 col-xl-2">
+                                    <div class="text-center text-xl-start">
+                                        <button class="ud-btn btn-dark bdrs60 bdrs4-sm w-100 px-0" type="submit">Search</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3 col-lg-2 col-xl-2">
-                                <div class="text-center text-xl-start">
-                                    <button class="ud-btn btn-dark bdrs60 bdrs4-sm w-100 px-0" type="button">Search</button>
-                                </div>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
-            <div class="col-xl-5 d-none d-xl-block">
-                <div class="home13-hero-img position-relative">
-                    <div class="position-relative">
-                        <div class="d-flex align-items-center justify-content-end">
-                            <div>
-                                <img class="img-1 spin-right" src="/template_assets/images/about/element-13.png" alt="">
-                                <img class="mb10 wow fadeInLeft" src="/template_assets/images/about/about-14.png" alt="">
-                                <div class="funfact_one at-home14-hero-1 mb20-sm py-5 pl35 wow fadeInRight">
-                                    <div class="details">
-                                        <ul class="ps-0 mb-0 d-flex justify-content-start">
-                                            <li><div class="timer">58</div></li>
-                                            <li><span>M</span></li>
-                                            <li><span>+</span></li>
-                                        </ul>
-                                        <p class="text mb-0">Active Freelancer</p>
-                                    </div>
+        </div>
+        <div class="col-xl-5 d-none d-xl-block">
+            <div class="home13-hero-img position-relative">
+                <div class="position-relative">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <div>
+                            <img class="img-1 spin-right" src="/template_assets/images/about/element-13.png" alt="">
+                            <img class="mb10 wow fadeInLeft" src="/template_assets/images/about/about-14.png" alt="">
+                            <div class="funfact_one at-home14-hero-1 mb20-sm py-5 pl35 wow fadeInRight">
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-start">
+                                        <li><div class="timer">58</div></li>
+                                        <li><span>M</span></li>
+                                        <li><span>+</span></li>
+                                    </ul>
+                                    <p class="text mb-0">Active Freelancer</p>
                                 </div>
                             </div>
-                            <div class="ml10">
-                                <div class="funfact_one at-home14-hero-2 mb20 py-5 pl35 wow fadeInLeft">
-                                    <span class="icon flaticon-rocket"></span>
-                                    <div class="details">
-                                        <ul class="ps-0 mb-0 d-flex justify-content-start">
-                                            <li><span>+</span></li>
-                                            <li><div class="timer">12</div></li>
-                                            <li><span>M</span></li>
-                                        </ul>
-                                        <p class="text mb-0">Project Completed</p>
-                                    </div>
+                        </div>
+                        <div class="ml10">
+                            <div class="funfact_one at-home14-hero-2 mb20 py-5 pl35 wow fadeInLeft">
+                                <span class="icon flaticon-rocket"></span>
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-start">
+                                        <li><span>+</span></li>
+                                        <li><div class="timer">12</div></li>
+                                        <li><span>M</span></li>
+                                    </ul>
+                                    <p class="text mb-0">Project Completed</p>
                                 </div>
-                                <img class="wow fadeInRight" src="/template_assets/images/about/about-15.png" alt="">
                             </div>
+                            <img class="wow fadeInRight" src="/template_assets/images/about/about-15.png" alt="">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </section>
 
@@ -520,7 +511,14 @@
                                                         <a href="@publicProfileUrl" target="_blank">
                                                             <span class="position-relative mr10">
                                                                 <img class="rounded-circle" src="@offer.UserProfileImage" width="100" style="max-width:25%" alt="Freelancer Photo">
-                                                                <span class="online-badge"></span>
+                                                                @{
+                                                                    // Check if ViewData contains the online status.
+                                                                    bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
+                                                                }
+                                                                @if (isOnline)
+                                                                {
+                                                                    <span class="online-badge"></span>
+                                                                }
                                                             </span>
                                                             <span class="fz14">@offer.UserName</span>
                                                         </a>
@@ -1145,7 +1143,7 @@
             </div>
             <div class="col-lg-3">
                 <div class="text-lg-end mb-3">
-                    <a href="page-freelancer-v1.html" class="ud-btn2">All Freelancers <i class="fal fa-arrow-right-long"></i></a>
+                    <a href="@Url.Action("PublicProfileList","UserProfileList")" class="ud-btn2">All Freelancers <i class="fal fa-arrow-right-long"></i></a>
                 </div>
             </div>
         </div>
@@ -1160,12 +1158,19 @@
                                 <div class="list-thumb">
                                     <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
                                         <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" style="max-width:100%;" />
-                                        <span class="online"></span>
+                                        @{
+                                            // Check if ViewData contains the online status.
+                                            bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
+                                        }
+                                        @if (isOnline)
+                                        {
+                                            <span class="online"></span>
+                                        }
                                     </div>
                                 </div>
                                 <div class="list-content">
                                     <h5 class="title mb-1">@freelancer.Name</h5>
-                                    <p class="mb-0">@freelancer.Location</p>
+                                    <p class="mb-1">@freelancer.Designation</p>
                                     <div class="skill-tags d-flex align-items-center justify-content-center mb5">
                                         @{
                                             int count = freelancer.OfferedSkillAreas != null ? freelancer.OfferedSkillAreas.Count : 0;
@@ -1190,7 +1195,7 @@
                                             <span class="fz14 fw400">@freelancer.Location</span>
                                         </a>
                                         <a class="meta fw500 text-start">
-                                            Recommendation<br>
+                                            Recomm.<br>
                                             <span class="fz14 fw400">% @freelancer.Recommendation</span>
                                         </a>
                                         <a class="meta fw500 text-start">

@@ -1,5 +1,7 @@
-﻿@{
-    ViewData["Title"] = "PublicFreelancerList";
+﻿@model SkillSwap_Platform.Models.ViewModels.FreelancersVM.UserProfileListVM
+
+@{
+    ViewData["Title"] = "Talent List";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -30,6 +32,17 @@
             text-align: right;
         }
 
+    /* Make the row a flex container so its children (columns) are equal height */
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+        /* Make each column a flex container */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
 </style>
 
 <!-- Breadcumb Sections -->
@@ -39,30 +52,83 @@
             <div class="col-lg-12">
                 <div class="breadcumb-style1">
                     <div class="breadcumb-list">
-                        <a href="">Home</a>
-                        <a href="">Services</a>
-                        <a href="">Design & Creative</a>
+                        <a href="@Url.Action("Index", "Home")">Home</a>
+                        <a href="#!talents">@ViewData["Title"]</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-<!-- Breadcumb Sections -->
 <section class="breadcumb-section pt-0">
-    <div class="cta-service-v3 cta-banner mx-auto maxw1700 pt120 pb120 bdrs16 position-relative overflow-hidden d-flex align-items-center mx20-lg px30-lg">
-        <img class="left-top-img wow zoomIn" src="/template_assets/images/vector-img/left-top.png" alt="">
-        <img class="right-bottom-img wow zoomIn" src="/template_assets/images/vector-img/right-bottom.png" alt="">
+    <div class="cta-service-v6 cta-banner mx-auto maxw1700 pt120 pt60-sm pb120 pb60-sm bdrs16 position-relative d-flex align-items-center">
         <img class="service-v3-vector d-none d-lg-block" src="/template_assets/images/about/about-4.png" alt="">
         <div class="container">
             <div class="row wow fadeInUp">
-                <div class="col-xl-5">
+                <div class="col-xl-7">
                     <div class="position-relative">
                         <h2 class="text-white">Design & Creative</h2>
                         <p class="text mb30 text-white">Give your visitor a smooth online experience with a solid UX design</p>
-                        <div class="d-flex align-items-center">
-                            <a class="video-btn mr10 popup-iframe popup-youtube" href="https://www.youtube.com/watch?v=7EHnQ0VM4KY"><i class="fal fa-play"></i></a>
-                            <h6 class="mb-0 text-white">How Freeio Works</h6>
+                        <div class="advance-search-tab bgc-white p10 bdrs4" style="border-radius:18px;">
+                            <form method="get" action="@Url.Action("PublicProfileList", "UserProfileList")" class="form-search position-relative">
+                                <div class="row">
+                                    <div class="col-md-5 col-lg-6 col-xl-6">
+                                        <div class="advance-search-field ">
+                                            <div class="box-search bb1-sm">
+                                                <span class="icon far fa-magnifying-glass"></span>
+                                                <input class="form-control" type="text" name="keyword" value="@Model.Keyword" placeholder="What are you looking for?">
+                                                <div class="search-suggestions">
+                                                    <h6 class="fz14 ml30 mt25 mb-3">Popular Search</h6>
+                                                    <div class="box-suggestions">
+                                                        <ul class="px-0 m-0 pb-4">
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app development</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app builder</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile legends</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app ui ux design</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile game app development</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app design</div>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-xl-3">
+                                        <div class="advance-search-field">
+                                            <input class="form-control" type="text" name="location" style="border-radius:12px;" placeholder="Search by location..." value="@Model.Location">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-lg-2 col-xl-3">
+                                        <div class="text-center text-xl-start">
+                                            <button class="ud-btn btn-thm w-100" type="submit" style="border-radius:12px;">Search</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -74,21 +140,181 @@
 <!-- Listings All Lists -->
 <section class="pt30 pb90">
     <div class="container">
-        <!-- Search/filter form -->
         <form method="get" action="@Url.Action("PublicProfileList", "UserProfileList")">
-            <div class="row mb20">
-                <div class="col-md-4">
-                    <input type="text" name="keyword" class="form-control" placeholder="Search by name..." value="@Model.Keyword" />
+            <div class="row align-items-center mb20">
+                <div class="col-6 col-sm-6 col-lg-9 pe-0">
+                    <div class="text-center text-sm-start">
+                        <div class="dropdown-lists">
+                            <ul class="p-0 mb-0 text-center text-sm-start">
+                                <li class="list-inline-item">
+                                    <!-- Advance Features modal trigger -->
+                                    @* <button type="button" class="open-btn filter-btn-left mb10"> <img class="me-2" src="/template_assets/images/icon/all-filter-icon.svg" alt=""> All Filter</button> *@
+                                    <a href="@Url.Action("PublicProfileList", "UserProfileList")" style="padding:12px;">
+                                        <img class="me-2" src="/template_assets/images/icon/all-filter-icon.svg" alt="">Clear Filters
+                                    </a>
+                                </li>
+                                <!-- Designation Filter -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.Designation) ? "Designation" : Model.Designation)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element" id="designation-options">
+                                                @foreach (var option in Model.DesignationOptions)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="designation" id="designation_@option.Value" value="@option.Value" @(Model.Designation == option.Value ? "checked" : "") />
+                                                        <label class="form-check-label" for="designation_@option.Value">@option.Text</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+
+                                <!-- Category Filter -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.Category) ? "Category" : Model.Category)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element" id="category-options">
+                                                @foreach (var option in Model.CategoryOptions)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="category" id="category_@option.Value" value="@option.Value" @(Model.Category == option.Value ? "checked" : "") />
+                                                        <label class="form-check-label" for="category_@option.Value">@option.Text</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+
+                                <!-- Freelance Type -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.FreelanceType) ? "Freelance Type" : Model.FreelanceType)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element">
+                                                @foreach (var option in Model.FreelanceTypeOptions)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="freelanceType" id="freelance_@option.Value" value="@option.Value" @(option.Selected ? "checked" : "") />
+                                                        <label class="form-check-label" for="freelance_@option.Value">@option.Text</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+
+                                <!-- Interaction Mode -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @(string.IsNullOrEmpty(Model.InteractionMode) ? "Mode" : Model.InteractionMode)
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="radio-element">
+                                                @{
+                                                    var modes = new[] { "Online", "In-Person" };
+                                                }
+                                                @foreach (var mode in modes)
+                                                {
+                                                    <div class="form-check d-flex align-items-center mb10">
+                                                        <input class="form-check-input" type="radio" name="interactionMode" id="interaction_@mode" value="@mode" @(Model.InteractionMode == mode ? "checked" : "") />
+                                                        <label class="form-check-label" for="interaction_@mode">@mode</label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+
+                                <!-- Skill Filter -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @("Skill")
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="checkbox-style1">
+                                                @foreach (var option in Model.SkillOptions)
+                                                {
+                                                    <label class="custom_checkbox">
+                                                        @option.Text
+                                                        <input type="checkbox" name="skill" value="@option.Text" @(Model.Skill == option.Text ? "checked" : "") />
+                                                        <span class="checkmark"></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+
+                                <!-- Language Filter -->
+                                <li class="list-inline-item position-relative d-none d-xl-inline-block">
+                                    <button class="open-btn mb10 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        @("Speaks")
+                                        <i class="fa fa-angle-down ms-2"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <div class="widget-wrapper pb25 mb0">
+                                            <div class="checkbox-style1">
+                                                @foreach (var option in Model.LanguageOptions)
+                                                {
+                                                    <label class="custom_checkbox">
+                                                        @option.Text
+                                                        <input type="checkbox" name="filterLanguage" value="@option.Value" @(Model.FilterLanguage == option.Value ? "checked" : "") />
+                                                        <span class="checkmark"></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <button class="done-btn ud-btn btn-thm drop_btn">Apply <i class="fal fa-arrow-right-long"></i></button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <input type="text" name="location" class="form-control" placeholder="Search by location..." value="@Model.Location" />
-                </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-thm">Search</button>
+                <div class="col-6 col-sm-6 col-lg-3 px-0">
+                    <div class="page_control_shorting mb10 d-flex align-items-center justify-content-center justify-content-sm-end">
+                        <div class="pcs_dropdown dark-color pr10 pr0-xs">
+                            @{
+                                var sortOption = ViewContext.HttpContext.Request.Query["sortOption"].ToString();
+                                var optionsHtml = new List<string>
+                            {
+                            $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
+                            $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
+                            $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
+                            };
+                            }
+                            <span>Sort by</span>
+                            <select name="sortOption" class="selectpicker show-tick" onchange="this.form.submit()">
+                                @Html.Raw(string.Join("", optionsHtml))
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
-        <div class="row">
+        <div class="row equal-height">
             @if (Model.Profiles != null && Model.Profiles.Count > 0)
             {
                 foreach (var profile in Model.Profiles)
@@ -98,30 +324,39 @@
                             <div class="list-thumb">
                                 <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
                                     <img class="rounded-circle mx-auto" src="@profile.ProfileImage" alt="@profile.UserName" style="max-width:100%;" />
-                                    <span class="online"></span>
+                                    @{
+                                        // Check if ViewData contains the online status.
+                                        bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
+                                    }
+                                    @if (isOnline)
+                                    {
+                                        <span class="online"></span>
+                                    }
                                 </div>
                             </div>
                             <div class="list-content">
-                                <h5 class="title mb-1">@profile.FirstName @profile.LastName</h5>
-                                <p class="mb-0">@profile.UserName</p>
+                                <h5 class="title mb-1">@profile.UserName</h5>
+                                <p class="mb-0">@profile.Designation</p>
                                 <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color fw500">4.9</span> (595 reviews)</p></div>
                                 <div class="skill-tags d-flex align-items-center justify-content-center mb5">
                                     @{
-                                        int count = profile.OfferedSkillAreas != null ? profile.OfferedSkillAreas.Count : 0;
+                                        var skillList = profile.OfferedSkillAreas ?? new List<string>();
+                                        int count = skillList.Count;
                                         int maxDisplay = count < 3 ? count : 3;
-                                    }@for (int i = 0; i < maxDisplay; i++)
+                                    }
+                                    @for (int i = 0; i < maxDisplay; i++)
                                     {
-                                        <span class="tag me-2">@profile.OfferedSkillAreas[i]</span>
+                                        <span class="tag me-2">@skillList[i]</span>
                                     }
                                 </div>
                                 <hr class="opacity-100 mt20 mb15">
                                 <div class="fl-meta d-flex align-items-center justify-content-between">
-                                    <a class="meta fw500 text-start">Location<br><span class="fz14 fw400">@profile.Country</span></a>
-                                    <a class="meta fw500 text-start">Recommendation<br><span class="fz14 fw400">@profile.Recommendation.ToString("N1")</span></a>
-                                    <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@profile.JobSuccessRate.ToString("P0")</span></a>
+                                    <a class="meta fw500 text-start">Location<br><span class="fz14 fw400">@profile.City, @profile.Country</span></a>
+                                    <a class="meta fw500 text-start">Recomm.<br><span class="fz14 fw400">@(profile.Recommendation?.ToString("N1") ?? "0.0")</span></a>
+                                    <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@(profile.JobSuccessRate?.ToString("P0") ?? "0%")</span></a>
                                 </div>
                                 <div class="d-grid mt15">
-                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90">View Profile<i class="fal fa-arrow-right-long"></i></a>
+                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90" target="_blank">View Profile<i class="fal fa-arrow-right-long"></i></a>
                                 </div>
                             </div>
                         </div>
@@ -138,7 +373,7 @@
         @if (Model.TotalPages > 1)
         {
             var start = ((Model.CurrentPage - 1) * 20) + 1;
-            var end = Math.Min(start + 4, Model.Offers.Count + ((Model.TotalPages - 1) * 20)); // This ensures last page shows correct count
+            var end = Math.Min(start + 4, Model.Profiles.Count + ((Model.TotalPages - 1) * 20)); // This ensures last page shows correct count
 
             <nav aria-label="Offer pagination">
                 <ul class="pagination justify-content-center mt-4">
@@ -164,7 +399,7 @@
                     }
                 </ul>
                 <p class="mt-2 mb-0 pagination_page_count text-center text-dark fw-semibold">
-                    @start – @end of @((Model.TotalPages * 20)) offers available
+                    @start – @end of @((Model.TotalPages * 20)) profile available
                 </p>
             </nav>
         }

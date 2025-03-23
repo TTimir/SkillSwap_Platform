@@ -29,6 +29,13 @@ namespace SkillSwap_Platform.Models.ViewModels.OnBoardVM
         [Required(ErrorMessage = "Country is required.")]
         [Display(Name = "Country")]
         public string? Country { get; set; }
+        [Required(ErrorMessage = "Designation is required.")]
+        [Display(Name = "Designation")] 
+        public string Designation { get; set; }
+        [Required(ErrorMessage = "Zip is required.")]
+        [Display(Name = "Zip Code")]
+        [RegularExpression(@"^\d{6}$", ErrorMessage = "Please enter a valid 6-digit Indian postal code.")]
+        public string Zip { get; set; }
 
         [Required(ErrorMessage = "Please introduce yourself")]
         [Display(Name = "About Me")]

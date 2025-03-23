@@ -200,8 +200,8 @@
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
                                                 </a>
                                                 <div class="ml20 ml0-xs">
-                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName</h5>
-                                                    <p class="mb-0">@("@")@Model.User.UserName</p>
+                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName <small>(<i>@("@")@Model.User.UserName</i>)</small></h5>
+                                                    <p class="mb-0">@Model.User.Designation</p>
                                                     <p class="mb-0 dark-color fz15 fw500 list-inline-item mb5-sm"><i class="fas fa-star vam fz10 review-color me-2"></i> 4.82 94 reviews</p>
                                                     <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-place vam fz20 me-2"></i> @Model.User.City, @Model.User.Country</p>
                                                     <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToString("MMMM d, yyyy")</p>

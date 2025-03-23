@@ -32,7 +32,13 @@ namespace SkillSwap_Platform.Controllers
         //}
 
         [HttpGet]
-        public IActionResult SelectRole() => View(new SelectRoleVM());
+        public IActionResult SelectRole()
+        {
+            // CHANGE: Check for user id using GetUserId()
+            if (GetUserId() == null)
+                return RedirectToAction("Login", "Home");
+            return View(new SelectRoleVM());
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -44,7 +50,13 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
 
             // Use transaction for consistency when updating multiple tables.
             using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -93,16 +105,25 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> ProfileCompletion()
         {
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
+
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new ProfileCompletionVM();
             if (user != null)
             {
-                model.Location = user.Location;
+                model.Location = user.CurrentLocation;
                 model.Address = user.Address;
                 model.City = user.City;
                 model.Country = user.Country;
                 model.AboutMe = user.AboutMe;
+                model.Designation = user.Designation;
+                model.Zip = user.Zip;
             }
             return View(model);
         }
@@ -117,13 +138,14 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
-            if (user == null)
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
             {
-                ViewBag.ErrorMessage = "User not found. Please try to login again. Please try to login again!";
-                return View(model);
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
             }
+            int userId = tempUserId.Value; // CHANGE
+            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
 
             // Handle profile image upload if provided.
             if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
@@ -138,11 +160,13 @@ namespace SkillSwap_Platform.Controllers
                 user.ProfileImageUrl = fileUrl;
             }
 
-            user.Location = model.Location;
+            user.CurrentLocation = model.Location;
             user.Address = model.Address;
             user.City = model.City;
             user.Country = model.Country;
             user.AboutMe = model.AboutMe;
+            user.Designation = model.Designation;
+            user.Zip = model.Zip;
 
             try
             {
@@ -164,7 +188,13 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> SkillsExperience()
         {
             //int? userId = HttpContext.Session.GetInt32("TempUserId");
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = await _context.TblUsers
                 .Include(u => u.TblEducations)
                 .Include(u => u.TblExperiences)
@@ -193,16 +223,16 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
-            if (user == null)
+            int? userId = GetUserId();
+            if (userId == null)
             {
-                ViewBag.ErrorMessage = "User not found. Please try to login again.";
-                return View(model);
+                ViewBag.ErrorMessage = "User not found. Please log in again.";
+                return RedirectToAction("Login", "Home");
             }
+            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
 
             // Process Education, Language, and Experience entries.
-            var eduSummaries = ProcessEducationEntries(form, userId, out bool eduValid, out string eduError);
+            var eduSummaries = ProcessEducationEntries(form, userId.Value, out bool eduValid, out string eduError);
             if (!eduValid)
             {
                 ViewBag.ErrorMessage = eduError;
@@ -210,7 +240,7 @@ namespace SkillSwap_Platform.Controllers
             }
             user.Education = string.Join("; ", eduSummaries);
 
-            var langSummaries = ProcessLanguageEntries(form, userId, out bool langValid, out string langError);
+            var langSummaries = ProcessLanguageEntries(form, userId.Value, out bool langValid, out string langError);
             if (!langValid)
             {
                 ViewBag.ErrorMessage = langError;
@@ -218,7 +248,7 @@ namespace SkillSwap_Platform.Controllers
             }
             user.Languages = string.Join(", ", langSummaries);
 
-            double totalExperienceYears = ProcessExperienceEntries(form, userId, out bool expValid, out string expError);
+            double totalExperienceYears = ProcessExperienceEntries(form, userId.Value, out bool expValid, out string expError);
             if (!expValid)
             {
                 ViewBag.ErrorMessage = expError;
@@ -485,13 +515,15 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> SkillPreference()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new SkillPreferenceVM();
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Home"); // Redirect if session expired
-            }
             if (user != null)
             {
                 model.DesiredSkillAreas = user.DesiredSkillAreas;
@@ -510,7 +542,13 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
@@ -598,7 +636,9 @@ namespace SkillSwap_Platform.Controllers
 
                 // Check if the skill exists in the global skill table
                 var existingSkill = await _context.TblSkills
-                    .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skillName.ToLower() && s.SkillCategory == category);
+                        .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skillName.ToLower()
+                           && s.SkillCategory.ToLower() == category.ToLower());
+
                 int skillId;
                 if (existingSkill != null)
                 {
@@ -675,7 +715,13 @@ namespace SkillSwap_Platform.Controllers
             var verificationIds = form["certification[verification_id][]"];
             var files = form.Files.GetFiles("certification[certificate_file][]");
 
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             bool hasValidCertificate = false;
 
             for (int i = 0; i < certificateNames.Count; i++)
@@ -704,7 +750,7 @@ namespace SkillSwap_Platform.Controllers
                 DateTime parsedDate;
                 var certificate = new TblUserCertificate
                 {
-                    UserId = userId.Value,
+                    UserId = userId,
                     CertificateName = certificateNames[i],
                     CertificateFrom = certifiedFrom[i],
                     CompleteDate = DateTime.TryParse(completionDate[i], out parsedDate) ? parsedDate : (DateTime?)null,
@@ -741,7 +787,13 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> AdditionalInfo()
         {
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             var model = new AdditionalInfoVM();
             if (user != null)
@@ -759,7 +811,13 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            int? userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
@@ -838,7 +896,7 @@ namespace SkillSwap_Platform.Controllers
                 string fileUrl = await UploadFileAsync(kycFile, "kyc");
                 var kycRecord = new TblKycUpload
                 {
-                    UserId = userId.Value,
+                    UserId = userId,
                     DocumentName = Request.Form["documentType"],
                     DocumentNumber = Request.Form["documentNumber"],
                     DocumentImageUrl = fileUrl,
@@ -868,7 +926,13 @@ namespace SkillSwap_Platform.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult ApprovalPending()
         {
-            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? tempUserId = GetUserId(); // CHANGE
+            if (tempUserId == null)
+            {
+                ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                return RedirectToAction("Login", "Home");
+            }
+            int userId = tempUserId.Value; // CHANGE
             var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
             if (user != null && user.IsVerified)
             {
@@ -881,6 +945,18 @@ namespace SkillSwap_Platform.Controllers
         #endregion
 
         #region Helper Methods
+        private int? GetUserId()
+        {
+            // First, try to get from session (set during registration/OTP)
+            int? tempUserId = HttpContext.Session.GetInt32("TempUserId");
+            if (tempUserId != null)
+                return tempUserId;
+            // Fallback: if user is signed in, try claims.
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim != null && int.TryParse(claim.Value, out int userId))
+                return userId;
+            return null;
+        }
 
         // Validate file based on allowed extensions and maximum size.
         private bool ValidateFile(IFormFile file, string[] allowedExtensions, long maxSizeBytes, out string errorMessage)

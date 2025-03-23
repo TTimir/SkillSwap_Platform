@@ -1,9 +1,16 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Dashboard";
+    ViewData["SubTitle"] = "Collaborate, learn, and grow together.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
 <div class="row">
     <div class="col-sm-6 col-xxl-3">
         <div class="d-flex align-items-center justify-content-between statistics_funfact">

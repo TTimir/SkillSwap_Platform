@@ -14,6 +14,8 @@ public partial class TblUser
 
     public string UserName { get; set; } = null!;
 
+    public string? Designation { get; set; }
+
     public string PasswordHash { get; set; } = null!;
 
     public string Salt { get; set; } = null!;
@@ -44,7 +46,7 @@ public partial class TblUser
 
     public string? PersonalWebsite { get; set; }
 
-    public string? Location { get; set; }
+    public string? CurrentLocation { get; set; }
 
     public string? WorkingTime { get; set; }
 
@@ -55,6 +57,8 @@ public partial class TblUser
     public string? City { get; set; }
 
     public string? Country { get; set; }
+
+    public string? Zip { get; set; }
 
     public string? DesiredSkillAreas { get; set; }
 
