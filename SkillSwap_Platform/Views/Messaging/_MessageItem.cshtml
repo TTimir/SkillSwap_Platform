@@ -1,0 +1,135 @@
+﻿@using Humanizer
+@model SkillSwap_Platform.Models.ViewModels.MessagesVM.MessageItemVM
+
+<div id="message-@Model.MessageId" class="message-item @(Model.IsSentByCurrent ? "reply" : "sent")" style="margin-bottom:20px;">
+    <div class="d-flex align-items-center @(Model.IsSentByCurrent ? "justify-content-end" : "justify-content-start") mb15">
+        @if (!Model.IsSentByCurrent)
+        {
+            <img class="img-fluid rounded-circle align-self-start mr10"
+                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+                 alt="Profile" style="width:50px;" />
+        }
+        <div class="title fz15">
+            @if (Model.IsSentByCurrent)
+            {
+                <small class="mr10">@Model.SentDate.ToLocalTime().Humanize()</small>
+                <h6 class="mr10">You</h6>
+            }
+            else
+            {
+                <small class="mr10">@Model.SentDate.ToLocalTime().Humanize()</small>
+                <h6 class="mr10">@Model.SenderName</h6>
+            }
+        </div>
+        @if (Model.IsSentByCurrent)
+        {
+            <img class="img-fluid rounded-circle align-self-end ml10"
+                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+                 alt="Profile" style="width:50px;" />
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ReplyPreview) && Model.ReplyMessageId.HasValue)
+    {
+        <a href="javascript:void(0);" class="go-to-parent" data-parent-id="@Model.ReplyMessageId" style="display:block; border-left: 3px solid #ccc; padding-left:10px; margin-bottom:10px;">
+            <small class="line-clamp2">Replying to: "@Model.ReplyPreview"</small>
+        </a>
+    }
+    <div class="message-body" data-message-id="@Model.MessageId" data-message-preview="@Model.Content.Substring(0, Math.Min(Model.Content.Length, 50))">
+        @if (Model.Attachments != null && Model.Attachments.Any())
+        {
+            @Html.Partial("_MessageAttachments", Model.Attachments)
+        }
+        <div class="message-content" style="@(Model.IsFlagged && !Model.IsApproved ? "opacity: 0.5; border: 1px dashed orange;" : "")">
+            @if (Model.IsSentByCurrent)
+            {
+                @if (!(Model.IsFlagged && !Model.IsApproved))
+                {
+                    <span class="icon-action icon-reply" title="Reply">
+                        <i class="fa fa-reply"></i>
+                    </span>
+                }
+                <p>@Model.Content</p>
+            }
+            else
+            {
+                <p>@Model.Content</p>
+                @if (!(Model.IsFlagged && !Model.IsApproved))
+                {
+                    <span class="icon-action icon-reply" title="Reply">
+                        <i class="fa fa-reply"></i>
+                    </span>
+                }
+            }
+        </div>
+
+    </div>
+    <!-- Payment warning: if message content contains "pay" or "payment" -->
+    @if (Model.Content.ToLower().Contains("pay") || Model.Content.ToLower().Contains("payment"))
+    {
+        <div class="payment-warning" style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 5px; margin-top: 5px;">
+            <i class="fa fa-info-circle"></i> Be aware: Payment-related messages may be associated with fraud.
+        </div>
+    }
+    @if (Model.IsSentByCurrent)
+    {
+        <div class="read-receipt" style="text-align:right; font-size:0.8em; color:gray;">
+            @if (Model.IsFlagged && !Model.IsApproved)
+            {
+                <span style="color: orange; font-style: italic;"><i class="fa fa-exclamation-triangle me-1"></i>Pending Approval</span>
+            }
+            else
+            {
+                <span>@(Model.IsRead ? "Seen" : "Delivered")</span>
+            }
+        </div>
+    }
+</div>
+<style>
+    /* Container for the text content */
+    .message-content {
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+        /* Styling the paragraph inside message-content */
+        .message-content p {
+            padding: 12px;
+            border-radius: 4px;
+            display: inline-block;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+    /* Alignment and color for messages sent by the current user */
+    .reply .message-content {
+        text-align: right;
+    }
+
+        .reply .message-content p {
+            background-color: rgba(91, 187, 123, 0.05);
+            color: #5BBB7B;
+        }
+
+    /* Alignment and color for messages received from the other user */
+    .sent .message-content {
+        text-align: left;
+    }
+
+        .sent .message-content p {
+            background-color: #F1FCFA;
+            color: #222;
+        }
+
+    /* Icon action styling */
+    .icon-action {
+        cursor: pointer;
+        display: inline-block;
+        margin: 0 5px;
+        padding: 0;
+        color: inherit;
+    }
+
+        .icon-action:hover {
+            opacity: 0.8;
+        }
+</style>

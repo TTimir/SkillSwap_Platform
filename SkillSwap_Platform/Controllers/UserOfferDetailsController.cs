@@ -240,40 +240,46 @@ namespace SkillSwap_Platform.Controllers
                 if (!string.IsNullOrEmpty(interactionMode))
                     offersQuery = offersQuery.Where(o => o.CollaborationMethod == interactionMode);
 
+                if (!string.IsNullOrEmpty(designTool))
+                    offersQuery = offersQuery.Where(o => o.Tools != null && o.Tools.Contains(designTool));
+
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
                     // Remove spaces and convert the search term to lower-case.
-                    string normalizedKeyword = keyword.Replace(" ", "").ToLower();
+                    var terms = keyword.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                   .Select(t => t.ToLower())
+                   .ToList();
 
-                    offersQuery = offersQuery.Where(o =>
-                        // Search in offer fields:
-                        (o.Title != null && o.Title.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.ScopeOfWork != null && o.ScopeOfWork.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.Category != null && o.Category.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.TokenCost.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.TimeCommitmentDays.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.WillingSkill != null && o.WillingSkill.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.SkillIdOfferOwner != null && o.SkillIdOfferOwner.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.CollaborationMethod != null && o.CollaborationMethod.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.JobSuccessRate.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.RecommendedPercentage.ToString().Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.Tools != null && o.Tools.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.Device != null && o.Device.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.FreelanceType != null && o.FreelanceType.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                        (o.RequiredSkillLevel != null && o.RequiredSkillLevel.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-
-                        // Search in related user fields:
-                        (o.User != null && (
-                            (o.User.UserName != null && o.User.UserName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.FirstName != null && o.User.FirstName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.LastName != null && o.User.LastName.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.Designation != null && o.User.Designation.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.City != null && o.User.City.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.Country != null && o.User.Country.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.CurrentLocation != null && o.User.CurrentLocation.Replace(" ", "").ToLower().Contains(normalizedKeyword)) ||
-                            (o.User.Languages != null && o.User.Languages.Replace(" ", "").ToLower().Contains(normalizedKeyword))
-                        ))
-                    );
+                    foreach (var t in terms)
+                    {
+                        offersQuery = offersQuery.Where(o =>
+                            (o.Title != null && o.Title.ToLower().Contains(t))
+                            || (o.ScopeOfWork != null && o.ScopeOfWork.ToLower().Contains(t))
+                            || (o.Category != null && o.Category.ToLower().Contains(t))
+                            || (o.TokenCost.ToString().Contains(t))
+                            || (o.TimeCommitmentDays.ToString().Contains(t))
+                            || (o.WillingSkill != null && o.WillingSkill.ToLower().Contains(t))
+                            || (o.SkillIdOfferOwner != null && o.SkillIdOfferOwner.ToLower().Contains(t))
+                            || (o.CollaborationMethod != null && o.CollaborationMethod.ToLower().Contains(t))
+                            || (o.JobSuccessRate.ToString().Contains(t))
+                            || (o.RecommendedPercentage.ToString().Contains(t))
+                            || (o.Tools != null && o.Tools.ToLower().Contains(t))
+                            || (o.Device != null && o.Device.ToLower().Contains(t))
+                            || (o.FreelanceType != null && o.FreelanceType.ToLower().Contains(t))
+                            || (o.RequiredSkillLevel != null && o.RequiredSkillLevel.ToLower().Contains(t))
+                            // Search in related user fields
+                            || (o.User != null && (
+                                   (o.User.UserName != null && o.User.UserName.ToLower().Contains(t))
+                                || (o.User.FirstName != null && o.User.FirstName.ToLower().Contains(t))
+                                || (o.User.LastName != null && o.User.LastName.ToLower().Contains(t))
+                                || (o.User.Designation != null && o.User.Designation.ToLower().Contains(t))
+                                || (o.User.City != null && o.User.City.ToLower().Contains(t))
+                                || (o.User.Country != null && o.User.Country.ToLower().Contains(t))
+                                || (o.User.CurrentLocation != null && o.User.CurrentLocation.ToLower().Contains(t))
+                                || (o.User.Languages != null && o.User.Languages.ToLower().Contains(t))
+                            ))
+                        );
+                    }
                 }
 
                 // Design Tool Options
@@ -343,9 +349,7 @@ namespace SkillSwap_Platform.Controllers
                 }
 
                 int totalOffers = await offersQuery.CountAsync();
-
                 var offers = await offersQuery
-                    .OrderByDescending(o => o.CreatedDate)
                      .Skip((page - 1) * pageSize)
                      .Take(pageSize)
                     .ToListAsync();

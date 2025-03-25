@@ -1,0 +1,385 @@
+﻿@using Humanizer
+@model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
+
+@{
+    ViewData["Title"] = "Chat Buddies";
+    ViewData["SubTitle"] = "Let’s share smiles, one message at a time.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["SubTitle"]</h2>
+        <p class="text">@ViewData["Title"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row mb40">
+    <!-- Left Sidebar: Chat Contacts -->
+    <div class="col-lg-6 col-xl-5 col-xxl-4">
+        <div class="message_container">
+            <div class="inbox_user_list">
+                <div class="iu_heading pr35">
+                    <div class="chat_user_search">
+                        <form class="d-flex align-items-center" method="get" action="@Url.Action("Conversation", "Messaging")">
+                            <button class="btn" type="submit"><span class="far fa-magnifying-glass"></span></button>
+                            <input class="form-control" type="search" name="searchTerm" placeholder="Search" aria-label="Search" />
+                        </form>
+                    </div>
+                </div>
+                <div class="chat-member-list pr20">
+                    @foreach (var contact in Model.ChatMembers)
+                    {
+                        <div class="list-item pt5">
+                            <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
+                                <div class="d-flex align-items-center position-relative">
+                                    <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
+                                    <div class="d-sm-flex">
+                                        <div class="d-inline-block">
+                                            <div class="fz15 fw500 dark-color ff-heading mb-0">@contact.UserName</div>
+                                            <p class="preview">@contact.Designation</p>
+                                        </div>
+                                        <div class="iul_notific">
+                                            @{
+                                                // Parse the stored value
+                                                var dt = DateTime.Parse(contact.LastMessageTime);
+                                                // Explicitly specify that it’s local time
+                                                dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                                            }
+                                            <small>@dt.Humanize()</small>
+                                            @if (contact.UnreadCount > 0)
+                                            {
+                                                <div class="m_notif">@contact.UnreadCount</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Conversation Messages -->
+    <div class="col-lg-6 col-xl-7 col-xxl-8">
+        <div class="message_container mt30-md">
+            <div class="user_heading px-0 mx30">
+                @if (Model.OtherUserId == 0)
+                {
+                    <!-- Placeholder for no conversation selected -->
+                    <div class="no-chat-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; border: 1px dashed #ccc;">
+                        <img src="~/template_assets/images/inbox/No-Message_Open.svg" style="border-radius: 0; max-width:50%; margin-bottom: 20px;" />
+                        <p style="text-align: center;">Select a conversation from your inbox or profile to start chatting, your connections are just a click away.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="user_heading px-0 mx30">
+                        <div class="wrap">
+                            <img class="img-fluid mr10 rounded-circle" src="@Model.OtherUserProfileImage" alt="Profile" style="width: 60px;" />
+                            <div class="meta d-sm-flex justify-content-sm-between align-items-center">
+                                <div class="authors">
+                                    <h6 class="name mb-0">@Model.OtherUserName</h6>
+                                    <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
+                                </div>
+                                <div>
+                                    <a class="text-decoration-underline fz14 fw500 text-red ff-heading" href="#">Delete Conversation</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inbox_chatting_box">
+                        <ul id="chatContainer" class="chatting_content">
+                            @{
+                                int? lastSenderId = null;
+                                string lastSentTime = null;
+                            }
+                            @foreach (var msg in Model.Messages)
+                            {
+                                var currentSentTime = msg.SentDate.ToLocalTime().ToString("g");
+                                bool showHeader = false;
+                                if (lastSenderId == null || lastSenderId != msg.SenderUserId || lastSentTime != currentSentTime)
+                                {
+                                    showHeader = true;
+                                    lastSenderId = msg.SenderUserId;
+                                    lastSentTime = currentSentTime;
+                                }
+                                var vm = new SkillSwap_Platform.Models.ViewModels.MessagesVM.MessageItemVM
+                    {
+                        MessageId = msg.MessageId,
+                        CurrentUserID = Model.CurrentUserID,
+                        SenderUserID = msg.SenderUserId,
+                        SenderName = msg.SenderUser?.UserName ?? "Unknown",
+                        SenderProfileImage = msg.SenderUser?.ProfileImageUrl,
+                        SentDate = msg.SentDate,
+                        Content = msg.Content,
+                        ReplyPreview = msg.ReplyPreview,
+                        ReplyMessageId = msg.ReplyToMessageId,
+                        Attachments = msg.TblMessageAttachments,
+                        ShowHeader = showHeader,
+                        IsRead = msg.IsRead,
+                        IsFlagged = msg.IsFlagged,
+                        IsApproved = msg.IsApproved
+                    };
+
+                                @await Html.PartialAsync("_MessageItem", vm)
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- Place the Reply Preview Container here, above the message input -->
+                    <div id="replyPreviewContainer" style="display:none; border: 1px solid #ddd; padding: 5px; margin-bottom: 40px; background-color: #f9f9f9;">
+                        <span id="replyPreviewDisplay" style="font-style: italic;"></span>
+                        <span class="icon-cancel" style="cursor: pointer; margin-left: 10px;">&times;</span>
+                    </div>
+
+                    <div class="mi_text">
+                        <div class="message_input">
+                            <form id="messageForm" method="post" enctype="multipart/form-data" action="@Url.Action("SendMessage", "Messaging")" class="d-flex flex-column">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="receiverUserId" value="@Model.OtherUserId" />
+                                <input type="hidden" id="replyPreview" name="replyPreview" value="" />
+                                <input type="hidden" id="replyMessageId" name="replyMessageId" value="" />
+
+                                <!-- Preview area for selected attachments -->
+                                <div id="filePreview" style="margin-bottom:10px;"></div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div id="errorContainer" style="display:none; color: red; margin-bottom: 10px;"></div>
+                                        <div class="input-group">
+                                            <!-- File upload icon -->
+                                            <div class="input-group-prepend">
+                                                <label class="input-group-text" for="fileInput" data-bs-toggle="tooltip" data-bs-placement="top" title="Allowed: Images, PDFs, Code, Archives (Max: 5MB)"
+                                                       style="cursor:pointer;background-color:#fff;border:none;">
+                                                    <i class="fa fa-paperclip"></i>
+                                                </label>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <!-- Hidden file input supporting multiple selection -->
+                                                <input type="file" id="fileInput" name="attachments" multiple webkitdirectory directory style="display:none" />
+                                                <!-- Main text input -->
+                                                <input type="text" id="messageInput" class="form-control" name="content" placeholder="Type a Message" aria-label="Message" style="height:50px;margin-bottom: 10px;" />
+                                            </div>
+                                            <div class="col-md-5">
+                                                <!-- Send button -->
+                                                <div class="input-group-append">
+                                                    <button class="btn ud-btn btn-thm" type="submit" style="top:0">
+                                                        Send Message <i class="fal fa-arrow-right-long"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Payment Warning Container: hidden by default -->
+                                        <div id="WarningInfo" style="display:none; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 5px; margin-top: 5px;">
+                                            <i class="fa fa-info-circle"></i> Be aware: Payment-related messages may be associated with fraud.
+                                        </div>
+                                    </div>
+                                   
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sent {
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .reply {
+        padding: 10px;
+        border-radius: 5px;
+        text-align: right;
+    }
+
+    .message_input {
+        margin-top: 20px;
+    }
+
+        .message_input input[type="text"] {
+            flex: 1;
+        }
+
+    .file-input-custom {
+        max-width: 150px;
+        position: relative;
+        z-index: 2;
+        /* Adjust margin as needed */
+        margin-right: 10px;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@section DynamicScript {
+    <script>
+        $(document).ready(function(){
+            // Reply button handler
+            $(document).on('click', '.icon-reply', function(){
+                var parentItem = $(this).closest('.message-item');
+                var previewText = parentItem.find('p').text().substring(0, 50);
+                var parentIdStr = parentItem.attr('id');
+                var parentId = parseInt(parentIdStr.split('-')[1], 10);
+
+                $('#replyPreview').val(previewText);
+                $('#replyMessageId').val(parentId);
+                $('#replyPreviewDisplay').text(previewText);
+                $('#replyPreviewContainer').show();
+                $('#replyPreviewContainer .icon-cancel').show();
+            });
+
+            $(document).on('click', '.icon-cancel', function(){
+                $('#replyPreview').val('');
+                $('#replyMessageId').val('');
+                $('#replyPreviewDisplay').text('');
+                $('#replyPreviewContainer').hide();
+                $(this).hide();
+            });
+
+            // Trigger file input when clicking the upload icon.
+            $('#fileInput').change(function(){
+                var previewContainer = $('#filePreview');
+                previewContainer.empty();
+                var files = this.files;
+                if(files.length > 0){
+                    $.each(files, function(index, file){
+                        if(file.type.startsWith("image/")){
+                            var reader = new FileReader();
+                            reader.onload = function(e){
+                                previewContainer.append(
+                                    '<div style="display:inline-block; margin-right:81%;">' +
+                                    '<img src="' + e.target.result + '" alt="' + file.name + '" style="max-width:100px; border:1px solid #ddd; border-radius:4px;" />' +
+                                    '</div>'
+                                );
+                            }
+                            reader.readAsDataURL(file);
+                        } else {
+                            previewContainer.append(
+                                '<div style="display:inline-block; margin-right:81%; padding:10px; border:1px solid #ddd; border-radius:4px;">' +
+                                '<i class="fa fa-file"></i> ' + file.name +
+                                '</div>'
+                            );
+                        }
+                    });
+                }
+            });
+
+            // Bind form submission once.
+            $('#messageForm').off('submit').on('submit', function(e){
+                e.preventDefault();
+                var formData = new FormData(this);
+                var $form = $(this);
+                $form.find('button[type="submit"]').prop('disabled', true);
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    success: function(result){
+                        // Check if result is JSON with an error message.
+                        if (result.success === false) {
+                            // Instead of alerting, display error message in the error container
+                            $('#errorContainer').html(result.error).show();
+                        } else {
+                            $('#errorContainer').hide().html('');
+                            $('#chatContainer').append(result);
+                            $form[0].reset();
+                            $('#filePreview').empty();
+                            $('#replyPreviewContainer').hide();
+                            $('#replyPreview').val('');
+                            $('#replyMessageId').val('');
+                        }
+                        $form.find('button[type="submit"]').prop('disabled', false);
+                    },
+                    error: function(xhr, status, error){
+                        console.error("Error details:", xhr.responseText);
+                        alert('Error sending message');
+                        $form.find('button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Load sensitive words from the server (via ViewBag).
+            var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
+
+            // Monitor keyup events on the message input field.
+            $('#messageInput').on('keyup', function() {
+                var text = $(this).val().toLowerCase();
+                // Normalize the input text by removing spaces.
+                var normalizedText = text.replace(/\s+/g, '');
+                var warningTriggered = false;
+
+                // Log the normalized text.
+                console.log("Normalized input text:", normalizedText);
+
+                // Check if any normalized keyword exists in the normalized text.
+                privacyKeywords.forEach(function(keyword) {
+                    var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
+                    console.log("Checking for keyword:", normalizedKeyword);
+                    if (normalizedText.indexOf(normalizedKeyword) !== -1) {
+                        warningTriggered = true;
+                    }
+                });
+
+                // Show or hide the warning accordingly.
+                if (warningTriggered) {
+                    $('#WarningInfo')
+                        .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+                        .fadeIn();
+                } else {
+                    $('#WarningInfo').fadeOut();
+                }
+            });
+
+            // Scroll to original message on reply preview click.
+            $(document).on('click', '.go-to-parent', function(){
+                var parentId = $(this).data('parent-id');
+                var target = $('#message-' + parentId);
+                var container = $('#chatContainer');
+                if(target.length && container.length){
+                    container.animate({
+                        scrollTop: container.scrollTop() + target.position().top
+                    }, 500);
+                } else {
+                    alert('Original message not found.');
+                }
+            });
+        });
+    </script>
+    }

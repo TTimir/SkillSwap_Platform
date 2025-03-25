@@ -5,6 +5,7 @@ using SkillSwap_Platform.Controllers;
 using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.Repository;
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,9 +28,14 @@ var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>
         item.UseSqlServer(config.GetConnectionString("dbcs")));
 
+builder.Services.AddHttpClient();
+
 // Register user service
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<ISensitiveWordService, SensitiveWordService>();
 builder.Services.AddScoped<UserProfilesFilter>();
 
 builder.Services.AddControllersWithViews(options =>

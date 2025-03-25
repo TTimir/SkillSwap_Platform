@@ -126,6 +126,8 @@ public partial class TblUser
 
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
 
+    public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();
+
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
 

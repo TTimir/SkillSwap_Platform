@@ -17,5 +17,7 @@ public partial class TblMessageAttachment
 
     public DateTime UploadedDate { get; set; }
 
+    public long? FileSize { get; set; }
+
     public virtual TblMessage Message { get; set; } = null!;
 }

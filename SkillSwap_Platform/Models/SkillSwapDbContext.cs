@@ -16,6 +16,10 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
+
+    public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
+
     public virtual DbSet<TblEducation> TblEducations { get; set; }
 
     public virtual DbSet<TblExchange> TblExchanges { get; set; }
@@ -53,7 +57,10 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
+    
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
+
+    public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -61,6 +68,21 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PrivacySensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__PrivacyS__3214EC0759BCBFB6");
+
+            entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<SensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Sensitiv__3214EC079C0CB70F");
+
+            entity.Property(e => e.WarningMessage).HasMaxLength(500);
+            entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<TblEducation>(entity =>
         {
             entity.HasKey(e => e.EducationId);
@@ -226,6 +248,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblMessages");
 
             entity.Property(e => e.MessageId).HasColumnName("MessageID");
+            entity.Property(e => e.IsApproved).HasDefaultValue(true);
             entity.Property(e => e.MeetingLink).HasMaxLength(500);
             entity.Property(e => e.ReceiverUserId).HasColumnName("ReceiverUserID");
             entity.Property(e => e.SenderUserId).HasColumnName("SenderUserID");
@@ -578,6 +601,30 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblWorkingTime_Users");
+        });
+
+        modelBuilder.Entity<UserSensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserSens__3214EC074AE3ACA8");
+
+            entity.Property(e => e.DetectedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_Message");
+
+            entity.HasOne(d => d.SensitiveWord).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.SensitiveWordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_SensitiveWord");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_User");
         });
 
         //modelBuilder.Entity<TblUserRole>(entity =>
