@@ -20,6 +20,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
 
+    public virtual DbSet<TblContract> TblContracts { get; set; }
+
     public virtual DbSet<TblEducation> TblEducations { get; set; }
 
     public virtual DbSet<TblExchange> TblExchanges { get; set; }
@@ -57,7 +59,6 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
-    
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
@@ -81,6 +82,44 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.WarningMessage).HasMaxLength(500);
             entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TblContract>(entity =>
+        {
+            entity.HasKey(e => e.ContractId).HasName("PK__TblContr__C90D3469E662177B");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FinalizedDate).HasColumnType("datetime");
+            entity.Property(e => e.FlowDescription).HasDefaultValue("");
+            entity.Property(e => e.SenderAcceptanceDate).HasColumnType("datetime");
+            entity.Property(e => e.SenderSignature).HasMaxLength(255);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.TokenOffer).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.TblContracts)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblMessages_MessageId");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblContracts)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblOffers_OfferId");
+
+            entity.HasOne(d => d.ReceiverUser).WithMany(p => p.TblContractReceiverUsers)
+                .HasForeignKey(d => d.ReceiverUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblUsers_ReceiverUserId");
+
+            entity.HasOne(d => d.SenderUser).WithMany(p => p.TblContractSenderUsers)
+                .HasForeignKey(d => d.SenderUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblUsers_SenderUserId");
         });
 
         modelBuilder.Entity<TblEducation>(entity =>
@@ -255,6 +294,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblMessages)
+                .HasForeignKey(d => d.OfferId)
+                .HasConstraintName("FK_TblMessages_Offers_OfferId");
 
             entity.HasOne(d => d.ReceiverUser).WithMany(p => p.TblMessageReceiverUsers)
                 .HasForeignKey(d => d.ReceiverUserId)

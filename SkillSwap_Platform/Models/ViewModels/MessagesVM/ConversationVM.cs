@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+
+namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
 {
     public class ConversationVM
     {
@@ -9,5 +11,8 @@
         public bool OtherUserIsOnline { get; set; }
         public List<TblMessage> Messages { get; set; } = new List<TblMessage>();
         public IEnumerable<ChatMemberVM> ChatMembers { get; set; }
+
+        public int? OfferId { get; set; }
+        public int OfferOwnerId { get; set; }
     }
 }

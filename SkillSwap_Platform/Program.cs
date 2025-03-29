@@ -10,6 +10,7 @@ using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // ✅ Load Encryption Key and store securely
 string encryptionKey = builder.Configuration.GetValue<string>("EncryptionConfig:EncryptionKey");
 if (string.IsNullOrEmpty(encryptionKey) || encryptionKey.Length != 32)

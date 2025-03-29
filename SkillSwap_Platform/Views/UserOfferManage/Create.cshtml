@@ -203,7 +203,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="SelectedWillingSkill" class="heading-color ff-heading fw500 mb10">Devices <span class="text-danger">*</span></label>
+                                <label asp-for="SelectedWillingSkill" class="heading-color ff-heading fw500 mb10">Willing Skkill <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="SelectedWillingSkill" asp-items="Model.WillingSkillOptions" class="selectpicker">
                                         <option value="">-- Select a Willing Skill --</option>
@@ -214,7 +214,7 @@
                         </div>
                         <div class="col-md-12">
                             <div class="mb10">
-                                <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work</label>
+                                <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work <span class="text-danger">*</span></label>
                                 <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this offer"></textarea>
                                 <span asp-validation-for="ScopeOfWork" class="text-danger"></span>
                             </div>

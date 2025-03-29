@@ -701,11 +701,14 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
+                int userId = GetUserId();
                 int pageSize = 5; // 5 offers per page
-                var totalOffers = await _context.TblOffers.CountAsync();
+
+                var totalOffers = await _context.TblOffers.Where(o => o.UserId == userId).CountAsync();
                 var totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
 
                 var offers = await _context.TblOffers
+                    .Where(o => o.UserId == userId)
                     .Include(o => o.TblOfferPortfolios)
                     .OrderByDescending(o => o.CreatedDate)
                     .Skip((page - 1) * pageSize)
@@ -997,7 +1000,8 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
-                var offer = _context.TblOffers.FirstOrDefault(o => o.OfferId == offerId);
+                var userId = GetUserId();
+                var offer = _context.TblOffers.FirstOrDefault(o => o.OfferId == offerId && o.UserId == userId);
                 if (offer == null)
                 {
                     return Json(new { success = false, message = "Offer not found" });

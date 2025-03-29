@@ -129,14 +129,14 @@
                     @{
                         // List of default images.
                         var defaultImages = new List<string>
-                        {
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
-                        };
+                    {
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                    };
 
                         // Check if the model has any portfolio images.
                         // Check if PortfolioUrls is non-null and has at least one element.
@@ -367,7 +367,7 @@
                                         </tr>
                                         <tr>
                                             <th scope="row"></th>
-                                            <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = Model.OfferId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
+                                            <td><a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId, otherUserId = Model.OfferOwnerId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
                                                 <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = compareOffer.OfferId })" class="ud-btn btn-thm">Select<i class="fal fa-arrow-right-long"></i></a></td>
@@ -607,7 +607,9 @@
                                                 }
                                             </div>
                                             <div class="d-grid">
-                                                <a href="" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a>
+                                                <a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId})" class="ud-btn btn-thm">
+                                                    Message about this Offer <i class="fal fa-arrow-right-long"></i>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>

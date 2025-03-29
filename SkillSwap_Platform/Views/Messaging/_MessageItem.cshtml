@@ -48,16 +48,108 @@
                         <i class="fa fa-reply"></i>
                     </span>
                 }
+                @* Offer Preview for sent messages *@
+                @if (Model.OfferDetails != null)
+                {
+                    var offer = Model.OfferDetails;
+                    <div class="offer-preview card mt-2" style="max-width: 65%; margin-right: 0px;">
+                        <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
+                                ? Url.Content(offer.PortfolioUrls.First())
+                                : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
+                             class="card-img-top" style="border-radius:14px;" alt="Offer Thumbnail" />
+                        <div class="card-body" style="display:block; flex:0 1 auto;">
+                            <h5 class="card-title line-clamp2">@offer.Title</h5>
+                            <span><i class="flaticon-sandclock"></i> @offer.TimeCommitmentDays Days</span>
+                            <span><i class="flaticon-recycle"></i> @offer.AssistanceRounds Assistance</span>
+                            <div>@offer.TokenCost Token</div>
+                            <!-- Button to send a contract invitation -->
+                            @if (Model.SenderUserID == Model.CurrentUserID)
+                            {
+                                <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">
+                                    Send Invite <i class="fal fa-arrow-right-long"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <p class="text-muted">Contract invitation sent.</p>
+                            }
+                        </div>
+                    </div>
+                }
+                @* Contract Invitation Section *@
+                @if (Model.ContractDetails != null && Model.ContractDetails.Status == "Pending")
+                {
+                    <div class="contract-invitation card mt-2">
+                        <div class="card-body">
+                            <h5>Contract Invitation</h5>
+                            <p>Offer: @Model.ContractDetails.Offer.Title</p>
+                            <p>Status: @Model.ContractDetails.Status</p>
+                            @if (Model.SenderUserID == Model.CurrentUserID)
+                            {
+                                <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">
+                                    Send Invite <i class="fal fa-arrow-right-long"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <p class="text-muted">Contract invitation sent.</p>
+                            }
+                        </div>
+                    </div>
+                }
                 <p>@Model.Content</p>
             }
             else
             {
+                @* Offer Preview for received messages *@
+                @if (Model.OfferDetails != null)
+                {
+                    var offer = Model.OfferDetails;
+                    <div class="offer-preview card mt-2" style="max-width: 60%; margin-right: 0px;">
+                        <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
+                                ? Url.Content(offer.PortfolioUrls.First())
+                                : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
+                             class="card-img-top" style="border-radius:14px;" alt="Offer Thumbnail" />
+                        <div class="card-body" style="display:block; flex:0 1 auto;">
+                            <h5 class="card-title">@offer.Title</h5>
+                            <span><i class="flaticon-sandclock"></i> @offer.TimeCommitmentDays Days</span>
+                            <span><i class="flaticon-recycle"></i> @offer.AssistanceRounds Assistance</span>
+                            <div>@offer.TokenCost Token</div>
+                            <!-- Button to send a contract invitation -->
+                            @if (Model.SenderUserID == Model.CurrentUserID)
+                            {
+                                <form method="post" action="@Url.Action("SendContract", "Messaging")">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="messageId" value="@Model.MessageId" />
+                                    <button type="submit" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">Send Invite <i class="fal fa-arrow-right-long"></i></button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
                 <p>@Model.Content</p>
                 @if (!(Model.IsFlagged && !Model.IsApproved))
                 {
                     <span class="icon-action icon-reply" title="Reply">
                         <i class="fa fa-reply"></i>
                     </span>
+                }
+                @* Optionally, if received messages have contract invitations, display them here as well *@
+                @if (Model.ContractDetails != null && Model.ContractDetails.Status == "Pending")
+                {
+                    <div class="contract-invitation card mt-2">
+                        <div class="card-body">
+                            <h5>Contract Invitation</h5>
+                            <p>Offer: @Model.ContractDetails.Offer.Title</p>
+                            <p>Status: @Model.ContractDetails.Status</p>
+                            <form method="post" action="@Url.Action("RespondContract", "Messaging")">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
+                                <button type="submit" name="response" value="Accepted" class="btn btn-success btn-sm">Accept</button>
+                                <button type="submit" name="response" value="Declined" class="btn btn-danger btn-sm">Decline</button>
+                            </form>
+                        </div>
+                    </div>
                 }
             }
         </div>

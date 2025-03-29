@@ -57,7 +57,11 @@ public partial class TblOffer
 
     public double? RecommendedPercentage { get; set; }
 
+    public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
+
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
+
+    public virtual ICollection<TblMessage> TblMessages { get; set; } = new List<TblMessage>();
 
     public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();
 

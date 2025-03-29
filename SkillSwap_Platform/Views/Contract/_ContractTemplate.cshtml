@@ -1,0 +1,424 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ContractCreationVM
+@{
+    // Lookup the offered skill display text.
+    string offeredSkillText = "N/A";
+    if (Model.SenderOfferedSkills != null && !string.IsNullOrEmpty(Model.OfferedSkill))
+    {
+        var selectedSkill = Model.SenderOfferedSkills.FirstOrDefault(x => x.Value == Model.OfferedSkill);
+        if (selectedSkill != null)
+        {
+            offeredSkillText = selectedSkill.Text;
+        }
+    }
+}
+<div class="contract-document">
+    <h2>SkillSwap Trust Exchange Agreement</h2>
+    <p>
+        This Trust Exchange Agreement ("Agreement") is entered into on this
+        <span class="display-field" style="font-weight:600">@Model.ContractDate?.ToString("dd")</span>
+        day of
+        <span class="display-field" style="font-weight:600">@Model.ContractDate?.ToString("MMMM"), </span>
+        <span class="display-field" style="font-weight:600">@Model.ContractDate?.ToString("yyyy")</span>, electronically through the SkillSwap Platform, by and between:
+    </p>
+    <p>
+        <strong>Sender:</strong>
+        @if (Model.IsPreview)
+        {
+            <span class="display-field">@Model.SenderName</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.SenderName, new { @class = "inline-input", id = "senderNameInput", placeholder = "Your Name", @readonly = "readonly" })
+        }
+        , residing at
+        @if (Model.IsPreview)
+        {
+            <span class="display-field">@Model.SenderAddress</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.SenderAddress, new { @class = "inline-input", placeholder = "Your Address", @readonly = "readonly" })
+        }
+        contactable via email
+        @if (Model.IsPreview)
+        {
+            <span class="display-field" href="mailto:@Model.SenderEmail">@Model.SenderEmail</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.SenderEmail, new { @class = "inline-input", placeholder = "Your Email", @readonly = "readonly" })
+        }
+        having SkillSwap profile with a username
+        @if (Model.IsPreview)
+        {
+            <span class="display-field" style="font-size:14px;">@("@")@Model.SenderUserName</span>
+        }
+        else
+        {
+            <span class="inline-input" style="font-size:14px;">@("@")@Model.SenderUserName</span>
+        }.
+    </p>
+    <p>
+        <strong>Receiver:</strong>
+        @if (Model.IsPreview)
+        {
+            <span class="display-field">@Model.ReceiverName</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.ReceiverName, new { @class = "inline-input", placeholder = "Receiver Email", @readonly = "readonly" })
+        }
+        , residing at
+        @if (Model.IsPreview)
+        {
+            <span class="display-field">@Model.ReceiverAddress</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.ReceiverAddress, new { @class = "inline-input", placeholder = "Receiver Email", @readonly = "readonly" })
+        },
+        contactable via email
+        @if (Model.IsPreview)
+        {
+            <span class="display-field">@Model.ReceiverEmail</span>
+        }
+        else
+        {
+            @Html.TextBoxFor(m => m.ReceiverEmail, new { @class = "inline-input", placeholder = "Receiver Email", @readonly = "readonly" })
+        },
+        having SkillSwap profile with a username
+        @if (Model.IsPreview)
+        {
+            <span class="display-field" style="font-size:14px;">@("@")@Model.ReceiverUserName</span>
+        }
+        else
+        {
+            <span class="inline-input" style="font-size:14px;">@("@")@Model.ReceiverUserName</span>
+        }.
+    </p>
+    <p>
+        The above-mentioned Sender and Receiver are collectively referred to as the "Parties" and individually as "Party."
+    </p>
+    <p>
+        <strong>PREAMBLE:</strong>
+        The Parties enter into this Agreement with mutual commitment to maintaining trust, 
+        transparency, accountability, and professionalism in the exchange of their respective skills or 
+        services as clearly detailed below. Both Parties agree to uphold integrity, clear communication, 
+        and mutual respect throughout their exchange to ensure a mutually satisfactory experience. 
+        The SkillSwap Platform exclusively serves as an intermediary, facilitating the exchange without 
+        bearing any legal responsibility or liability for the actions or representations made by either Party.
+    </p>
+    <ol>
+        <li>
+            <strong>Details of the Exchange:</strong><br />
+            The Sender agrees to provide the following skill or service:
+            @if (Model.IsPreview)
+            {
+                <span class="display-field">@offeredSkillText</span>
+            }
+            else
+            {
+                @Html.DropDownListFor(m => m.OfferedSkill, Model.SenderOfferedSkills ?? new List<SelectListItem>(), "Select your skill", new { @class = "inline-input" })
+            }
+            .<br />
+            The Receiver agrees to provide the following skill or service:
+            @if (Model.IsPreview)
+            {
+                <span class="display-field">@Model.OfferOwnerSkill</span>
+            }
+            else
+            {
+                @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly" })
+            }.<br />
+            The agreed duration for this exchange is
+            @if (Model.IsPreview)
+            {
+                <span class="display-field">@Model.LearningDays</span>
+            }
+            else
+            {
+                @Html.TextBoxFor(m => m.LearningDays, new { @class = "inline-input", placeholder = "Learning Days", type = "number", @readonly = "readonly" })
+            }
+            days, with an agreed digital token as payment of
+            @if (Model.IsPreview)
+            {
+                <span class="display-field">@Model.TokenOffer</span>
+            }
+            else
+            {
+                @Html.TextBoxFor(m => m.TokenOffer, new { @class = "inline-input", placeholder = "Token Amount", type = "number" })
+            }
+            tokens. The exchange shall commence on
+            @if (Model.IsPreview)
+            {
+                <span class="display-field" style="font-weight:600">@DateTime.Now.ToString("dd MMMM, yyyy")</span>
+            }
+            else
+            {
+                <span class="display-field" style="font-weight:600">@DateTime.Now.ToString("dd MMMM, yyyy")</span>
+            }
+            and must be completed by
+            @if (Model.IsPreview)
+            {
+                var completionDate = Model.ContractDate?.AddDays(Model.LearningDays + 1);
+                <span class="display-field">@completionDate?.ToString("dd MMMM, yyyy")</span>
+            }
+            else
+            {
+                <span class="display-field">________________.</span>
+            }
+        </li>
+        <br />
+        <li>
+            <strong>Term of Agreement:</strong><br />
+            This Agreement remains effective from the commencement date until the specified completion date, 
+            unless terminated earlier according to the conditions herein. Should additional time be necessary, 
+            both Parties must mutually agree upon an extension in writing through the SkillSwap Platform 
+            prior to the original completion date.
+            <br />
+        </li>
+            <br />
+        <li>
+            <strong>Commitments of the Parties:</strong><br />
+            Both Parties agree to provide truthful, accurate, and comprehensive details regarding their 
+            skills and services. Services must be delivered promptly, professionally, and exactly as agreed. 
+            Both Parties agree to maintain respectful, ethical, and clear communication throughout 
+            the duration of the exchange.
+        </li>
+        <br />
+        <li>
+            <strong>Prohibited Conduct:</strong><br />
+            The Parties expressly agree not to engage in:
+            a) Fraudulent activities, misrepresentation, or dishonesty.
+            b) Providing false or misleading information.
+            c) Any conduct causing financial, reputational, or other forms of harm.
+            d) Unprofessional or disrespectful behavior.
+        </li>
+        <br />
+        <li>
+            <strong>Confidentiality and Privacy:</strong><br />
+            Both Parties must strictly maintain confidentiality regarding all shared information, 
+            only disclosing details if explicitly authorized by the other Party or required by law.
+        </li>
+        <br />
+        <li>
+            <strong>Breach of Agreement and Enforcement:</strong><br />
+            In the event of a breach, the following actions will be taken:
+            a) Immediate termination of services by the breaching Party.
+            b) Liability of the breaching Party for incurred damages.
+            c) Potential legal action within the jurisdiction of India. This includes adherence to all applicable provisions of the Indian Contract Act, 1872, and the Information Technology Act, 2000, governing electronic agreements and digital transactions.
+            d) Reporting breaches to SkillSwap administration and professional platforms including LinkedIn, Facebook, Instagram, Twitter, and relevant forums.
+            e) Flagging of the offending Party’s SkillSwap profile and reporting across other professional platforms if inappropriate, unprofessional, or disrespectful behavior is identified.
+        </li>
+        <br />
+        <li>
+            <strong>Measures to Enhance Trust:</strong><br />
+            Both Parties commit to:
+            a) Prompt and responsive communication.
+            b) Regular updates and complete transparency throughout the exchange.
+            c) Mutual feedback to ensure quality and satisfaction.
+            d) Clearly defined procedures for resolving misunderstandings or disputes.
+        </li>
+        <br />
+        <li>
+            <strong>Protection of SkillSwap Platform:</strong><br />
+            Both Parties acknowledge that SkillSwap acts solely as an intermediary platform to facilitate 
+            exchanges. The Platform holds no legal or financial responsibility for disputes, breaches, 
+            misrepresentations, or other issues arising from this Agreement. The Parties explicitly waive 
+            the right to involve SkillSwap in legal or administrative proceedings.
+        </li>
+        <br />
+        <li>
+            <strong>Dispute Resolution:</strong><br />
+            Any disputes arising shall initially be addressed through negotiation or mediation. If unresolved, 
+            arbitration procedures under the Arbitration and Conciliation Act, 1996, will apply within 
+            the jurisdiction of India.
+        </li>
+        <br />
+        <li>
+            <strong>Governing Law:</strong><br />
+            This Agreement shall be governed by and interpreted under the laws of India. Specifically, 
+            this Agreement complies with the provisions of the Indian Contract Act, 1872, and 
+            the Information Technology Act, 2000.
+        </li>
+        <br />
+        <li>
+            <strong>Entire Agreement:</strong><br />
+            This Agreement constitutes the complete understanding between the Parties, superseding any previous 
+            verbal or written discussions or agreements.
+        </li>
+        <br />
+        <li>
+            <strong>Amendments:</strong><br />
+            Any changes or modifications must be documented in writing and mutually agreed upon by both Parties 
+            to be valid.
+        </li>
+            <br />
+        <li>
+            <strong>Optional Additional Terms (e.g., specific conditions, communication preferences, penalty clauses):</strong><br />
+            @if (Model.IsPreview)
+            {
+                <span class="display-field">@(!string.IsNullOrWhiteSpace(Model.AdditionalTerms) ? Model.AdditionalTerms : "N/A")</span>
+            }
+            else
+            {
+                @Html.TextAreaFor(m => m.AdditionalTerms, new { @class = "inline-input", placeholder = "Enter additional terms", style = "width:90%; height:60px;" })
+            }
+        </li>
+        <br />
+        <li>
+            <strong>Process Flow of Exchange:</strong><br />
+            Clearly outline the detailed steps involved in the exchange process, including key milestones or checkpoints:
+            <br />
+            @if (Model.IsPreview)
+            {
+                @* Split the FlowDescription into lines and enumerate them *@
+                var steps = Model.FlowDescription
+                ?.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                ?? Array.Empty<string>();
+
+                <ol>
+                    @for (int i = 0; i < steps.Length; i++)
+                    {
+                        <li>@steps[i]</li>
+                    }
+                </ol>
+            }
+            else
+            {
+                <!-- In create/edit mode, display the bullet-point inputs -->
+                <div id="bulletContainer">
+                    <ul>
+                        <li>
+                            <input type="text" class="bullet-point" placeholder="Step 1" />
+                        </li>
+                        <li>
+                            <input type="text" class="bullet-point" placeholder="Step 2" />
+                        </li>
+                        <li>
+                            <input type="text" class="bullet-point" placeholder="Step 3" />
+                        </li>
+                    </ul>
+                </div>
+                <button type="button" id="addMoreBtn" class="btn">Add More</button>
+            }
+        </li>
+        <br />
+        <li>
+            <strong>Declaration and Acceptance:</strong><br />
+            By electronically signing below through the SkillSwap Platform, both Parties explicitly confirm 
+            they have carefully read, fully understood, and agree to comply strictly with all terms, conditions, 
+            obligations, and responsibilities outlined above. They acknowledge that this Agreement is legally 
+            binding and enforceable.
+            <br />
+            <br />
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                <!-- Sender Acceptance Column -->
+                <div style="flex: 1;">
+                    <label>Sender Acceptance:</label><br />
+                    <div>
+                        <span>Name:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">@Model.SenderName</span>
+                        }
+                        else
+                        {
+                            @Html.TextBoxFor(m => m.SenderName, new { @class = "inline-input", @readonly = "readonly" })
+                        }
+                    </div>
+                    <div>
+                        <span>
+                            @if (Model.IsPreview)
+                            {
+                                <span class="display-field">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("MM/dd/yyyy")</span>
+                            }
+                            else
+                            {
+                                <!-- Sender Acceptance Section -->
+                                <input asp-for="SenderAgreementAccepted" type="checkbox" id="senderAgreementCheckbox" />
+                                <label for="senderAgreementCheckbox">I Agree, Date:</label>
+                                @Html.TextBox("SenderAcceptanceDate", null, new { @class = "inline-input", type = "date" })
+                            }
+                        </span>
+                    </div>
+                    <div>
+                        <span>Signature:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">[Signature]</span>
+                        }
+                        else
+                        {
+                            @Html.TextBox("SenderSignature", null, new { @class = "inline-input", placeholder = "Sign Here" })
+                        }
+                    </div>
+                    <div>
+                        <span>Place:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">[Place]</span>
+                        }
+                        else
+                        {
+                            @Html.TextBox("SenderPlace", null, new { @class = "inline-input", placeholder = "Place of sign", })
+                        }
+                    </div>
+                </div>
+
+                <!-- Receiver Acceptance Column -->
+                <div style="flex: 1;">
+                    <label>Receiver Acceptance:</label><br />
+                    <div>
+                        <span>Name:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">@Model.ReceiverName</span>
+                        }
+                        else
+                        {
+                            @Html.TextBoxFor(m => m.ReceiverName, new { @class = "inline-input", placeholder = "Enter receiver's name", @readonly = "readonly" })
+                        }
+                    </div>
+                    <div>
+                        <span>
+                            @if (Model.IsPreview)
+                            {
+                                <span class="display-field">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("MM/dd/yyyy")</span>
+                            }
+                            else
+                            {
+                                <!-- Receiver Acceptance Section -->
+                                <input asp-for="ReceiverAgreementAccepted" type="checkbox" id="receiverAgreementCheckbox" readonly />
+                                <label for="receiverAgreementCheckbox">I Agree, Date:</label>
+                                @Html.TextBox("ReceiverAcceptanceDate", null, new { @class = "inline-input", type = "date" })
+                            }
+                        </span>
+                    </div>
+                    <div>
+                        <span>Signature:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">[Signature]</span>
+                        }
+                        else
+                        {
+                            @Html.TextBox("ReceiverSignature", null, new { @class = "inline-input", placeholder = "Sign Here", @readonly = "readonly" })
+                        }
+                    </div>
+                    <div>
+                        <span>Place:</span>
+                        @if (Model.IsPreview)
+                        {
+                            <span class="display-field">[Place]</span>
+                        }
+                        else
+                        {
+                            @Html.TextBox("ReceiverPlace", null, new { @class = "inline-input", placeholder = "Place of sign", @readonly = "readonly" })
+                        }
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ol>
+</div>

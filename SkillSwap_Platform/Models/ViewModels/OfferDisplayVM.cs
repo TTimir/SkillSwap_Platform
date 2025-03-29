@@ -27,6 +27,8 @@
         public List<UserDetailsVM> UserDetails { get; set; }
         public List<CompareOfferVM> CompareOffers { get; set; } = new List<CompareOfferVM>();
 
+        public int OfferOwnerId { get; set; }
+
     }
 
     public class UserLanguageVM
