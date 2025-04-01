@@ -6,8 +6,8 @@
         @if (!Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-start mr10"
-                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-                 alt="Profile" style="width:50px;" />
+            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+            alt="Profile" style="width:50px;" />
         }
         <div class="title fz15">
             @if (Model.IsSentByCurrent)
@@ -24,8 +24,8 @@
         @if (Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-end ml10"
-                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-                 alt="Profile" style="width:50px;" />
+            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+            alt="Profile" style="width:50px;" />
         }
     </div>
     @if (!string.IsNullOrEmpty(Model.ReplyPreview) && Model.ReplyMessageId.HasValue)
@@ -52,47 +52,95 @@
                 @if (Model.OfferDetails != null)
                 {
                     var offer = Model.OfferDetails;
-                    <div class="offer-preview card mt-2" style="max-width: 65%; margin-right: 0px;">
-                        <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
-                                ? Url.Content(offer.PortfolioUrls.First())
-                                : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
-                             class="card-img-top" style="border-radius:14px;" alt="Offer Thumbnail" />
-                        <div class="card-body" style="display:block; flex:0 1 auto;">
-                            <h5 class="card-title line-clamp2">@offer.Title</h5>
-                            <span><i class="flaticon-sandclock"></i> @offer.TimeCommitmentDays Days</span>
-                            <span><i class="flaticon-recycle"></i> @offer.AssistanceRounds Assistance</span>
-                            <div>@offer.TokenCost Token</div>
-                            <!-- Button to send a contract invitation -->
-                            @if (Model.SenderUserID == Model.CurrentUserID)
-                            {
-                                <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">
-                                    Send Invite <i class="fal fa-arrow-right-long"></i>
-                                </a>
-                            }
-                            else
-                            {
-                                <p class="text-muted">Contract invitation sent.</p>
-                            }
+                    <div class="navpill-style1" style="margin-bottom: 40%;">
+                        <ul class="nav nav-pills mb30" id="pills-tab" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active fw500 dark-color">@offer.TokenCost Token</button>
+                            </li>
+                            <li class="nav-item">
+                                @if (Model.SenderUserID == Model.CurrentUserID)
+                                {
+                                    if (Model.ContractDetails == null)
+                                    {
+                                        <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
+                                        class="nav-link fw500 dark-color">
+                                            Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <p class="nav-link fw500 dark-color text-muted">Contract invitation sent.</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">Contract invitation sent.</p>
+                                }
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade fz15 text show active">
+                                <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
+                                    ? Url.Content(offer.PortfolioUrls.First())
+                                    : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
+                                class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;" />
+                                <div>
+                                    <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
+                                    <small class="text-muted d-block mb-1">
+                                        <i class="flaticon-sandclock me-1"></i>@offer.TimeCommitmentDays Days
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <i class="flaticon-recycle me-1"></i>@offer.AssistanceRounds Assistance
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 }
-                @* Contract Invitation Section *@
-                @if (Model.ContractDetails != null && Model.ContractDetails.Status == "Pending")
+
+                @if (Model.ContractDetails != null)
                 {
-                    <div class="contract-invitation card mt-2">
-                        <div class="card-body">
-                            <h5>Contract Invitation</h5>
-                            <p>Offer: @Model.ContractDetails.Offer.Title</p>
-                            <p>Status: @Model.ContractDetails.Status</p>
-                            @if (Model.SenderUserID == Model.CurrentUserID)
+                    <div class="contract-card">
+                        <div class="contract-header">
+                            <h5>📄 Contract Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
+                        </div>
+
+                        <div class="contract-details">
+                            <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
+                            <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
+                            <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p>
+                                <strong>Status:</strong>
+                                <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
+                                    @Model.ContractDetails.Status
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="contract-actions">
+                            <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
+                            class="btn btn-outline-primary" target="_blank">
+                                <i class="fa fa-file-pdf"></i> Download PDF
+                            </a>
+
+                            @if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
-                                <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">
-                                    Send Invite <i class="fal fa-arrow-right-long"></i>
+                                <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
+                                class="btn btn-sm btn-primary" style="color:#fff">
+                                    <i class="fa fa-eye"></i> Review Contract
                                 </a>
-                            }
-                            else
-                            {
-                                <p class="text-muted">Contract invitation sent.</p>
+
+                                <form asp-action="DeclineContract"
+                                asp-controller="Contract"
+                                method="post"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                    <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fa fa-times-circle"></i> Decline Invite
+                                    </button>
+                                </form>
                             }
                         </div>
                     </div>
@@ -105,23 +153,108 @@
                 @if (Model.OfferDetails != null)
                 {
                     var offer = Model.OfferDetails;
-                    <div class="offer-preview card mt-2" style="max-width: 60%; margin-right: 0px;">
-                        <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
-                                ? Url.Content(offer.PortfolioUrls.First())
-                                : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
-                             class="card-img-top" style="border-radius:14px;" alt="Offer Thumbnail" />
-                        <div class="card-body" style="display:block; flex:0 1 auto;">
-                            <h5 class="card-title">@offer.Title</h5>
-                            <span><i class="flaticon-sandclock"></i> @offer.TimeCommitmentDays Days</span>
-                            <span><i class="flaticon-recycle"></i> @offer.AssistanceRounds Assistance</span>
-                            <div>@offer.TokenCost Token</div>
-                            <!-- Button to send a contract invitation -->
-                            @if (Model.SenderUserID == Model.CurrentUserID)
+                    <div class="navpill-style1" style="margin-bottom: 40%;">
+                        <ul class="nav nav-pills mb30" id="pills-tab" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active fw500 dark-color">@offer.TokenCost Token</button>
+                            </li>
+                            <li class="nav-item">
+                                @if (Model.SenderUserID == Model.CurrentUserID)
+                                {
+                                    if (Model.ContractDetails == null)
+                                    {
+                                        <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
+                                        class="nav-link fw500 dark-color">
+                                            Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        if (Model.ContractDetails != null && !Model.IsSentByCurrent)
+                                        {
+                                            <p class="nav-link fw500 dark-color text-muted">Contract invitation received.</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="nav-link fw500 dark-color text-muted">Contract invitation sent.</p>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (Model.ContractDetails != null && !Model.IsSentByCurrent)
+                                    {
+                                        <p class="text-muted mb-0">Contract invite received.</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted mb-0">Contract invitation sent.</p>
+                                    }
+                                }
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade fz15 text show active">
+                                <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
+                                    ? Url.Content(offer.PortfolioUrls.First())
+                                    : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
+                                     class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;" />
+                                <div>
+                                    <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
+                                    <small class="text-muted d-block mb-1">
+                                        <i class="flaticon-sandclock me-1"></i>@offer.TimeCommitmentDays Days
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <i class="flaticon-recycle me-1"></i>@offer.AssistanceRounds Assistance
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ContractDetails != null)
+                {
+                    <div class="contract-card">
+                        <div class="contract-header">
+                            <h5>📄 Contract Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
+                        </div>
+
+                        <div class="contract-details">
+                            <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
+                            <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
+                            <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p>
+                                <strong>Status:</strong>
+                                <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
+                                    @Model.ContractDetails.Status
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="contract-actions">
+                            <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
+                               class="btn btn-outline-primary" target="_blank">
+                                <i class="fa fa-file-pdf"></i> Download PDF
+                            </a>
+
+                            @if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
-                                <form method="post" action="@Url.Action("SendContract", "Messaging")">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="messageId" value="@Model.MessageId" />
-                                    <button type="submit" class="ud-btn btn-light-thm me-4" style="width:100%; border:none;">Send Invite <i class="fal fa-arrow-right-long"></i></button>
+                                <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
+                                   class="btn btn-sm btn-primary" style="color:#fff">
+                                    <i class="fa fa-eye"></i> Review Contract
+                                </a>
+
+                                <form asp-action="DeclineContract"
+                                      asp-controller="Contract"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                    <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fa fa-times-circle"></i> Decline Invite
+                                    </button>
                                 </form>
                             }
                         </div>
@@ -133,23 +266,6 @@
                     <span class="icon-action icon-reply" title="Reply">
                         <i class="fa fa-reply"></i>
                     </span>
-                }
-                @* Optionally, if received messages have contract invitations, display them here as well *@
-                @if (Model.ContractDetails != null && Model.ContractDetails.Status == "Pending")
-                {
-                    <div class="contract-invitation card mt-2">
-                        <div class="card-body">
-                            <h5>Contract Invitation</h5>
-                            <p>Offer: @Model.ContractDetails.Offer.Title</p>
-                            <p>Status: @Model.ContractDetails.Status</p>
-                            <form method="post" action="@Url.Action("RespondContract", "Messaging")">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
-                                <button type="submit" name="response" value="Accepted" class="btn btn-success btn-sm">Accept</button>
-                                <button type="submit" name="response" value="Declined" class="btn btn-danger btn-sm">Decline</button>
-                            </form>
-                        </div>
-                    </div>
                 }
             }
         </div>
@@ -177,10 +293,117 @@
     }
 </div>
 <style>
+    .contract-card {
+        background: #f9f9f9;
+        border: 1px solid #dedede;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 600px;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .contract-header {
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+        .contract-header h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .contract-header .version {
+            background-color: #eef1f5;
+            color: #333;
+            font-size: 13px;
+            padding: 3px 8px;
+            border-radius: 8px;
+        }
+
+    .contract-details p {
+        margin: 4px 0;
+        font-size: 14px;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        font-size: 13px;
+        border-radius: 6px;
+        color: white;
+    }
+
+    .contract-actions {
+        margin-top: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .contract-actions .btn {
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+    .btn-outline-primary {
+        background: white;
+        border: 1px solid #007bff;
+        color: #007bff;
+    }
+
+        .btn-outline-primary:hover {
+            background: #007bff;
+            color: white;
+        }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+        .btn-success:hover {
+            color: #fff;
+            background-color: #218838;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            color: #fff;
+            background-color: #c82333;
+        }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+        .btn-warning:hover {
+            color: #111;
+            background-color: #e0a800;
+        }
+
     /* Container for the text content */
     .message-content {
         padding: 10px;
-        border-radius: 5px;
+        border-radius: 4px;
     }
 
         /* Styling the paragraph inside message-content */
@@ -224,4 +447,16 @@
         .icon-action:hover {
             opacity: 0.8;
         }
+
+    .badge-accepted {
+        background: #28a745;
+    }
+
+    .badge-pending {
+        background: #ffc107;
+    }
+
+    .badge-declined {
+        background: #dc3545;
+    }
 </style>

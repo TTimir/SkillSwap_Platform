@@ -43,6 +43,30 @@ public partial class TblContract
 
     public string? SenderSignature { get; set; }
 
+    public bool ReceiverAgreementAccepted { get; set; }
+
+    public DateTime? ReceiverAcceptanceDate { get; set; }
+
+    public string? ReceiverSignature { get; set; }
+
+    public DateTime? CompletionDate { get; set; }
+
+    public int Version { get; set; }
+
+    public int? ParentContractId { get; set; }
+
+    public string? SenderSkill { get; set; }
+
+    public string? ReceiverSkill { get; set; }
+
+    public string? SenderName { get; set; }
+
+    public string? ReceiverName { get; set; }
+
+    public string? SenderPlace { get; set; }
+
+    public string? ReceiverPlace { get; set; }
+
     public virtual TblMessage Message { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;

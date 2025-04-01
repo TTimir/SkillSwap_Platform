@@ -37,6 +37,13 @@
             border-bottom-color: #007bff;
         }
 
+    .display-field {
+        display: inline-block;
+        width: auto;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
     .contract-actions {
         margin-top: 2em;
         text-align: center;
@@ -136,9 +143,14 @@
     @Html.HiddenFor(m => m.ContractDate)
     @Html.HiddenFor(m => m.SenderUserName)
     @Html.HiddenFor(m => m.ReceiverUserName)
-    <input type="hidden" name="FlowDescription" id="flowDescriptionHidden" value="" />
+    @Html.HiddenFor(m => m.SenderPlace)
+    @Html.HiddenFor(m => m.ReceiverPlace)
+    @Html.HiddenFor(m => m.Mode)
+    @Html.HiddenFor(m => m.ActionContext)
+    @Html.HiddenFor(m => m.SenderPlace)
+    <input type="hidden" name="FlowDescription" id="flowDescriptionField" value="" />
     <div class="contract-actions">
-        <button type="button" onclick="previewContract(event)" class="btn">Preview Contract</button>
+        <button type="button" onclick="disableAndPreview(this, event)" class="btn">Preview Contract</button>
         <button type="submit" id="confirmSend" class="btn" disabled>Confirm and Send Contract</button>
     </div>
 </form>
@@ -180,6 +192,18 @@
     </div>
 </div>
 
+<!-- Processing Overlay -->
+<div id="processingOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <img src="~/template_assets/images/C_Loader.gif" />
+        <h3>Please wait...</h3>
+        <p>Your contract is being prepared and sent. Please do not close this window.</p>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // ----------------------------
@@ -195,6 +219,10 @@
                 errorModalList.appendChild(li);
             });
             errorModalOverlay.style.display = "flex";
+        }
+
+        function hideErrorModal() {
+            document.getElementById("errorModalOverlay").style.display = "none";
         }
 
         function showModal() {
@@ -313,33 +341,124 @@
         }
 
         // ----------------------------
-        // Form Submission: Validate and Combine Bullet Points
+        // Confirm & Send Validation (on form submission)
         // ----------------------------
         var form = document.getElementById("contractForm");
         if (form) {
             form.addEventListener("submit", function (e) {
-                var bulletInputs = document.querySelectorAll(".bullet-point");
-                var bulletSteps = [];
-                var hasEmptyStep = false;
+            var errors = [];
+
+            // Validate sender name.
+            var senderNameInput = document.getElementById("senderNameInput");
+            if (!senderNameInput) {
+                errors.push("Sender name input was not found.");
+            } else {
+                var senderName = senderNameInput.value.trim();
+                if (senderName === "" || senderName === "Your Name") {
+                    errors.push("Please enter your actual name.");
+                }
+            }
+
+            // Validate token offer.
+            var tokenOfferInput = document.querySelector("input[name='TokenOffer']");
+            if (!tokenOfferInput) {
+                errors.push("Token Offer input was not found.");
+            } else {
+                var tokenOfferValue = tokenOfferInput.value.trim();
+                if (tokenOfferValue === "" || parseFloat(tokenOfferValue) < 0) {
+                    errors.push("Your token amount isn’t valid. Your offer can even start with 0 tokens.");
+                }
+            }
+
+            // Validate offered skill.
+            var skillSelect = document.querySelector("select[name='OfferedSkill']");
+            if (!skillSelect) {
+                errors.push("Offered Skill selection was not found.");
+            } else {
+                var selectedSkill = skillSelect.value;
+                if (selectedSkill === "" || selectedSkill === "Select your skill") {
+                    errors.push("Please select your offered skill.");
+                }
+            }
+
+            function isPlaceholderSignature(value) {
+                // Matches patterns like "[Sign Here]", "Sign Here", "[ sign here", etc.
+                var regex = /^\[?\s*sign\s+here\s*\]?$/i;
+                return regex.test(value.trim());
+            }
+
+            // Validate sender signature.
+            var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+            if (!senderSignatureInput || senderSignatureInput.value.trim() === "" || isPlaceholderSignature(senderSignatureInput.value)) {
+                errors.push("Please provide your actual signature.");
+            }
+
+            function isPlaceholderPlace(value) {
+                // Matches patterns like "[Place of Sign]", "Place of Sign", "[ place of sign", etc.
+                var regex = /^\[?\s*place\s+of\s+sign\s*\]?$/i;
+                return regex.test(value.trim());
+            }
+
+            // Validate sender place of sign.
+            var senderPlaceInput = document.querySelector("input[name='SenderPlace']");
+            if (!senderPlaceInput || senderPlaceInput.value.trim() === "" || isPlaceholderPlace(senderPlaceInput.value)) {
+                errors.push("Please provide the actual place of signing.");
+            }
+
+            // Validate Acceptance Dates (must match today's date)
+            var senderAcceptanceDateInput = document.querySelector("input[name='SenderAcceptanceDate']");
+            if (!senderAcceptanceDateInput || senderAcceptanceDateInput.value.trim() === "") {
+                errors.push("Please enter the Sender Acceptance Date.");
+            } else {
+                var senderAcceptanceDate = new Date(senderAcceptanceDateInput.value);
+                var today = new Date();
+                if (senderAcceptanceDate.toDateString() !== today.toDateString()) {
+                    errors.push("Sender Acceptance Date must be today's date.");
+                }
+            }
+
+            // Validate process flow steps.
+            var bulletInputs = document.querySelectorAll(".bullet-point");
+            var bulletSteps = [];
+            var hasEmptyStep = false;
                 bulletInputs.forEach(function (input) {
-                    var val = input.value.trim();
-                    if (!val) {
-                        hasEmptyStep = true;
-                    } else {
-                        bulletSteps.push(val);
-                    }
+                   var val = input.value.trim();
+                   if (!val) {
+                       hasEmptyStep = true;
+                   } else {
+                       bulletSteps.push(val);
+                   }
                 });
                 if (bulletSteps.length < 3) {
-                    e.preventDefault();
-                    showErrorModal(["To create an impactful flow, please add at least 3 steps."]);
-                    return false;
+                    errors.push("To create an impactful flow, please add at least 3 steps.");
                 }
                 if (hasEmptyStep) {
+                    errors.push("Please fill in all the step fields you have added, or remove any empty ones.");
+                }
+
+                // If any errors were found, prevent submission and show the error modal.
+                if (errors.length > 0) {
                     e.preventDefault();
-                    showErrorModal(["Please fill in all the step fields you have added, or remove any empty ones."]);
+                    showErrorModal(errors);
                     return false;
                 }
-                document.getElementById("flowDescriptionHidden").value = bulletSteps.join("\n");
+
+                // Otherwise, combine the bullet points into the hidden FlowDescription field.
+                document.getElementById("flowDescriptionField").value = bulletSteps.join("\n");
+
+                // Optionally, disable pointer events on the whole document.
+                document.body.style.pointerEvents = "none";
+
+                // Show the processing overlay.
+                var overlay = document.getElementById("processingOverlay");
+                if (overlay) {
+                    overlay.style.display = "flex";
+                }
+
+               // Delay then submit.
+                setTimeout(function () {
+                    $("#contractForm").off("submit").submit();
+                }, 5050);
             });
         }
 
@@ -388,6 +507,11 @@
                     errors.push("Please select your offered skill.");
                 }
             }
+            // Validate sender signature.
+            var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+            if (!senderSignatureInput || senderSignatureInput.value.trim() === "") {
+                errors.push("Please provide your signature.");
+            }
             // Validate process flow steps.
             var bulletInputs = document.querySelectorAll(".bullet-point");
             var bulletSteps = [];
@@ -410,7 +534,7 @@
                 showErrorModal(errors);
                 return;
             }
-            document.getElementById("flowDescriptionHidden").value = bulletSteps.join("\n");
+            document.getElementById("flowDescriptionField").value = bulletSteps.join("\n");
             var form = document.getElementById("contractForm");
             form.action = '@Url.Action("PreviewFromForm", "Contract")';
             form.target = "_blank";
@@ -419,6 +543,23 @@
                 form.target = "";
                 form.action = '@Url.Action("Create", "Contract")';
             }, 100);
+        };
+
+        // ----------------------------
+        // Anti-Double-Submission Helper for Preview
+        // ----------------------------
+        window.disableAndPreview = function(button, e) {
+            if (e && typeof e.preventDefault === "function") {
+                e.preventDefault();
+            }
+            // Disable the preview button immediately
+            button.disabled = true;
+            // Call the previewContract function to handle preview
+            previewContract(e);
+            // Re-enable the preview button after 3 seconds (adjust as needed)
+            setTimeout(function() {
+                button.disabled = false;
+            }, 5000);
         };
     });
 </script>

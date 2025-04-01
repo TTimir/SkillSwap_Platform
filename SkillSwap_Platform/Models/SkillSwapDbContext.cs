@@ -88,18 +88,22 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.ContractId).HasName("PK__TblContr__C90D3469E662177B");
 
-            entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getutcdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.FinalizedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.FlowDescription).HasDefaultValue("");
-            entity.Property(e => e.SenderAcceptanceDate).HasColumnType("datetime");
+            entity.Property(e => e.ReceiverAcceptanceDate).HasColumnType("datetime");
+            entity.Property(e => e.ReceiverName).HasMaxLength(100);
+            entity.Property(e => e.ReceiverPlace).HasMaxLength(100);
+            entity.Property(e => e.ReceiverSignature).HasMaxLength(255);
+            entity.Property(e => e.ReceiverSkill).HasMaxLength(100);
+            entity.Property(e => e.SenderName).HasMaxLength(100);
+            entity.Property(e => e.SenderPlace).HasMaxLength(100);
             entity.Property(e => e.SenderSignature).HasMaxLength(255);
+            entity.Property(e => e.SenderSkill).HasMaxLength(100);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
             entity.Property(e => e.TokenOffer).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Version).HasDefaultValue(1);
 
             entity.HasOne(d => d.Message).WithMany(p => p.TblContracts)
                 .HasForeignKey(d => d.MessageId)

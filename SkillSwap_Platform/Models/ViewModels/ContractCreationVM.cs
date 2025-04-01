@@ -1,28 +1,25 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SkillSwap_Platform.Services.Contracts;
 using System.ComponentModel.DataAnnotations;
 
 namespace SkillSwap_Platform.Models.ViewModels
 {
     public class ContractCreationVM
     {
-        [Required(ErrorMessage = "Message ID is required.")]
+        public int ContractId { get; set; }
+
+        [Required]
         public int MessageId { get; set; }
 
-        [Required(ErrorMessage = "Offer ID is required.")]
+        [Required]
         public int OfferId { get; set; }
 
-        [Required(ErrorMessage = "Sender User ID is required.")]
+        [Required]
         public int SenderUserId { get; set; }
 
-        [Required(ErrorMessage = "Receiver User ID is required.")]
+        [Required]
         public int ReceiverUserId { get; set; }
-
-        [Required]
-        public string SenderUserName { get; set; }
-
-        [Required]
-        public string ReceiverUserName { get; set; }
 
         [Required(ErrorMessage = "Token Offer is required.")]
         [Range(0, double.MaxValue, ErrorMessage = "Token Offer must be 0 or a positive number.")]
@@ -31,54 +28,67 @@ namespace SkillSwap_Platform.Models.ViewModels
         [Required(ErrorMessage = "Please select an offered skill.")]
         public string OfferedSkill { get; set; }
 
-        // Sender's offered skills used for lookup.
         [BindNever]
-        public IEnumerable<SelectListItem> SenderOfferedSkills { get; set; }
+        public IEnumerable<SelectListItem>? SenderOfferedSkills { get; set; }
 
-        // Additional Terms (optional)
-        public string? AdditionalTerms { get; set; }
-
-        [Required(ErrorMessage = "Please enter the process flow description.")]
         public string FlowDescription { get; set; }
 
-        // Document fields – these are used to render the contract document.
-        [Required(ErrorMessage = "Your Name is required.")]
-        public string SenderName { get; set; }
-
-        [Required(ErrorMessage = "Counterparty Name is required.")]
-        public string ReceiverName { get; set; }
-
-        [Required]
+        public int Version { get; set; }
         public DateTime? ContractDate { get; set; }
+        public string? SenderUserName { get; set; }
+        public string? ReceiverUserName { get; set; }
+
+        // Agreement checkboxes
         public bool SenderAgreementAccepted { get; set; }
         public bool ReceiverAgreementAccepted { get; set; }
 
-        // Extended sender details – fetched from DB.
-        public string SenderAddress { get; set; }
+        public string? AdditionalTerms { get; set; }
 
-        public string SenderEmail { get; set; }
-
-        public string ReceiverAddress { get; set; }
-
-        public string ReceiverEmail { get; set; }
+        // Document fields
+        [Required(ErrorMessage = "Your Name is required.")]
+        public string SenderName { get; set; }
 
         [Required(ErrorMessage = "Learning Duration (Days) is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Learning Days must be at least 1.")]
         public int LearningDays { get; set; }
 
-        // Computed: CompletionDate = ContractDate + LearningDays + 1 day backup.
+        public string SenderAddress { get; set; }
+        public string SenderEmail { get; set; }
+
         public DateTime? CompletionDate { get; set; }
         public DateTime? SenderAcceptanceDate { get; set; }
         public DateTime? ReceiverAcceptanceDate { get; set; }
-        public string SenderSignature { get; set; }
 
-        // The registered sender name from the DB (for validation).
+        // For creation we now initialize these as empty strings.
+        public string SenderSignature { get; set; } = "";
+        [RequiredWhenSigning("Mode", ErrorMessage = "Receiver signature is required when signing.")]
+        public string ReceiverSignature { get; set; } = "";
         public string AccountSenderName { get; set; }
 
-        // New property: Offer Owner Skill (the service the receiver will offer).
         public string OfferOwnerSkill { get; set; }
 
-        // Flag for rendering mode (true = Preview, false = Create/Edit).
-        public bool IsPreview { get; set; }
+        public string SenderPlace { get; set; } = "";
+        [RequiredWhenSigning("Mode", ErrorMessage = "Receiver place is required when signing.")]
+        public string ReceiverPlace { get; set; } = "";
+
+        public bool IsPreview { get; set; } = true;
+
+        public string? senderFullName { get; set; }
+        public string? receiverFullName { get; set; }
+
+        public string ReceiverName { get; set; }
+        public string ReceiverEmail { get; set; }
+        public string ReceiverAddress { get; set; }
+
+        public DateTime? OriginalCreatedDate { get; set; }
+        public string? Status { get; set; }
+
+        // Mode and ActionContext will determine which fields are required.
+        [Required]
+        public string Mode { get; set; }  // e.g., "Edit", "ReadOnly", "Sign"
+        [Required]
+        public string ActionContext { get; set; }  // e.g., "ModifyOnly", "Signing"
+        public bool HideSenderAcceptance { get; set; }
+
     }
 }

@@ -118,40 +118,15 @@
                     </div>
                     <div class="inbox_chatting_box">
                         <ul id="chatContainer" class="chatting_content">
-                            @{
-                                int? lastSenderId = null;
-                                string lastSentTime = null;
-                            }
                             @foreach (var msg in Model.Messages)
                             {
+                                // Now you're looping over MessageItemVM directly.
                                 var currentSentTime = msg.SentDate.ToLocalTime().ToString("g");
                                 bool showHeader = false;
-                                if (lastSenderId == null || lastSenderId != msg.SenderUserId || lastSentTime != currentSentTime)
-                                {
-                                    showHeader = true;
-                                    lastSenderId = msg.SenderUserId;
-                                    lastSentTime = currentSentTime;
-                                }
-                                var vm = new SkillSwap_Platform.Models.ViewModels.MessagesVM.MessageItemVM
-                    {
-                        MessageId = msg.MessageId,
-                        CurrentUserID = Model.CurrentUserID,
-                        SenderUserID = msg.SenderUserId,
-                        SenderName = msg.SenderUser?.UserName ?? "Unknown",
-                        SenderProfileImage = msg.SenderUser?.ProfileImageUrl,
-                        SentDate = msg.SentDate,
-                        Content = msg.Content,
-                        ReplyPreview = msg.ReplyPreview,
-                        ReplyMessageId = msg.ReplyToMessageId,
-                        Attachments = msg.TblMessageAttachments,
-                        ShowHeader = showHeader,
-                        IsRead = msg.IsRead,
-                        IsFlagged = msg.IsFlagged,
-                        IsApproved = msg.IsApproved,
-                        OfferDetails = msg.OfferId.HasValue ? msg.OfferPreview : null,
-                    };
 
-                                @await Html.PartialAsync("_MessageItem", vm)
+                                msg.ShowHeader = showHeader;
+
+                                @await Html.PartialAsync("_MessageItem", msg)
                             }
                         </ul>
                     </div>

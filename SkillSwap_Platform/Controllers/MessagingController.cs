@@ -201,6 +201,7 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
+                var messageViewModels = new List<MessageItemVM>();
                 // --- NEW: For each message that has an OfferId, load its offer details and attach to the message.
                 foreach (var msg in messages)
                 {
@@ -228,9 +229,40 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
 
-                    var contract = await _context.TblContracts.FirstOrDefaultAsync(c => c.MessageId == msg.MessageId);
-                    // Build the view model for the message
-                    var vm = new MessageItemVM
+                    var contract = await _context.TblContracts
+                            .Where(c => c.MessageId == msg.MessageId)
+                            .OrderByDescending(c => c.Version)
+                            .FirstOrDefaultAsync();
+
+                    string? offeredSkillName = null;
+                    if (!string.IsNullOrWhiteSpace(contract?.OfferedSkill) && int.TryParse(contract.OfferedSkill, out int offeredSkillId))
+                    {
+                        offeredSkillName = await _context.TblSkills
+                            .Where(s => s.SkillId == offeredSkillId)
+                            .Select(s => s.SkillName)
+                            .FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        // fallback: treat as raw skill name
+                        offeredSkillName = contract?.OfferedSkill;
+                    }
+
+                    // Resolve ExchangeSkill
+                    string? exchangeSkillName = null;
+                    if (!string.IsNullOrWhiteSpace(contract?.ReceiverSkill) && int.TryParse(contract.ReceiverSkill, out int exchangeSkillId))
+                    {
+                        exchangeSkillName = await _context.TblSkills
+                            .Where(s => s.SkillId == exchangeSkillId)
+                            .Select(s => s.SkillName)
+                            .FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        exchangeSkillName = contract?.ReceiverSkill;
+                    }
+
+                    messageViewModels.Add(new MessageItemVM
                     {
                         MessageId = msg.MessageId,
                         CurrentUserID = currentUserId,
@@ -245,9 +277,11 @@ namespace SkillSwap_Platform.Controllers
                         IsRead = msg.IsRead,
                         IsFlagged = msg.IsFlagged,
                         IsApproved = msg.IsApproved,
-                        OfferDetails = msg.OfferPreview,
-                        ContractDetails = contract  // assign the contract if found
-                    };
+                        OfferDetails = msg.OfferId.HasValue ? msg.OfferPreview : null,
+                        ContractDetails = contract, // ✅ assign latest contract
+                        OfferedSkillName = offeredSkillName,
+                        ReceiverSkillName = exchangeSkillName,
+                    });
                 }
 
                 // Load sensitive words from the database.
@@ -265,7 +299,7 @@ namespace SkillSwap_Platform.Controllers
                     OtherUserProfileImage = otherUser?.ProfileImageUrl,
                     OtherUserIsOnline = otherUserOnline,
                     ChatMembers = chatMembers,
-                    Messages = messages,
+                    Messages = messageViewModels,
                     OfferId = offerId,
                 };
 
@@ -335,15 +369,16 @@ namespace SkillSwap_Platform.Controllers
                     var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
                     bool isFlagged = sensitiveWarnings.Any();
 
-                    // Determine the offer to attach: prefer the custom attached offer (from hidden field) over the query string offerId.
-                    int? attachedOfferId = null;
+                    // Check for duplicate offer: if an offer is attached, ensure no message from this sender
+                    // to the receiver already has it.
+                    int? finalOfferId = null;
                     if (int.TryParse(Request.Form["attachedOfferId"], out int parsedOfferId))
                     {
-                        attachedOfferId = parsedOfferId;
+                        finalOfferId = parsedOfferId;
                     }
-                    int? finalOfferId = attachedOfferId ?? offerId;
+                    finalOfferId ??= offerId;
 
-                    // Check for duplicate offer preview: if an offer is attached, ensure no message from this sender to the receiver already has it.
+                    // 1. Check in TblMessages if an offer has already been sent in this conversation.
                     if (finalOfferId.HasValue)
                     {
                         bool offerAlreadySent = await _context.TblMessages.AnyAsync(m =>
@@ -352,8 +387,23 @@ namespace SkillSwap_Platform.Controllers
                             m.OfferId == finalOfferId.Value);
                         if (offerAlreadySent)
                         {
-                            TempData["ErrorMessage"] = "Offer already sent in the conversation.";
-                            return Json(new { success = false, error = TempData["ErrorMessage"] });
+                            string errorMsg = "Offer already sent in the conversation.";
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                    }
+
+                    // 2. Check in TblContracts if a contract already exists for this conversation.
+                    if (finalOfferId.HasValue)
+                    {
+                        bool contractExists = await _context.TblContracts.AnyAsync(c =>
+                            c.MessageId == offerId && // or use an appropriate identifier from your conversation context
+                            ((c.SenderUserId == senderUserId && c.ReceiverUserId == receiverUserId) ||
+                             (c.SenderUserId == receiverUserId && c.ReceiverUserId == senderUserId))
+                        );
+                        if (contractExists)
+                        {
+                            string errorMsg = "A contract for this conversation has already been sent.";
+                            return Json(new { success = false, error = errorMsg });
                         }
                     }
 
@@ -367,7 +417,7 @@ namespace SkillSwap_Platform.Controllers
                         ReplyToMessageId = (replyMessageId.HasValue && replyMessageId.Value > 0) ? replyMessageId : null,
                         SentDate = DateTime.UtcNow,
                         IsRead = false,
-                        IsFlagged = isFlagged,
+                        IsFlagged = false,
                         OfferId = offerId
                     };
 
@@ -512,7 +562,7 @@ namespace SkillSwap_Platform.Controllers
                             Attachments = attachmentsList,
                             IsFlagged = message.IsFlagged,
                             IsApproved = message.IsApproved,
-                            OfferDetails = offerDisplay
+                            OfferDetails = offerDisplay,
                         };
 
                         return PartialView("_MessageItem", messageVm);
