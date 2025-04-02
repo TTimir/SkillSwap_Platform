@@ -69,8 +69,15 @@ namespace SkillSwap_Platform.Services.Contracts
                 SenderEmail = senderUser.Email,
                 SenderAddress = $"{senderUser.Address}, {senderUser.City}, {senderUser.Country}",
 
+                Category = offer.Category,
+                LearningObjective = offer.ScopeOfWork ?? "N/A",
+                OppositeExperienceLevel = offer.RequiredSkillLevel,
+                ModeOfLearning = offer.CollaborationMethod,
+                OfferOwnerAvailability = offer.FreelanceType,
+                AssistanceRounds = offer.AssistanceRounds,
+
                 ContractDate = DateTime.Now,
-                TokenOffer = 0,
+                TokenOffer = offer.TokenCost,
                 LearningDays = learningDays,
                 OfferedSkill = offerSkillId,
                 OfferOwnerSkill = offerOwnerSkillName,

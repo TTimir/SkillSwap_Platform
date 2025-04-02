@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\contracts\" />
+    <Folder Include="wwwroot\contracts\Final\" />
+    <Folder Include="wwwroot\contracts\Modified\" />
   </ItemGroup>
 
 </Project>

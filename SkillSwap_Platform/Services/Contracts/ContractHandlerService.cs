@@ -109,6 +109,18 @@ namespace SkillSwap_Platform.Services.Contracts
                     ReceiverUserId = model.ReceiverUserId,
                     TokenOffer = model.TokenOffer,
                     OfferedSkill = model.OfferedSkill,
+                    SenderEmail = model.SenderEmail,
+                    SenderAddress = model.SenderAddress,
+                    SenderUserName = model.SenderUserName,
+                    ReceiverEmail = model.ReceiverEmail,
+                    ReceiverAddress = model.ReceiverAddress,
+                    ReceiverUserName = model.ReceiverUserName,
+                    Category = offer.Category,
+                    LearningObjective = offer.ScopeOfWork ?? "N/A",
+                    OppositeExperienceLevel = offer.RequiredSkillLevel,
+                    ModeOfLearning = offer.CollaborationMethod,
+                    OfferOwnerAvailability = offer.FreelanceType,
+                    AssistanceRounds = offer.AssistanceRounds,
                     AdditionalTerms = SerializeMultiline(model.AdditionalTerms),
                     FlowDescription = SerializeMultiline(model.FlowDescription),
                     Status = "Pending",
@@ -124,14 +136,13 @@ namespace SkillSwap_Platform.Services.Contracts
                     SignedByReceiver = model.ReceiverAgreementAccepted,
                     Version = newVersion,
                     ParentContractId = baseContractId,
-                    SenderSkill = model.OfferedSkill, 
+                    SenderSkill = model.OfferedSkill,
                     ReceiverSkill = offer?.SkillIdOfferOwner.ToString(),
                     SenderName = senderFullName,
                     ReceiverName = $"{receiverUser.FirstName} {receiverUser.LastName}".Trim(),
                     SenderPlace = model.SenderPlace,
                     ReceiverPlace = model.ReceiverPlace
                 };
-
                 _context.TblContracts.Add(contract);
                 await _context.SaveChangesAsync();
 
@@ -153,7 +164,8 @@ namespace SkillSwap_Platform.Services.Contracts
                     FlowDescription = contract.FlowDescription,
                     ContractDate = contract.CreatedDate,
                     CompletionDate = contract.CompletionDate ?? contract.CreatedDate.AddDays(model.LearningDays + 1),
-                    Version = contract.Version,SenderName = senderFullName,
+                    Version = contract.Version,
+                    SenderName = senderFullName,
                     SenderUserName = model.SenderUserName ?? senderUser.UserName,
                     ReceiverName = $"{receiverUser.FirstName} {receiverUser.LastName}".Trim(),
                     ReceiverUserName = model.ReceiverUserName ?? "user_unknown",
@@ -161,6 +173,12 @@ namespace SkillSwap_Platform.Services.Contracts
                     SenderAddress = model.SenderAddress,
                     ReceiverEmail = model.ReceiverEmail,
                     ReceiverAddress = model.ReceiverAddress,
+                    Category = contract.Category,
+                    LearningObjective = contract.LearningObjective,
+                    OppositeExperienceLevel = contract.OppositeExperienceLevel,
+                    ModeOfLearning = contract.ModeOfLearning,
+                    OfferOwnerAvailability = contract.OfferOwnerAvailability,
+                    AssistanceRounds = contract.AssistanceRounds,
                     LearningDays = model.LearningDays,
                     SenderAgreementAccepted = model.SenderAgreementAccepted,
                     SenderAcceptanceDate = model.SenderAgreementAccepted ? DateTime.Now : null,
@@ -186,15 +204,29 @@ namespace SkillSwap_Platform.Services.Contracts
 
 
                 var htmlContent = await _viewRenderService.RenderViewToStringAsync("PreviewContract", finalContractModel, "Contract");
+                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(htmlContent);
 
-                // Generate filename
-                string skillPart = Sanitize(model.OfferOwnerSkill ?? "Skill");
-                string senderPart = Sanitize(model.SenderName ?? "Sender");
+                string baseFolder = Path.Combine("wwwroot", "contracts");
+                string subFolder = "Initial";
+                string folderPath = Path.Combine(baseFolder, subFolder);
+
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                // Generate the filename (keeping it the same as before).
+                string skillPart = Sanitize(finalContractModel.OfferOwnerSkill ?? "Skill");
+                string senderPart = Sanitize(finalContractModel.SenderName ?? "Sender");
                 string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 string fileName = $"{skillPart}-{senderPart}-{timestamp}.pdf";
+                string filePath = Path.Combine(folderPath, fileName);
 
-                var pdfPath = await _pdfGenerator.SavePdfToDiskAsync(htmlContent, fileName);
-                contract.ContractDocument = pdfPath;
+                // Write the PDF bytes to disk.
+                await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+
+                // Save the relative file path to the contract record.
+                contract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -219,7 +251,7 @@ namespace SkillSwap_Platform.Services.Contracts
         // Updated to join lines with newline rather than JSON.
         private string SerializeMultiline(string input)
         {
-            var lines = input?.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries) 
+            var lines = input?.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
                         ?? Array.Empty<string>();
             return string.Join(Environment.NewLine, lines);
         }

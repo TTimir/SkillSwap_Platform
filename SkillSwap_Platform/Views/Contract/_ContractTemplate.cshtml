@@ -17,17 +17,29 @@
 }
 <div class="contract-document">
     <p style="display: flex; justify-content: space-between; align-items: center;">
-        <span><strong>Contract Version:</strong> @("v")@Model.Version</span>
-        <span>(Agreement Initiated On: @Model.OriginalCreatedDate?.ToString("dd MMMM, yyyy"))</span>
+        <span><strong>Contract Version:</strong> @("v")@(Model.Version == 0 ? 1 : Model.Version)</span>
+        <span>(Agreement Initiated On: @((Model.OriginalCreatedDate ?? Model.ContractDate).Value.ToString("dd MMMM, yyyy")))</span>
     </p>
     <br />
     <h2>SkillSwap Trust Exchange Agreement</h2>
+    @{
+        DateTime effectiveDate = (Model.ActionContext != null &&
+        Model.ActionContext.Equals("ModifyOnly", StringComparison.OrdinalIgnoreCase))
+        ? (Model.ContractDate ?? DateTime.Now)
+        : (Model.OriginalCreatedDate ?? Model.ContractDate ?? DateTime.Now);
+    }
     <p>
         This Trust Exchange Agreement ("Agreement") is entered into on this
-        <span class="inline-input" style="font-weight:600">@DateTime.Now.ToString("dd")</span>
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("dd")
+        </span>
         day of
-        <span class="inline-input" style="font-weight:600">@DateTime.Now.ToString("MMMM"), </span>
-        <span class="inline-input" style="font-weight:600">@DateTime.Now.ToString("yyyy")</span>, electronically through the SkillSwap Platform, by and between:
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("MMMM")
+        </span>,
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("yyyy")
+        </span>, electronically through the SkillSwap Platform, by and between:
     </p>
     <p>
         <strong>Sender:</strong>
@@ -42,7 +54,7 @@
         , residing at
         @if (Model.IsPreview)
         {
-            <span class="inline-input" style="font-size:14px;">@Model.SenderAddress</span>
+            <span class="inline-input" style="font-size:14px; display: inline-block; word-wrap: break-word; white-space: normal;">@Model.SenderAddress</span>
         }
         else
         {
@@ -72,7 +84,7 @@
         <span class="inline-input" style="font-size:14px;">@Model.ReceiverName</span>
         @Html.HiddenFor(m => m.ReceiverName)
         , residing at
-        <span class="inline-input" style="font-size:14px;">@Model.ReceiverAddress</span>
+        <span class="inline-input" style="font-size:14px; display: inline-block; word-wrap: break-word; white-space: normal;">@Model.ReceiverAddress</span>
         @Html.HiddenFor(m => m.ReceiverAddress)
         , contactable via email
         <span class="inline-input" style="font-size:14px;">@Model.ReceiverEmail</span>
@@ -97,7 +109,7 @@
     <ol>
         <li>
             <strong>Details of the Exchange:</strong><br />
-            1.1 The Sender agrees to provide the following skill or service:
+            1.1 By entering into this agreement, the Sender agrees to provide the following:
             @if (Model.IsPreview)
             {
                 <span class="inline-input" style="font-size:14px;">@offeredSkillText</span>
@@ -107,7 +119,7 @@
                 @Html.DropDownListFor(m => m.OfferedSkill, Model.SenderOfferedSkills ?? new List<SelectListItem>(), "Select your skill", new { @class = "inline-input", style = "font-size:14px;" })
             }
             .<br />
-            1.2 The Receiver agrees to provide the following skill or service:
+            1.2 In return, The Receiver agrees to provide the following skill/service:
             @if (Model.IsPreview)
             {
                 <span class="inline-input" style="font-size:14px;">@Model.OfferOwnerSkill</span>
@@ -115,8 +127,20 @@
             else
             {
                 @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly", style = "font-size:14px;" })
-            }.<br />
-            1.3 The agreed duration for this exchange is
+            }
+            under the category “<span class="inline-input" style="font-size:14px;">@Model.Category</span>,” as specified in the original offer listing.<br />
+            1.3 The learning objective/description for this exchange is:
+            @Html.TextBoxFor(m => m.LearningObjective, new { @class = "inline-input", style = "font-size:14px;", @readonly = "readonly" })
+            , and the Offer Owner (Receiver) requires that the learner possess an <span class="inline-input" style="font-size:14px;">@Model.OppositeExperienceLevel</span> level of proficiency to fully benefit from the instruction.
+            <br />
+            1.4 The mode of learning/instruction is <span class="inline-input" style="font-size:14px;">@Model.ModeOfLearning</span>
+            and the Offer Owner (Receiver) is available on a
+            <span class="inline-input" style="font-size:14px;">@Model.OfferOwnerAvailability</span>
+            basis
+            <br />
+            1.5 The Offer Owner (Receiver) agrees to provide reasonable assistance and clarification rounds during the learning period. Unless otherwise agreed, up to two (<span class="inline-input" style="font-size:14px;">@Model.AssistanceRounds</span>) rounds of revision or guidance may be requested by the Sender, within the agreed exchange duration.
+            <br />
+            1.6 The agreed duration for this exchange is
             @if (Model.IsPreview)
             {
                 <span class="inline-input" style="font-size:14px;">@Model.LearningDays</span>
@@ -125,17 +149,17 @@
             {
                 @Html.TextBoxFor(m => m.LearningDays, new { @class = "inline-input", placeholder = "Learning Days", type = "number", @readonly = "readonly", style = "font-size:14px;" })
             }
-            days, with an agreed digital token as payment of
+            days, with an agreed digital token payment of
             @if (Model.IsPreview)
             {
                 <span class="inline-input" style="font-size:14px;">@Model.TokenOffer</span>
             }
             else
             {
-                @Html.TextBoxFor(m => m.TokenOffer, new { @class = "inline-input", placeholder = "Token Amount", type = "number", style = "font-size:14px;" })
+                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;" })
             }
             tokens. <br />
-            1.4 The exchange shall commence on
+            1.7 The exchange shall commence on
             @{
                 // Fallback: if CompletionDate is not set, calculate it as ContractDate + LearningDays + 1.
                 var contractDate = Model.ContractDate ?? DateTime.Now;
@@ -329,14 +353,18 @@
                             <span>
                                 @if (Model.IsPreview)
                                 {
-                                    <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("MM/dd/yyyy")</span>
+                                    <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</span>
                                 }
                                 else
                                 {
                                     <!-- Sender Acceptance Section -->
                                     <input asp-for="SenderAgreementAccepted" type="checkbox" id="senderAgreementCheckbox" />
-                                    <label for="senderAgreementCheckbox">I Agree, Date:</label>
+                                    <label for="senderAgreementCheckbox">I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</label>
                                     @Html.TextBox("SenderAcceptanceDate", null, new { @class = "inline-input", type = "date" })
+                                    <span id="senderDateInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                        <img src="~/template_assets/images/icons8-info.svg" />
+                                        <span class="tooltip">Enter today's date. (format: DD-MM-YYYY).</span>
+                                    </span>
                                 }
                             </span>
                         </div>
@@ -348,7 +376,11 @@
                             }
                             else
                             {
-                                @Html.TextBox("SenderSignature", null, new { @class = "inline-input", placeholder = "Sign Here" })
+                                @Html.TextBox("SenderSignature", null, new { autocomplete = "off", @class = "inline-input", placeholder = "Sign Here" })
+                                <span id="senderSignatureInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your valid signature.</span>
+                                </span>
                             }
                         </div>
                         <div>
@@ -359,7 +391,11 @@
                             }
                             else
                             {
-                                @Html.TextBox("SenderPlace", null, new { @class = "inline-input", placeholder = "Place of sign", })
+                                @Html.TextBox("SenderPlace", null, new { autocomplete = "off", @class = "inline-input", placeholder = "Place of sign", })
+                                <span id="senderPlaceInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your signing place.</span>
+                                </span>
                             }
                         </div>
                     }
@@ -383,24 +419,24 @@
                         <span>
                             @if (Model.IsPreview && isReceiver && editableMode)
                             {
-                                var checkboxAttrs = new Dictionary<string, object>
-                            {
-                            { "id", "receiverAgreementCheckbox" }
-                            };
+                                var checkboxAttrs = new Dictionary<string, object> { { "id", "receiverAgreementCheckbox" } };
                                 if (!editableMode)
                                 {
                                     checkboxAttrs["disabled"] = "disabled";
                                 }
-
                                 @Html.CheckBoxFor(m => m.ReceiverAgreementAccepted, checkboxAttrs)
                                 <label for="receiverAgreementCheckbox">I Agree, Date:</label>
-                                @Html.TextBox("ReceiverAcceptanceDate", Model.ReceiverAcceptanceDate?.ToString("yyyy-MM-dd"), new { @class = "inline-input", type = "date" })
+                                @Html.TextBox("ReceiverAcceptanceDate", Model.ReceiverAcceptanceDate?.ToString("yyyy-MM-dd"), new { @class = "inline-input", type = "date", id = "visibleReceiverAcceptanceDate" })
+                                <span id="receiverdateInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter today's date. (format: DD-MM-YYYY).</span>
+                                </span>
                             }
                             else
                             {
                                 if (Model.ReceiverAgreementAccepted && Model.ReceiverAcceptanceDate != null)
                                 {
-                                    <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("MM/dd/yyyy")</span>
+                                    <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("dd/MM/yyyy")</span>
                                 }
                                 else
                                 {
@@ -412,19 +448,20 @@
                     <div>
                         <span>Signature:</span>
                         @{
-                            if (Model.IsPreview && isReceiver && (Model.Mode == "Edit" || Model.Mode == "Sign"))
+                            if (Model.IsPreview && isReceiver && editableMode)
                             {
                                 var receiverSignAttributes = new Dictionary<string, object>
                         {
                         { "class", "inline-input" },
-                        { "placeholder", "Sign Here" }
+                        { "placeholder", "Sign Here" },
+                        { "id", "visibleReceiverSignature" },
+                        { "autocomplete", "off" }
                         };
-                                if (!editableMode)
-                                {
-                                    receiverSignAttributes["readonly"] = "readonly";
-                                }
-
                                 @Html.TextBox("ReceiverSignature", Model.ReceiverSignature, receiverSignAttributes)
+                                <span id="receiversignatureInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your valid signature.</span>
+                                </span>
                             }
                             else
                             {
@@ -436,19 +473,20 @@
                     <div>
                         <span>Place:</span>
                         @{
-                            if (Model.IsPreview && isReceiver && (Model.Mode == "Edit" || Model.Mode == "Sign"))
+                            if (Model.IsPreview && isReceiver && editableMode)
                             {
                                 var receiverPlaceAttributes = new Dictionary<string, object>
                         {
                         { "class", "inline-input" },
-                        { "placeholder", "Place of sign" }
+                        { "placeholder", "Place of sign" },
+                        { "id", "visibleReceiverPlace" },
+                        { "autocomplete", "off" }
                         };
-                                if (!editableMode)
-                                {
-                                    receiverPlaceAttributes["readonly"] = "readonly";
-                                }
-
                                 @Html.TextBox("ReceiverPlace", Model.ReceiverPlace, receiverPlaceAttributes)
+                                <span id="receiverplaceInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your signing place.</span>
+                                </span>
                             }
                             else
                             {
@@ -474,12 +512,59 @@
         <h4 style="text-align: center; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Important Notice &amp; Contract Index</h4>
         <p style="margin: 10px 0; line-height: 1.5;">
             <strong>[Index 1] Version Declaration:</strong> <br />
-            This is version (@("v")@Model.Version) of the contract. All previous versions (i.e. v0, v1) are hereby nullified and shall no longer be considered valid or enforceable. A version shall be deemed binding and enforceable only upon acceptance by both Parties through confirmation and return. Only the most recently accepted version of this contract shall be binding on the Parties going forward.
+            This is version (@("v")@Model.Version) of the contract. All prior versions (e.g., v0, v1) are hereby nullified and shall no longer be considered valid or enforceable. A contract version becomes binding only upon acceptance by both Parties through confirmation and return. Only the most recently accepted version shall be considered legally binding.
         </p>
         <p style="margin: 10px 0; line-height: 1.5;">
             <strong>[Index 2] Legal Binding Clause:</strong> <br />
             This agreement will become legally binding once all parties have signed.
         </p>
+        <p style="margin: 10px 0; line-height: 1.5;">
+            <strong>[Index 3] Acceptance Confirmation:</strong> <br />
+            Provision of valid acceptance details, a valid signature, signing place, and today’s date, confirms acknowledgment of the contract terms and permits final execution of this agreement.
+        </p>
     </footer>
 
 </div>
+
+<style>
+    .info-icon {
+        cursor: pointer;
+    }
+
+        /* Tooltip styling */
+        .info-icon .tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translate(10px, -50%);
+            background-color: var(--color-foreground, #5c5c4f);
+            color: var(--color-background, #e6e2d6);
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+            /* Tooltip arrow */
+            .info-icon .tooltip::before {
+                content: "";
+                position: absolute;
+                left: -5px;
+                top: 50%;
+                transform: translateY(-50%);
+                border-top: 5px solid transparent;
+                border-bottom: 5px solid transparent;
+                border-right: 5px solid var(--color-foreground, #5c5c4f);
+            }
+
+        /* Show tooltip on hover */
+        .info-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+</style>

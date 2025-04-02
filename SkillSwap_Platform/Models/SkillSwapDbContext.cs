@@ -59,6 +59,7 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
+    
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
@@ -88,17 +89,28 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.ContractId).HasName("PK__TblContr__C90D3469E662177B");
 
+            entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
+            entity.Property(e => e.Category).HasMaxLength(100);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.FlowDescription).HasDefaultValue("");
+            entity.Property(e => e.ModeOfLearning).HasMaxLength(50);
+            entity.Property(e => e.OfferOwnerAvailability).HasMaxLength(100);
+            entity.Property(e => e.OppositeExperienceLevel).HasMaxLength(50);
             entity.Property(e => e.ReceiverAcceptanceDate).HasColumnType("datetime");
+            entity.Property(e => e.ReceiverAddress).HasMaxLength(255);
+            entity.Property(e => e.ReceiverEmail).HasMaxLength(255);
             entity.Property(e => e.ReceiverName).HasMaxLength(100);
             entity.Property(e => e.ReceiverPlace).HasMaxLength(100);
             entity.Property(e => e.ReceiverSignature).HasMaxLength(255);
             entity.Property(e => e.ReceiverSkill).HasMaxLength(100);
+            entity.Property(e => e.ReceiverUserName).HasMaxLength(100);
+            entity.Property(e => e.SenderAddress).HasMaxLength(255);
+            entity.Property(e => e.SenderEmail).HasMaxLength(255);
             entity.Property(e => e.SenderName).HasMaxLength(100);
             entity.Property(e => e.SenderPlace).HasMaxLength(100);
             entity.Property(e => e.SenderSignature).HasMaxLength(255);
             entity.Property(e => e.SenderSkill).HasMaxLength(100);
+            entity.Property(e => e.SenderUserName).HasMaxLength(100);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");

@@ -27,7 +27,13 @@ namespace SkillSwap_Platform.Models.ViewModels
 
         [Required(ErrorMessage = "Please select an offered skill.")]
         public string OfferedSkill { get; set; }
-
+        public string? Category { get; set; }
+        public int? AssistanceRounds { get; set; }
+        public string? LearningObjective { get; set; }  // or Description
+        public string? OppositeExperienceLevel { get; set; }
+        public string? ModeOfLearning { get; set; }
+        public string? OfferOwnerAvailability { get; set; }
+        
         [BindNever]
         public IEnumerable<SelectListItem>? SenderOfferedSkills { get; set; }
 
@@ -61,14 +67,12 @@ namespace SkillSwap_Platform.Models.ViewModels
 
         // For creation we now initialize these as empty strings.
         public string SenderSignature { get; set; } = "";
-        [RequiredWhenSigning("Mode", ErrorMessage = "Receiver signature is required when signing.")]
         public string ReceiverSignature { get; set; } = "";
         public string AccountSenderName { get; set; }
 
         public string OfferOwnerSkill { get; set; }
 
         public string SenderPlace { get; set; } = "";
-        [RequiredWhenSigning("Mode", ErrorMessage = "Receiver place is required when signing.")]
         public string ReceiverPlace { get; set; } = "";
 
         public bool IsPreview { get; set; } = true;
@@ -77,8 +81,26 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string? receiverFullName { get; set; }
 
         public string ReceiverName { get; set; }
+
+        public bool RevealReceiverDetails { get; set; }
         public string ReceiverEmail { get; set; }
+        public string DisplayReceiverEmail
+        {
+            get
+            {
+                // Only reveal actual email if allowed.
+                return RevealReceiverDetails ? ReceiverEmail : "[counterparty@email]";
+            }
+        }
         public string ReceiverAddress { get; set; }
+        public string DisplayReceiverAddress
+        {
+            get
+            {
+                return RevealReceiverDetails ? ReceiverAddress : "[Counterparty Address]";
+            }
+        }
+
 
         public DateTime? OriginalCreatedDate { get; set; }
         public string? Status { get; set; }

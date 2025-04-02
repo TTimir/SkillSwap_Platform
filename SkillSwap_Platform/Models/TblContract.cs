@@ -67,6 +67,30 @@ public partial class TblContract
 
     public string? ReceiverPlace { get; set; }
 
+    public string? Category { get; set; }
+
+    public string? LearningObjective { get; set; }
+
+    public string? OppositeExperienceLevel { get; set; }
+
+    public string? ModeOfLearning { get; set; }
+
+    public string? OfferOwnerAvailability { get; set; }
+
+    public int? AssistanceRounds { get; set; }
+
+    public string? SenderEmail { get; set; }
+
+    public string? ReceiverEmail { get; set; }
+
+    public string? SenderAddress { get; set; }
+
+    public string? ReceiverAddress { get; set; }
+
+    public string? SenderUserName { get; set; }
+
+    public string? ReceiverUserName { get; set; }
+
     public virtual TblMessage Message { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;
