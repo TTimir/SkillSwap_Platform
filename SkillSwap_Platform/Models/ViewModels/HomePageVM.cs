@@ -18,6 +18,15 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string Country { get; set; }
         public List<OfferCardVM> TrendingOffers { get; set; }
         public List<FreelancerCardVM> HighestRatedFreelancers { get; set; }
+        public List<CategoryOffers> TrendingOffersByCategory { get; set; } = new List<CategoryOffers>();
+    }
+
+    public class CategoryOffers
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public string CategorySlug { get; set; } // e.g. "development-it" to use in IDs
+        public List<OfferCardVM> Offers { get; set; }
     }
 
     public class FreelancerCardVM

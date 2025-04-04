@@ -131,8 +131,7 @@
     <div>
         @{
             Model.IsPreview = false; // Editable mode.
-            @await Html.PartialAsync("_ContractTemplate", Model)
-            ;
+            @await Html.PartialAsync("_ContractTemplate", Model);
         }
     </div>
     @Html.HiddenFor(m => m.AccountSenderName)
@@ -141,9 +140,16 @@
     @Html.HiddenFor(m => m.SenderUserId)
     @Html.HiddenFor(m => m.ReceiverUserId)
     @Html.HiddenFor(m => m.ContractDate)
+    @Html.HiddenFor(m => m.AssistanceRounds)
+    @Html.HiddenFor(m => m.OfferOwnerAvailability)
+    @Html.HiddenFor(m => m.ModeOfLearning)
+    @Html.HiddenFor(m => m.OppositeExperienceLevel)
+    @Html.HiddenFor(m => m.Category)
     @Html.HiddenFor(m => m.SenderUserName)
     @Html.HiddenFor(m => m.ReceiverUserName)
     @Html.HiddenFor(m => m.SenderPlace)
+    @Html.HiddenFor(m => m.SenderSignature)
+    @Html.HiddenFor(m => m.ReceiverSignature)
     @Html.HiddenFor(m => m.ReceiverPlace)
     @Html.HiddenFor(m => m.Mode)
     @Html.HiddenFor(m => m.ActionContext)

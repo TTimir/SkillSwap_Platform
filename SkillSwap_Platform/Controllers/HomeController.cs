@@ -33,8 +33,21 @@ public class HomeController : Controller
     {
         try
         {
+            int? currentUserId = User.Identity.IsAuthenticated
+                ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
+                : null;
+
+            var trendingOffersQuery = _dbcontext.TblOffers
+                .Include(o => o.User)
+                .Where(o => o.IsActive);
+
+            if (currentUserId.HasValue)
+            {
+                trendingOffersQuery = trendingOffersQuery.Where(o => o.UserId != currentUserId.Value);
+            }
+
             // Retrieve trending offers with eager loading for related User
-            var trendingOffers = await _dbcontext.TblOffers
+            var trendingOffers = await trendingOffersQuery
                 .Include(o => o.User)  // Eager load the related User
                 .Where(o => o.IsActive)
                 .OrderByDescending(o => o.JobSuccessRate)
@@ -64,8 +77,8 @@ public class HomeController : Controller
             var highestRatedUsers = await _dbcontext.TblUsers
                 .Include(u => u.TblReviewReviewees)
                 .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
-                .Where(u => u.IsVerified)
-                .Where(u => u.IsActive)
+                .Where(u => u.IsVerified && u.IsActive)
+                .Where(u => !currentUserId.HasValue || u.UserId != currentUserId.Value) // ✅ exclude current user
                 .Take(10)
                 .ToListAsync();
 
@@ -94,7 +107,8 @@ public class HomeController : Controller
             var vm = new HomePageVM
             {
                 TrendingOffers = trendingOfferVMs,
-                HighestRatedFreelancers = highestRatedFreelancersVM
+                HighestRatedFreelancers = highestRatedFreelancersVM,
+                TrendingOffersByCategory = new List<CategoryOffers>()
             };
 
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;

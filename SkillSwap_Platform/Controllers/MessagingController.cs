@@ -212,6 +212,26 @@ namespace SkillSwap_Platform.Controllers
                             .FirstOrDefaultAsync(o => o.OfferId == msg.OfferId.Value);
                         if (tblOffer != null)
                         {
+                            // Prepare offered skill names list
+                            var offeredSkillNames = new List<string>();
+                            if (!string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner))
+                            {
+                                // Parse the comma-separated skill IDs into a list of ints.
+                                var offeredSkillIds = tblOffer.SkillIdOfferOwner
+                                    .Split(',')
+                                    .Select(s => s.Trim())
+                                    .Where(s => int.TryParse(s, out _))
+                                    .Select(int.Parse)
+                                    .ToList();
+
+                                // Load all skills into memory and filter by the parsed IDs.
+                                var allSkills = await _context.TblSkills.ToListAsync();
+                                offeredSkillNames = allSkills
+                                    .Where(s => offeredSkillIds.Contains(s.SkillId))
+                                    .Select(s => s.SkillName)
+                                    .ToList();
+                            }
+
                             msg.OfferPreview = new OfferDisplayVM
                             {
                                 OfferId = tblOffer.OfferId,
@@ -222,7 +242,7 @@ namespace SkillSwap_Platform.Controllers
                                 PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
                                                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
                                                 : new List<string>(),
-                                SkillNames = new List<string>(), // Populate as needed
+                                SkillNames = offeredSkillNames, // Populate as needed
                                 OfferOwnerId = tblOffer.UserId,
                                 WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>()
                             };

@@ -27,9 +27,18 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
+                var currentUserId = User.Identity.IsAuthenticated
+                    ? _context.TblUsers.FirstOrDefault(u => u.UserName == User.Identity.Name)?.UserId
+                    : null;
+
                 // Fetch active and non-deleted users.
                 var usersQuery = _context.TblUsers
                     .Where(u => u.IsVerified);
+
+                if (currentUserId.HasValue)
+                {
+                    usersQuery = usersQuery.Where(u => u.UserId != currentUserId.Value);
+                }
 
                 // Apply keyword filter on username, first or last name.
                 if (!string.IsNullOrWhiteSpace(keyword))

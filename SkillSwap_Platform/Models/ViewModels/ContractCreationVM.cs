@@ -111,6 +111,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         [Required]
         public string ActionContext { get; set; }  // e.g., "ModifyOnly", "Signing"
         public bool HideSenderAcceptance { get; set; }
+        public bool HideReceiverAcceptance { get; set; }
 
     }
 }

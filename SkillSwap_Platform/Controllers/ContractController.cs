@@ -11,6 +11,9 @@ using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.PDF;
 using System;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SkillSwap_Platform.HelperClass.NewFolder.Extensions;
+using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -49,7 +52,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 int userId = GetUserId();
                 var viewModel = await _contractPreparation.PrepareViewModelAsync(messageId, userId, revealReceiverDetails: false);
-
+               
                 // Set server-controlled properties so they appear in the hidden fields.
                 viewModel.Mode = "Create";
                 viewModel.ActionContext = "CreateOnly";
@@ -71,6 +74,7 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> Create(ContractCreationVM model)
         {
             ModelState.Remove(nameof(model.ReceiverPlace));
+            ModelState.Remove(nameof(model.ReceiverSignature));
             if (!ModelState.IsValid)
             {
                 LogModelErrors();
@@ -119,20 +123,7 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 // Remove server-controlled fields from validation.
-                ModelState.Remove(nameof(model.SenderOfferedSkills));
-                ModelState.Remove(nameof(model.FlowDescription));
-                ModelState.Remove(nameof(model.SenderUserName));
-                ModelState.Remove(nameof(model.ReceiverUserName));
-                ModelState.Remove(nameof(model.ContractDate));
-                ModelState.Remove(nameof(model.Mode));
-                ModelState.Remove(nameof(model.ActionContext));
-                ModelState.Remove(nameof(model.SenderPlace));
-                ModelState.Remove(nameof(model.ReceiverPlace));
-                ModelState.Remove(nameof(model.OppositeExperienceLevel));
-                ModelState.Remove(nameof(model.ModeOfLearning));
-                ModelState.Remove(nameof(model.LearningObjective));
-                ModelState.Remove(nameof(model.OfferOwnerAvailability));
-                ModelState.Remove(nameof(model.AssistanceRounds));
+                RemoveServerControlledFields();
 
                 model.ContractDate ??= DateTime.Now;
 
@@ -170,18 +161,11 @@ namespace SkillSwap_Platform.Controllers
 
                 // Render the preview Razor view into HTML.
                 string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
-
                 var pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
 
                 // Generate dynamic preview filename with version
-                string skillPart = Sanitize(previewModel.OfferOwnerSkill ?? "Skill");
-                string senderPart = Sanitize(previewModel.SenderName ?? "Sender");
-                string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                string version = $"v{previewModel.Version}";
-
-                string previewFileName = $"{skillPart}-{senderPart}-{version}-{timestamp}-Preview.pdf";
-
-                return File(pdfBytes, "application/pdf", previewFileName);
+                string filename = GeneratePreviewFilename(previewModel);
+                return File(pdfBytes, "application/pdf", filename);
 
             }
             catch (Exception ex)
@@ -192,7 +176,7 @@ namespace SkillSwap_Platform.Controllers
         }
         #endregion
 
-
+        #region Modify Contract (Sender or Receiver)
         [HttpGet]
         public async Task<IActionResult> ModifyContractAndSend(int contractId)
         {
@@ -200,9 +184,17 @@ namespace SkillSwap_Platform.Controllers
             if (contract == null) return NotFound();
 
             int userId = GetUserId();
-            if (contract.ReceiverUserId != userId) return Forbid();
+            if (contract.ReceiverUserId != userId && contract.SenderUserId != userId)
+                return Forbid();
 
-            var vm = await PrepareViewModelForEdit(contract, "ModifyOnly"); // Editable view
+            // If contract is at final version (v3), do not allow further modification.
+            if (contract.Version >= 3)
+            {
+                TempData["ErrorMessage"] = "This is the final version of the contract. No further modifications are allowed.";
+                return RedirectToAction("Review", new { contractId });
+            }
+
+            var vm = await PrepareViewModelForEdit(contract, "ModifyOnly");
             vm.Mode = "Edit";
             vm.ActionContext = "ModifyOnly";
 
@@ -211,23 +203,37 @@ namespace SkillSwap_Platform.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ModifyContractAndSend(int contractId, [FromForm] string flowDescription, [FromForm] string additionalTerms, [FromForm] string receiverPlace, [FromForm] bool receiverAgreementAccepted, [FromForm] string receiverSignature, [FromForm] string receiverAcceptanceDate)
+        public async Task<IActionResult> ModifyContractAndSend(int contractId, [FromForm] decimal tokenOffer, [FromForm] string flowDescription, [FromForm] string additionalTerms, [FromForm] string partyPlace, [FromForm] bool partyAgreementAccepted, [FromForm] string partySignature, [FromForm] string partyAcceptanceDate, [FromForm] bool finalModificationConfirmed = false)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 ModelState.Remove("FlowDescription");
 
-                var originalContract = await _context.TblContracts.FindAsync(contractId);
+                var originalContract = await _context.TblContracts
+                    .FirstOrDefaultAsync(c => c.ContractId == contractId);
                 if (originalContract == null)
                 {
-                    _logger.LogWarning("Contract {ContractId} not found.", contractId);
                     return NotFound();
                 }
 
-                if (!receiverAgreementAccepted)
+                int currentUserId = GetUserId();
+                bool isReceiver = currentUserId == originalContract.ReceiverUserId;
+                bool isSender = currentUserId == originalContract.SenderUserId;
+                if (!isReceiver && !isSender)
+                    return Forbid();
+
+                // Prevent further modifications if contract is at version 3
+                if (originalContract.Version >= 3)
                 {
-                    ModelState.AddModelError("ReceiverAgreementAccepted", "You must accept the agreement before submitting.");
+                    TempData["ErrorMessage"] = "This contract is final (v3) and cannot be modified further.";
+                    return RedirectToAction("Review", new { contractId });
+                }
+
+                int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
+                if (!partyAgreementAccepted)
+                {
+                    ModelState.AddModelError("PartyAgreementAccepted", "You must accept the agreement before submitting.");
 
                     originalContract = await _context.TblContracts.FindAsync(contractId);
                     var vm = await PrepareViewModelForEdit(originalContract, "Edit");
@@ -235,37 +241,25 @@ namespace SkillSwap_Platform.Controllers
                     return View("PreviewContract", vm);
                 }
 
-                int userId = GetUserId();
-                if (originalContract.ReceiverUserId != userId)
-                {
-                    _logger.LogWarning("Unauthorized modify attempt for contract {ContractId} by user {UserId}.", contractId, userId);
-                    return Forbid();
-                }
-
-                // Ensure FlowDescription has at least 3 steps
-                flowDescription = string.IsNullOrWhiteSpace(flowDescription)
-                    ? originalContract.FlowDescription ?? string.Empty
-                    : flowDescription;
-                var steps = flowDescription.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                if (steps.Length < 3)
+                if (!HasMinimumFlowSteps(flowDescription))
                 {
                     ModelState.AddModelError("FlowDescription", "Please provide at least 3 steps in the process flow.");
-                    return await ReloadModifyFormWithErrors(contractId, flowDescription, additionalTerms, receiverPlace, receiverSignature, receiverAcceptanceDate);
+                    return await ReloadModifyFormWithErrors(contractId, flowDescription, additionalTerms, partyPlace, partySignature, partyAcceptanceDate);
                 }
 
                 // Check for invalid signature value
-                if (string.IsNullOrWhiteSpace(receiverSignature) || receiverSignature.Trim() == "[Sign Here]")
+                if (string.IsNullOrWhiteSpace(partySignature) || partySignature.Trim() == "[Sign Here]")
                 {
-                    ModelState.AddModelError("ReceiverSignature", "Please provide your actual signature.");
+                    ModelState.AddModelError("partySignature", "Please provide your actual signature.");
                     var vm = await PrepareViewModelForEdit(originalContract, "Edit");
                     vm.ActionContext = "ModifyOnly";
                     return View("PreviewContract", vm);
                 }
 
                 // Check for invalid place value
-                if (string.IsNullOrWhiteSpace(receiverPlace) || receiverPlace.Trim() == "[Place of Sign]")
+                if (string.IsNullOrWhiteSpace(partyPlace) || partyPlace.Trim() == "[Place of Sign]")
                 {
-                    ModelState.AddModelError("ReceiverPlace", "Please provide your actual place of signing.");
+                    ModelState.AddModelError("PartyPlace", "Please provide your actual place of signing.");
                     var vm = await PrepareViewModelForEdit(originalContract, "Edit");
                     vm.ActionContext = "ModifyOnly";
                     return View("PreviewContract", vm);
@@ -273,11 +267,11 @@ namespace SkillSwap_Platform.Controllers
 
                 // Validate acceptance date is today's date
                 var today = DateTime.UtcNow.Date;
-                if (!DateTime.TryParseExact(receiverAcceptanceDate, "yyyy-MM-dd", null,
+                if (!DateTime.TryParseExact(partyAcceptanceDate, "yyyy-MM-dd", null,
                     System.Globalization.DateTimeStyles.None, out var acceptanceDate) ||
                     acceptanceDate.Date != today)
                 {
-                    ModelState.AddModelError("ReceiverAcceptanceDate", "Receiver Acceptance Date must be today’s date.");
+                    ModelState.AddModelError("PartyAcceptanceDate", "The acceptance date must be today’s date.");
                     var vm = await PrepareViewModelForEdit(originalContract, "Edit");
                     vm.ActionContext = "ModifyOnly";
                     return View("PreviewContract", vm);
@@ -285,7 +279,6 @@ namespace SkillSwap_Platform.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    ModelState.Remove(nameof(ContractCreationVM.FlowDescription));
                     LogModelStateDetails();
                     LogModelErrors();
                     var vm = await PrepareViewModelForEdit(originalContract, "Edit");
@@ -295,6 +288,7 @@ namespace SkillSwap_Platform.Controllers
 
                 var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == originalContract.OfferId);
                 int learningDays = offer?.DeliveryTimeDays ?? 0;
+
                 // Create a new contract version
                 var newContract = new TblContract
                 {
@@ -302,7 +296,7 @@ namespace SkillSwap_Platform.Controllers
                     OfferId = originalContract.OfferId,
                     SenderUserId = originalContract.SenderUserId,
                     ReceiverUserId = originalContract.ReceiverUserId,
-                    TokenOffer = originalContract.TokenOffer,
+                    TokenOffer = tokenOffer,
                     OfferedSkill = originalContract.SenderSkill,
                     AdditionalTerms = SerializeMultiline(additionalTerms),
                     FlowDescription = SerializeMultiline(flowDescription),
@@ -321,24 +315,8 @@ namespace SkillSwap_Platform.Controllers
                     // Use the original ContractDate (or update it if needed)
                     CreatedDate = DateTime.Now,
                     CompletionDate = DateTime.Now.AddDays(learningDays + 1),
-                    // For agreements and signatures, copy over existing data and update receiver fields.
-                    SenderAgreementAccepted = false,
-                    SenderAcceptanceDate = null,
-                    SenderSignature = string.Empty,
-                    SenderPlace = string.Empty,
-                    SignedBySender = false,
 
-                    // Set receiver's updated fields:
-                    ReceiverAgreementAccepted = receiverAgreementAccepted,
-                    ReceiverAcceptanceDate = receiverAgreementAccepted ? DateTime.Now : null,
-                    ReceiverSignature = receiverSignature.Trim(),
-                    ReceiverPlace = receiverPlace.Trim(),
-                    SignedByReceiver = receiverAgreementAccepted,
-
-                    // Set status and version details:
-                    Status = "ModifiedByReceiver",
                     Version = originalContract.Version + 1,
-                    // Use ParentContractId: if the original already had a parent, keep that; otherwise, use original.ContractId.
                     ParentContractId = originalContract.ParentContractId ?? originalContract.ContractId,
 
                     // Copy any additional fields as needed.
@@ -348,6 +326,42 @@ namespace SkillSwap_Platform.Controllers
                     SenderName = originalContract.SenderName,
                     ReceiverName = originalContract.ReceiverName,
                 };
+
+                // Now, update the acceptance fields based on the modifying role.
+                if (isReceiver)
+                {
+                    // Receiver is modifying: clear sender's acceptance and update receiver's fields.
+                    newContract.SenderAgreementAccepted = false;
+                    newContract.SenderAcceptanceDate = null;
+                    newContract.SenderSignature = string.Empty;
+                    newContract.SenderPlace = string.Empty;
+                    newContract.SignedBySender = false;
+
+                    newContract.ReceiverAgreementAccepted = partyAgreementAccepted;
+                    newContract.ReceiverAcceptanceDate = partyAgreementAccepted ? DateTime.Now : (DateTime?)null;
+                    newContract.ReceiverSignature = partySignature.Trim();
+                    newContract.ReceiverPlace = partyPlace.Trim();
+                    newContract.SignedByReceiver = partyAgreementAccepted;
+                }
+                else if (isSender)
+                {
+                    // Sender is modifying: clear receiver's acceptance and update sender's fields.
+                    newContract.ReceiverAgreementAccepted = false;
+                    newContract.ReceiverAcceptanceDate = null;
+                    newContract.ReceiverSignature = string.Empty;
+                    newContract.ReceiverPlace = string.Empty;
+                    newContract.SignedByReceiver = false;
+
+                    newContract.SenderAgreementAccepted = partyAgreementAccepted;
+                    newContract.SenderAcceptanceDate = partyAgreementAccepted ? DateTime.Now : (DateTime?)null;
+                    newContract.SenderSignature = partySignature.Trim();
+                    newContract.SenderPlace = partyPlace.Trim();
+                    newContract.SignedBySender = partyAgreementAccepted;
+                }
+
+                // For status, set it based on the modifying role. (You could choose to use a single status,
+                // but here we differentiate so later the UI can decide how to show actions.)
+                newContract.Status = isReceiver ? "ModifiedByReceiver" : "ModifiedBySender";
 
                 _context.TblContracts.Add(newContract);
                 await _context.SaveChangesAsync();
@@ -361,13 +375,14 @@ namespace SkillSwap_Platform.Controllers
                 // Determine subfolder based on contract version and status.
                 string baseFolder = Path.Combine("wwwroot", "contracts");
                 string subFolder = "";
-                if (newContract.Version == 1)
+
+                if (newContract.Status.Equals("ModifiedByReceiver", StringComparison.OrdinalIgnoreCase))
                 {
-                    subFolder = "Initial";
+                    subFolder = Path.Combine("Modified", "modifybyreceiver");
                 }
-                else if (newContract.Status.Equals("ModifiedByReceiver", StringComparison.OrdinalIgnoreCase))
+                else if (newContract.Status.Equals("ModifiedBySender", StringComparison.OrdinalIgnoreCase))
                 {
-                    subFolder = "Modified";
+                    subFolder = Path.Combine("Modified", "modifybysender");
                 }
                 else if (newContract.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase))
                 {
@@ -375,7 +390,7 @@ namespace SkillSwap_Platform.Controllers
                 }
                 else
                 {
-                    subFolder = "Others"; // Fallback subfolder if needed.
+                    subFolder = "Others"; // Fallback if needed.
                 }
 
                 string folderPath = Path.Combine(baseFolder, subFolder);
@@ -397,19 +412,22 @@ namespace SkillSwap_Platform.Controllers
                 // Save relative path to database
                 newContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
                 await _context.SaveChangesAsync();
-                
                 await transaction.CommitAsync();
 
-                TempData["SuccessMessage"] = "Contract modified and sent back to sender.";
-                return RedirectToAction("Conversation", "Messaging", new { otherUserId = originalContract.SenderUserId });
+                TempData["SuccessMessage"] = "Contract modified and sent back successfully.";
+                return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error modifying contract for contractId={ContractId}", contractId);
                 TempData["ErrorMessage"] = "An error occurred while modifying the contract.";
                 return RedirectToAction("Review", new { contractId });
             }
         }
+        #endregion
+
+        #region Sign Contract
 
         [HttpGet]
         public async Task<IActionResult> SignContract(int contractId)
@@ -424,7 +442,7 @@ namespace SkillSwap_Platform.Controllers
                     return NotFound();
 
                 int userId = GetUserId();
-                if (contract.ReceiverUserId != userId)
+                if (contract.ReceiverUserId != userId && contract.SenderUserId != userId)
                     return Forbid();
 
                 var sender = await _context.TblUsers.FindAsync(contract.SenderUserId);
@@ -500,7 +518,7 @@ namespace SkillSwap_Platform.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SignContract(int contractId, [FromForm] string receiverSignature, [FromForm] string receiverPlace, [FromForm] string OfferedSkill)
+        public async Task<IActionResult> SignContract(int contractId, [FromForm] string partySignature, [FromForm] string partyPlace, [FromForm] string OfferedSkill, [FromForm] bool finalSignConfirmed = false)
         {
             try
             {
@@ -508,102 +526,161 @@ namespace SkillSwap_Platform.Controllers
                 if (originalContract == null)
                     return NotFound();
 
-                int userId = GetUserId();
-                if (originalContract.ReceiverUserId != userId)
+                int currentUserId = GetUserId();
+                bool isReceiver = currentUserId == originalContract.ReceiverUserId;
+                bool isSender = currentUserId == originalContract.SenderUserId;
+                if (!isReceiver && !isSender)
                     return Forbid();
 
-                // Create a new contract version with updated receiver details.
-                var newFinalContract = new TblContract
+                // Block signing if contract is expired or modified beyond allowed versions.
+                if (originalContract.Version > 3 || originalContract.Status == "Expired")
                 {
-                    // Basic identifiers and foreign keys.
-                    MessageId = originalContract.MessageId,
-                    OfferId = originalContract.OfferId,
-                    SenderUserId = originalContract.SenderUserId,
-                    ReceiverUserId = originalContract.ReceiverUserId,
-                    TokenOffer = originalContract.TokenOffer,
-                    SenderUserName = originalContract.SenderUserName,
-                    ReceiverUserName = originalContract.ReceiverUserName,
-                    SenderEmail = originalContract.SenderEmail,
-                    ReceiverEmail = originalContract.ReceiverEmail,
-                    SenderAddress = originalContract.SenderAddress,
-                    ReceiverAddress = originalContract.ReceiverAddress,
-                    Category = originalContract.Category, // or fetch from offer if needed
-                    LearningObjective = originalContract.LearningObjective,
-                    OppositeExperienceLevel = originalContract.OppositeExperienceLevel,
-                    ModeOfLearning = originalContract.ModeOfLearning,
-                    OfferOwnerAvailability = originalContract.OfferOwnerAvailability,
-                    AssistanceRounds = originalContract.AssistanceRounds,
-
-                    // Skills: copy both sender and receiver skill info.
-                    OfferedSkill = OfferedSkill,
-                    SenderSkill = OfferedSkill,
-                    ReceiverSkill = originalContract.ReceiverSkill, // Make sure this is set in the original contract
-
-                    // Names and contact details.
-                    SenderName = originalContract.SenderName,
-                    ReceiverName = originalContract.ReceiverName,
-
-                    // Additional contract text.
-                    AdditionalTerms = originalContract.AdditionalTerms,
-                    FlowDescription = originalContract.FlowDescription,
-
-                    // Dates.
-                    CreatedDate = DateTime.Now, // New record creation date
-                    CompletionDate = originalContract.CompletionDate, // Preserved from original
-                                                                      // Preserve sender's acceptance details.
-                    SenderAgreementAccepted = originalContract.SenderAgreementAccepted,
-                    SenderAcceptanceDate = originalContract.SenderAcceptanceDate,
-                    SenderSignature = originalContract.SenderSignature,
-                    SenderPlace = originalContract.SenderPlace,
-
-                    // Update receiver fields with new signing details.
-                    ReceiverAgreementAccepted = true,
-                    ReceiverAcceptanceDate = DateTime.Now,
-                    ReceiverSignature = receiverSignature?.Trim(),
-                    ReceiverPlace = receiverPlace?.Trim(),
-
-                    // Preserve other flags.
-                    SignedBySender = originalContract.SignedBySender,
-                    SignedByReceiver = true,
-
-                    // Versioning.
-                    Version = originalContract.Version + 1,
-                    ParentContractId = originalContract.ParentContractId ?? originalContract.ContractId,
-
-                    // Status and finalization.
-                    Status = "Accepted",
-                    FinalizedDate = DateTime.Now
-                };
-
-                // (Assuming PDF generation is required, generate the PDF and save to disk)
-                var previewModel = await PrepareViewModelForEdit(newFinalContract, "Review");
-                previewModel.IsPreview = true;
-                string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
-                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
-
-                string baseFolder = Path.Combine("wwwroot", "contracts");
-                string subFolder = "Final";
-                string folderPath = Path.Combine(baseFolder, subFolder);
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
+                    TempData["ErrorMessage"] = "This contract is expired or has exceeded modifications; signing is no longer possible.";
+                    int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
+                    return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
                 }
 
-                string skillPart = Sanitize(previewModel.OfferOwnerSkill ?? "Skill");
-                string senderPart = Sanitize(previewModel.SenderName ?? "Sender");
-                string versionPart = $"v{newFinalContract.Version}";
-                string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                string fileName = $"{skillPart}-{senderPart}-{versionPart}-{timestamp}.pdf";
-                string filePath = Path.Combine(folderPath, fileName);
+                // If contract is version 3 (final), force confirmation before signing.
+                if (originalContract.Version == 3 && !finalSignConfirmed)
+                {
+                    TempData["WarningMessage"] = "You are signing the final version (v3). No further modifications will be possible after signing.";
+                    return RedirectToAction("Review", new { contractId, mode = "Sign" });
+                }
 
-                await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
-                newFinalContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
+                // Validate signature, place, etc., just like your normal sign logic
+                if (string.IsNullOrWhiteSpace(partySignature) || partySignature.Trim() == "[Sign Here]")
+                {
+                    TempData["ErrorMessage"] = "Please provide your actual signature.";
+                    return RedirectToAction("Review", new { contractId = contractId, mode = "Sign" });
+                }
 
-                _context.TblContracts.Add(newFinalContract);
-                await _context.SaveChangesAsync();
+                if (string.IsNullOrWhiteSpace(partyPlace) || partyPlace.Trim() == "[Place of Sign]")
+                {
+                    TempData["ErrorMessage"] = "Please provide your place of signing.";
+                    return RedirectToAction("Review", new { contractId = contractId, mode = "Sign" });
+                }
 
-                TempData["SuccessMessage"] = "You have signed the contract. A new version has been created.";
-                return RedirectToAction("Conversation", "Messaging", new { otherUserId = originalContract.SenderUserId });
+                // Create a new contract version with updated receiver details.
+                if (originalContract.Status == "ModifiedByReceiver"
+                    || originalContract.Status == "ModifiedBySender"
+                           || originalContract.Status == "Pending"
+                           || originalContract.Status == "Review")
+                {
+                    var newFinalContract = new TblContract
+                    {
+                        // Basic identifiers and foreign keys.
+                        MessageId = originalContract.MessageId,
+                        OfferId = originalContract.OfferId,
+                        SenderUserId = originalContract.SenderUserId,
+                        ReceiverUserId = originalContract.ReceiverUserId,
+                        TokenOffer = originalContract.TokenOffer,
+                        SenderUserName = originalContract.SenderUserName,
+                        ReceiverUserName = originalContract.ReceiverUserName,
+                        SenderEmail = originalContract.SenderEmail,
+                        ReceiverEmail = originalContract.ReceiverEmail,
+                        SenderAddress = originalContract.SenderAddress,
+                        ReceiverAddress = originalContract.ReceiverAddress,
+                        Category = originalContract.Category, // or fetch from offer if needed
+                        LearningObjective = originalContract.LearningObjective,
+                        OppositeExperienceLevel = originalContract.OppositeExperienceLevel,
+                        ModeOfLearning = originalContract.ModeOfLearning,
+                        OfferOwnerAvailability = originalContract.OfferOwnerAvailability,
+                        AssistanceRounds = originalContract.AssistanceRounds,
+
+                        // Skills: copy both sender and receiver skill info.
+                        OfferedSkill = OfferedSkill,
+                        SenderSkill = OfferedSkill,
+                        ReceiverSkill = originalContract.ReceiverSkill, // Make sure this is set in the original contract
+
+                        // Names and contact details.
+                        SenderName = originalContract.SenderName,
+                        ReceiverName = originalContract.ReceiverName,
+
+                        // Additional contract text.
+                        AdditionalTerms = originalContract.AdditionalTerms,
+                        FlowDescription = originalContract.FlowDescription,
+
+                        // Dates.
+                        CreatedDate = DateTime.Now, // New record creation date
+                        CompletionDate = originalContract.CompletionDate, // Preserved from original
+
+                        // Versioning.
+                        Version = originalContract.Version + 1,
+                        ParentContractId = originalContract.ParentContractId ?? originalContract.ContractId
+                    };
+
+                    // Role-based assignment:
+                    if (isReceiver)
+                    {
+                        // Receiver signing: preserve sender’s acceptance and update receiver’s.
+                        newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
+                        newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
+                        newFinalContract.SenderSignature = originalContract.SenderSignature;
+                        newFinalContract.SenderPlace = originalContract.SenderPlace;
+                        newFinalContract.SignedBySender = originalContract.SignedBySender;
+
+                        newFinalContract.ReceiverAgreementAccepted = true;
+                        newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
+                        newFinalContract.ReceiverSignature = partySignature.Trim();
+                        newFinalContract.ReceiverPlace = partyPlace.Trim();
+                        newFinalContract.SignedByReceiver = true;
+                    }
+                    else if (isSender)
+                    {
+                        // Sender signing: preserve receiver’s acceptance and update sender’s.
+                        newFinalContract.ReceiverAgreementAccepted = originalContract.SignedByReceiver;
+                        newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
+                        newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
+                        newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
+                        newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
+
+                        newFinalContract.SenderAgreementAccepted = true;
+                        newFinalContract.SenderAcceptanceDate = DateTime.Now;
+                        newFinalContract.SenderSignature = partySignature.Trim();
+                        newFinalContract.SenderPlace = partyPlace.Trim();
+                        newFinalContract.SignedBySender = true;
+                    }
+
+                    newFinalContract.Status = "Accepted";
+                    newFinalContract.FinalizedDate = DateTime.Now;
+
+                    // (Assuming PDF generation is required, generate the PDF and save to disk)
+                    var previewModel = await PrepareViewModelForEdit(newFinalContract, "Review");
+                    previewModel.IsPreview = true;
+                    string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
+                    byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
+
+                    string baseFolder = Path.Combine("wwwroot", "contracts");
+                    string subFolder = "Final";
+                    string folderPath = Path.Combine(baseFolder, subFolder);
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                    }
+
+                    string skillPart = Sanitize(previewModel.OfferOwnerSkill ?? "Skill");
+                    string senderPart = Sanitize(previewModel.SenderName ?? "Sender");
+                    string versionPart = $"v{newFinalContract.Version}";
+                    string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                    string fileName = $"{skillPart}-{senderPart}-{versionPart}-{timestamp}.pdf";
+                    string filePath = Path.Combine(folderPath, fileName);
+
+                    await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+                    newFinalContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
+
+                    _context.TblContracts.Add(newFinalContract);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "You have signed the contract. A new version has been created.";
+                    int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
+                    return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
+                }
+                else
+                {
+                    // It's some other status => maybe we can't sign it again
+                    TempData["ErrorMessage"] = "Cannot sign this contract in its current state.";
+                    return RedirectToAction("Review", new { contractId });
+                }
             }
             catch (Exception ex)
             {
@@ -612,7 +689,7 @@ namespace SkillSwap_Platform.Controllers
                 return RedirectToAction("Review", new { contractId });
             }
         }
-
+        #endregion
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -621,7 +698,7 @@ namespace SkillSwap_Platform.Controllers
             var contract = await _context.TblContracts.FindAsync(contractId);
             if (contract == null) return NotFound();
 
-            contract.SignedByReceiver = true;
+            contract.SignedBySender = true;
             contract.SignedByReceiver = true;
             contract.Status = "Accepted";
             contract.FinalizedDate = DateTime.Now;
@@ -659,19 +736,17 @@ namespace SkillSwap_Platform.Controllers
 
                 // Verify the logged-in user is the receiver
                 int userId = GetUserId();
-                if (contract.ReceiverUserId != userId)
-                    return Forbid();
 
                 var sender = await _context.TblUsers.FindAsync(contract.SenderUserId);
                 var receiver = await _context.TblUsers.FindAsync(contract.ReceiverUserId);
                 var offer = await _context.TblOffers.FindAsync(contract.OfferId);
 
                 string offerOwnerSkillName = "N/A";
-                if (offer != null)
+                if (offer != null && int.TryParse(offer.SkillIdOfferOwner, out int skillId))
                 {
                     var receiverSkill = await _context.TblUserSkills
                         .Include(s => s.Skill)
-                        .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId.ToString() == offer.SkillIdOfferOwner && s.IsOffering)
+                        .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
                         .FirstOrDefaultAsync();
 
                     offerOwnerSkillName = receiverSkill?.Skill.SkillName ?? "N/A";
@@ -693,25 +768,31 @@ namespace SkillSwap_Platform.Controllers
 
                 var viewModel = new ContractCreationVM
                 {
+                    ContractId = contract.ContractId,
                     MessageId = contract.MessageId,
                     OfferId = contract.OfferId,
                     ContractDate = contract.CreatedDate,
-                    OriginalCreatedDate = originalDate,
+                    OriginalCreatedDate = contract.ParentContractId == null
+                        ? contract.CreatedDate
+                        : (await _context.TblContracts.FindAsync(contract.ParentContractId))?.CreatedDate,
                     SenderUserId = contract.SenderUserId,
                     ReceiverUserId = contract.ReceiverUserId,
+                    // Use the contract values (which are updated) for sender details:
                     SenderName = contract.SenderName,
-                    ReceiverName = contract.ReceiverName,
                     SenderUserName = sender?.UserName,
+                    SenderEmail = contract.SenderEmail,
+                    SenderAddress = contract.SenderAddress,
+                    // For receiver, use the stored contract values (or override if needed)
+                    ReceiverName = contract.ReceiverName,
                     ReceiverUserName = receiver?.UserName,
-                    SenderEmail = sender?.Email,
-                    ReceiverEmail = receiver?.Email,
-                    SenderAddress = sender?.Address,
-                    ReceiverAddress = receiver?.Address,
+                    ReceiverEmail = contract.ReceiverEmail,
+                    ReceiverAddress = contract.ReceiverAddress,
+
                     OfferedSkill = contract.SenderSkill,
                     OfferOwnerSkill = offerOwnerSkillName,
-                    LearningDays = offer?.DeliveryTimeDays ?? 0,
                     TokenOffer = contract.TokenOffer,
-                    Category = contract.Category, // or fetch from offer if needed
+                    Category = contract.Category,
+                    LearningDays = offer?.DeliveryTimeDays ?? 0,
                     LearningObjective = contract.LearningObjective,
                     OppositeExperienceLevel = contract.OppositeExperienceLevel,
                     ModeOfLearning = contract.ModeOfLearning,
@@ -729,11 +810,19 @@ namespace SkillSwap_Platform.Controllers
                     ReceiverSignature = contract.ReceiverSignature,
                     Version = contract.Version,
                     Status = contract.Status,
+                    // Optionally, you can also build a sender offered skills list from the contract if needed.
                     SenderOfferedSkills = senderSkills,
                     IsPreview = true,
                     Mode = mode,
                     ActionContext = contract.ParentContractId == null ? "CreateOnly" : "ModifyOnly"
                 };
+
+                // If the contract is final (v3), set a flag (or status message) in the view model so that the UI shows only the "Sign" option.
+                if (contract.Version >= 3)
+                {
+                    viewModel.Status = "Final";
+                }
+
                 return View("PreviewContract", viewModel);
             }
             catch (Exception ex)
@@ -772,11 +861,11 @@ namespace SkillSwap_Platform.Controllers
             var offer = await _context.TblOffers.FindAsync(contract.OfferId);
 
             string offerOwnerSkillName = "N/A";
-            if (offer != null)
+            if (offer != null && int.TryParse(offer.SkillIdOfferOwner, out int skillId))
             {
                 var receiverSkill = await _context.TblUserSkills
                     .Include(s => s.Skill)
-                    .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId.ToString() == offer.SkillIdOfferOwner && s.IsOffering)
+                    .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
                     .FirstOrDefaultAsync();
                 offerOwnerSkillName = receiverSkill?.Skill.SkillName ?? "N/A";
             }
@@ -802,7 +891,15 @@ namespace SkillSwap_Platform.Controllers
                 var baseContract = await _context.TblContracts.FindAsync(contract.ParentContractId);
                 originalDate = baseContract?.CreatedDate;
             }
-            bool hideSenderAcceptance = (mode == "ModifyOnly");
+
+            var currentUserId = GetUserId();
+            bool isSender = currentUserId == contract.SenderUserId;
+            bool isReceiver = currentUserId == contract.ReceiverUserId;
+
+            // In a ModifyOnly context, clear the acceptance for the party that is not modifying.
+            bool hideSenderAcceptance = (mode == "ModifyOnly") && !isSender;
+            bool hideReceiverAcceptance = (mode == "ModifyOnly") && !isReceiver;
+
             return new ContractCreationVM
             {
                 ContractId = contract.ContractId,
@@ -814,10 +911,10 @@ namespace SkillSwap_Platform.Controllers
                 ReceiverName = contract.ReceiverName,
                 SenderUserName = sender?.UserName,
                 ReceiverUserName = receiver?.UserName,
-                SenderEmail = sender?.Email,
-                ReceiverEmail = receiver?.Email,
-                SenderAddress = sender?.Address,
-                ReceiverAddress = receiver?.Address,
+                SenderEmail = contract.SenderEmail,
+                ReceiverEmail = contract.ReceiverEmail,
+                SenderAddress = contract.SenderAddress,
+                ReceiverAddress = contract.ReceiverAddress,
                 OfferedSkill = contract.SenderSkill,
                 OfferOwnerSkill = offerOwnerSkillName,
                 LearningDays = offer?.DeliveryTimeDays ?? 0,
@@ -850,6 +947,7 @@ namespace SkillSwap_Platform.Controllers
                 Mode = mode,
                 OriginalCreatedDate = originalDate,
                 HideSenderAcceptance = hideSenderAcceptance,
+                HideReceiverAcceptance = hideReceiverAcceptance,
             };
         }
 
@@ -863,6 +961,11 @@ namespace SkillSwap_Platform.Controllers
             );
 
             // Override any editable fields submitted from form
+            preparedModel.SenderName = model.SenderName;
+            preparedModel.SenderAddress = model.SenderAddress;
+            preparedModel.SenderEmail = model.SenderEmail;
+            preparedModel.ReceiverAddress = model.ReceiverAddress;
+            preparedModel.ReceiverEmail = model.ReceiverEmail;
             preparedModel.TokenOffer = model.TokenOffer;
             preparedModel.Category = model.Category;
             preparedModel.LearningObjective = model.LearningObjective;
@@ -874,10 +977,9 @@ namespace SkillSwap_Platform.Controllers
             preparedModel.AdditionalTerms = model.AdditionalTerms;
             preparedModel.ContractDate = model.ContractDate;
             preparedModel.OfferedSkill = model.OfferedSkill;
-            preparedModel.AccountSenderName = model.AccountSenderName;
             preparedModel.IsPreview = true;
             preparedModel.Status = "Preview";
-
+            
             return preparedModel;
         }
 
@@ -902,6 +1004,52 @@ namespace SkillSwap_Platform.Controllers
 
             return View("PreviewContract", vm);
         }
+        private bool HasMinimumFlowSteps(string flowDescription)
+        {
+            if (string.IsNullOrWhiteSpace(flowDescription))
+                return false;
+            var steps = flowDescription.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            return steps.Length >= 3;
+        }
+
+        private string GeneratePreviewFilename(ContractCreationVM model)
+        {
+            string skillPart = Sanitize(model.OfferOwnerSkill ?? "Skill");
+            string senderPart = Sanitize(model.SenderName ?? "Sender");
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string version = $"v{model.Version}";
+            return $"{skillPart}-{senderPart}-{version}-{timestamp}-Preview.pdf";
+        }
+
+        private void RemoveServerControlledFields()
+        {
+            ModelState.RemoveProperties(
+                nameof(ContractCreationVM.SenderName), 
+                nameof(ContractCreationVM.SenderAddress), 
+                nameof(ContractCreationVM.SenderEmail),  
+                nameof(ContractCreationVM.SenderSignature),
+                nameof(ContractCreationVM.SenderPlace),
+                nameof(ContractCreationVM.ReceiverName), 
+                nameof(ContractCreationVM.ReceiverAddress), 
+                nameof(ContractCreationVM.ReceiverEmail),
+                nameof(ContractCreationVM.ReceiverSignature),
+                nameof(ContractCreationVM.ReceiverPlace),
+                nameof(ContractCreationVM.SenderOfferedSkills),
+                nameof(ContractCreationVM.FlowDescription),
+                nameof(ContractCreationVM.SenderUserName),
+                nameof(ContractCreationVM.ReceiverUserName),
+                nameof(ContractCreationVM.ContractDate),
+                nameof(ContractCreationVM.Mode),
+                nameof(ContractCreationVM.ActionContext),
+                nameof(ContractCreationVM.Category),
+                nameof(ContractCreationVM.OppositeExperienceLevel),
+                nameof(ContractCreationVM.ModeOfLearning),
+                nameof(ContractCreationVM.LearningObjective),
+                nameof(ContractCreationVM.OfferOwnerAvailability),
+                nameof(ContractCreationVM.AssistanceRounds)
+            );
+        }
+
         private void LogModelStateDetails()
         {
             foreach (var kvp in ModelState)

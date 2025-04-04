@@ -213,10 +213,19 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
+                var currentUserId = User.Identity.IsAuthenticated
+                    ? _context.TblUsers.FirstOrDefault(u => u.UserName == User.Identity.Name)?.UserId
+                    : null;
+
                 var offersQuery = _context.TblOffers
                     .Include(o => o.TblOfferPortfolios)
                     .Include(o => o.User)
                     .Where(o => o.IsActive && !o.IsDeleted);
+
+                if (currentUserId.HasValue)
+                {
+                    offersQuery = offersQuery.Where(o => o.UserId != currentUserId.Value);
+                }
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(category))

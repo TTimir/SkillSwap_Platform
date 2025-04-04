@@ -140,6 +140,66 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
     }
+     /* Overlay covers entire viewport with blur background */
+    .share-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      display: none; /* Hidden by default */
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    /* Modal card in center */
+    .share-modal {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      position: relative;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Close button in modal */
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    /* Modal header */
+    .share-modal h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    /* Input and button container */
+    .share-content {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    /* Input styling */
+    .share-content input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
 </style>
 <div class="body_content bgc-thm3">
     <!-- Breadcumb Sections -->
@@ -157,7 +217,7 @@
                 </div>
                 <div class="col-sm-4 col-lg-2">
                     <div class="d-flex align-items-center justify-content-sm-end">
-                        <div class="share-save-widget d-flex align-items-center">
+                        <div id="shareBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;">
                             <span class="icon flaticon-share dark-color fz12 mr10"></span>
                             <div class="h6 mb-0">Share</div>
                         </div>
@@ -170,7 +230,17 @@
             </div>
         </div>
     </section>
-
+    <!-- Overlay Modal -->
+    <div id="shareOverlay" class="share-overlay">
+      <div class="share-modal">
+        <button id="closeShare" class="close-btn">&times;</button>
+        <h3>Share This Profile</h3>
+        <div class="share-content">
+          <input type="text" id="shareLink" readonly value="https://yourprofilelink.com" />
+          <button id="copyShare" class="ud-btn btn-thm">Copy </button>
+        </div>
+      </div>
+    </div>
     <!-- Service Details -->
     <section class="pt0 pb90 pb30-md">
         <div class="container">
@@ -573,6 +643,108 @@
                 <div class="col-lg-4">
                     <div class="column">
                         <div class="blog-sidebar ms-lg-auto">
+                            @if (!string.IsNullOrWhiteSpace(Model.User.PersonalWebsite) || !string.IsNullOrWhiteSpace(Model.User.SocialMediaLinks))
+                            {
+                                <div class="social-icons sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                   @{
+                                        var socialLinks = new Dictionary<string, string>();
+                                        if (!string.IsNullOrWhiteSpace(Model.User.SocialMediaLinks))
+                                        {
+                                            try
+                                            {
+                                                socialLinks = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(Model.User.SocialMediaLinks);
+                                                // Convert keys to lowercase
+                                                socialLinks = socialLinks.ToDictionary(x => x.Key.ToLowerInvariant(), x => x.Value);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                <div style="color:red;">Error parsing social media links: @ex.Message</div>
+                                            }
+                                        }
+                                    }
+                                    <div class="share-card">
+                                        <header style="display:flex; justify-content:space-between; align-items:center; padding-bottom:15px; border-bottom:1px solid #ebedf9; margin-bottom:10px;">
+                                            <span style="font-size:21px;">Social Profiles</span>
+                                        </header>
+                                        <div class="content" style="margin-top:20px;">
+                                            <p style="font-size:16px; margin-bottom:10px;">Find me on</p>
+                                                <ul class="icons" style="display:flex; flex-wrap:wrap; justify-content:flex-start; gap:10px; margin:0; margin-bottom: 20px; padding:0; list-style:none;">
+                                                @if (socialLinks.ContainsKey("github") && !string.IsNullOrWhiteSpace(socialLinks["github"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["github"]" title="GitHub" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#111; border:1px solid #111; border-radius: 4px;">
+                                                            <i class="fa-brands fa-github"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("linkedin") && !string.IsNullOrWhiteSpace(socialLinks["linkedin"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["linkedin"]" title="Linkedin" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#0077B5; border:1px solid #0077B5; border-radius: 4px;">
+                                                            <i class="fab fa-linkedin-in"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("twitter") && !string.IsNullOrWhiteSpace(socialLinks["twitter"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["twitter"]" title="Twitter" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#1DA1F2 ; border:1px solid #1DA1F2 ; border-radius: 4px;">
+                                                            <i class="fa-brands fa-twitter"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("instagram") && !string.IsNullOrWhiteSpace(socialLinks["instagram"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["instagram"]" title="Instagram" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#d62976; border:1px solid #d62976; border-radius: 4px;">
+                                                            <i class="fab fa-instagram"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("facebook") && !string.IsNullOrWhiteSpace(socialLinks["facebook"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["facebook"]" title="GitHub" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#1877F2; border:1px solid #1877F2; border-radius: 4px;">
+                                                            <i class="fab fa-facebook-f"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("behance") && !string.IsNullOrWhiteSpace(socialLinks["behance"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["behance"]" title="Behance" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#053eff; border:1px solid #053eff; border-radius: 4px;">
+                                                            <i class="fa-brands fa-behance"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("pinterest") && !string.IsNullOrWhiteSpace(socialLinks["pinterest"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["pinterest"]" title="Pinterest" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#E60023; border:1px solid #E60023; border-radius: 4px;">
+                                                            <i class="fa-brands fa-pinterest"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                            @{
+                                                var portfolioUrl = !string.IsNullOrWhiteSpace(Model.User.PersonalWebsite)
+                                                                     ? Model.User.PersonalWebsite
+                                                                     : "";
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(portfolioUrl))
+                                            {
+                                                <p style="font-size:16px; margin-bottom:10px;">Or open portoflio:</p>
+                                                <div class="field" style="display:flex; align-items:center; gap:10px; height:45px; border-radius:4px; padding:0 5px; border:1px solid #757171;">
+                                                    <i class="url-icon uil uil-link" style="width:50px; font-size:18px; text-align:center;"></i>
+                                                    <input type="text" readonly value="@portfolioUrl" style="width:100%; height:100%; border:none; outline:none; font-size:15px;">
+                                                    <a href="@portfolioUrl" target="_blank" style="color:#5BBB7B; padding:5px 10px;">
+                                                        <img src="~/template_assets/images/icon/icons8-external-link-20.svg" title="@portfolioUrl" alt="external link" />                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                             <div class="price-widget pt25 bdrs12 default-box-shadow1s">
                                 <h3 class="widget-title">
                                     @if (Model.RecommendedPercentage > 0)
@@ -662,7 +834,7 @@
                                 </a>
                                 </div>
                                 <div class="d-grid">
-                                    <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = Model.User.UserId })" class="ud-btn btn-thm">Contact Me<i class="fal fa-arrow-right-long"></i></a>
+                                    <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = Model.User.UserId })" class="ud-btn btn-thm">Send Message<i class="fal fa-arrow-right-long"></i></a>
                                 </div>
                             </div>
                             <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
@@ -738,4 +910,61 @@
             $('#previewModal').modal('show');
         });
     </script>
+        <script>
+      // Attach copy functionality to the copy button(s) within the share card
+      document.querySelectorAll('.field button').forEach(btn => {
+          btn.addEventListener('click', function () {
+              var field = this.parentElement;
+              var input = field.querySelector('input');
+              input.select();
+              try {
+                  var successful = document.execCommand("copy");
+                  if(successful){
+                      field.classList.add("active");
+                      this.innerText = "Copied";
+                      setTimeout(() => {
+                          window.getSelection().removeAllRanges();
+                          field.classList.remove("active");
+                          this.innerText = "Copy";
+                      }, 3000);
+                  }
+              } catch (e) {
+                  console.error("Copy command failed", e);
+              }
+          });
+      });
+    </script>
+    <script>
+        // Show overlay when share button is clicked
+        document.getElementById("shareBtn").addEventListener("click", function () {
+          var shareInput = document.getElementById("shareLink");
+          // Set the share link input to the full current URL initially
+          shareInput.value = window.location.href;
+          document.getElementById("shareOverlay").style.display = "flex";
+        });
+
+        // Close overlay when close button is clicked
+        document.getElementById("closeShare").addEventListener("click", function () {
+          document.getElementById("shareOverlay").style.display = "none";
+        });
+
+        // Copy functionality for share input
+        document.getElementById("copyShare").addEventListener("click", function () {
+          var input = document.getElementById("shareLink");
+          input.select();
+          try {
+            var successful = document.execCommand("copy");
+            if (successful) {
+              var btn = this;
+              var originalText = btn.innerText;
+              btn.innerText = "Copied";
+              setTimeout(function () {
+                btn.innerText = originalText;
+              }, 3000);
+            }
+          } catch (e) {
+            console.error("Copy command failed", e);
+          }
+       });
+  </script>
 }
