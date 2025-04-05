@@ -35,6 +35,7 @@ builder.Services.AddDbContext<SkillSwapDbContext>(item =>
 builder.Services.AddHttpClient();
 
 // Register user service
+builder.Services.AddHostedService<ContractExpirationService>();
 builder.Services.AddScoped<IContractPreparationService, ContractPreparationService>();
 builder.Services.AddScoped<IContractHandlerService, ContractHandlerService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();

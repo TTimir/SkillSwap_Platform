@@ -12,8 +12,10 @@ using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.PDF;
 using System;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using SkillSwap_Platform.HelperClass.NewFolder.Extensions;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+using System.Diagnostics.Contracts;
+using SkillSwap_Platform.HelperClass.Extensions;
+using SkillSwap_Platform.HelperClass;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -52,7 +54,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 int userId = GetUserId();
                 var viewModel = await _contractPreparation.PrepareViewModelAsync(messageId, userId, revealReceiverDetails: false);
-               
+
                 // Set server-controlled properties so they appear in the hidden fields.
                 viewModel.Mode = "Create";
                 viewModel.ActionContext = "CreateOnly";
@@ -75,6 +77,9 @@ namespace SkillSwap_Platform.Controllers
         {
             ModelState.Remove(nameof(model.ReceiverPlace));
             ModelState.Remove(nameof(model.ReceiverSignature));
+            ModelState.Remove(nameof(model.ContractUniqueId));
+            ModelState.Remove(nameof(model.LearningDays));
+
             if (!ModelState.IsValid)
             {
                 LogModelErrors();
@@ -89,6 +94,15 @@ namespace SkillSwap_Platform.Controllers
                 // Override the placeholder values with the actual data.
                 model.ReceiverEmail = receiverUser.Email;
                 model.ReceiverAddress = $"{receiverUser.Address}, {receiverUser.City}, {receiverUser.Country}";
+            }
+
+            // Generate the unique contract identifier
+            // Format: SkillSwap-CT-<yyyyMMddHHmmss>-<6charHexToken>
+            if (string.IsNullOrWhiteSpace(model.ContractUniqueId))
+            {
+                string dateTimePart = DateTime.Now.ToString("yyyyMMddHHmmss");
+                string token = UniqueIdGenerator.GenerateSixCharHexToken();
+                model.ContractUniqueId = $"SkillSwap-CT-{dateTimePart}-{token}";
             }
 
             var result = await _contractHandler.CreateContractAsync(model);
@@ -161,7 +175,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Render the preview Razor view into HTML.
                 string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
-                var pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
+                var pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html, model.Version);
 
                 // Generate dynamic preview filename with version
                 string filename = GeneratePreviewFilename(previewModel);
@@ -317,7 +331,8 @@ namespace SkillSwap_Platform.Controllers
                     CompletionDate = DateTime.Now.AddDays(learningDays + 1),
 
                     Version = originalContract.Version + 1,
-                    ParentContractId = originalContract.ParentContractId ?? originalContract.ContractId,
+                    ParentContractId = originalContract.ContractId,
+                    BaseContractId = originalContract.BaseContractId ?? originalContract.ContractId,
 
                     // Copy any additional fields as needed.
                     SenderSkill = originalContract.SenderSkill,
@@ -325,6 +340,7 @@ namespace SkillSwap_Platform.Controllers
                     // You may want to preserve other fields such as names, emails, etc.
                     SenderName = originalContract.SenderName,
                     ReceiverName = originalContract.ReceiverName,
+                    ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                 };
 
                 // Now, update the acceptance fields based on the modifying role.
@@ -370,7 +386,7 @@ namespace SkillSwap_Platform.Controllers
                 previewModel.IsPreview = true;
 
                 string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
-                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
+                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html, newContract.Version);
 
                 // Determine subfolder based on contract version and status.
                 string baseFolder = Path.Combine("wwwroot", "contracts");
@@ -464,6 +480,7 @@ namespace SkillSwap_Platform.Controllers
 
                 var viewModel = new ContractCreationVM
                 {
+                    ContractUniqueId = contract.ContractUniqueId,
                     MessageId = contract.MessageId,
                     OfferId = contract.OfferId,
                     ContractDate = contract.CreatedDate,
@@ -606,7 +623,9 @@ namespace SkillSwap_Platform.Controllers
 
                         // Versioning.
                         Version = originalContract.Version + 1,
-                        ParentContractId = originalContract.ParentContractId ?? originalContract.ContractId
+                        ParentContractId = originalContract.ContractId,
+                        BaseContractId = originalContract.BaseContractId ?? originalContract.ContractId,
+                        ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                     };
 
                     // Role-based assignment:
@@ -648,7 +667,7 @@ namespace SkillSwap_Platform.Controllers
                     var previewModel = await PrepareViewModelForEdit(newFinalContract, "Review");
                     previewModel.IsPreview = true;
                     string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", previewModel, "Contract");
-                    byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html);
+                    byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html, newFinalContract.Version);
 
                     string baseFolder = Path.Combine("wwwroot", "contracts");
                     string subFolder = "Final";
@@ -690,23 +709,6 @@ namespace SkillSwap_Platform.Controllers
             }
         }
         #endregion
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AcceptContract(int contractId)
-        {
-            var contract = await _context.TblContracts.FindAsync(contractId);
-            if (contract == null) return NotFound();
-
-            contract.SignedBySender = true;
-            contract.SignedByReceiver = true;
-            contract.Status = "Accepted";
-            contract.FinalizedDate = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "You accepted the contract.";
-            return RedirectToAction("Conversation", "Messaging", new { otherUserId = contract.SenderUserId });
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -769,6 +771,7 @@ namespace SkillSwap_Platform.Controllers
                 var viewModel = new ContractCreationVM
                 {
                     ContractId = contract.ContractId,
+                    ContractUniqueId = contract.ContractUniqueId,
                     MessageId = contract.MessageId,
                     OfferId = contract.OfferId,
                     ContractDate = contract.CreatedDate,
@@ -833,6 +836,40 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DownloadPdf(int contractId)
+        {
+            // Retrieve the contract by its ID.
+            var contract = await _context.TblContracts.FindAsync(contractId);
+            if (contract == null)
+            {
+                return NotFound();
+            }
+
+            // Prepare the view model for preview.
+            // Here you can use your existing PrepareViewModelForEdit or another helper method
+            // For example, if the PDF should look like the preview:
+            var viewModel = await PrepareViewModelForEdit(contract, "Review");
+            viewModel.IsPreview = false;
+            viewModel.IsPdfDownload = true;
+
+            // Render the HTML string using your view render service.
+            string html = await _viewRenderService.RenderViewToStringAsync("PreviewContract", viewModel, "Contract");
+
+            // Generate the PDF bytes from the HTML.
+            byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(html, contract.Version);
+
+            // Create a dynamic filename (for example, based on the sender's name, contract version, and timestamp).
+            string skillPart = SanitizePDF(viewModel.OfferOwnerSkill ?? "Skill");
+            string senderPart = SanitizePDF(viewModel.SenderName ?? "Sender");
+            string versionPart = $"v{contract.Version}";
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string filename = $"{skillPart}-{senderPart}-{versionPart}-{timestamp}.pdf";
+
+            // Return the PDF file.
+            return File(pdfBytes, "application/pdf", filename);
+        }
+
         public async Task<IActionResult> VersionHistory(int messageId, int offerId)
         {
             var versions = await _context.TblContracts
@@ -852,6 +889,27 @@ namespace SkillSwap_Platform.Controllers
             if (int.TryParse(userIdClaim, out int userId))
                 return userId;
             throw new Exception("User ID not found in claims.");
+        }
+
+        private string UpdateContractUniqueId(string originalUniqueId)
+        {
+            // Expected format: "SkillSwap-CT-<timestamp>-<token>"
+            var parts = originalUniqueId.Split('-');
+            if (parts.Length >= 4)
+            {
+                // Use new timestamp in milliseconds for higher resolution
+                string newTimestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                // Preserve the token (parts[3] and any extra parts, if any)
+                string tokenPart = string.Join("-", parts.Skip(3));
+                return $"SkillSwap-CT-{newTimestamp}-{tokenPart}";
+            }
+            else
+            {
+                // Fallback: if not in expected format, generate a new unique id.
+                string newTimestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                string token = UniqueIdGenerator.GenerateSixCharHexToken();
+                return $"SkillSwap-CT-{newTimestamp}-{token}";
+            }
         }
 
         private async Task<ContractCreationVM> PrepareViewModelForEdit(TblContract contract, string mode)
@@ -903,6 +961,7 @@ namespace SkillSwap_Platform.Controllers
             return new ContractCreationVM
             {
                 ContractId = contract.ContractId,
+                ContractUniqueId = contract.ContractUniqueId,
                 MessageId = contract.MessageId,
                 OfferId = contract.OfferId,
                 SenderUserId = contract.SenderUserId,
@@ -979,7 +1038,7 @@ namespace SkillSwap_Platform.Controllers
             preparedModel.OfferedSkill = model.OfferedSkill;
             preparedModel.IsPreview = true;
             preparedModel.Status = "Preview";
-            
+
             return preparedModel;
         }
 
@@ -1024,13 +1083,14 @@ namespace SkillSwap_Platform.Controllers
         private void RemoveServerControlledFields()
         {
             ModelState.RemoveProperties(
-                nameof(ContractCreationVM.SenderName), 
-                nameof(ContractCreationVM.SenderAddress), 
-                nameof(ContractCreationVM.SenderEmail),  
+                nameof(ContractCreationVM.ContractUniqueId),
+                nameof(ContractCreationVM.SenderName),
+                nameof(ContractCreationVM.SenderAddress),
+                nameof(ContractCreationVM.SenderEmail),
                 nameof(ContractCreationVM.SenderSignature),
                 nameof(ContractCreationVM.SenderPlace),
-                nameof(ContractCreationVM.ReceiverName), 
-                nameof(ContractCreationVM.ReceiverAddress), 
+                nameof(ContractCreationVM.ReceiverName),
+                nameof(ContractCreationVM.ReceiverAddress),
                 nameof(ContractCreationVM.ReceiverEmail),
                 nameof(ContractCreationVM.ReceiverSignature),
                 nameof(ContractCreationVM.ReceiverPlace),
@@ -1042,6 +1102,7 @@ namespace SkillSwap_Platform.Controllers
                 nameof(ContractCreationVM.Mode),
                 nameof(ContractCreationVM.ActionContext),
                 nameof(ContractCreationVM.Category),
+                nameof(ContractCreationVM.LearningDays),
                 nameof(ContractCreationVM.OppositeExperienceLevel),
                 nameof(ContractCreationVM.ModeOfLearning),
                 nameof(ContractCreationVM.LearningObjective),
@@ -1075,6 +1136,13 @@ namespace SkillSwap_Platform.Controllers
         }
 
         private string Sanitize(string input)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            return string.Join("-", input.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries))
+                         .Replace(" ", "-");
+        }
+
+        private string SanitizePDF(string input)
         {
             var invalidChars = Path.GetInvalidFileNameChars();
             return string.Join("-", input.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries))

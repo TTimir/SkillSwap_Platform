@@ -17,7 +17,6 @@
     }
     bool isSender = currentUserId == Model.SenderUserId;
     bool isReceiver = currentUserId == Model.ReceiverUserId;
-    bool isReviewMode = Model.Mode.Equals("Review", StringComparison.OrdinalIgnoreCase);
 }
 
 <!DOCTYPE html>
@@ -233,13 +232,38 @@
 </head>
 <body>
     @{
-        var watermarkText = Model.Status switch
+        // Determine watermark text based on the view model properties.
+        string watermarkText = string.Empty;
+
+        if (Model.IsPdfDownload)
         {
-            "Pending" => "DRAFT – Awaiting Signature",
-            "Accepted" => "Digitally Signed and Verified by SkillSwap",
-            "ModifiedByReceiver" => isSender ? "Awaiting Your Review" : "Modified – Awaiting Sender’s Review",
-            _ => "PREVIEW ONLY – Not Yet Signed"
-        };
+            // When generating the PDF, use a different watermark based on preview vs. final state.
+            if (Model.IsPreview)
+            {
+                watermarkText = "PREVIEW ONLY – Not Yet Signed";
+            }
+            else if (Model.Version < 3)
+            {
+                watermarkText = "REVIEW VERSION – Subject to Final Approval";
+            }
+            else
+            {
+                watermarkText = "FINALIZED – Legally Binding";
+            }
+        }
+        else
+        {
+            // For interactive (web) views, you might use a different watermark or none at all.
+            watermarkText = Model.Status switch
+            {
+                "Pending" => "DRAFT – Awaiting Final Signature",
+                "Accepted" => "EXECUTED – Signed & Verified by SkillSwap",
+                "ModifiedByReceiver" => isSender
+                ? "REVIEW NEEDED – Contract Updated"
+                : "MODIFIED – Awaiting Final Review",
+                _ => "PREVIEW ONLY – Not Yet Legally Binding"
+            };
+        }
     }
     <div class="watermark">@watermarkText</div>
 
@@ -284,7 +308,7 @@
         </div>
     }
 
-    <div class="contract-document">
+    <div>
         @await Html.PartialAsync("_ContractTemplate", Model)
     </div>
 
@@ -304,7 +328,7 @@
 
     <div class="contract-actions">
         
-        @if (Model.Version >= 3 && isReviewMode)
+        @if (Model.Version >= 3 && Model.Mode == "Review" && !Model.IsPdfDownload)
         {
             <div id="finalMessage" style="margin-bottom: 1em; font-weight: bold; color: red;">
                 This is the final version of the contract. No further modifications are allowed.
@@ -314,24 +338,24 @@
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.ContractId)
                 @Html.Hidden("Mode", "Sign")
-                <button type="submit" class="btn btn-success">Sign Document</button>
+                <button type="submit" class="btn btn-success">Review & Sign Contract</button>
             </form>
         }
-        else if (isReviewMode)
+        else if (Model.Mode == "Review" && !Model.IsPdfDownload)
         {
             <!-- Show default Modify & Send and Sign options -->
             <form asp-action="ModifyContractAndSend" method="get">
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.ContractId)
                 @Html.Hidden("Mode", "Review")
-                <button type="submit" class="btn btn-warning">Modify & Send</button>
+                <button type="submit" class="btn btn-warning">Review & Send Back</button>
             </form>
 
             <form asp-action="SignContract" method="get">
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.ContractId)
                 @Html.Hidden("Mode", "Sign")
-                <button type="submit" class="btn btn-success mt-2">Sign Document</button>
+                <button type="submit" class="btn btn-success mt-2">Review & Sign Contract</button>
             </form>
         }
 
@@ -355,12 +379,12 @@
                     {
                         <!-- This is the final version -> show a confirm prompt -->
                         <button id="finalSignButton" type="button" class="btn btn-success" onclick="confirmFinalSign();">
-                            Review & Accept Contract (Final)
+                            Finalize & Sign (No More Changes)
                         </button>
                     }
                     else
                     {
-                        <button type="submit" class="btn btn-success">Review & Accept Contract</button>
+                        <button type="submit" class="btn btn-success">Accept & Sign</button>
                     }
                 }
             }
@@ -380,7 +404,7 @@
                     <input type="hidden" name="partyAgreementAccepted" id="partyAgreementAcceptedField" />
                     <input type="hidden" name="finalModificationConfirmed" value="false" id="finalModConfirm" />
                     <button id="confirmButton" type="submit" class="btn btn-primary">
-                        Review and Send Back
+                        Revise and Forward
                     </button>
                 </form>
             }
@@ -437,12 +461,12 @@
                     {
                         <!-- This is the final version -> show a confirm prompt -->
                         <button id="finalSignButton" type="button" class="btn btn-success" onclick="confirmFinalSign();">
-                            Review & Accept Contract (Final)
+                            Finalize & Sign (No More Changes)
                         </button>
                     }
                     else
                     {
-                        <button type="submit" class="btn btn-success">Review & Accept Contract</button>
+                        <button type="submit" class="btn btn-success">Accept & Sign</button>
                     }
                 }
             }
@@ -452,6 +476,7 @@
                 <form asp-action="ModifyContractAndSend" method="post" id="modifyForm" onsubmit="return validateAndSubmitModify(event)">
                     @Html.AntiForgeryToken()
                     @Html.HiddenFor(m => m.ContractId)
+                    <input type="hidden" name="tokenOffer" id="hiddenTokenOffer" value="@Model.TokenOffer" />
                     <input type="hidden" id="flowDescriptionModifyField" name="flowDescription" />
                     <input type="hidden" id="additionalTermsField" name="additionalTerms" />
                     <input type="hidden" id="partyPlaceField" name="partyPlace" value="@Model.ReceiverPlace" />
@@ -459,7 +484,7 @@
                     <input type="hidden" name="partyAcceptanceDate" id="partyAcceptanceDateField" />
                     <input type="hidden" name="partyAgreementAccepted" id="partyAgreementAcceptedField" />
                     <input type="hidden" name="finalModificationConfirmed" value="false" id="finalModConfirm" />
-                    <button id="confirmButton" type="submit" class="btn btn-primary">Modify and Send Back</button>
+                    <button id="confirmButton" type="submit" class="btn btn-primary">Revise and Forward</button>
                 </form>
             }
         }
@@ -668,7 +693,7 @@
                     }
 
                     const version = '@Model.Version';
-                    if (version === '2' && !confirm('Finalize contract version 3?')) {
+                    if (version === '2' && !confirm('Are you sure you want to finalize Contract Version 3? Once finalized, no further modifications are allowed. Signatures are still required for it to become legally binding.')) {
                         return false;
                     }
 

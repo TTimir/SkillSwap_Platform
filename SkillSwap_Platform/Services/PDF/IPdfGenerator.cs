@@ -2,7 +2,7 @@
 {
     public interface IPdfGenerator
     {
-        Task<byte[]> GeneratePdfFromHtmlAsync(string htmlContent);
+        Task<byte[]> GeneratePdfFromHtmlAsync(string htmlContent, int contractVersion);
         Task<string> SavePdfToDiskAsync(string htmlContent, string fileName);
     }
 }

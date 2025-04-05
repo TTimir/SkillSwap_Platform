@@ -20,9 +20,31 @@
         Model.IsPreview = false;
     }
 
-    var editableMode = (Model.Mode == "Create" || Model.Mode == "Edit" || Model.Mode == "Sign");
+    var editableMode = (Model.Mode == "Create" || Model.Mode == "Edit");
+    var isSignMode = Model.Mode == "Sign";
 }
 <div class="contract-document">
+    @if (Model.IsPdfDownload)
+    {
+        <div class="pdf-header">
+            @if (Model.IsPreview)
+            {
+                <p class="pdf-status preview">PREVIEW: This document is a draft and is not legally binding.</p>
+            }
+            else if (Model.Version < 3)
+            {
+                <p class="pdf-status pre-final">Pre-final Version (v@Model.Version): Subject to modifications until finalized.</p>
+            }
+            else if (Model.Version >= 3)
+            {
+                <p class="pdf-status finalized">FINALIZED CONTRACT: This contract is legally binding.</p>
+            }
+        </div>
+    }
+
+    <p style="font-size: 14px; font-weight: bold;">
+        Contract Unique ID: @Model.ContractUniqueId
+    </p>
     <p style="display: flex; justify-content: space-between; align-items: center;">
         @{
             // Example condition: Check if "mode" is set to "modify" in the query string
@@ -132,13 +154,13 @@
             1.6 The agreed duration for this exchange is
             <span class="inline-input" style="font-size:14px;">@Model.LearningDays</span>
             days, with an agreed digital token payment of
-            @if (Model.IsPreview)
+            @if (isSender && editableMode)
             {
-                <span class="inline-input" style="font-size:14px;">@Model.TokenOffer</span>
+                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", id = "visibleTokenOffer", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;" })
             }
             else
             {
-                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", id = "visibleTokenOffer", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;" })
+                <span class="inline-input" style="font-size:14px;">@Model.TokenOffer</span>
             }
             tokens. <br />
             1.7 The exchange shall commence on
@@ -240,11 +262,8 @@
         </li>
         <br />
         <li>
-            @{
-                bool editableModeForTermandFlow = !Model.IsPreview || (Model.Mode == "Edit");
-            }
             <strong>Optional Additional Terms (e.g., specific conditions, communication preferences, penalty clauses):</strong><br />
-            @if (editableModeForTermandFlow)
+            @if (editableMode)
             {
                 @Html.TextAreaFor(m => m.AdditionalTerms, new { @class = "inline-input", placeholder = "Enter additional terms", style = "width:90%; height:60px; font-size:14px;" })
             }
@@ -258,7 +277,7 @@
             <strong>Process Flow of Exchange:</strong><br />
             Clearly outline the detailed steps involved in the exchange process, including key milestones or checkpoints:
             <br />
-            @if (editableModeForTermandFlow)
+            @if (editableMode)
             {
                 <div id="bulletContainer">
                     <ul id="flowSteps" style="list-style-type: none; padding-left: 0;">
@@ -321,7 +340,7 @@
 
                         <br />
                         <div>
-                            @if (isSender)
+                            @if (isSender || Model.IsPdfDownload)
                             {
                                 <span>Name (Registered):</span>
                             }
@@ -329,7 +348,7 @@
                             {
                                 <span>Name:</span>
                             }
-                            @if (Model.IsPreview)
+                            @if (Model.IsPreview || Model.IsPdfDownload)
                             {
                                 <span class="inline-input">@Model.SenderName</span>
                             }
@@ -340,7 +359,7 @@
                         </div>
                         <div>
                             <span>
-                                @if (isSender && editableMode)
+                                @if (isSender && (editableMode || isSignMode))
                                 {
                                     <!-- Sender Acceptance Section -->
                                     <input asp-for="SenderAgreementAccepted" type="checkbox" id="senderAgreementCheckbox" />
@@ -353,7 +372,7 @@
                                 }
                                 else
                                 {
-                                    if (Model.SenderAgreementAccepted && Model.SenderAcceptanceDate != null)
+                                    if (Model.SenderAgreementAccepted && Model.SenderAcceptanceDate != null || Model.IsPdfDownload)
                                     {
                                         <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</span>
                                     }
@@ -366,7 +385,7 @@
                         </div>
                         <div>
                             <span>Signature:</span>
-                            @if (isSender && editableMode)
+                            @if (isSender && (editableMode || isSignMode))
                             {
                                 @Html.TextBox("SenderSignature", null, new { id = "visibleSenderSignature", autocomplete = "off", @class = "inline-input", placeholder = "Sign Here" })
                                 <span id="senderSignatureInfo" class="info-icon" style="margin-left:5px; position: relative;">
@@ -376,13 +395,20 @@
                             }
                             else
                             {
-                                var displaySenderSig = string.IsNullOrWhiteSpace(Model.SenderSignature) ? "[Signature]" : Model.SenderSignature;
-                                <span class="inline-input" style="font-size:14px">@displaySenderSig</span>
+                                if (Model.IsPdfDownload)
+                                {
+                                    <span class="inline-input" style="font-size:14px">@Model.SenderSignature</span>
+                                }
+                                else
+                                {
+                                    var displaySenderSig = string.IsNullOrWhiteSpace(Model.SenderSignature) ? "[Signature]" : Model.SenderSignature;
+                                    <span class="inline-input" style="font-size:14px">@displaySenderSig</span>
+                                }
                             }
                         </div>
                         <div>
                             <span>Place:</span>
-                            @if (isSender && editableMode)
+                            @if (isSender && (editableMode || isSignMode))
                             {
                                 @Html.TextBox("SenderPlace", null, new { id = "visibleSenderPlace", autocomplete = "off", @class = "inline-input", placeholder = "Place of sign", })
                                 <span id="senderPlaceInfo" class="info-icon" style="margin-left:5px; position: relative;">
@@ -392,8 +418,15 @@
                             }
                             else
                             {
-                                var displaySenderPlace = string.IsNullOrWhiteSpace(Model.SenderPlace) ? "[Signature]" : Model.SenderPlace;
-                                <span class="inline-input" style="font-size:14px">@displaySenderPlace</span>
+                                if (Model.IsPdfDownload)
+                                {
+                                    <span class="inline-input" style="font-size:14px">@Model.SenderPlace</span>
+                                }
+                                else
+                                {
+                                    var displaySenderPlace = string.IsNullOrWhiteSpace(Model.SenderPlace) ? "[Signature]" : Model.SenderPlace;
+                                    <span class="inline-input" style="font-size:14px">@displaySenderPlace</span>
+                                }
                             }
                         </div>
                     }
@@ -413,7 +446,7 @@
 
                         <br />
                         <div>
-                            @if (isReceiver)
+                            @if (isReceiver || Model.IsPdfDownload)
                             {
                                 <span>Name (Registered):</span>
                             }
@@ -421,7 +454,7 @@
                             {
                                 <span>Name:</span>
                             }
-                            @if (Model.IsPreview)
+                            @if (Model.IsPreview || Model.IsPdfDownload)
                             {
                                 <span class="inline-input">@Model.ReceiverName</span>
                             }
@@ -432,7 +465,7 @@
                         </div>
                         <div>
                             <span>
-                                @if (isReceiver && editableMode)
+                                @if (isReceiver && (editableMode || isSignMode))
                                 {
                                     var checkboxAttrs = new Dictionary<string, object> { { "id", "receiverAgreementCheckbox" } };
                                     if (!editableMode)
@@ -449,7 +482,7 @@
                                 }
                                 else
                                 {
-                                    if (Model.ReceiverAgreementAccepted && Model.ReceiverAcceptanceDate != null)
+                                    if (Model.ReceiverAgreementAccepted && Model.ReceiverAcceptanceDate != null || Model.IsPdfDownload)
                                     {
                                         <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("dd/MM/yyyy")</span>
                                     }
@@ -463,7 +496,7 @@
                         <div>
                             <span>Signature:</span>
                             @{
-                                if (isReceiver && editableMode)
+                                if (isReceiver && (editableMode || isSignMode))
                                 {
                                     var receiverSignAttributes = new Dictionary<string, object>
                         {
@@ -480,15 +513,22 @@
                                 }
                                 else
                                 {
-                                    var displayRecSig = string.IsNullOrWhiteSpace(Model.ReceiverSignature) ? "[Signature]" : Model.ReceiverSignature;
-                                    <span class="inline-input" style="font-size:14px">@displayRecSig</span>
+                                    if (Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input" style="font-size:14px">@Model.ReceiverSignature</span>
+                                    }
+                                    else
+                                    {
+                                        var displayRecSig = string.IsNullOrWhiteSpace(Model.ReceiverSignature) ? "[Signature]" : Model.ReceiverSignature;
+                                        <span class="inline-input" style="font-size:14px">@displayRecSig</span>
+                                    }
                                 }
                             }
                         </div>
                         <div>
                             <span>Place:</span>
                             @{
-                                if (isReceiver && editableMode)
+                                if (isReceiver && (editableMode || isSignMode))
                                 {
                                     var receiverPlaceAttributes = new Dictionary<string, object>
                         {
@@ -505,8 +545,15 @@
                                 }
                                 else
                                 {
-                                    var displayRecPlace = string.IsNullOrWhiteSpace(Model.ReceiverPlace) ? "[Place]" : Model.ReceiverPlace;
-                                    <span class="inline-input" style="font-size:14px">@displayRecPlace</span>
+                                    if (Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input" style="font-size:14px">@Model.ReceiverPlace</span>
+                                    }
+                                    else
+                                    {
+                                        var displayRecPlace = string.IsNullOrWhiteSpace(Model.ReceiverPlace) ? "[Place]" : Model.ReceiverPlace;
+                                        <span class="inline-input" style="font-size:14px">@displayRecPlace</span>
+                                    }
                                 }
                             }
                         </div>
@@ -576,4 +623,28 @@
             visibility: visible;
         }
 
+    .pdf-header {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    .pdf-status {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+        .pdf-status.preview {
+            color: #d9534f; /* red */
+        }
+
+        .pdf-status.pre-final {
+            color: #f0ad4e; /* orange */
+        }
+
+        .pdf-status.finalized {
+            color: #5cb85c; /* green */
+        }
 </style>

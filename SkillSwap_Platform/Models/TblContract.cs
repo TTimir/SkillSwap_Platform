@@ -11,6 +11,8 @@ public partial class TblContract
 
     public int OfferId { get; set; }
 
+    public string ContractUniqueId { get; set; } = null!;
+
     public int SenderUserId { get; set; }
 
     public int ReceiverUserId { get; set; }
@@ -37,17 +39,17 @@ public partial class TblContract
 
     public string FlowDescription { get; set; } = null!;
 
+    public string? SenderSignature { get; set; }
+
     public bool SenderAgreementAccepted { get; set; }
 
     public DateTime? SenderAcceptanceDate { get; set; }
 
-    public string? SenderSignature { get; set; }
+    public string? ReceiverSignature { get; set; }
 
     public bool ReceiverAgreementAccepted { get; set; }
 
     public DateTime? ReceiverAcceptanceDate { get; set; }
-
-    public string? ReceiverSignature { get; set; }
 
     public DateTime? CompletionDate { get; set; }
 
@@ -55,13 +57,13 @@ public partial class TblContract
 
     public int? ParentContractId { get; set; }
 
-    public string? SenderSkill { get; set; }
-
-    public string? ReceiverSkill { get; set; }
-
     public string? SenderName { get; set; }
 
+    public string? SenderSkill { get; set; }
+
     public string? ReceiverName { get; set; }
+
+    public string? ReceiverSkill { get; set; }
 
     public string? SenderPlace { get; set; }
 
@@ -81,15 +83,17 @@ public partial class TblContract
 
     public string? SenderEmail { get; set; }
 
-    public string? ReceiverEmail { get; set; }
-
     public string? SenderAddress { get; set; }
 
     public string? ReceiverAddress { get; set; }
 
+    public string? ReceiverEmail { get; set; }
+
     public string? SenderUserName { get; set; }
 
     public string? ReceiverUserName { get; set; }
+
+    public int? BaseContractId { get; set; }
 
     public virtual TblMessage Message { get; set; } = null!;
 

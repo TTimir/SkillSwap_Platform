@@ -140,9 +140,10 @@
                             </a>
 
 
-                            @if ((Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                            @if ((Model.ContractDetails != null) && 
+                            (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
+                            (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                            (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                    class="btn btn-sm btn-primary" style="color:#fff">
@@ -181,6 +182,30 @@
                         </div>
                     </div>
                 }
+                @* Example: Show a custom message divider after the invite card *@
+                @if (Model.ContractDetails != null &&
+               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Define your custom message. For example, you might set it based on the status.
+                    var customMessage = Model.ContractDetails.Status switch
+                    {
+                        "Accepted" => "Your contract has been accepted",
+                        "Expired" => "This contract has expired",
+                        "Declined" => "This contract has been declined",
+                        _ => ""
+                    };
+
+                    <div style="display: flex; align-items: center; margin: 20px 0;">
+                        <hr style="flex: 1; border: none; border-top: 1px solid #ccc;" />
+                        <span style="padding: 0 10px; color: #888; font-weight: 600;">
+                            @customMessage
+                        </span>
+                        <hr style="flex: 1; border: none; border-top: 1px solid #ccc;" />
+                    </div>
+                }
+
                 <p>@Model.Content</p>
             }
             else
@@ -310,6 +335,29 @@
                                 </form>
                             }
                         </div>
+                    </div>
+                }
+                @* Example: Show a custom message divider after the invite card *@
+                @if (Model.ContractDetails != null &&
+               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Define your custom message. For example, you might set it based on the status.
+                    var customMessage = Model.ContractDetails.Status switch
+                    {
+                        "Accepted" => "Your contract has been accepted",
+                        "Expired" => "This contract has expired",
+                        "Declined" => "This contract has been declined",
+                        _ => ""
+                    };
+
+                    <div style="display: flex; align-items: center; margin: 20px 0;">
+                        <hr style="flex: 1; border: none; border-top: 1px solid #ccc;" />
+                        <span style="padding: 0 10px; color: #888; font-weight: 600;">
+                            @customMessage
+                        </span>
+                        <hr style="flex: 1; border: none; border-top: 1px solid #ccc;" />
                     </div>
                 }
                 <p>@Model.Content</p>

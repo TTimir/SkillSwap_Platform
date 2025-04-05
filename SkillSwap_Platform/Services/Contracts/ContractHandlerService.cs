@@ -141,7 +141,8 @@ namespace SkillSwap_Platform.Services.Contracts
                     SenderName = senderFullName,
                     ReceiverName = $"{receiverUser.FirstName} {receiverUser.LastName}".Trim(),
                     SenderPlace = model.SenderPlace,
-                    ReceiverPlace = model.ReceiverPlace
+                    ReceiverPlace = model.ReceiverPlace,
+                    ContractUniqueId = model.ContractUniqueId
                 };
                 _context.TblContracts.Add(contract);
                 await _context.SaveChangesAsync();
@@ -190,6 +191,7 @@ namespace SkillSwap_Platform.Services.Contracts
                     OfferOwnerSkill = model.OfferOwnerSkill,
                     SenderPlace = model.SenderPlace,
                     ReceiverPlace = model.ReceiverPlace,
+                    ContractUniqueId = model.ContractUniqueId
                 };
                 finalContractModel.Status = "Pending";
                 // Populate sender skill options for resolving skill text in PDF
@@ -204,7 +206,7 @@ namespace SkillSwap_Platform.Services.Contracts
 
 
                 var htmlContent = await _viewRenderService.RenderViewToStringAsync("PreviewContract", finalContractModel, "Contract");
-                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(htmlContent);
+                byte[] pdfBytes = await _pdfGenerator.GeneratePdfFromHtmlAsync(htmlContent, contract.Version);
 
                 string baseFolder = Path.Combine("wwwroot", "contracts");
                 string subFolder = "Initial";

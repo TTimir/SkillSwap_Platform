@@ -9,6 +9,8 @@ namespace SkillSwap_Platform.Models.ViewModels
     {
         public int ContractId { get; set; }
 
+        public string ContractUniqueId { get; set; }
+
         [Required]
         public int MessageId { get; set; }
 
@@ -112,6 +114,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string ActionContext { get; set; }  // e.g., "ModifyOnly", "Signing"
         public bool HideSenderAcceptance { get; set; }
         public bool HideReceiverAcceptance { get; set; }
+        public bool IsPdfDownload { get; set; } = false;
 
     }
 }

@@ -59,7 +59,6 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
-    
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
@@ -91,6 +90,9 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
             entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.ContractUniqueId)
+                .HasMaxLength(100)
+                .HasDefaultValue("");
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.FlowDescription).HasDefaultValue("");
             entity.Property(e => e.ModeOfLearning).HasMaxLength(50);
