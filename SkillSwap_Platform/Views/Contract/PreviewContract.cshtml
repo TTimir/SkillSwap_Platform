@@ -1,0 +1,1496 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ContractCreationVM
+
+@{
+    ViewData["Title"] = "Contract Preview";
+    if (Model.Mode != "Edit" && Model.Mode != "Sign")
+    {
+        Model.IsPreview = true;
+    }
+    Layout = null;
+
+    // Retrieve user ID from claims
+    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    int currentUserId = 0;
+    if (!string.IsNullOrEmpty(userIdClaim))
+    {
+        int.TryParse(userIdClaim, out currentUserId);
+    }
+    bool isSender = currentUserId == Model.SenderUserId;
+    bool isReceiver = currentUserId == Model.ReceiverUserId;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            position: relative;
+        }
+
+        .warning-message {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .contract-document {
+            margin: 2em auto;
+            max-width: 800px;
+            padding: 2em;
+            border: 1px solid #ccc;
+            background-color: #fafafa;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+            .contract-document h2 {
+                text-align: center;
+                margin-bottom: 1.5em;
+            }
+
+        .inline-input {
+            border: none;
+            border-bottom: 1px dotted #333;
+            font-weight: bold;
+            padding: 0 5px;
+            background: transparent;
+            width: auto;
+            min-width: 150px;
+        }
+
+            .inline-input:focus {
+                outline: none;
+                border-bottom-color: #007bff;
+            }
+
+        .display-field {
+            display: inline-block;
+            width: auto;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        .contract-actions {
+            margin-top: 2em;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+            .contract-actions button {
+                margin: 0 10px;
+            }
+
+        #bulletContainer ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        #bulletContainer li {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        #bulletContainer .bullet-point {
+            width: 90%;
+            border: none;
+            border-bottom: 1px dotted #333;
+            background: transparent;
+            font-weight: bold;
+        }
+
+            #bulletContainer .bullet-point:focus {
+                outline: none;
+                border-bottom-color: #007bff;
+            }
+
+        #bulletContainer .remove-icon {
+            cursor: pointer;
+            color: red;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        #addMoreBtn {
+            margin-top: 10px;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 3em;
+            color: rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 1000;
+            text-align: center;
+            white-space: pre-line;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+            padding: 1rem;
+            border-radius: 5px;
+        }
+
+            .alert-danger ul {
+                margin: 0;
+                padding-left: 20px;
+            }
+        /* Info tooltip style */
+        .info-icon {
+            cursor: pointer;
+            position: relative;
+        }
+
+            .info-icon .tooltip {
+                position: absolute;
+                left: 100%;
+                top: 50%;
+                transform: translate(10px, -50%);
+                background-color: #5c5c4f;
+                color: #e6e2d6;
+                padding: 5px 10px;
+                border-radius: 4px;
+                white-space: nowrap;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+                z-index: 10;
+                pointer-events: none;
+            }
+
+                .info-icon .tooltip::before {
+                    content: "";
+                    position: absolute;
+                    left: -5px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    border-top: 5px solid transparent;
+                    border-bottom: 5px solid transparent;
+                    border-right: 5px solid #5c5c4f;
+                }
+
+            .info-icon:hover .tooltip {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        /* Custom modal styles */
+        .custom-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-modal {
+            background: #fff;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+            .custom-modal h3 {
+                margin-top: 0;
+            }
+
+            .custom-modal .modal-actions {
+                margin-top: 20px;
+                text-align: right;
+            }
+
+                .custom-modal .modal-actions button {
+                    margin-left: 10px;
+                }
+
+    </style>
+</head>
+<body>
+    @{
+        // Determine watermark text based on the view model properties.
+        string watermarkText = string.Empty;
+
+        if (Model.IsPdfDownload)
+        {
+            // When generating the PDF, use a different watermark based on preview vs. final state.
+            if (Model.IsPreview)
+            {
+                watermarkText = "PREVIEW ONLY – Not Yet Signed";
+            }
+            else if (Model.Version < 3)
+            {
+                watermarkText = "REVIEW VERSION – Subject to Final Approval";
+            }
+            else
+            {
+                watermarkText = "FINALIZED – Legally Binding";
+            }
+        }
+        else
+        {
+            // For interactive (web) views, you might use a different watermark or none at all.
+            watermarkText = Model.Status switch
+            {
+                "Pending" => "DRAFT – Awaiting Final Signature",
+                "Accepted" => "EXECUTED – Signed & Verified by SkillSwap",
+                "ModifiedByReceiver" => isSender
+                ? "REVIEW NEEDED – Contract Updated"
+                : "MODIFIED – Awaiting Final Review",
+                _ => "PREVIEW ONLY – Not Yet Legally Binding"
+            };
+        }
+    }
+    <div class="watermark">@watermarkText</div>
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_two alert-dismissible fade show mb20" role="alert">
+                        @TempData["WarningMessage"]
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                        @TempData["ErrorMessage"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                        @TempData["SuccessMessage"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div>
+        @await Html.PartialAsync("_ContractTemplate", Model)
+    </div>
+
+    <!-- Processing Overlay -->
+    <div id="processingOverlay" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <img src="~/template_assets/images/C_Loader.gif" />
+            <h3>Please wait...</h3>
+            <p style="margin: 10px 0; font-size: 14px; color: #555;">
+                Your contract is being prepared and sent. Please do not close or refresh this window.
+            </p>
+            <p style="margin: 5px 0; font-size: 13px; color: #888; font-style: italic;">
+                You’ll be redirected once it’s successfully sent.
+            </p>
+        </div>
+    </div>
+
+    <div class="contract-actions">
+        
+        @if (Model.Version >= 3 && Model.Mode == "Review" && !Model.IsPdfDownload)
+        {
+            <div id="finalMessage" style="margin-bottom: 1em; font-weight: bold; color: red;">
+                This is the final version of the contract. No further modifications are allowed.
+            </div>
+            <!-- Render only the Sign button -->
+            <form asp-action="SignContract" method="get">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ContractId)
+                @Html.Hidden("Mode", "Sign")
+                <button type="submit" class="btn btn-success">Review & Sign Contract</button>
+            </form>
+        }
+        else if (Model.Mode == "Review" && !Model.IsPdfDownload)
+        {
+            <!-- Show default Modify & Send and Sign options -->
+            <form asp-action="ModifyContractAndSend" method="get">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ContractId)
+                @Html.Hidden("Mode", "Review")
+                <button type="submit" class="btn btn-warning">Review & Send Back</button>
+            </form>
+
+            <form asp-action="SignContract" method="get">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ContractId)
+                @Html.Hidden("Mode", "Sign")
+                <button type="submit" class="btn btn-success mt-2">Review & Sign Contract</button>
+            </form>
+        }
+
+        @if (Model.Status == "ModifiedByReceiver" && isSender)
+        {
+            if ("Sign".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+            {
+                <!-- In Sign mode: show a form that posts to the SignContract action for sender -->
+                @using (Html.BeginForm("SignContract", "Contract", FormMethod.Post, new { id = "signForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ContractId)
+                    @Html.Hidden("Mode", "Sign")
+                    <input type="hidden" name="OfferedSkill" value="@Model.OfferedSkill" />
+                    <!-- Using unified field names; for sender these will eventually be bound to sender's acceptance data -->
+                    <input type="hidden" name="partySignature" id="hiddenPartySignature" value="" />
+                    <input type="hidden" name="partyPlace" id="hiddenPartyPlace" value="" />
+                    <input type="hidden" name="partyAcceptanceDate" id="hiddenPartyAcceptanceDate" value="" />
+                    <input type="hidden" name="finalSignConfirmed" value="false" id="finalSignConfirm" />
+                    @if (Model.Version == 3)
+                    {
+                        <!-- This is the final version -> show a confirm prompt -->
+                        <button id="finalSignButton" type="button" class="btn btn-success" onclick="confirmFinalSign();">
+                            Finalize & Sign (No More Changes)
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-success">Accept & Sign</button>
+                    }
+                }
+            }
+            else if ("Edit".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase) && Model.ActionContext == "ModifyOnly")
+            {
+                <!-- Only show confirm submit for Edit mode for sender -->
+                <form asp-action="ModifyContractAndSend" method="post" id="modifyForm" onsubmit="return validateAndSubmitModifyForSender(event)">
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ContractId)
+                    <input type="hidden" name="tokenOffer" id="hiddenTokenOffer" value="@Model.TokenOffer" />
+                    <input type="hidden" id="flowDescriptionModifyField" name="flowDescription" />
+                    <input type="hidden" id="additionalTermsField" name="additionalTerms" />
+                    <!-- For sender, use sender's fields -->
+                    <input type="hidden" id="partyPlaceField" name="partyPlace" value="@Model.SenderPlace" />
+                    <input type="hidden" name="partySignature" id="partySignatureField" />
+                    <input type="hidden" name="partyAcceptanceDate" id="partyAcceptanceDateField" />
+                    <input type="hidden" name="partyAgreementAccepted" id="partyAgreementAcceptedField" />
+                    <input type="hidden" name="finalModificationConfirmed" value="false" id="finalModConfirm" />
+                    <button id="confirmButton" type="submit" class="btn btn-primary">
+                        Revise and Forward
+                    </button>
+                </form>
+            }
+            @* else
+            {
+                @if (Model.Version >= 3)
+                {
+                    <div class="final-message">
+                        <p>This is the final version of the contract. No further modifications are allowed.</p>
+                    </div>
+                    <!-- Render only the Sign button -->
+                    <form asp-action="SignContract" method="get">
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ContractId)
+                        @Html.Hidden("Mode", "Sign")
+                        <button type="submit" class="btn btn-success">Sign Document</button>
+                    </form>
+                }
+                else
+                {
+                    <!-- Show default Modify & Send and Sign options for sender -->
+                    <form asp-action="ModifyContractAndSend" method="get">
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ContractId)
+                        @Html.Hidden("Mode", "Review")
+                        <button type="submit" class="btn btn-warning">Modify & Send</button>
+                    </form>
+
+                    <form asp-action="SignContract" method="get">
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.ContractId)
+                        @Html.Hidden("Mode", "Sign")
+                        <button type="submit" class="btn btn-success mt-2">Sign Document</button>
+                    </form>
+                }
+            } *@
+        }
+        else if (isReceiver && (Model.Status == "Pending" || Model.Status == "ModifiedBySender") && !Model.ReceiverAgreementAccepted)
+        {
+            if ("Sign".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+            {
+                <!-- In Sign mode: show a form that posts to the SignContract action -->
+                @using (Html.BeginForm("SignContract", "Contract", FormMethod.Post, new { id = "signForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ContractId)
+                    @Html.Hidden("Mode", "Sign")
+                    <input type="hidden" name="OfferedSkill" value="@Model.OfferedSkill" />
+                    <input type="hidden" name="partySignature" id="hiddenPartySignature" value="" />
+                    <input type="hidden" name="partyPlace" id="hiddenPartyPlace" value="" />
+                    <input type="hidden" name="partyAcceptanceDate" id="hiddenPartyAcceptanceDate" value="" />
+                    <input type="hidden" name="finalSignConfirmed" value="false" id="finalSignConfirm" />
+                    @if (Model.Version == 3)
+                    {
+                        <!-- This is the final version -> show a confirm prompt -->
+                        <button id="finalSignButton" type="button" class="btn btn-success" onclick="confirmFinalSign();">
+                            Finalize & Sign (No More Changes)
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-success">Accept & Sign</button>
+                    }
+                }
+            }
+            else if ("Edit".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase) && Model.ActionContext == "ModifyOnly")
+            {
+                <!-- Only show confirm submit for Edit mode -->
+                <form asp-action="ModifyContractAndSend" method="post" id="modifyForm" onsubmit="return validateAndSubmitModify(event)">
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.ContractId)
+                    <input type="hidden" name="tokenOffer" id="hiddenTokenOffer" value="@Model.TokenOffer" />
+                    <input type="hidden" id="flowDescriptionModifyField" name="flowDescription" />
+                    <input type="hidden" id="additionalTermsField" name="additionalTerms" />
+                    <input type="hidden" id="partyPlaceField" name="partyPlace" value="@Model.ReceiverPlace" />
+                    <input type="hidden" name="partySignature" id="partySignatureField" />
+                    <input type="hidden" name="partyAcceptanceDate" id="partyAcceptanceDateField" />
+                    <input type="hidden" name="partyAgreementAccepted" id="partyAgreementAcceptedField" />
+                    <input type="hidden" name="finalModificationConfirmed" value="false" id="finalModConfirm" />
+                    <button id="confirmButton" type="submit" class="btn btn-primary">Revise and Forward</button>
+                </form>
+            }
+        }
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        (function() {
+            "use strict";
+
+            // Disable right-click, copy, cut, paste, text selection, etc.
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+            ['copy', 'cut', 'paste'].forEach(function(evt) {
+                document.addEventListener(evt, function(e) {
+                    e.preventDefault();
+                });
+            });
+            document.addEventListener("selectstart", function(e) {
+                e.preventDefault();
+            });
+            document.body.style.userSelect = "none";
+            document.addEventListener("dragstart", function(e) {
+                e.preventDefault();
+            });
+
+            // Block specific key combinations
+            document.onkeydown = function(e) {
+                var blockedCombinations = [
+                    { keyCode: 123 }, // F12
+                    { ctrlKey: true, shiftKey: true, keyCode: 73 }, // Ctrl+Shift+I
+                    { ctrlKey: true, shiftKey: true, keyCode: 74 }, // Ctrl+Shift+J
+                    { ctrlKey: true, keyCode: 85 }, // Ctrl+U
+                    { ctrlKey: true, keyCode: 67 }, // Ctrl+C
+                    { ctrlKey: true, keyCode: 86 }, // Ctrl+V
+                    { ctrlKey: true, keyCode: 88 }  // Ctrl+X
+                ];
+                for (var i = 0; i < blockedCombinations.length; i++) {
+                    var combo = blockedCombinations[i];
+                    if ((combo.keyCode && e.keyCode === combo.keyCode) &&
+                        (combo.ctrlKey ? e.ctrlKey : true) &&
+                        (combo.shiftKey ? e.shiftKey : true)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            };
+
+            // Overlay creation functions
+            function showOverlay() {
+                // If the overlay already exists, do nothing.
+                if (document.getElementById("devtoolsOverlay")) return;
+
+                var overlay = document.createElement("div");
+                overlay.id = "devtoolsOverlay";
+                overlay.style.position = "fixed";
+                overlay.style.top = 0;
+                overlay.style.left = 0;
+                overlay.style.width = "100%";
+                overlay.style.height = "100%";
+                overlay.style.backgroundColor = "rgba(0,0,0,0.95)";
+                overlay.style.color = "white";
+                overlay.style.zIndex = "9999";
+                overlay.style.display = "flex";
+                overlay.style.alignItems = "center";
+                overlay.style.justifyContent = "center";
+                overlay.style.fontSize = "24px";
+                overlay.style.textAlign = "center";
+                overlay.innerHTML = "Warning: Developer tools detected. For security reasons, the content is disabled.";
+                document.body.appendChild(overlay);
+            }
+
+            function removeOverlay() {
+                var overlay = document.getElementById("devtoolsOverlay");
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
+
+            // Detect Developer Tools using difference in window dimensions
+            var devtools = { open: false };
+            var threshold = 160; // You may adjust the threshold as needed.
+            setInterval(function() {
+                var widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                var heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                if (widthThreshold || heightThreshold) {
+                    if (!devtools.open) {
+                        devtools.open = true;
+                        console.warn("Developer tools detected.");
+                        // Instead of closing the window, show a blocking overlay.
+                        showOverlay();
+                    }
+                } else {
+                    if (devtools.open) {
+                        devtools.open = false;
+                        removeOverlay();
+                    }
+                }
+            }, 500);
+        })();
+    </script>
+
+    <script>
+        function submitFormWithOverlay(formId, delayMs) {
+            // Disable pointer events
+            document.body.style.pointerEvents = "none";
+            // Show the processing overlay
+            var overlay = document.getElementById("processingOverlay");
+            if (overlay) {
+                overlay.style.display = "flex";
+            }
+            // Delay submission
+            setTimeout(function () {
+                var form = document.getElementById(formId);
+                if (form) {
+                    isProgrammaticSubmit = true;
+                    form.submit();
+                }
+            }, delayMs);
+        }
+    </script>
+
+    @if (isSender && "Edit".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                var visibleTokenOffer = document.getElementById("visibleTokenOffer");
+                var hiddenTokenOffer = document.getElementById("hiddenTokenOffer");
+                if (visibleTokenOffer && hiddenTokenOffer) {
+                    // Update the hidden field when visible input changes
+                    visibleTokenOffer.addEventListener("change", function () {
+                        hiddenTokenOffer.value = this.value;
+                    });
+                    // Also update on keyup
+                    visibleTokenOffer.addEventListener("keyup", function () {
+                        hiddenTokenOffer.value = this.value;
+                    });
+                }
+
+                const agreementCheckbox = document.getElementById("senderAgreementCheckbox");
+                const acceptanceDateInput = document.getElementById("visibleSenderAcceptanceDate");
+                const signatureInput = document.getElementById("visibleSenderSignature");
+                const placeInput = document.getElementById("visibleSenderPlace");
+                const confirmButton = document.getElementById("confirmButton");
+
+                const dateInfo = document.getElementById("senderDateInfo");
+                const signatureInfo = document.getElementById("senderSignatureInfo");
+                const placeInfo = document.getElementById("senderPlaceInfo");
+
+                function validateSenderFields() {
+                    const today = new Date().toISOString().split("T")[0];
+                    let valid = agreementCheckbox.checked &&
+                        acceptanceDateInput.value === today &&
+                        signatureInput.value.trim().toLowerCase() !== "[sign here]" && signatureInput.value.trim() !== "" &&
+                        placeInput.value.trim().toLowerCase() !== "[place of sign]" && placeInput.value.trim() !== "";
+
+                    dateInfo.style.display = acceptanceDateInput.value === today ? "none" : "inline-block";
+                    signatureInfo.style.display = signatureInput.value.trim().toLowerCase() === "[sign here]" || signatureInput.value.trim() === "" ? "inline-block" : "none";
+                    placeInfo.style.display = placeInput.value.trim().toLowerCase() === "[place of sign]" || placeInput.value.trim() === "" ? "inline-block" : "none";
+
+                    confirmButton.disabled = !valid;
+                    return valid;
+                }
+
+                [agreementCheckbox, acceptanceDateInput, signatureInput, placeInput].forEach(el => {
+                    el.addEventListener("change", validateSenderFields);
+                    el.addEventListener("keyup", validateSenderFields);
+                });
+
+                agreementCheckbox.addEventListener("click", e => {
+                    if (!agreementCheckbox.checked) {
+                        e.preventDefault();
+                        agreementCheckbox.checked = true;
+                    }
+                });
+
+                validateSenderFields();
+
+                const modifyForm = document.getElementById("modifyForm");
+                let isProgrammaticSubmit = false;
+
+                modifyForm.addEventListener("submit", function (e) {
+                    if (isProgrammaticSubmit) return true;
+
+                    e.preventDefault();
+
+                    if (!validateSenderFields()) {
+                        alert("Ensure all required fields are correctly filled.");
+                        return false;
+                    }
+
+                    const steps = [];
+                    let hasEmpty = false;
+                    document.querySelectorAll(".bullet-point").forEach(input => {
+                        const val = input.value.trim();
+                        if (!val) hasEmpty = true;
+                        else steps.push(val);
+                    });
+
+                    if (steps.length < 3 || hasEmpty) {
+                        alert("Provide at least 3 steps and fill/remove empty fields.");
+                        return false;
+                    }
+
+                    const version = '@Model.Version';
+                    if (version === '2' && !confirm('Are you sure you want to finalize Contract Version 3? Once finalized, no further modifications are allowed. Signatures are still required for it to become legally binding.')) {
+                        return false;
+                    }
+
+                    if (version === '2') document.getElementById('finalModConfirm').value = 'true';
+
+                    document.getElementById("flowDescriptionModifyField").value = steps.join("\n");
+                    document.getElementById("additionalTermsField").value = document.querySelector("textarea[name='AdditionalTerms']").value.trim();
+                    document.getElementById("partyPlaceField").value = placeInput.value.trim();
+                    document.getElementById("partySignatureField").value = signatureInput.value.trim();
+                    document.getElementById("partyAcceptanceDateField").value = acceptanceDateInput.value;
+                    document.getElementById("partyAgreementAcceptedField").value = "true";
+
+                    submitFormWithOverlay("modifyForm", 6050);
+                    return true;
+                });
+
+                function updatePlaceholders() {
+                    document.querySelectorAll("#bulletContainer ul li").forEach((li, i) => {
+                        const input = li.querySelector("input.bullet-point");
+                        if (input) input.placeholder = "Step " + (i + 1);
+                    });
+                }
+
+                function addRemoveButton(li) {
+                    const removeIcon = document.createElement("span");
+                    removeIcon.className = "remove-icon";
+                    removeIcon.innerHTML = "&#10006;";
+                    removeIcon.onclick = () => {
+                        const container = document.querySelector("#bulletContainer ul");
+                        if (container.querySelectorAll("li").length > 3) {
+                            li.remove();
+                            updatePlaceholders();
+                        } else {
+                            alert("At least 3 steps are required.");
+                        }
+                    };
+                    li.appendChild(removeIcon);
+                }
+
+                document.querySelectorAll("#bulletContainer ul li").forEach((li, index) => {
+                    if (index >= 3 && !li.querySelector(".remove-icon")) addRemoveButton(li);
+                });
+
+                document.getElementById("addMoreBtn").addEventListener("click", function () {
+                    const container = document.querySelector("#bulletContainer ul");
+                    const count = container.querySelectorAll("li").length;
+                    if (count < 7) {
+                        const li = document.createElement("li");
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.className = "bullet-point";
+                        input.placeholder = "Step " + (count + 1);
+                        li.appendChild(input);
+                        addRemoveButton(li);
+                        container.appendChild(li);
+                        updatePlaceholders();
+                    } else {
+                        alert("Maximum 7 steps allowed.");
+                    }
+                });
+
+            });
+
+        </script>
+        @*         <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Get sender-side input elements.
+                var senderAgreementCheckbox = document.getElementById("senderAgreementCheckbox");
+                var senderAcceptanceDateInput = document.querySelector("input[name='SenderAcceptanceDate']");
+                var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+                var senderPlaceInput = document.querySelector("input[name='SenderPlace']");
+
+                // Get tooltip elements (make sure these IDs exist in your view).
+                var senderDateInfo = document.getElementById("senderDateInfo");
+                var senderSignatureInfo = document.getElementById("senderSignatureInfo");
+                var senderPlaceInfo = document.getElementById("senderPlaceInfo");
+
+                // Validate sender fields:
+                function validateSenderFields() {
+                    var today = new Date().toISOString().split("T")[0];
+                    var valid = true;
+
+                    // Check that the sender's agreement checkbox is checked.
+                    if (!senderAgreementCheckbox || !senderAgreementCheckbox.checked) {
+                        valid = false;
+                    }
+                    // Validate that the sender acceptance date is not empty and equals today's date.
+                    if (!senderAcceptanceDateInput.value || senderAcceptanceDateInput.value.trim() === "" || senderAcceptanceDateInput.value !== today) {
+                        valid = false;
+                        if (senderDateInfo) {
+                            senderDateInfo.style.display = "inline-block";
+                        }
+                    } else {
+                        if (senderDateInfo) {
+                            senderDateInfo.style.display = "none";
+                        }
+                    }
+                    // Validate that the sender signature is not empty or a placeholder.
+                    if (!senderSignatureInput.value.trim() || senderSignatureInput.value.trim().toLowerCase() === "[sign here]") {
+                        valid = false;
+                        if (senderSignatureInfo) {
+                            senderSignatureInfo.style.display = "inline-block";
+                        }
+                    } else {
+                        if (senderSignatureInfo) {
+                            senderSignatureInfo.style.display = "none";
+                        }
+                    }
+                    // Validate that the sender signing place is not empty or a placeholder.
+                    if (!senderPlaceInput.value.trim() || senderPlaceInput.value.trim().toLowerCase() === "[place of sign]") {
+                        valid = false;
+                        if (senderPlaceInfo) {
+                            senderPlaceInfo.style.display = "inline-block";
+                        }
+                    } else {
+                        if (senderPlaceInfo) {
+                            senderPlaceInfo.style.display = "none";
+                        }
+                    }
+                    // Enable or disable the sender's confirm button accordingly.
+                    var confirmButton = document.getElementById("confirmSend");
+                    if (confirmButton) {
+                        confirmButton.disabled = !valid;
+                    }
+                    return valid;
+                }
+
+                // Attach event listeners so that the sender's fields are validated in real time.
+                if (senderAgreementCheckbox) {
+                    senderAgreementCheckbox.addEventListener("change", validateSenderFields);
+                }
+                if (senderAcceptanceDateInput) {
+                    senderAcceptanceDateInput.addEventListener("change", validateSenderFields);
+                }
+                if (senderSignatureInput) {
+                    senderSignatureInput.addEventListener("keyup", validateSenderFields);
+                }
+                if (senderPlaceInput) {
+                    senderPlaceInput.addEventListener("keyup", validateSenderFields);
+                }
+                // Run initial validation on page load.
+                validateSenderFields();
+            });
+        </script>
+ *@        
+        @* <script>
+            // Output a JavaScript variable from your Razor view:
+            var isSender = @isSender.ToString().ToLower(); // "true" or "false"
+
+            if (isSender) {
+                // Setup Add/Remove flow steps for the sender.
+                var addMoreBtn = document.getElementById("addMoreBtn");
+                if (addMoreBtn) {
+                    addMoreBtn.addEventListener("click", function () {
+                        var bulletContainer = document.querySelector("#bulletContainer ul");
+                        var bulletCount = bulletContainer.querySelectorAll("li").length;
+                        var maxSteps = 7;
+                        if (bulletCount < maxSteps) {
+                            var newLi = document.createElement("li");
+                            var newInput = document.createElement("input");
+                            newInput.type = "text";
+                            newInput.className = "bullet-point";
+                            newInput.placeholder = "Step " + (bulletCount + 1);
+                            newLi.appendChild(newInput);
+                            if (bulletCount >= 3) {
+                                var removeIcon = document.createElement("span");
+                                removeIcon.className = "remove-icon";
+                                removeIcon.innerHTML = "&#10006;";
+                                removeIcon.style.cursor = "pointer";
+                                removeIcon.style.marginLeft = "10px";
+                                removeIcon.addEventListener("click", function () {
+                                    if (bulletContainer.querySelectorAll("li").length > 3) {
+                                        newLi.remove();
+                                        updatePlaceholders();
+                                    } else {
+                                        alert("At least 3 steps are required.");
+                                    }
+                                });
+                                newLi.appendChild(removeIcon);
+                            }
+                            bulletContainer.appendChild(newLi);
+                        } else {
+                            alert("You cannot add more than " + maxSteps + " steps.");
+                        }
+                    });
+                }
+
+                // Function to update the placeholder text for all bullet inputs.
+                function updatePlaceholders() {
+                    var liElements = document.querySelectorAll("#bulletContainer ul li");
+                    liElements.forEach(function(li, index) {
+                        var input = li.querySelector("input.bullet-point");
+                        if (input) {
+                            input.placeholder = "Step " + (index + 1);
+                        }
+                    });
+                }
+
+                // You can also add any other flow-related validation here (e.g., ensuring at least 3 non-empty steps).
+                function validateFlowFields() {
+                    var bulletInputs = document.querySelectorAll(".bullet-point");
+                    var steps = [];
+                    var hasEmpty = false;
+                    bulletInputs.forEach(function(input) {
+                        var val = input.value.trim();
+                        if (!val) {
+                            hasEmpty = true;
+                        } else {
+                            steps.push(val);
+                        }
+                    });
+                    if (steps.length < 3) {
+                        return { valid: false, message: "Please add at least 3 steps to the process flow." };
+                    }
+                    if (hasEmpty) {
+                        return { valid: false, message: "Please fill in all step fields or remove empty ones." };
+                    }
+                    return { valid: true };
+                }
+
+                // Example: Validate before form submission (you can integrate this into your existing form submit logic)
+                var contractForm = document.getElementById("contractForm");
+                if (contractForm) {
+                    contractForm.addEventListener("submit", function(e) {
+                        var flowValidation = validateFlowFields();
+                        if (!flowValidation.valid) {
+                            e.preventDefault();
+                            alert(flowValidation.message);
+                            return false;
+                        }
+                    });
+                }
+            }
+        </script> *@
+    }
+
+    @if (isSender && "Sign".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Get sender signing elements.
+                var acceptButton = document.querySelector("button[type='submit']"); // Adjust the selector as needed.
+                var agreementCheckbox = document.getElementById("senderAgreementCheckbox");
+                var acceptanceDateInput = document.querySelector("input[name='SenderAcceptanceDate']");
+                var signatureInput = document.querySelector("input[name='SenderSignature']");
+                var placeInput = document.querySelector("input[name='SenderPlace']");
+
+                // Get tooltip elements for sender signing.
+                var dateInfo = document.getElementById("senderDateInfo");
+                var signatureInfo = document.getElementById("senderSignatureInfo");
+                var placeInfo = document.getElementById("senderPlaceInfo");
+
+                // Clear the acceptance date on load (if needed)
+                if (acceptanceDateInput) {
+                    acceptanceDateInput.value = "";
+                }
+
+                function validateSenderSignFields() {
+                    var today = new Date().toISOString().split("T")[0];
+                    var valid = true;
+                    if (!agreementCheckbox || !agreementCheckbox.checked) {
+                        valid = false;
+                    }
+                    if (!acceptanceDateInput.value || acceptanceDateInput.value.trim() === "" || acceptanceDateInput.value !== today) {
+                        valid = false;
+                        if (dateInfo) { dateInfo.style.display = "inline-block"; }
+                    } else {
+                        if (dateInfo) { dateInfo.style.display = "none"; }
+                    }
+                    if (!signatureInput.value.trim() || signatureInput.value.trim().toLowerCase() === "[sign here]") {
+                        valid = false;
+                        if (signatureInfo) { signatureInfo.style.display = "inline-block"; }
+                    } else {
+                        if (signatureInfo) { signatureInfo.style.display = "none"; }
+                    }
+                    if (!placeInput.value.trim() || placeInput.value.trim().toLowerCase() === "[place of sign]") {
+                        valid = false;
+                        if (placeInfo) { placeInfo.style.display = "inline-block"; }
+                    } else {
+                        if (placeInfo) { placeInfo.style.display = "none"; }
+                    }
+                    if (acceptButton) {
+                        acceptButton.disabled = !valid;
+                    }
+                    return valid;
+                }
+
+                // Attach change/keyup events.
+                if (agreementCheckbox) {
+                    agreementCheckbox.addEventListener("change", validateSenderSignFields);
+                    agreementCheckbox.addEventListener("click", function (e) {
+                        if (!agreementCheckbox.checked) {
+                            e.preventDefault();
+                            agreementCheckbox.checked = true;
+                        }
+                    });
+                }
+                if (acceptanceDateInput) {
+                    acceptanceDateInput.addEventListener("change", validateSenderSignFields);
+                }
+                if (signatureInput) {
+                    signatureInput.addEventListener("keyup", validateSenderSignFields);
+                }
+                if (placeInput) {
+                    placeInput.addEventListener("keyup", validateSenderSignFields);
+                }
+                // Initial validation
+                validateSenderSignFields();
+
+                // Add a form submission listener to copy visible sender input values into hidden fields.
+                var signForm = document.getElementById("signForm");
+                if (signForm) {
+                    signForm.addEventListener("submit", function (e) {
+                        e.preventDefault();
+                        var hiddenSignature = document.getElementById("hiddenPartySignature");
+                        var hiddenPlace = document.getElementById("hiddenPartyPlace");
+                        var hiddenAcceptanceDate = document.getElementById("hiddenPartyAcceptanceDate");
+                        if (hiddenSignature) {
+                            hiddenSignature.value = signatureInput.value;
+                        }
+                        if (hiddenPlace) {
+                            hiddenPlace.value = placeInput.value;
+                        }
+                        if (hiddenAcceptanceDate) {
+                            hiddenAcceptanceDate.value = acceptanceDateInput.value;
+                        }
+                        submitFormWithOverlay("signForm", 6050);
+                    });
+                }
+            });
+        </script>
+    }
+
+    @if (isReceiver && "Edit".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+    {
+        <!-- Common Validation Function (used in both Edit and Sign modes) -->
+        <script>
+                // This function validates the receiver fields: agreement, date, signature, and place.
+            function validateCommonFields() {
+                var today = new Date().toISOString().split("T")[0];
+                var valid = true;
+                var agreementCheckbox = document.getElementById("receiverAgreementCheckbox");
+                var acceptanceDateInput = document.getElementById("visibleReceiverAcceptanceDate");
+                var signatureInput = document.getElementById("visibleReceiverSignature");
+                var placeInput = document.getElementById("visibleReceiverPlace");
+
+                // Info elements for displaying error messages.
+                var dateInfo = document.getElementById("receiverdateInfo");
+                var signatureInfo = document.getElementById("receiversignatureInfo");
+                var placeInfo = document.getElementById("receiverplaceInfo");
+
+                if (!agreementCheckbox || !agreementCheckbox.checked) {
+                    valid = false;
+                }
+                if (!acceptanceDateInput.value || acceptanceDateInput.value.trim() === "" || acceptanceDateInput.value !== today) {
+                    valid = false;
+                    if(dateInfo) { dateInfo.style.display = "inline-block"; }
+                } else {
+                    if(dateInfo) { dateInfo.style.display = "none"; }
+                }
+                if (!signatureInput.value.trim() || signatureInput.value.trim().toLowerCase() === "[sign here]") {
+                    valid = false;
+                    if(signatureInfo) { signatureInfo.style.display = "inline-block"; }
+                } else {
+                    if(signatureInfo) { signatureInfo.style.display = "none"; }
+                }
+                if (!placeInput.value.trim() || placeInput.value.trim().toLowerCase() === "[place of sign]") {
+                    valid = false;
+                    if(placeInfo) { placeInfo.style.display = "inline-block"; }
+                } else {
+                    if(placeInfo) { placeInfo.style.display = "none"; }
+                }
+                return valid;
+            }
+
+            // Update the state of the confirm button based on validation.
+            function updateConfirmButtonState() {
+                var confirmButton = document.getElementById("confirmButton");
+                if (confirmButton) {
+                    confirmButton.disabled = !validateCommonFields();
+                }
+            }
+
+            let isProgrammaticSubmit = false;
+            // Validate and submit the form for Edit mode.
+            function validateAndSubmitModify(e) {
+                if (isProgrammaticSubmit) {
+                    return true; // Allow form submission without re-validation
+                }
+
+                e.preventDefault();
+
+                if (!validateCommonFields()) {
+                    alert("Please ensure you have checked 'I Agree', provided your signature, signing place, and set today’s date.");
+                    return false;
+                }
+                const errors = [];
+                const steps = [];
+                let hasEmpty = false;
+                document.querySelectorAll(".bullet-point").forEach(input => {
+                    const val = input.value.trim();
+                    if (!val) { hasEmpty = true; }
+                    else { steps.push(val); }
+                });
+                if (steps.length < 3) {
+                    errors.push("To create an impactful flow, please add at least 3 steps.");
+                }
+                if (hasEmpty) {
+                    errors.push("Please fill in all the step fields or remove any empty ones.");
+                }
+                if (errors.length > 0) {
+                    alert(errors.join("\n"));
+                    return false;
+                }
+
+                // Confirm final modification if required
+                var version = '@Model.Version';
+                if (version === '2') {
+                    if (!confirm('You are about to finalize the contract with version 3, after which no changes will be possible. Proceed?')) {
+                        return false; // User cancelled the action
+                    }
+                    document.getElementById('finalModConfirm').value = 'true';
+                }
+
+                // Update hidden fields.
+                document.getElementById("flowDescriptionModifyField").value = steps.join("\n");
+                const termsInput = document.querySelector("textarea[name='AdditionalTerms']");
+                if (termsInput) {
+                    document.getElementById("additionalTermsField").value = termsInput.value.trim();
+                }
+                // Updated unified IDs and names for receiver modification:
+                document.getElementById("partyPlaceField").value = document.getElementById("visibleReceiverPlace").value.trim();
+                document.getElementById("partySignatureField").value = document.getElementById("visibleReceiverSignature").value.trim();
+                document.getElementById("partyAcceptanceDateField").value = document.getElementById("visibleReceiverAcceptanceDate").value;
+                document.getElementById("partyAgreementAcceptedField").value = document.getElementById("receiverAgreementCheckbox").checked ? "true" : "false";
+
+                submitFormWithOverlay("modifyForm", 6050); // Ensure your Modify form has id="modifyForm"
+                return true;
+            }
+
+            // Attach event listeners if in Edit mode.
+            document.addEventListener("DOMContentLoaded", function () {
+                // Only run these listeners if we're in Edit mode.
+                if ("@Model.Mode".toLowerCase() !== "edit") return;
+
+                var agreementCheckbox = document.getElementById("receiverAgreementCheckbox");
+                var acceptanceDateInput = document.getElementById("visibleReceiverAcceptanceDate");
+                var signatureInput = document.getElementById("visibleReceiverSignature");
+                var placeInput = document.getElementById("visibleReceiverPlace");
+                var confirmButton = document.getElementById("confirmButton");
+
+                if (agreementCheckbox) {
+                    agreementCheckbox.addEventListener("change", updateConfirmButtonState);
+                    agreementCheckbox.addEventListener("click", function (e) {
+                        if (!agreementCheckbox.checked) {
+                            e.preventDefault();
+                            agreementCheckbox.checked = true;
+                        }
+                    });
+                }
+                if (acceptanceDateInput) {
+                    acceptanceDateInput.addEventListener("change", updateConfirmButtonState);
+                }
+                if (signatureInput) {
+                    signatureInput.addEventListener("keyup", updateConfirmButtonState);
+                }
+                if (placeInput) {
+                    placeInput.addEventListener("keyup", updateConfirmButtonState);
+                }
+                updateConfirmButtonState();
+
+                // // Setup Add/Remove flow steps.
+                // var addMoreBtn = document.getElementById("addMoreBtn");
+                // if (addMoreBtn) {
+                //     addMoreBtn.addEventListener("click", function () {
+                //         var container = document.querySelector("#bulletContainer ul");
+                //         var count = container.querySelectorAll("li").length;
+                //         var max = 7;
+                //         if (count < max) {
+                //             var li = document.createElement("li");
+                //             var input = document.createElement("input");
+                //             input.type = "text";
+                //             input.className = "bullet-point";
+                //             input.placeholder = "Step " + (count + 1);
+                //             li.appendChild(input);
+                //             if (count >= 3) {
+                //                 var remove = document.createElement("span");
+                //                 remove.className = "remove-icon";
+                //                 remove.innerHTML = "&#10006;";
+                //                 remove.onclick = function () {
+                //                     var currentCount = container.querySelectorAll("li").length;
+                //                     if (currentCount > 3) {
+                //                         li.remove();
+                //                         updatePlaceholders();
+                //                     } else {
+                //                         alert("At least 3 steps are required.");
+                //                     }
+                //                 };
+                //                 li.appendChild(remove);
+                //             }
+                //             container.appendChild(li);
+                //         } else {
+                //             alert("You cannot add more than " + max + " steps.");
+                //         }
+                //     });
+                // }
+
+                // Add remove icons for already rendered steps if more than 3 exist.
+                function addRemoveButton(li) {
+                    const removeIcon = document.createElement("span");
+                    removeIcon.className = "remove-icon";
+                    removeIcon.innerHTML = "&#10006;";
+                    removeIcon.onclick = () => {
+                        const container = document.querySelector("#bulletContainer ul");
+                        if (container.querySelectorAll("li").length > 3) {
+                            li.remove();
+                            updatePlaceholders();
+                        } else {
+                            alert("At least 3 steps are required.");
+                        }
+                    };
+                    li.appendChild(removeIcon);
+                }
+
+                function updatePlaceholders() {
+                    document.querySelectorAll("#bulletContainer ul li").forEach((li, i) => {
+                        const input = li.querySelector("input.bullet-point");
+                        if (input) input.placeholder = "Step " + (i + 1);
+                    });
+                }
+
+                document.querySelectorAll("#bulletContainer ul li").forEach((li, index) => {
+                    if (index >= 3 && !li.querySelector(".remove-icon")) addRemoveButton(li);
+                })
+
+                document.getElementById("addMoreBtn").addEventListener("click", function () {
+                    const container = document.querySelector("#bulletContainer ul");
+                    const count = container.querySelectorAll("li").length;
+                    if (count < 7) {
+                        const li = document.createElement("li");
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.className = "bullet-point";
+                        input.placeholder = "Step " + (count + 1);
+                        li.appendChild(input);
+                        if (count >= 3) addRemoveButton(li);
+                        container.appendChild(li);
+                        updatePlaceholders();
+                    } else {
+                        alert("Maximum 7 steps allowed.");
+                    }
+                });
+
+                // Also attach change events to update validation as user types.
+                if (agreementCheckbox) {
+                    agreementCheckbox.addEventListener("change", validateCommonFields);
+                }
+                if (acceptanceDateInput) {
+                    acceptanceDateInput.addEventListener("change", validateCommonFields);
+                }
+                if (signatureInput) {
+                    signatureInput.addEventListener("keyup", validateCommonFields);
+                }
+                if (placeInput) {
+                    placeInput.addEventListener("keyup", validateCommonFields);
+                }
+            });
+        </script>
+    }
+
+    @if (isReceiver && "Sign".Equals(Model.Mode, StringComparison.OrdinalIgnoreCase))
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // --- Overlay Submission Function ---
+                function submitFormWithOverlay(formId, delayMs) {
+                    // Disable pointer events
+                    document.body.style.pointerEvents = "none";
+                    // Show the processing overlay
+                    var overlay = document.getElementById("processingOverlay");
+                    if (overlay) {
+                        overlay.style.display = "flex";
+                    }
+                    // Delay submission
+                    setTimeout(function () {
+                        var form = document.getElementById(formId);
+                        if (form) {
+                            form.submit();
+                        }
+                    }, delayMs);
+                }
+
+                // --- Real-Time Final Sign Validation ---
+                var finalSignButton = document.getElementById("finalSignButton");
+                var agreementCheckbox = document.getElementById("receiverAgreementCheckbox");
+                var acceptanceDateInput = document.getElementById("visibleReceiverAcceptanceDate");
+                var signatureInput = document.getElementById("visibleReceiverSignature");
+                var placeInput = document.getElementById("visibleReceiverPlace");
+
+                function validateFinalSignFields() {
+                    var today = new Date().toISOString().split("T")[0];
+                    var valid = true;
+
+                    // Validate acceptance date
+                    if (!acceptanceDateInput.value || acceptanceDateInput.value.trim() === "" || acceptanceDateInput.value !== today) {
+                        valid = false;
+                        document.getElementById("receiverdateInfo").style.display = "inline-block";
+                    } else {
+                        document.getElementById("receiverdateInfo").style.display = "none";
+                    }
+
+                    // Validate signature
+                    if (!signatureInput.value.trim() || signatureInput.value.trim().toLowerCase() === "[sign here]") {
+                        valid = false;
+                        document.getElementById("receiversignatureInfo").style.display = "inline-block";
+                    } else {
+                        document.getElementById("receiversignatureInfo").style.display = "none";
+                    }
+
+                    // Validate signing place
+                    if (!placeInput.value.trim() || placeInput.value.trim().toLowerCase() === "[place of sign]") {
+                        valid = false;
+                        document.getElementById("receiverplaceInfo").style.display = "inline-block";
+                    } else {
+                        document.getElementById("receiverplaceInfo").style.display = "none";
+                    }
+
+                    // Check agreement checkbox
+                    if (!agreementCheckbox.checked) {
+                        valid = false;
+                    }
+
+                    // Enable or disable the final sign button based on validation
+                    if (finalSignButton) {
+                        finalSignButton.disabled = !valid;
+                    }
+                    return valid;
+                }
+
+                // Attach change and keyup events for real-time validation
+                [agreementCheckbox, acceptanceDateInput, signatureInput, placeInput].forEach(function(el) {
+                    el.addEventListener("change", validateFinalSignFields);
+                    el.addEventListener("keyup", validateFinalSignFields);
+                });
+                validateFinalSignFields(); // Initial check
+
+                // --- Final Confirmation and Form Submission ---
+                window.confirmFinalSign = function () {
+                    // Get tooltip elements for final sign
+                    var dateInfo = document.getElementById("receiverdateInfo");
+                    var signatureInfo = document.getElementById("receiversignatureInfo");
+                    var placeInfo = document.getElementById("receiverplaceInfo");
+
+                    var today = new Date().toISOString().split("T")[0];
+                    var valid = true;
+
+                    // Validate acceptance date
+                    if (!acceptanceDateInput.value || acceptanceDateInput.value.trim() === "" || acceptanceDateInput.value !== today) {
+                        valid = false;
+                        if (dateInfo) { dateInfo.style.display = "inline-block"; }
+                    } else {
+                        if (dateInfo) { dateInfo.style.display = "none"; }
+                    }
+
+                    // Validate signature
+                    if (!signatureInput.value.trim() || signatureInput.value.trim().toLowerCase() === "[sign here]") {
+                        valid = false;
+                        if (signatureInfo) { signatureInfo.style.display = "inline-block"; }
+                    } else {
+                        if (signatureInfo) { signatureInfo.style.display = "none"; }
+                    }
+
+                    // Validate signing place
+                    if (!placeInput.value.trim() || placeInput.value.trim().toLowerCase() === "[place of sign]") {
+                        valid = false;
+                        if (placeInfo) { placeInfo.style.display = "inline-block"; }
+                    } else {
+                        if (placeInfo) { placeInfo.style.display = "none"; }
+                    }
+
+                    // Check the agreement checkbox
+                    if (!agreementCheckbox.checked) {
+                        valid = false;
+                    }
+
+                    // If validation fails, alert and abort submission.
+                    if (!valid) {
+                        alert("Please ensure you have accepted the agreement, provided today's date, your signature, and signing place.");
+                        return;
+                    }
+
+                    // Copy visible values into hidden fields.
+                    var hiddenSignature = document.getElementById("hiddenPartySignature");
+                    var hiddenPlace = document.getElementById("hiddenPartyPlace");
+                    var hiddenAcceptanceDate = document.getElementById("hiddenPartyAcceptanceDate");
+
+                    if (hiddenSignature && hiddenPlace && hiddenAcceptanceDate) {
+                        hiddenSignature.value = signatureInput.value;
+                        hiddenPlace.value = placeInput.value;
+                        hiddenAcceptanceDate.value = acceptanceDateInput.value;
+                    }
+
+                    // Confirm final sign submission with the user.
+                    if (!confirm('This is the final version (v3). Once you sign, no further modifications can be made. Proceed?')) {
+                        return;
+                    }
+
+                    // Set final sign confirmation flag and use the overlay process to submit the form.
+                    document.getElementById('finalSignConfirm').value = 'true';
+                    submitFormWithOverlay("signForm", 6050);
+                };
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                var acceptButton = document.querySelector("button[type='submit']");
+                var agreementCheckbox = document.getElementById("receiverAgreementCheckbox");
+                var acceptanceDateInput = document.getElementById("visibleReceiverAcceptanceDate");
+                var signatureInput = document.getElementById("visibleReceiverSignature");
+                var placeInput = document.getElementById("visibleReceiverPlace");
+
+                var dateInfo = document.getElementById("receiverdateInfo");
+                var signatureInfo = document.getElementById("receiversignatureInfo");
+                var placeInfo = document.getElementById("receiverplaceInfo");
+
+                if (acceptanceDateInput) {
+                    acceptanceDateInput.value = "";
+                }
+
+                function validateSignFields() {
+                    var today = new Date().toISOString().split("T")[0];
+                    var valid = true;
+                    if (!agreementCheckbox.checked) {
+                        valid = false;
+                    }
+                    if (!acceptanceDateInput.value || acceptanceDateInput.value.trim() === "" || acceptanceDateInput.value !== today) {
+                        valid = false;
+                        if(dateInfo) { dateInfo.style.display = "inline-block"; }
+                    } else {
+                        if(dateInfo) { dateInfo.style.display = "none"; }
+                    }
+                    if (!signatureInput.value.trim() || signatureInput.value.trim().toLowerCase() === "[sign here]") {
+                        valid = false;
+                        if(signatureInfo) { signatureInfo.style.display = "inline-block"; }
+                    } else {
+                        if(signatureInfo) { signatureInfo.style.display = "none"; }
+                    }
+                    if (!placeInput.value.trim() || placeInput.value.trim().toLowerCase() === "[place of sign]") {
+                        valid = false;
+                        if(placeInfo) { placeInfo.style.display = "inline-block"; }
+                    } else {
+                        if(placeInfo) { placeInfo.style.display = "none"; }
+                    }
+                    if (acceptButton) {
+                        acceptButton.disabled = !valid;
+                    }
+                }
+
+                agreementCheckbox.addEventListener("change", validateSignFields);
+                acceptanceDateInput.addEventListener("change", validateSignFields);
+                signatureInput.addEventListener("keyup", validateSignFields);
+                placeInput.addEventListener("keyup", validateSignFields);
+
+                validateSignFields();
+
+                agreementCheckbox.addEventListener("click", function (e) {
+                    if (!agreementCheckbox.checked) {
+                        e.preventDefault();
+                        agreementCheckbox.checked = true;
+                    }
+                });
+
+
+                // Add a form submission listener to copy visible input values into hidden fields.
+                var signForm = document.getElementById("signForm");
+                if (signForm) {
+                    signForm.addEventListener("submit", function (e) {
+                        e.preventDefault();
+                        var hiddenSignature = document.getElementById("hiddenPartySignature");
+                        var hiddenPlace = document.getElementById("hiddenPartyPlace");
+                        var hiddenAcceptanceDate = document.getElementById("hiddenPartyAcceptanceDate");
+
+                        if (hiddenSignature) {
+                            hiddenSignature.value = signatureInput.value;
+                        }
+                        if (hiddenPlace) {
+                            hiddenPlace.value = placeInput.value;
+                        }
+                        if (hiddenAcceptanceDate) {
+                            hiddenAcceptanceDate.value = acceptanceDateInput.value;
+                        }
+
+                        submitFormWithOverlay("signForm", 6050);
+                    });
+                }
+            });
+        </script>
+    }
+</body>
+</html>

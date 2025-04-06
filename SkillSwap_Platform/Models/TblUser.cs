@@ -14,6 +14,8 @@ public partial class TblUser
 
     public string UserName { get; set; } = null!;
 
+    public string? Designation { get; set; }
+
     public string PasswordHash { get; set; } = null!;
 
     public string Salt { get; set; } = null!;
@@ -44,7 +46,7 @@ public partial class TblUser
 
     public string? PersonalWebsite { get; set; }
 
-    public string? Location { get; set; }
+    public string? CurrentLocation { get; set; }
 
     public string? WorkingTime { get; set; }
 
@@ -55,6 +57,8 @@ public partial class TblUser
     public string? City { get; set; }
 
     public string? Country { get; set; }
+
+    public string? Zip { get; set; }
 
     public string? DesiredSkillAreas { get; set; }
 
@@ -73,6 +77,16 @@ public partial class TblUser
     public string Role { get; set; } = null!;
 
     public string? TotpSecret { get; set; }
+
+    public bool IsOnboardingCompleted { get; set; }
+
+    public double? JobSuccessRate { get; set; }
+
+    public double? RecommendedPercentage { get; set; }
+
+    public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
+
+    public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblEducation> TblEducations { get; set; } = new List<TblEducation>();
 
@@ -98,6 +112,8 @@ public partial class TblUser
 
     public virtual ICollection<TblReview> TblReviewReviewers { get; set; } = new List<TblReview>();
 
+    public virtual ICollection<TblReview> TblReviewUsers { get; set; } = new List<TblReview>();
+
     public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
 
     public virtual ICollection<TblUserCertificate> TblUserCertificateApprovedByAdmins { get; set; } = new List<TblUserCertificate>();
@@ -113,6 +129,8 @@ public partial class TblUser
     public virtual ICollection<TblUserSkill> TblUserSkills { get; set; } = new List<TblUserSkill>();
 
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
+
+    public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();
 
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();

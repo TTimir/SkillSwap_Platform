@@ -1,0 +1,337 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.SkillsExperienceVM
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Step 3: Skills & Experience";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+</head>
+<body>
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline with extra spacing -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step completed">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step active">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills &amp; Experience</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Let potential buyers know about your background.</p>
+
+        @using (Html.BeginForm("SkillsExperience", "Onboarding", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+
+                        @if (ViewBag.ErrorMessage != null)
+                        {
+                            <div class="col-lg-12">
+                                <div class="ui-content">
+                                    <div class="message-alart-style1">
+                                        <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                            @ViewBag.ErrorMessage
+                                            <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-lg-12">
+
+                            <!-- EDUCATION SECTION -->
+                            <div id="education-section">
+                                <div class="row gy-4 mb-5 education-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>EDUCATION</h4>
+                                        <a href="javascript:void(0);" class="ud-btn btn-light-thm mb25 add-entry">
+                                            <i class="far fa-x me-2"></i> Add Education
+                                        </a>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="ui-content">
+                                            <div class="form-style1">
+                                                <label class="form-label fw500 fz16 dark-color">Degree</label>
+                                                <div class="bootselect-multiselect">
+                                                    <select name="education[degree][]" class="selectpicker">
+                                                        <option value="">Select</option>
+                                                        <option value="School's">School's Degree</option>
+                                                        <option value="Bachelor's">Bachelor's Degree</option>
+                                                        <option value="Master's">Master's Degree</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Degree Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="education[degree_name][]" placeholder="e.g., Bachelor of Computer Applications" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">University Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="education[institution_name][]" class="form-control" placeholder="Institution Name" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="education[start_date][]" class="form-control" required />
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">End Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="education[end_date][]" class="form-control" required />
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label">Description</label>
+                                        <textarea cols="30" rows="6" name="education[description][]" placeholder="Describe..."></textarea>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
+                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- LANGUAGE SECTION -->
+                            <div id="language-section">
+                                <div class="row gy-4 mb-5 language-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>LANGUAGE</h4>
+                                        <a href="javascript:void(0);" class="ud-btn btn-light-thm mb25 add-entry">
+                                            <i class="far fa-x me-2"></i> Add Language
+                                        </a>
+                                    </div>
+
+                                    <!-- Language Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Language <span class="text-danger">*</span></label>
+                                        <input type="text" name="language[name][]" class="form-control" placeholder="Language" required />
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <div class="form-style1">
+                                                <label class="heading-color ff-heading fw500 mb10">Proficiency <span class="text-danger">*</span></label>
+                                                <div class="bootselect-multiselect">
+                                                    <select name="language[level][]" class="selectpicker" required>
+                                                        <option value="">Choose Proficiency</option>
+                                                        <option value="Basic">Basic</option>
+                                                        <option value="Intermediate">Intermediate</option>
+                                                        <option value="Proficient">Proficient</option>
+                                                        <option value="Native">Native</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
+                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- EXPERIENCE SECTION -->
+                            <div id="experience-section">
+                                <div class="row gy-4 mb-5 experience-entry">
+                                    <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                        <h4>EXPERIENCE</h4>
+                                        <a href="javascript:void(0);" class="ud-btn btn-light-thm mb25 add-entry">
+                                            <i class="far fa-x me-2"></i> Add Experience
+                                        </a>
+                                    </div>
+
+
+                                    <!-- Company Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="experience[company_name][]" class="form-control" placeholder="Company Name" required />
+                                    </div>
+
+                                    <!-- Position -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Position <span class="text-danger">*</span></label>
+                                        <input type="text" name="experience[position][]" class="form-control" placeholder="Position" required />
+                                    </div>
+
+                                    <!-- Start Date -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="experience[start_date][]" class="form-control" required />
+                                    </div>
+
+                                    <!-- End Date  -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">End Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="experience[end_date][]" class="form-control" required />
+                                    </div>
+
+
+                                    <div class="col-md-12">
+                                        <label class="form-label">Description</label>
+                                        <textarea cols="30" rows="6" name="experience[description][]" placeholder="Describe..."></textarea>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
+                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center my-4">
+                                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- Wrapper End -->
+        <!-- Correct order -->
+        <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+        <script src="/template_assets/js/popper.min.js"></script> <!-- Popper BEFORE bootstrap -->
+        <script src="/template_assets/js/bootstrap.min.js"></script>
+        <script src="/template_assets/js/bootstrap-select.min.js"></script>
+        <script src="/template_assets/js/jquery.mmenu.all.js"></script>
+        <script src="/template_assets/js/ace-responsive-menu.js"></script>
+        <script src="/template_assets/js/dashboard-script.js"></script>
+        <!-- Custom script for all pages -->
+        <script src="/template_assets/js/script.js"></script>
+        <!-- JavaScript (jQuery) to Clone Sections -->
+        <script>
+             $(document).ready(function () {
+
+                // Initialize all selectpickers on page load
+                $('.selectpicker').selectpicker();
+
+                // Cloning function
+                function cloneEntry(sectionSelector) {
+                    var $original = $(sectionSelector).find('.row:first');
+                    var $clone = $original.clone(false, false);
+
+                    // Remove bootstrap-select extra markup before cloning
+                    $clone.find('.bootstrap-select').replaceWith(function () {
+                        return $('select', this);
+                    });
+
+                    // Clear inputs
+                    $clone.find('input').val('');
+
+                    // Reset and reinitialize selects, removing "multiple"
+                    $clone.find('select.selectpicker').each(function () {
+                        $(this).removeAttr('multiple');   // Ensures no multiple selection allowed
+                        $(this).val('');
+                        $(this).selectpicker('destroy').selectpicker();
+                    });
+
+                    // Buttons adjustments
+                    $clone.find('.add-entry').remove();
+                    $clone.find('.remove-entry').removeClass('d-none');
+
+                    // Append clone
+                    $(sectionSelector).append($clone);
+                }
+
+                // Add button click handler
+                $(document).on('click', '.add-entry', function () {
+                    var section = $(this).closest('[id$="-section"]');
+                    cloneEntry(section);
+                });
+
+                // Remove button click handler
+                $(document).on('click', '.remove-entry', function () {
+                    $(this).closest('.row').remove();
+                });
+
+            });
+        </script>
+
+</body>
+</html>

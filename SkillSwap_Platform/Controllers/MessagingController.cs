@@ -1,0 +1,643 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Models.ViewModels.MessagesVM;
+using SkillSwap_Platform.Services;
+using System.Diagnostics;
+using System.Security.Claims;
+
+namespace SkillSwap_Platform.Controllers
+{
+    [Authorize]
+    public class MessagingController : Controller
+    {
+        private readonly SkillSwapDbContext _context;
+        private readonly ILogger<MessagingController> _logger;
+        private readonly ISensitiveWordService _sensitiveWordService;
+
+        public MessagingController(SkillSwapDbContext context,
+                                         ILogger<MessagingController> logger,
+                                         ISensitiveWordService sensitiveWordService)
+        {
+            _context = context;
+            _logger = logger;
+            _sensitiveWordService = sensitiveWordService;
+        }
+
+
+        #region Conversation & Chat Contacts
+        /// <summary>
+        /// Displays the conversation between the logged-in user and the specified other user.
+        /// </summary>
+        /// <param name="otherUserId">The ID of the other participant.</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> Conversation(int? otherUserId, int? offerId)
+        {
+            try
+            {
+                int currentUserId = GetUserId();
+
+
+                if (offerId.HasValue)
+                {
+                    // **Important Change: Include the User navigation property**
+                    var tblOffer = await _context.TblOffers
+                        .Include(o => o.User) // Load the offer owner
+                        .FirstOrDefaultAsync(o => o.OfferId == offerId.Value);
+
+                    if (tblOffer != null)
+                    {
+                        int offerOwnerId = tblOffer.User != null ? tblOffer.User.UserId : tblOffer.UserId;
+
+                        // Map properties from tblOffer to OfferDisplayVM
+                        var offerDisplay = new OfferDisplayVM
+                        {
+                            OfferId = tblOffer.OfferId,
+                            Title = tblOffer.Title,
+                            ShortTitle = tblOffer.Title,
+                            TimeCommitmentDays = tblOffer.TimeCommitmentDays,
+                            Category = tblOffer.Category,
+                            PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
+                                                ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
+                                                : new List<string>(),
+                            SkillNames = new List<string>(),
+                            OfferOwnerId = offerOwnerId,
+                            WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
+                        };
+
+                        // Pass the mapped offer details to the view.
+                        ViewBag.OfferDetails = offerDisplay;
+
+                        // Set the conversation partner to the offer owner.
+                        otherUserId = tblOffer.UserId;
+                    }
+                }
+
+                // 1. Get all distinct conversation partner IDs for the current user
+                var partnerIds = await _context.TblMessages
+                    .Where(m => m.SenderUserId == currentUserId || m.ReceiverUserId == currentUserId)
+                    .Select(m => m.SenderUserId == currentUserId ? m.ReceiverUserId : m.SenderUserId)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 2. Build a list of chat members (all users you’ve messaged with)
+                var chatMembers = new List<ChatMemberVM>();
+                foreach (var partnerId in partnerIds)
+                {
+                    var user = await _context.TblUsers.FindAsync(partnerId);
+                    if (user != null)
+                    {
+                        // Retrieve all messages between the current user and this partner
+                        var conversationMessages = await _context.TblMessages
+                            .Where(m =>
+                                (m.SenderUserId == currentUserId && m.ReceiverUserId == partnerId) ||
+                                (m.SenderUserId == partnerId && m.ReceiverUserId == currentUserId))
+                            .OrderBy(m => m.SentDate)
+                            .ToListAsync();
+
+                        chatMembers.Add(new ChatMemberVM
+                        {
+                            UserID = partnerId,
+                            UserName = user.UserName,
+                            ProfileImage = user.ProfileImageUrl,
+                            Designation = user.Designation,
+                            LastMessageTime = conversationMessages.Any()
+                                                ? conversationMessages.Last().SentDate.ToLocalTime().ToString("g")
+                                                : "",
+                            UnreadCount = conversationMessages.Count(m =>
+                                m.ReceiverUserId == currentUserId &&
+                                !m.IsRead &&
+                                (!m.IsFlagged || (m.IsFlagged && m.IsApproved))
+                            )
+                        });
+                    }
+                }
+
+                // sort the chat members by last message time (most recent first)
+                chatMembers = chatMembers.OrderByDescending(cm =>
+                    DateTime.TryParse(cm.LastMessageTime, out DateTime dt) ? dt : DateTime.MinValue)
+                    .ToList();
+
+                // 3. If no specific conversation is selected, set otherUserId to 0.
+                if (!otherUserId.HasValue)
+                {
+                    otherUserId = 0;
+                }
+
+                // 4. Load messages for the selected conversation (if any)
+                List<TblMessage> messages = new List<TblMessage>();
+                TblUser otherUser = null;
+                bool otherUserOnline = false;
+
+                if (otherUserId.HasValue && otherUserId.Value > 0)
+                {
+                    // Validate: Check that the other user exists.
+                    otherUser = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == otherUserId.Value);
+                    if (otherUser == null)
+                    {
+                        string errorMsg = "The user you are trying to chat with does not exist.";
+                        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            TempData["ErrorMessage"] = errorMsg;
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                    }
+
+                    // When the current user is the receiver, filter out messages that are flagged and not approved.
+                    if (otherUserId.Value != currentUserId)
+                    {
+                        messages = await _context.TblMessages
+                            .Include(m => m.SenderUser)
+                            .Include(m => m.TblMessageAttachments)
+                            .Where(m =>
+                                ((m.SenderUserId == currentUserId && m.ReceiverUserId == otherUserId.Value) ||
+                                 (m.SenderUserId == otherUserId.Value && m.ReceiverUserId == currentUserId))
+                                 &&
+                                (
+                                    // Always show messages where current user is sender.
+                                    (m.SenderUserId == currentUserId)
+                                    ||
+                                    // For receiver, only show if not flagged or approved.
+                                    (!m.IsFlagged || (m.IsFlagged && m.IsApproved))
+                                )
+                            )
+                            .OrderBy(m => m.SentDate)
+                            .ToListAsync();
+                    }
+                    else
+                    {
+                        // For the sender, load all messages.
+                        messages = await _context.TblMessages
+                            .Include(m => m.SenderUser)
+                            .Include(m => m.TblMessageAttachments)
+                            .Where(m =>
+                                (m.SenderUserId == currentUserId && m.ReceiverUserId == otherUserId.Value) ||
+                                (m.SenderUserId == otherUserId.Value && m.ReceiverUserId == currentUserId))
+                            .OrderBy(m => m.SentDate)
+                            .ToListAsync();
+                    }
+                    // Mark messages as read for the current user.
+                    var unreadMessages = messages
+                        .Where(m => m.ReceiverUserId == currentUserId && !m.IsRead)
+                        .ToList();
+
+                    if (unreadMessages.Any())
+                    {
+                        foreach (var msg in unreadMessages)
+                        {
+                            msg.IsRead = true;
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    otherUser = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == otherUserId.Value);
+                    if (otherUser != null && otherUser.LastActive.HasValue)
+                    {
+                        otherUserOnline = (DateTime.UtcNow - otherUser.LastActive.Value).TotalMinutes < 10;
+                    }
+                }
+
+                var messageViewModels = new List<MessageItemVM>();
+                // --- NEW: For each message that has an OfferId, load its offer details and attach to the message.
+                foreach (var msg in messages)
+                {
+                    if (msg.OfferId.HasValue)
+                    {
+                        var tblOffer = await _context.TblOffers
+                            .Include(o => o.User)
+                            .FirstOrDefaultAsync(o => o.OfferId == msg.OfferId.Value);
+                        if (tblOffer != null)
+                        {
+                            // Prepare offered skill names list
+                            var offeredSkillNames = new List<string>();
+                            if (!string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner))
+                            {
+                                // Parse the comma-separated skill IDs into a list of ints.
+                                var offeredSkillIds = tblOffer.SkillIdOfferOwner
+                                    .Split(',')
+                                    .Select(s => s.Trim())
+                                    .Where(s => int.TryParse(s, out _))
+                                    .Select(int.Parse)
+                                    .ToList();
+
+                                // Load all skills into memory and filter by the parsed IDs.
+                                var allSkills = await _context.TblSkills.ToListAsync();
+                                offeredSkillNames = allSkills
+                                    .Where(s => offeredSkillIds.Contains(s.SkillId))
+                                    .Select(s => s.SkillName)
+                                    .ToList();
+                            }
+
+                            msg.OfferPreview = new OfferDisplayVM
+                            {
+                                OfferId = tblOffer.OfferId,
+                                Title = tblOffer.Title,
+                                ShortTitle = tblOffer.Title,
+                                TimeCommitmentDays = tblOffer.TimeCommitmentDays,
+                                Category = tblOffer.Category,
+                                PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
+                                                ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
+                                                : new List<string>(),
+                                SkillNames = offeredSkillNames, // Populate as needed
+                                OfferOwnerId = tblOffer.UserId,
+                                WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>()
+                            };
+                        }
+                    }
+
+                    var contract = await _context.TblContracts
+                            .Where(c => c.MessageId == msg.MessageId)
+                            .OrderByDescending(c => c.Version)
+                            .FirstOrDefaultAsync();
+
+                    string? offeredSkillName = null;
+                    if (!string.IsNullOrWhiteSpace(contract?.OfferedSkill) && int.TryParse(contract.OfferedSkill, out int offeredSkillId))
+                    {
+                        offeredSkillName = await _context.TblSkills
+                            .Where(s => s.SkillId == offeredSkillId)
+                            .Select(s => s.SkillName)
+                            .FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        // fallback: treat as raw skill name
+                        offeredSkillName = contract?.OfferedSkill;
+                    }
+
+                    // Resolve ExchangeSkill
+                    string? exchangeSkillName = null;
+                    if (!string.IsNullOrWhiteSpace(contract?.ReceiverSkill) && int.TryParse(contract.ReceiverSkill, out int exchangeSkillId))
+                    {
+                        exchangeSkillName = await _context.TblSkills
+                            .Where(s => s.SkillId == exchangeSkillId)
+                            .Select(s => s.SkillName)
+                            .FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        exchangeSkillName = contract?.ReceiverSkill;
+                    }
+
+                    messageViewModels.Add(new MessageItemVM
+                    {
+                        MessageId = msg.MessageId,
+                        CurrentUserID = currentUserId,
+                        SenderUserID = msg.SenderUserId,
+                        SenderName = msg.SenderUser?.UserName ?? "Unknown",
+                        SenderProfileImage = msg.SenderUser?.ProfileImageUrl,
+                        SentDate = msg.SentDate,
+                        Content = msg.Content,
+                        ReplyPreview = msg.ReplyPreview,
+                        ReplyMessageId = msg.ReplyToMessageId,
+                        Attachments = msg.TblMessageAttachments,
+                        IsRead = msg.IsRead,
+                        IsFlagged = msg.IsFlagged,
+                        IsApproved = msg.IsApproved,
+                        OfferDetails = msg.OfferId.HasValue ? msg.OfferPreview : null,
+                        ContractDetails = contract, // ✅ assign latest contract
+                        OfferedSkillName = offeredSkillName,
+                        ReceiverSkillName = exchangeSkillName,
+                    });
+                }
+
+                // Load sensitive words from the database.
+                var sensitiveWords = await _context.PrivacySensitiveWords
+                    .Select(psw => psw.Word)
+                    .ToListAsync();
+
+                ViewBag.SensitiveWords = sensitiveWords;
+
+                var viewModel = new ConversationVM
+                {
+                    CurrentUserID = currentUserId,
+                    OtherUserId = otherUserId.HasValue ? otherUserId.Value : 0,
+                    OtherUserName = otherUser?.UserName ?? "Unknown",
+                    OtherUserProfileImage = otherUser?.ProfileImageUrl,
+                    OtherUserIsOnline = otherUserOnline,
+                    ChatMembers = chatMembers,
+                    Messages = messageViewModels,
+                    OfferId = offerId,
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching conversation between user {CurrentUserId} and {OtherUserId}", GetUserId(), otherUserId);
+                TempData["ErrorMessage"] = "An error occurred while loading your conversation.";
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        #endregion
+
+        #region Send Message Action
+        /// <summary>
+        /// Sends a message from the current user to the specified receiver, optionally including attachments.
+        /// </summary>
+        /// <param name="receiverUserId">Receiver’s user ID</param>
+        /// <param name="content">The message text</param>
+        /// <param name="attachments">Any files attached to the message</param>
+        /// <returns></returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(int receiverUserId, string content, IFormFileCollection attachments, string replyPreview, int? replyMessageId, int? offerId)
+        {
+            // Begin transaction for atomicity.
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    int senderUserId = GetUserId();
+
+                    // Normalize content: if null or whitespace, set to an empty string.
+                    content = content?.Trim() ?? string.Empty;
+
+                    // enforce that either content or attachments must be provided.
+                    if (string.IsNullOrEmpty(content) && (attachments == null || !attachments.Any()))
+                    {
+                        string errorMsg = "Please enter a message or attach a file.";
+                        // If the request is AJAX, return a JSON error result.
+                        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            TempData["ErrorMessage"] = errorMsg;
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                        TempData["ErrorMessage"] = errorMsg;
+                        return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                    }
+
+
+                    // Validate maximum length of content.
+                    if (content.Length > 200) // Example: maximum 200 characters.
+                    {
+                        string errorMsg = "Message is too long. Please limit to 200 characters.";
+                        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            TempData["ErrorMessage"] = errorMsg;
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                        TempData["ErrorMessage"] = errorMsg;
+                        return Json(new { success = false, error = errorMsg });
+                    }
+
+                    // Check for sensitive words in the content.
+                    var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
+                    bool isFlagged = sensitiveWarnings.Any();
+
+                    // Check for duplicate offer: if an offer is attached, ensure no message from this sender
+                    // to the receiver already has it.
+                    int? finalOfferId = null;
+                    if (int.TryParse(Request.Form["attachedOfferId"], out int parsedOfferId))
+                    {
+                        finalOfferId = parsedOfferId;
+                    }
+                    finalOfferId ??= offerId;
+
+                    // 1. Check in TblMessages if an offer has already been sent in this conversation.
+                    if (finalOfferId.HasValue)
+                    {
+                        bool offerAlreadySent = await _context.TblMessages.AnyAsync(m =>
+                            m.SenderUserId == senderUserId &&
+                            m.ReceiverUserId == receiverUserId &&
+                            m.OfferId == finalOfferId.Value);
+                        if (offerAlreadySent)
+                        {
+                            string errorMsg = "Offer already sent in the conversation.";
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                    }
+
+                    // 2. Check in TblContracts if a contract already exists for this conversation.
+                    if (finalOfferId.HasValue)
+                    {
+                        bool contractExists = await _context.TblContracts.AnyAsync(c =>
+                            c.MessageId == offerId && // or use an appropriate identifier from your conversation context
+                            ((c.SenderUserId == senderUserId && c.ReceiverUserId == receiverUserId) ||
+                             (c.SenderUserId == receiverUserId && c.ReceiverUserId == senderUserId))
+                        );
+                        if (contractExists)
+                        {
+                            string errorMsg = "A contract for this conversation has already been sent.";
+                            return Json(new { success = false, error = errorMsg });
+                        }
+                    }
+
+                    // Create the new message.
+                    var message = new TblMessage
+                    {
+                        SenderUserId = senderUserId,
+                        ReceiverUserId = receiverUserId,
+                        Content = content,
+                        ReplyPreview = replyPreview,
+                        ReplyToMessageId = (replyMessageId.HasValue && replyMessageId.Value > 0) ? replyMessageId : null,
+                        SentDate = DateTime.UtcNow,
+                        IsRead = false,
+                        IsFlagged = false,
+                        OfferId = offerId
+                    };
+
+                    _context.TblMessages.Add(message);
+                    await _context.SaveChangesAsync();
+
+                    // Process uploaded attachments.
+                    if (attachments != null && attachments.Any())
+                    {
+                        // Allowed MIME types.
+                        var allowedTypes = new[]
+                        {
+                            "image/jpeg", "image/png", "application/pdf",
+                            "text/plain", "text/x-python", "text/x-c",
+                            "application/javascript", "text/javascript",
+                            "text/x-java-source", "text/x-c++src",
+                            "application/zip", "application/x-zip-compressed"
+                        };
+
+                        // Validation: Check file size (e.g., max 5MB) and allowed types.
+                        const long maxFileSize = 5 * 1024 * 1024; // 5MB
+
+                        foreach (var file in attachments)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                if (file.Length > maxFileSize)
+                                {
+                                    string errorMsg = "One or more files exceed the maximum allowed size (5MB).";
+                                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                    {
+                                        TempData["ErrorMessage"] = errorMsg;
+                                        return Json(new { success = false, error = errorMsg });
+                                    }
+                                    TempData["ErrorMessage"] = errorMsg;
+                                    return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                                }
+
+                                if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                                {
+                                    string errorMsg = "File type not allowed.";
+                                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                    {
+                                        TempData["ErrorMessage"] = errorMsg;
+                                        return Json(new { success = false, error = errorMsg });
+                                    }
+                                    TempData["ErrorMessage"] = errorMsg;
+                                    return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                                }
+
+                                // add file validation such as size/type checking here.)
+                                string filePath = await UploadFileAsync(file, "messageAttachments");
+
+                                var attachment = new TblMessageAttachment
+                                {
+                                    MessageId = message.MessageId,
+                                    FileName = file.FileName,
+                                    FilePath = filePath,
+                                    ContentType = file.ContentType,
+                                    UploadedDate = DateTime.UtcNow
+                                };
+
+                                _context.TblMessageAttachments.Add(attachment);
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // If the message is flagged, insert audit records for each sensitive word.
+                    if (isFlagged)
+                    {
+                        foreach (var kvp in sensitiveWarnings)
+                        {
+                            // Get the SensitiveWord record using case-insensitive comparison.
+                            var sensitiveRecord = await _context.SensitiveWords
+                                .FirstOrDefaultAsync(sw => sw.Word.ToLower() == kvp.Key.ToLower());
+                            if (sensitiveRecord != null)
+                            {
+                                _context.UserSensitiveWords.Add(new UserSensitiveWord
+                                {
+                                    UserId = senderUserId,
+                                    MessageId = message.MessageId,
+                                    SensitiveWordId = sensitiveRecord.Id,
+                                    DetectedOn = DateTime.UtcNow
+                                });
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Commit the transaction after successful operations.
+                    await transaction.CommitAsync();
+
+                    // Load offer details if an offerId is provided
+                    OfferDisplayVM offerDisplay = null;
+                    if (offerId.HasValue)
+                    {
+                        var tblOffer = await _context.TblOffers
+                            .Include(o => o.User)
+                            .FirstOrDefaultAsync(o => o.OfferId == offerId.Value);
+                        if (tblOffer != null)
+                        {
+                            offerDisplay = new OfferDisplayVM
+                            {
+                                OfferId = tblOffer.OfferId,
+                                Title = tblOffer.Title,
+                                ShortTitle = tblOffer.Title,
+                                TimeCommitmentDays = tblOffer.TimeCommitmentDays,
+                                Category = tblOffer.Category,
+                                PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
+                                                ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
+                                                : new List<string>(),
+                                SkillNames = new List<string>(),
+                                OfferOwnerId = tblOffer.UserId,
+                                WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>()
+                            };
+                        }
+                    }
+
+                    // If the request is AJAX, return a partial view for the new message.
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        var currentUser = await _context.TblUsers.FindAsync(senderUserId);
+                        // Reload attachments from DB.
+                        var attachmentsList = await _context.TblMessageAttachments
+                            .Where(a => a.MessageId == message.MessageId)
+                            .ToListAsync();
+
+                        var messageVm = new MessageItemVM
+                        {
+                            MessageId = message.MessageId,
+                            CurrentUserID = senderUserId,
+                            SenderUserID = senderUserId,
+                            SenderName = "You",
+                            SenderProfileImage = currentUser?.ProfileImageUrl,
+                            SentDate = message.SentDate,
+                            Content = message.Content,
+                            ReplyPreview = message.ReplyPreview,
+                            ReplyMessageId = message.ReplyToMessageId,
+                            IsRead = false,
+                            ShowHeader = true,
+                            Attachments = attachmentsList,
+                            IsFlagged = message.IsFlagged,
+                            IsApproved = message.IsApproved,
+                            OfferDetails = offerDisplay,
+                        };
+
+                        return PartialView("_MessageItem", messageVm);
+                    }
+                    else
+                    {
+                        // Fallback for non-AJAX requests.
+                        return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Rollback on error.
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error sending message from user {SenderId} to user {ReceiverId}", GetUserId(), receiverUserId);
+                    TempData["ErrorMessage"] = "An error occurred while sending your message.";
+                    return RedirectToAction("EP500", "EP");
+                }
+            }
+        }
+        #endregion
+
+        #region Helper Class
+        /// <summary>
+        /// Helper to get the current logged in user's ID from claims.
+        /// </summary>
+        /// <returns></returns>
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+            throw new Exception("User ID not found in claims.");
+        }
+
+        /// <summary>
+        /// Uploads a file to the specified folder under wwwroot/uploads.
+        /// </summary>
+        /// <param name="file">The file to upload</param>
+        /// <param name="folderName">The target folder name</param>
+        /// <returns>The relative URL of the uploaded file</returns>
+        private async Task<string> UploadFileAsync(IFormFile file, string folderName)
+        {
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folderName);
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            return $"/uploads/{folderName}/{uniqueFileName}";
+        }
+        #endregion
+    }
+}

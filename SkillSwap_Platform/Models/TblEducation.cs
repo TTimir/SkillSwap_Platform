@@ -13,7 +13,7 @@ public partial class TblEducation
 
     public string Degree { get; set; } = null!;
 
-    public string? FieldOfStudy { get; set; }
+    public string? Description { get; set; }
 
     public DateTime StartDate { get; set; }
 

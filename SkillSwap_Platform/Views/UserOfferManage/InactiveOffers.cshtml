@@ -1,0 +1,229 @@
+﻿
+@{
+    ViewData["Title"] = "Inactive Offers";
+    ViewData["SubTitle"] = "These deals are paused, reactivate them anytime.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">Title</th>
+                                        <th scope="col">Category</th>
+                                        <th scope="col">Tokens/Cost</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var offer in Model.Offers)
+                                    {
+                                        <tr>
+                                            <th class="dashboard-img-service" scope="row">
+                                                <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                    <div class="list-thumb flex-shrink-0 bdrs4 mb10-lg">
+                                                        @* Display the first portfolio image as thumbnail if available *@
+                                                        @{
+                                                            List<string> portfolioImages = new List<string>();
+                                                            if (!string.IsNullOrWhiteSpace(offer.Portfolio))
+                                                            {
+                                                                try
+                                                                {
+                                                                    portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
+                                                                    ?? new List<string>();
+                                                                }
+                                                                catch { /* If deserialization fails, leave portfolioImages empty. */ }
+                                                            }
+
+                                                            // Define the list of default images.
+                                                            var defaultImages = new List<string>
+                                                    {
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                    };
+
+                                                            // You can choose between a random image or a deterministic one.
+                                                            // For a random default image, use:
+                                                            // var random = new Random();
+                                                            // int index = random.Next(defaultImages.Count);
+
+                                                            // For a deterministic but varied selection based on the offer id:
+                                                            int index = offer.OfferId % defaultImages.Count;
+                                                            var selectedImage = defaultImages[index];
+                                                        }
+
+                                                        @if (portfolioImages.Any())
+                                                        {
+                                                            <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Offer Image">
+                                                        }
+                                                        else
+                                                        {
+                                                            <img src="@selectedImage" class="card-img-top w-100" alt="Default Offer Image">
+                                                        }
+                                                    </div>
+                                                    <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                        <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
+                                                        <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                            <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
+                                                            <li>Availability Set: @offer.FreelanceType</li>
+                                                            <li>Created Date: @offer.CreatedDate.ToString("MMMM dd,yyyy")</li>
+                                                            <li style="list-style:none">
+                                                                <div class="switch-style1">
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input active-toggle" type="checkbox" data-offer-id="@offer.OfferId" @(offer.IsActive ? "checked" : "")>
+                                                                        <span class="status-text mx-3">@((offer.IsActive ? "Active" : "Inactive"))</span>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            <td class="align-top"><span class="fz15 fw400">@offer.Category</span></td>
+                                            <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
+                                            <td class="align-top">
+                                                <div class="d-flex">
+                                                    <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                    <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <div class="mbp_pagination text-center mt30">
+                                <ul class="page_navigation">
+                                    @if (Model.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+                                    }
+                                    @{
+                                        // Calculate the pagination group: display only 5 page links at a time
+                                        int groupSize = 5;
+                                        int currentGroup = (Model.CurrentPage - 1) / groupSize;
+                                        int startPage = currentGroup * groupSize + 1;
+                                        int endPage = Math.Min(startPage + groupSize - 1, Model.TotalPages);
+                                    }
+                                    @for (int i = startPage; i <= endPage; i++)
+                                    {
+                                        if (i == Model.CurrentPage)
+                                        {
+                                            <li class="page-item active" aria-current="page">
+                                                <a class="page-link" href="#">@i <span class="sr-only">(current)</span></a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
+                                            </li>
+                                        }
+                                    }
+
+                                    @if (Model.CurrentPage < Model.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                                <p class="mt10 mb-0 pagination_page_count text-center">Showing page @Model.CurrentPage of @Model.TotalPages offers listed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section DynamicScript {
+    <script>
+        $(document).ready(function () {
+            $('.active-toggle').change(function () {
+                var offerId = $(this).data('offer-id');
+                var isActive = $(this).is(':checked');
+                // Find the status text element in the same cell
+                var statusTextElem = $(this).closest('td').find('.status-text');
+
+                $.ajax({
+                    url: '@Url.Action("ToggleActive", "UserOfferManage")',
+                    type: 'POST',
+                    data: { offerId: offerId, isActive: isActive },
+                    success: function (response) {
+                        if(response.success){
+                            // Update the status text dynamically
+                            statusTextElem.text(isActive ? "Active" : "Inactive");
+                        } else {
+                            alert("There was an issue updating the offer.");
+                        }
+                    },
+                    error: function () {
+                        alert("Error updating offer status.");
+                    }
+                });
+            });
+        });
+    </script>
+}

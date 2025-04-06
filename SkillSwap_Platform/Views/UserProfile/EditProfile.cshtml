@@ -1,0 +1,1163 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.EditProfileCompositeVM
+
+@{
+    ViewData["Title"] = "My Profile";
+    ViewData["SubTitle"] = "Share a bit about yourself, this is your personal space.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+<style>
+    .skill-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        margin: 5px 5px 5px 0;
+        background: rgba(46, 204, 113, 0.15); /* glassed green effect */
+        color: #2ecc71;
+        border-radius: 20px;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+        backdrop-filter: blur(5px);
+        font-size: 14px;
+        transition: 0.3s ease;
+    }
+
+        .skill-badge:hover {
+            background: rgba(46, 204, 113, 0.25);
+        }
+
+        .skill-badge .remove-skill {
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+            .skill-badge .remove-skill:hover {
+                color: #e74c3c;
+            }
+
+    .approved-tag {
+        background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+        color: #2ecc71;
+        border-left: 5px solid #2ecc71;
+        border-right: 0.1px solid #2ecc71;
+        border-top: 0.1px solid #2ecc71;
+        border-bottom: 0.1px solid #2ecc71;
+    }
+
+    .not-approved-tag {
+        background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+        color: #e74c3c;
+        border-left: 5px solid #e74c3c;
+        border-right: 0.1px solid #e74c3c;
+        border-top: 0.1px solid #e74c3c;
+        border-bottom: 0.1px solid #e74c3c;
+    }
+
+    .approved-tag i {
+        color: #2ecc71; /* Green for approved */
+    }
+
+    .not-approved-tag i {
+        color: #e74c3c; /* Red for not approved */
+    }
+</style>
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="alert alert-warning">
+    <strong>Warning:</strong> All data will be saved at once when you click the corresponding save button.
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        @using (Html.BeginForm("UpdateProfile", "UserProfile", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Profile Details</h5>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="profile-box d-sm-flex align-items-center mb30">
+                        <div class="profile-img mb20-sm">
+                            <img id="profileImage" class="rounded-circle wa-xs"
+                                 src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/template_assets/images/No_Profile_img.png" : ViewData["UserProfileImage"])"
+                                 width="100" alt="Profile Image">
+                        </div>
+                        <div class="profile-content ml20 ml0-xs">
+                            <div class="d-flex align-items-center mx-3 mb-2">
+                                <a href="#!smile" class="tag-delt text-thm2">
+                                    <span class="fas fa-smile text-thm2" style="color:#111"></span>
+                                </a>
+                                <label asp-for="PersonalDetails.ProfileImageFile" for="fileInput" class="upload-btn ml10" style="cursor: pointer;">Upload Images</label>
+                                <input asp-for="PersonalDetails.ProfileImageFile" type="file" id="fileInput" accept=".jpg, .jpeg, .png" style="display: none;">
+                            </div>
+                            <p class="text mb-0 mx-3">Max file size is 1MB, Minimum dimension: 330x300. Suitable files: .jpg & .png</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.FirstName" class="heading-color ff-heading fw500 mb10">First Name <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.FirstName" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.FirstName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.LastName" class="heading-color ff-heading fw500 mb10">Last Name <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.LastName" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.UserName" class="heading-color ff-heading fw500 mb10">UserName <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.UserName" type="text" class="form-control" readonly disabled>
+                                <span asp-validation-for="PersonalDetails.UserName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.Email" class="heading-color ff-heading fw500 mb10">Email Address <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.Email" type="email" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.Email" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.PersonalWebsite" class="heading-color ff-heading fw500 mb10">Personal Website</label>
+                                <input asp-for="PersonalDetails.PersonalWebsite" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.PersonalWebsite" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.Location" class="heading-color ff-heading fw500 mb10">Location <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.Location" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.Location" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.Address" class="heading-color ff-heading fw500 mb10">Address <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.Address" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.Address" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.City" class="heading-color ff-heading fw500 mb10">City <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.City" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.City" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="PersonalDetails.Country" class="heading-color ff-heading fw500 mb10">Country <span class="text-danger">*</span></label>
+                                <input asp-for="PersonalDetails.Country" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="PersonalDetails.Country" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="PersonalDetails.AboutMe" class="heading-color ff-heading fw500 mb10">Introduce Yourself</label>
+                                <textarea asp-for="PersonalDetails.AboutMe" cols="30" rows="6" placeholder="Description"></textarea>
+                                <span asp-validation-for="PersonalDetails.AboutMe" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Skills <span class="text-danger">*</span></h5>
+                </div>
+                <div class="col-lg-12">
+                    <div class="row">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <div class="row skill-row" data-index="@i">
+                                <div class="col-sm-4">
+                                    <div class="mb20">
+                                        <div class="form-style1">
+                                            <div class="bootselect-multiselect">
+                                                <input asp-for="Skills.AllSkills[i].SkillId" type="hidden" />
+                                                <label asp-for="Skills.AllSkills[i].SkillName" class="heading-color ff-heading fw500 mb10">Skill Name</label>
+                                                <input asp-for="Skills.AllSkills[i].SkillName" type="text" class="form-control skill-name" placeholder="Enter skill name">
+                                                <span asp-validation-for="Skills.AllSkills[i].SkillName" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="mb20">
+                                        <div class="form-style1">
+                                            <label class="heading-color ff-heading fw500 mb10">Category</label>
+                                            <div class="bootselect-multiselect">
+                                                @{
+                                                    // Start with your hard-coded categories
+                                                    var unionCategories = Model.Skills.Categories.ToList();
+                                                    // Get all custom categories (non‑empty values) from every skill row
+                                                    var customCategories = Model.Skills.AllSkills
+                                                    .Select(s => s.Category)
+                                                    .Where(cat => !string.IsNullOrWhiteSpace(cat))
+                                                    .Distinct()
+                                                    .ToList();
+                                                    // Add any custom category that isn't already in the union list.
+                                                    foreach (var custom in customCategories)
+                                                    {
+                                                        if (!unionCategories.Any(o => o.Value == custom))
+                                                        {
+                                                            unionCategories.Add(new SelectListItem { Value = custom, Text = custom });
+                                                        }
+                                                    }
+                                                }
+                                                @Html.DropDownListFor(m => m.Skills.AllSkills[i].Category,
+                                                         unionCategories,
+                                                         "Choose Category",
+                                                         new { @class = "selectpicker skill-category" })
+                                                <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
+                                                <!-- Custom category input, hidden by default -->
+                                                <input type="text" class="form-control custom-category-input"
+                                                       name="Skills.AllSkills[@i].CustomCategory"
+                                                       placeholder="Enter custom category"
+                                                       style="display:none;" />
+                                                <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="mb20">
+                                        <div class="form-style1">
+                                            <label class="heading-color ff-heading fw500 mb10">Proficiency</label>
+                                            <div class="bootselect-multiselect">
+                                                <select asp-for="Skills.AllSkills[i].ProficiencyLevel" asp-items="Model.Skills.ProficiencyOptions" class="selectpicker skill-proficiency">
+                                                    <option value="">Select Level</option>
+                                                </select>
+                                                <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2 text-end">
+                                    <button type="button" class="btn btn-link icon clear-skill-btn" style="background-color:#FFEDE8" data-index="@i">
+                                        <span class="flaticon-delete"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Skill Preference</h5>
+                </div>
+                <div class="col-lg-7">
+                    <div class="row">
+                        <div class="row">
+                            <!-- Offered Skills Summary Section -->
+                            <div class="mb-3">
+                                <label class="form-label">Offered Skills <span class="text-danger">*</span></label>
+                                <input type="text" id="offeredSkillInput" class="form-control" placeholder="Enter offered skills (comma separated)" value="@(Model.Skills.OfferedSkillSummary ?? "")" />
+                                <small class="form-text text-muted">
+                                    Please enter skills separated by commas (e.g., <em>C#, JavaScript, UI Design</em>).
+                                </small>
+                                <div id="offeredSkillsContainer" class="mt-2">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Skills.OfferedSkillSummary))
+                                    {
+                                        var offeredSkills = Model.Skills.OfferedSkillSummary.Split(',')
+                                        .Select(s => s.Trim())
+                                        .Where(s => !string.IsNullOrEmpty(s))
+                                        .ToList();
+                                        foreach (var skill in offeredSkills)
+                                        {
+                                            <span class="skill-badge">
+                                                @skill
+                                            </span>
+                                        }
+                                    }
+                                </div>
+                                <input type="hidden" name="Skills.OfferedSkillSummary" id="offeredSkillsHidden" value="@(Model.Skills.OfferedSkillSummary ?? "")" />
+                                <small id="offeredSkillError" class="text-danger"></small>
+                            </div>
+
+                            <!-- Willing Skills Summary Section -->
+                            <div class="mb-3">
+                                <label class="form-label">Willing Skills <span class="text-danger">*</span></label>
+                                <input asp-for="Skills.WillingSkillSummary" type="text" id="willingSkillInput" class="form-control" placeholder="Enter willing skills (comma separated)" value="@(Model.Skills.WillingSkillSummary ?? "")" />
+                                <small class="form-text text-muted">
+                                    Please enter skills separated by commas (e.g., <em>C#, JavaScript, UI Design</em>).
+                                </small>
+                                <div id="willingSkillsContainer" class="mt-2">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Skills.WillingSkillSummary))
+                                    {
+                                        var willingSkills = Model.Skills.WillingSkillSummary.Split(',')
+                                        .Select(s => s.Trim())
+                                        .Where(s => !string.IsNullOrEmpty(s))
+                                        .ToList();
+                                        foreach (var skill in willingSkills)
+                                        {
+                                            <span class="skill-badge">
+                                                @skill
+                                            </span>
+                                        }
+                                    }
+                                </div>
+                                <input type="hidden" name="Skills.WillingSkillSummary" id="willingSkillsHidden" value="@(Model.Skills.WillingSkillSummary ?? "")" />
+                                <small id="willingSkillError" class="text-danger"></small>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="text-start">
+                                    <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Education <span class="text-danger">*</span></h5>
+                    <button type="button" id="addEducationBtn" class="add-more-btn text-thm" style="background:transparent;border:none">
+                        <i class="icon far fa-plus mr10"></i>Add Education
+                    </button>
+                    @* <a href="" class="add-more-btn text-thm"><i class="icon far fa-plus mr10"></i>Add Aducation</a> *@
+                </div>
+                <div class="position-relative" id="educationContainer">
+                    @for (int i = 0; i < Model.EducationEntries.Count; i++)
+                    {
+                        <div class="educational-quality education-entry" data-index="@i" id="eduRow_@i">
+                            @Html.HiddenFor(m => m.EducationEntries[i].EducationId)
+                            @Html.HiddenFor(m => m.EducationEntries[i].IsDeleted, new { id = "isDeleted_" + i })
+
+                            <div class="m-circle text-thm">E</div>
+                            <div class="wrapper mb40 position-relative">
+                                <div class="del-edit">
+                                    <div class="d-flex">
+                                        @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                        <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Delete" aria-label="Delete" onclick="markEducationDeleted(@i)">
+                                            <span class="flaticon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <sapn class="row col-sm-12">
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="EducationEntries[i].StartDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
+                                            <span asp-validation-for="EducationEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].EndDate" class="heading-color ff-heading fw500 mb10">End Date</label>
+                                            <input asp-for="EducationEntries[i].EndDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].EndDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </sapn>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].Degree" class="heading-color ff-heading fw500 mb10">Degree</label>
+                                            <input asp-for="EducationEntries[i].Degree" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].Degree" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].DegreeName" class="heading-color ff-heading fw500 mb10">Degree Name</label>
+                                            <input asp-for="EducationEntries[i].DegreeName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="EducationEntries[i].DegreeName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12">
+                                    <div class="mb20">
+                                        <label asp-for="EducationEntries[i].Institution" class="heading-color ff-heading fw500 mb10">Institute Name</label>
+                                        <input asp-for="EducationEntries[i].Institution" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="EducationEntries[i].Institution" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb10">
+                                        <label asp-for="EducationEntries[i].Description" class="heading-color ff-heading fw500 mb10">Descrption</label>
+                                        <textarea asp-for="EducationEntries[i].Description" cols="30" rows="6" placeholder="Description (Optional)"></textarea>
+                                        <span asp-validation-for="EducationEntries[i].Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Work & Experience <span class="text-danger">*</span></h5>
+                    <button type="button" id="addExperienceBtn" class="add-more-btn text-thm" style="background: transparent; border: none;">
+                        <i class="icon far fa-plus mr10"></i>Add Experience
+                    </button>
+                </div>
+                <div class="position-relative" id="experienceContainer">
+                    @for (int i = 0; i < Model.ExperienceEntries.Count; i++)
+                    {
+                        <div class="educational-quality experience-entry" data-index="@i" id="expRow_@i">
+                            @Html.HiddenFor(m => m.ExperienceEntries[i].ExperienceId)
+                            @Html.HiddenFor(m => m.ExperienceEntries[i].IsexpDeleted, new { id = "expIsDeleted_" + i })
+
+                            <div class="m-circle text-thm">X</div>
+                            <div class="wrapper mb40 position-relative">
+                                <div class="del-edit">
+                                    <div class="d-flex">
+                                        @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                        <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="Delete" aria-label="Delete" onclick="markExperienceDeleted(@i)">
+                                            <span class="flaticon-delete"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <sapn class="row col-sm-12">
+                                    @* <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="EducationEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="EducationEntries[i].StartDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
+                                            <span asp-validation-for="EducationEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div> *@
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                            <input asp-for="ExperienceEntries[i].StartDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].StartDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].EndDate" class="heading-color ff-heading fw500 mb10">End Date</label>
+                                            <input asp-for="ExperienceEntries[i].EndDate" type="date" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].EndDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </sapn>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].CompanyName" class="heading-color ff-heading fw500 mb10">Company Name</label>
+                                            <input asp-for="ExperienceEntries[i].CompanyName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].CompanyName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="ExperienceEntries[i].Position" class="heading-color ff-heading fw500 mb10">Position</label>
+                                            <input asp-for="ExperienceEntries[i].Position" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="ExperienceEntries[i].Position" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb10">
+                                        <label asp-for="ExperienceEntries[i].Description" class="heading-color ff-heading fw500 mb10">Descrption</label>
+                                        <textarea asp-for="ExperienceEntries[i].Description" cols="30" rows="6" placeholder="Description (Optional)"></textarea>
+                                        <span asp-validation-for="ExperienceEntries[i].Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30 d-sm-flex justify-content-between">
+                    <h5 class="list-title">Awards & Certificates <span class="text-danger">*</span></h5>
+                    <button type="button" id="addCertificateBtn" class="add-more-btn text-thm" style="background:transparent;border:none">
+                        <i class="icon far fa-plus mr10"></i>Add Certificate
+                    </button>
+                </div>
+                <div class="position-relative" id="certificateContainer">
+                    @for (int i = 0; i < Model.CertificateEntries.Count; i++)
+                    {
+                        <div class="educational-quality experience-entry" data-index="@i" id="certRow_@i">
+                            @Html.HiddenFor(m => m.CertificateEntries[i].CertificateId)
+                            @Html.HiddenFor(m => m.CertificateEntries[i].CertificateFilePath)
+                            @Html.HiddenFor(m => m.CertificateEntries[i].IscertDeleted, new { id = "certIsDeleted_" + i })
+
+                            <div class="m-circle text-thm">C</div>
+                            <div class="wrapper mb40 position-relative">
+                                <span class="tag @(Model.CertificateEntries[i].IsApproved ? "approved-tag" : "not-approved-tag") mb20">
+                                    @if (Model.CertificateEntries[i].IsApproved)
+                                    {
+                                        <span class="">
+                                            <i class="fas fa-check-circle"></i> Approved on @Model.CertificateEntries[i].IsApproved
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="">
+                                            <i class="fas fa-check-circle"></i> Not Approved Yet
+                                        </span>
+                                    }
+                                    <div class="del-edit">
+                                        <div class="d-flex">
+                                            @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
+                                            <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Delete" aria-label="Delete" onclick="markCertificateDeleted(@i)">
+                                                <span class="flaticon-delete"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </span>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateName" class="heading-color ff-heading fw500 mb10">Certificate Name</label>
+                                            <input asp-for="CertificateEntries[@i].CertificateName" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateFrom" class="heading-color ff-heading fw500 mb10">Institution/Organization</label>
+                                            <input asp-for="CertificateEntries[@i].CertificateFrom" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateFrom" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].CertificateDate" class="heading-color ff-heading fw500 mb10">Completion Date</label>
+                                            <input asp-for="CertificateEntries[i].CertificateDate"
+                                                   type="date"
+                                                   class="form-control"
+                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate.ToString("yyyy-MM-dd"))" />                                            <span asp-validation-for="CertificateEntries[@i].CertificateDate" class="text-danger"></span>
+                                            <span asp-validation-for="CertificateEntries[i].CertificateDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="mb20">
+                                            <label asp-for="CertificateEntries[@i].VerificationId" class="heading-color ff-heading fw500 mb10">Verification Id</label>
+                                            <input asp-for="CertificateEntries[@i].VerificationId" type="text" class="form-control" placeholder="i will">
+                                            <span asp-validation-for="CertificateEntries[@i].VerificationId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-8">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml20 mr40 ml0-xs">
+                                            <label class="form-label">Upload Certificate</label>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label for="certificateInput_@i" class="upload-btn certificate-label" style="cursor: pointer;">
+                                                    Upload Certificate
+                                                </label>
+                                                @if (string.IsNullOrEmpty(Model.CertificateEntries[i].CertificateFilePath))
+                                                {
+                                                    <input type="file"
+                                                           asp-for="CertificateEntries[@i].CertificateFile"
+                                                           class="certificateInput"
+                                                           id="certificateInput_@i"
+                                                           style="display: none;"
+                                                           required="required" />
+                                                }
+                                                else
+                                                {
+                                                    <input type="file"
+                                                           asp-for="CertificateEntries[@i].CertificateFile"
+                                                           class="certificateInput"
+                                                           id="certificateInput_@i"
+                                                           style="display: none;" />
+                                                }
+                                            </div>
+                                            <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf, .jpg, .jpeg, .png)</p>
+                                            <small class="fileError text-danger mx-3"></small>
+                                            <span asp-validation-for="CertificateEntries[@i].CertificateFile" class="text-danger"></span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(Model.CertificateEntries[i].CertificateFilePath))
+                                        {
+                                            <div class="certificate-preview mt-2">
+                                                @{
+                                                    string ext = System.IO.Path.GetExtension(Model.CertificateEntries[i].CertificateFilePath).ToLower();
+                                                    if (ext == ".pdf")
+                                                    {
+                                                        <iframe src="@Model.CertificateEntries[i].CertificateFilePath#toolbar=0" class="pdf-preview" width="150"></iframe>
+                                                    }
+                                                    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
+                                                    {
+                                                        <img src="@Model.CertificateEntries[i].CertificateFilePath" alt="Certificate Preview" class="img-preview" width="150" />
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="text-start mb-5">
+                        <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb25">
+                <h5 class="list-title">Change password</h5>
+            </div>
+            <div class="col-lg-7">
+                <div class="row">
+                    <form class="form-style1">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb20">
+                                    <label class="heading-color ff-heading fw500 mb10">Old Password</label>
+                                    <input type="text" class="form-control" placeholder="********">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="mb20">
+                                    <label class="heading-color ff-heading fw500 mb10">New Password</label>
+                                    <input type="text" class="form-control" placeholder="********">
+                                </div>
+                            </div>
+                            <div class="col-sm-12">
+                                <div class="mb20">
+                                    <label class="heading-color ff-heading fw500 mb10">Confirm New Password</label>
+                                    <input type="text" class="form-control" placeholder="********">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="text-start">
+                                    <a class="ud-btn btn-thm" href="page-contact.html">Change Password<i class="fal fa-arrow-right-long"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="col-lg-7">
+                <div class="row">
+                    <div class="bdrb1 pb15 mb25">
+                        <h5 class="list-title">Change password</h5>
+                    </div>
+                    <form class="form-style1">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <h6>Close account</h6>
+                                <p class="text">Warning: If you close your account, you will be unsubscribed from all your 5 courses, and will lose access forever.</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb20">
+                                    <label class="heading-color ff-heading fw500 mb10">Enter Password</label>
+                                    <input type="text" class="form-control" placeholder="********">
+                                </div>
+                                <div class="text-start">
+                                    <a class="ud-btn btn-thm" href="page-contact.html">Change Password<i class="fal fa-arrow-right-long"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section DynamicScript {
+    <script>
+        (function ($) {
+            "use strict";
+
+            var App = {
+                // Profile module: updates preview image and file upload label.
+                profile: {
+                    init: function () {
+                        var fileInput = document.getElementById('fileInput');
+                        if (fileInput) {
+                            fileInput.addEventListener('change', function (event) {
+                                var file = event.target.files[0];
+                                var img = document.getElementById('profileImage');
+                                var label = $('label[for="fileInput"]');
+                                if (file) {
+                                    if (file.size > 1024 * 1024) { // 1MB max
+                                        alert('File size exceeds 1MB.');
+                                        event.target.value = '';
+                                        label.text("Upload Images");
+                                        return;
+                                    }
+                                    var reader = new FileReader();
+                                    reader.onload = function (e) {
+                                        img.src = e.target.result;
+                                        label.text(file.name);
+                                    };
+                                    reader.readAsDataURL(file);
+                                } else {
+                                    label.text("Upload Images");
+                                }
+                            });
+                        }
+                    }
+                },
+
+                // Skills module: handles clearing of individual skill rows.
+                skills: {
+                    init: function () {
+                        $('.clear-skill-btn').on('click', function () {
+                            var container = $(this).closest('.skill-row');
+                            container.find('.skill-name').val('');
+                            container.find('.skill-category, .skill-proficiency')
+                                .prop('selectedIndex', 0)
+                                .trigger('change')
+                                .selectpicker('refresh');
+                            container.find('.custom-category-input').hide().val('');
+
+                            // Immediately re-check offered skills after clearing a row.
+                            App.skillPreference.checkOfferedSkillsProfile();
+                        });
+                    }
+                },
+
+                // Education module: handles dynamic education entries.
+                education: {
+                    educationIndex: @Model.EducationEntries.Count,
+                    init: function () {
+                        var self = this;
+                        $("#addEducationBtn").click(function () {
+                            var newBlock = `
+                            <div class="clone-wrapper" data-index="${self.educationIndex}">
+                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
+                                    New Education Entry
+                                </div>
+                                <div class="educational-quality education-entry" data-index="${self.educationIndex}" id="eduRow_${self.educationIndex}" data-new="true">
+                                    <input type="hidden" name="EducationEntries[${self.educationIndex}].EducationId" value="0">
+                                    <input type="hidden" id="isDeleted_${self.educationIndex}" name="EducationEntries[${self.educationIndex}].IsDeleted" value="false">
+                                    <div class="m-circle text-thm">M</div>
+                                    <div class="wrapper mb40 position-relative">
+                                        <div class="del-edit">
+                                            <button type="button" class="btn btn-link icon delete-education-btn" data-index="${self.educationIndex}" title="Delete" aria-label="Delete">
+                                                <span class="flaticon-delete"></span>
+                                            </button>
+                                        </div>
+                                        <div class="row mb20">
+                                            <div class="col-sm-3">
+                                                <label class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                                <input type="date" class="form-control" name="EducationEntries[${self.educationIndex}].StartDate" value="">
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <label class="heading-color ff-heading fw500 mb10">End Date</label>
+                                                <input type="date" class="form-control" name="EducationEntries[${self.educationIndex}].EndDate" value="">
+                                            </div>
+                                        </div>
+                                        <div class="row mb20">
+                                            <div class="col-sm-6">
+                                                <label class="heading-color ff-heading fw500 mb10">Degree</label>
+                                                <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].Degree" placeholder="Enter Degree" value="">
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="heading-color ff-heading fw500 mb10">Degree Name</label>
+                                                <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].DegreeName" placeholder="Enter Degree Name" value="">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 mb20">
+                                            <label class="heading-color ff-heading fw500 mb10">Institute Name</label>
+                                            <input type="text" class="form-control" name="EducationEntries[${self.educationIndex}].Institution" placeholder="Enter Institute Name" value="">
+                                        </div>
+                                        <div class="col-md-12 mb20">
+                                            <label class="heading-color ff-heading fw500 mb10">Description</label>
+                                            <textarea class="form-control" cols="30" rows="6" name="EducationEntries[${self.educationIndex}].Description" placeholder="Enter description"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                            $("#educationContainer .text-start:last").before(newBlock);
+                            self.educationIndex++;
+                        });
+
+                        $(document).on('click', '.delete-education-btn', function () {
+                            var index = $(this).data('index');
+                            App.education.markDeleted(index);
+                        });
+                    },
+                    markDeleted: function (index) {
+                        var element = $("#eduRow_" + index);
+                        if (element.attr("data-new") === "true") {
+                            element.closest(".clone-wrapper").remove();
+                        } else {
+                            $("#isDeleted_" + index).val("true");
+                            element.hide();
+                        }
+                    }
+                },
+
+                // Experience module: handles dynamic experience entries.
+                experience: {
+                    experienceIndex: @Model.ExperienceEntries.Count,
+                    init: function () {
+                        var self = this;
+                        $("#addExperienceBtn").click(function () {
+                            var newBlock = `
+                            <div class="clone-wrapper" data-index="${self.experienceIndex}">
+                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
+                                    New Experience Entry
+                                </div>
+                                <div class="educational-quality experience-entry" data-index="${self.experienceIndex}" id="expRow_${self.experienceIndex}" data-new="true">
+                                    <input type="hidden" name="ExperienceEntries[${self.experienceIndex}].ExperienceId" value="0">
+                                    <input type="hidden" id="expIsDeleted_${self.experienceIndex}" name="ExperienceEntries[${self.experienceIndex}].IsDeleted" value="false">
+                                    <div class="m-circle text-thm">X</div>
+                                    <div class="wrapper mb40 position-relative">
+                                        <div class="del-edit">
+                                            <button type="button" class="btn btn-link icon delete-experience-btn" data-index="${self.experienceIndex}" title="Delete" aria-label="Delete">
+                                                <span class="flaticon-delete"></span>
+                                            </button>
+                                        </div>
+                                        <div class="row mb20">
+                                            <div class="col-sm-3">
+                                                <label class="heading-color ff-heading fw500 mb10">Start Date</label>
+                                                <input type="date" class="form-control" name="ExperienceEntries[${self.experienceIndex}].StartDate" value="">
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <label class="heading-color ff-heading fw500 mb10">End Date</label>
+                                                <input type="date" class="form-control" name="ExperienceEntries[${self.experienceIndex}].EndDate" value="">
+                                            </div>
+                                        </div>
+                                        <div class="row mb20">
+                                            <div class="col-sm-6">
+                                                <label class="heading-color ff-heading fw500 mb10">Company Name</label>
+                                                <input type="text" class="form-control" name="ExperienceEntries[${self.experienceIndex}].CompanyName" placeholder="Enter company name">
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="heading-color ff-heading fw500 mb10">Position</label>
+                                                <input type="text" class="form-control" name="ExperienceEntries[${self.experienceIndex}].Position" placeholder="Enter position">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 mb20">
+                                            <label class="heading-color ff-heading fw500 mb10">Description</label>
+                                            <textarea class="form-control" cols="30" rows="4" name="ExperienceEntries[${self.experienceIndex}].Description" placeholder="Enter description"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                            $("#experienceContainer .text-start:last").before(newBlock);
+                            self.experienceIndex++;
+                        });
+
+                        $(document).on('click', '.delete-experience-btn', function () {
+                            var index = $(this).data('index');
+                            App.experience.markDeleted(index);
+                        });
+                    },
+                    markDeleted: function (index) {
+                        var element = $('#expRow_' + index);
+                        if (element.attr("data-new") === "true") {
+                            element.closest(".clone-wrapper").remove();
+                        } else {
+                            $('#expIsDeleted_' + index).val('true');
+                            element.hide();
+                        }
+                    }
+                },
+
+                // Certificate module: handles dynamic certificate entries and file upload label updates.
+                certificate: {
+                    certificateIndex: @Model.CertificateEntries.Count,
+                    init: function () {
+                        var self = this;
+                        $("#addCertificateBtn").click(function () {
+                            var newBlock = `
+                            <div class="clone-wrapper" data-index="${self.certificateIndex}">
+                                <div class="clone-header" style="padding:5px; background:#eee; margin-bottom:5px;">
+                                    New Certificate Entry
+                                </div>
+                                <div class="certificate-entry mb30" data-index="${self.certificateIndex}" id="certRow_${self.certificateIndex}" data-new="true">
+                                    <input type="hidden" name="CertificateEntries[${self.certificateIndex}].CertificateId" value="0" />
+                                    <input type="hidden" id="certIsDeleted_${self.certificateIndex}" name="CertificateEntries[${self.certificateIndex}].IsDeleted" value="false" />
+                                    <div class="del-edit">
+                                        <div class="d-flex">
+                                            <button type="button" class="btn btn-link icon delete-certificate-btn" data-index="${self.certificateIndex}" title="Delete" aria-label="Delete">
+                                                <span class="flaticon-delete"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row mb20">
+                                        <div class="col-sm-6">
+                                            <div class="mb20">
+                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateName" class="heading-color ff-heading fw500 mb10">Certificate Name</label>
+                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].CertificateName" id="CertificateEntries_${self.certificateIndex}__CertificateName" class="form-control" placeholder="Enter Certificate Name">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="mb20">
+                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateFrom" class="heading-color ff-heading fw500 mb10">Institution/Organization</label>
+                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].CertificateFrom" id="CertificateEntries_${self.certificateIndex}__CertificateFrom" class="form-control" placeholder="Enter Institution/Organization">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb20">
+                                        <div class="col-sm-6">
+                                            <div class="mb20">
+                                                <label for="CertificateEntries_${self.certificateIndex}__CertificateDate" class="heading-color ff-heading fw500 mb10">Completion Date</label>
+                                                <input type="date" name="CertificateEntries[${self.certificateIndex}].CertificateDate" id="CertificateEntries_${self.certificateIndex}__CertificateDate" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="mb20">
+                                                <label for="CertificateEntries_${self.certificateIndex}__VerificationId" class="heading-color ff-heading fw500 mb10">Verification Id</label>
+                                                <input type="text" name="CertificateEntries[${self.certificateIndex}].VerificationId" id="CertificateEntries_${self.certificateIndex}__VerificationId" class="form-control" placeholder="Enter Verification Id">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="profile-content ml20 ml0-xs">
+                                        <label class="form-label">Upload Certificate</label>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <label for="certificateInput_${self.certificateIndex}" class="upload-btn certificate-label" style="cursor: pointer; background-color:#FBF7ED; padding:12px 35px; border-radius:4px">
+                                                Upload Certificate
+                                            </label>
+                                            <input type="file" name="CertificateEntries[${self.certificateIndex}].CertificateFile" id="certificateInput_${self.certificateIndex}" class="certificateInput" style="display: none;">
+                                        </div>
+                                        <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf, .jpg, .jpeg, .png)</p>
+                                        <small class="fileError text-danger mx-3"></small>
+                                    </div>
+                                </div>
+                            </div>`;
+                            $("#certificateContainer .text-start:last").before(newBlock);
+                            self.certificateIndex++;
+                        });
+                        $(document).on('click', '.delete-certificate-btn', function () {
+                            var index = $(this).data('index');
+                            App.certificate.markDeleted(index);
+                        });
+                        $(document).on('change', '.certificateInput', function () {
+                            var file = this.files[0];
+                            var inputId = $(this).attr('id');
+                            var label = $('label[for="' + inputId + '"]');
+                            label.text(file ? file.name : 'Upload Certificate');
+                        });
+                    },
+                    markDeleted: function (index) {
+                        var element = $("#certRow_" + index);
+                        if (element.attr("data-new") === "true") {
+                            element.closest(".clone-wrapper").remove();
+                        } else {
+                            $("#certIsDeleted_" + index).val("true");
+                            element.hide();
+                        }
+                    }
+                },
+
+                // SkillPreference module: handles offered skills synchronization in real time.
+                skillPreference: {
+                    updateOfferedSkillsHidden: function () {
+                        var offeredSkills = [];
+                        $("#offeredSkillsContainer .skill-badge").each(function () {
+                            offeredSkills.push($(this).text().trim().replace("×", "").trim());
+                        });
+                        $("#offeredSkillsHidden").val(offeredSkills.join(","));
+                    },
+                    checkOfferedSkillsProfile: function () {
+                        var availableSkills = $(".skill-name").map(function () {
+                            return $(this).val().trim().toLowerCase();
+                        }).get();
+                        $("#offeredSkillsContainer .skill-badge").each(function () {
+                            var badgeSkill = $(this).text().trim().replace("×", "").trim().toLowerCase();
+                            if ($.inArray(badgeSkill, availableSkills) === -1) {
+                                $(this).remove();
+                            }
+                        });
+                        App.skillPreference.updateOfferedSkillsHidden();
+                    },
+                    addSkillBadge: function (skill) {
+                        var container = $("#offeredSkillsContainer");
+                        // Prevent duplicates.
+                        var duplicate = false;
+                        container.find(".skill-badge").each(function () {
+                            if ($(this).text().trim().replace("×", "").toLowerCase() === skill.toLowerCase()) {
+                                duplicate = true;
+                            }
+                        });
+                        if (duplicate) {
+                            $("#offeredSkillError").text("This skill has already been added.");
+                            $("#offeredSkillInput").val("");
+                            return;
+                        }
+                        if (container.find(".skill-badge").length >= 5) {
+                            $("#offeredSkillError").text("Maximum of 5 skills allowed.");
+                            $("#offeredSkillInput").val("");
+                            return;
+                        }
+                        var badge = '<span class="skill-badge">' + skill + '<i class="far fa-times remove-skill ms-2"></i></span>';
+                        container.append(badge);
+                        $("#offeredSkillInput").val("");
+                        $("#offeredSkillError").text("");
+                        App.skillPreference.updateOfferedSkillsHidden();
+                    },
+                    init: function () {
+                        // Re-check offered skills on every keyup or change in any skill row.
+                        $(document).on("keyup change", ".skill-name", function () {
+                            App.skillPreference.checkOfferedSkillsProfile();
+                        });
+
+                        // Delegate removal of offered skill badges.
+                        $(document).on("click", "#offeredSkillsContainer .skill-badge .remove-skill", function () {
+                            $(this).closest(".skill-badge").remove();
+                            App.skillPreference.updateOfferedSkillsHidden();
+                        });
+
+                        // Offered skill input: on Enter, process comma-separated skills.
+                        $("#offeredSkillInput").on("keypress", function (e) {
+                            if (e.which === 13) {
+                                e.preventDefault();
+                                var inputVal = $(this).val().trim();
+                                if (!inputVal) { return; }
+                                // Split by comma if multiple skills are entered.
+                                var skills = inputVal.split(",").map(function (item) {
+                                    return item.trim();
+                                }).filter(function (item) {
+                                    return item.length > 0;
+                                });
+
+                                var availableSkills = $(".skill-name").map(function () {
+                                    return $(this).val().trim().toLowerCase();
+                                }).get();
+                                var invalidSkills = [];
+
+                                skills.forEach(function (skill) {
+                                    if ($.inArray(skill.toLowerCase(), availableSkills) === -1) {
+                                        invalidSkills.push(skill);
+                                    } else {
+                                        App.skillPreference.addSkillBadge(skill);
+                                    }
+                                });
+
+                                if (invalidSkills.length > 0) {
+                                    $("#offeredSkillError").text('The following skills are not present in your skill set: ' + invalidSkills.join(", "));
+                                } else {
+                                    $("#offeredSkillError").text("");
+                                }
+                                $(this).val("");
+                            }
+                        });
+
+                        // Additionally, on blur, process any remaining text.
+                        $("#offeredSkillInput").on("blur", function () {
+                            var inputVal = $(this).val().trim();
+                            if (inputVal !== "") {
+                                var skills = inputVal.split(",").map(function (item) {
+                                    return item.trim();
+                                }).filter(function (item) {
+                                    return item.length > 0;
+                                });
+                                var availableSkills = $(".skill-name").map(function () {
+                                    return $(this).val().trim().toLowerCase();
+                                }).get();
+                                var invalidSkills = [];
+                                skills.forEach(function (skill) {
+                                    if ($.inArray(skill.toLowerCase(), availableSkills) === -1) {
+                                        invalidSkills.push(skill);
+                                    } else {
+                                        App.skillPreference.addSkillBadge(skill);
+                                    }
+                                });
+                                if (invalidSkills.length > 0) {
+                                    $("#offeredSkillError").text('The following skills are not present in your skill set: ' + invalidSkills.join(", "));
+                                } else {
+                                    $("#offeredSkillError").text("");
+                                }
+                                $(this).val("");
+                            }
+                        });
+                    }
+                },
+
+                // Global form submit handler to update the hidden field from badges.
+                initFormSubmit: function () {
+                    $("form").on("submit", function () {
+                        // Extract offered skills directly from the badges.
+                        var offeredSkills = [];
+                        $("#offeredSkillsContainer .skill-badge").each(function () {
+                            offeredSkills.push($(this).text().trim().replace("×", "").trim());
+                        });
+                        $("#offeredSkillsHidden").val(offeredSkills.join(","));
+                        console.log("Serialized form data:", $(this).serialize());
+                    });
+                }
+            };
+
+            $(document).ready(function () {
+                App.profile.init();
+                App.skills.init();
+                App.education.init();
+                App.experience.init();
+                App.certificate.init();
+                App.skillPreference.init();
+                App.initFormSubmit();
+
+                // Expose deletion functions globally for inline event handlers in DB-rendered content.
+                window.markEducationDeleted = App.education.markDeleted;
+                window.markExperienceDeleted = App.experience.markDeleted;
+                window.markCertificateDeleted = App.certificate.markDeleted;
+            });
+        })(jQuery);
+    </script>
+}
+

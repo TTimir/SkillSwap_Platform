@@ -1,0 +1,650 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ContractCreationVM
+@{
+    // Lookup the offered skill display text.
+    string offeredSkillText = "N/A";
+    if (Model.SenderOfferedSkills != null && !string.IsNullOrWhiteSpace(Model.OfferedSkill))
+    {
+        var selectedSkill = Model.SenderOfferedSkills
+            .FirstOrDefault(x => x.Value == Model.OfferedSkill?.ToString());
+        if (selectedSkill != null)
+        {
+            offeredSkillText = selectedSkill.Text;
+        }
+    }
+    var currentUserId = Convert.ToInt32(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+    var isSender = currentUserId == Model.SenderUserId;
+    var isReceiver = currentUserId == Model.ReceiverUserId;
+    // For signing mode, force editable mode for the sender.
+    if (isSender && (Model.Mode == "Create" || Model.Mode == "Edit" || Model.Mode == "Sign"))
+    {
+        Model.IsPreview = false;
+    }
+
+    var editableMode = (Model.Mode == "Create" || Model.Mode == "Edit");
+    var isSignMode = Model.Mode == "Sign";
+}
+<div class="contract-document">
+    @if (Model.IsPdfDownload)
+    {
+        <div class="pdf-header">
+            @if (Model.IsPreview)
+            {
+                <p class="pdf-status preview">PREVIEW: This document is a draft and is not legally binding.</p>
+            }
+            else if (Model.Version < 3)
+            {
+                <p class="pdf-status pre-final">Pre-final Version (v@Model.Version): Subject to modifications until finalized.</p>
+            }
+            else if (Model.Version >= 3)
+            {
+                <p class="pdf-status finalized">FINALIZED CONTRACT: This contract is legally binding.</p>
+            }
+        </div>
+    }
+
+    <p style="font-size: 14px; font-weight: bold;">
+        Contract Unique ID: @Model.ContractUniqueId
+    </p>
+    <p style="display: flex; justify-content: space-between; align-items: center;">
+        @{
+            // Example condition: Check if "mode" is set to "modify" in the query string
+            bool isModifyMode = Model.Mode == "Edit";
+
+            int displayVersion = Model.Version;
+            if (isModifyMode)
+            {
+                displayVersion++; // Increment version if in modify mode
+            }
+            else
+            {
+                displayVersion = Model.Version;
+            }
+        }
+        <span><strong>Contract Version:</strong> @("v")@displayVersion</span>
+        <span>(Agreement Initiated On: @((Model.OriginalCreatedDate ?? Model.ContractDate).Value.ToString("dd MMMM, yyyy")))</span>
+    </p>
+    <br />
+    <h2>SkillSwap Trust Exchange Agreement</h2>
+    @{
+        DateTime effectiveDate = (Model.ActionContext != null &&
+        Model.ActionContext.Equals("ModifyOnly", StringComparison.OrdinalIgnoreCase))
+        ? (Model.ContractDate ?? DateTime.Now)
+        : (Model.OriginalCreatedDate ?? Model.ContractDate ?? DateTime.Now);
+    }
+    <p>
+        This Trust Exchange Agreement ("Agreement") is entered into on this
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("dd")
+        </span>
+        day of
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("MMMM")
+        </span>,
+        <span class="inline-input" style="font-weight:600">
+            @effectiveDate.ToString("yyyy")
+        </span>, electronically through the SkillSwap Platform, by and between:
+    </p>
+    <p>
+        <strong>Sender:</strong>
+        @Html.TextBoxFor(m => m.SenderName, new { @class = "inline-input", id = "senderNameInput", placeholder = "Your Name", style = "font-size:14px;", @readonly = "readonly" })
+        , residing at
+        @Html.TextBoxFor(m => m.SenderAddress, new { @class = "inline-input", placeholder = "Your Address", style = "width:100%;font-size:14px;", @readonly = "readonly" })
+        , contactable via email
+        @Html.TextBoxFor(m => m.SenderEmail, new { @class = "inline-input", placeholder = "Your Email", style = "font-size:14px;", @readonly = "readonly" })
+        , having SkillSwap profile with a username
+        <span class="inline-input" style="font-size:14px;">@("@")@Model.SenderUserName</span>.
+    </p>
+    <p>
+        <strong>Receiver:</strong>
+        @Html.TextBoxFor(m => m.ReceiverName, new { @class = "inline-input", id = "receiverNameInput", placeholder = "Your Name", style = "font-size:14px;", @readonly = "readonly" })
+        , residing at
+        @Html.TextBoxFor(m => m.ReceiverAddress, new { @class = "inline-input", placeholder = "Your Address", style = "width:100%;font-size:14px;", @readonly = "readonly" })
+        , contactable via email
+        @Html.TextBoxFor(m => m.ReceiverEmail, new { @class = "inline-input", placeholder = "Your Email", style = "font-size:14px;", @readonly = "readonly" })
+        , having SkillSwap profile with a username
+        <span class="inline-input" style="font-size:14px;">@("@")@Model.ReceiverUserName</span>.
+    </p>
+
+    <p>
+        The above-mentioned Sender and Receiver are collectively referred to as the "Parties" and individually as "Party."
+    </p>
+    <p>
+        <strong>PREAMBLE:</strong>
+        The Parties enter into this Agreement with mutual commitment to maintaining trust,
+        transparency, accountability, and professionalism in the exchange of their respective skills or
+        services as clearly detailed below. Both Parties agree to uphold integrity, clear communication,
+        and mutual respect throughout their exchange to ensure a mutually satisfactory experience.
+        The SkillSwap Platform exclusively serves as an intermediary, facilitating the exchange without
+        bearing any legal responsibility or liability for the actions or representations made by either Party.
+    </p>
+    <ol>
+        <li>
+            <strong>Details of the Exchange:</strong><br />
+            1.1 By entering into this agreement, the Sender agrees to provide the following:
+            @if (Model.Mode == "Create")
+            {
+                @Html.DropDownListFor(m => m.OfferedSkill, Model.SenderOfferedSkills ?? new List<SelectListItem>(), "Select your skill", new { @class = "inline-input", style = "font-size:14px;" })
+            }
+            else
+            {
+                <span class="inline-input" style="font-size:14px;">@offeredSkillText</span>
+            }
+            .<br />
+            1.2 In return, The Receiver agrees to provide the following skill/service:
+            @if (Model.Mode == "Create")
+            {
+                @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly", style = "font-size:14px;" })
+            }
+            else
+            {
+                <span class="inline-input" style="font-size:14px;">@Model.OfferOwnerSkill</span>
+            }
+            under the category “<span class="inline-input" style="font-size:14px;">@Model.Category</span>,” as specified in the original offer listing.<br />
+            1.3 The learning objective/description for this exchange is:
+            @Html.TextBoxFor(m => m.LearningObjective, new { @class = "inline-input", style = "font-size:14px;", @readonly = "readonly" })
+            , and the Offer Owner (Receiver) requires that the learner (Sender) possess an <span class="inline-input" style="font-size:14px;">@Model.OppositeExperienceLevel</span> level of proficiency to fully benefit from the instruction.
+            <br />
+            1.4 The mode of learning/instruction is <span class="inline-input" style="font-size:14px;">@Model.ModeOfLearning</span>
+            and the Offer Owner (Receiver) is available on a
+            <span class="inline-input" style="font-size:14px;">@Model.OfferOwnerAvailability</span>
+            basis
+            <br />
+            1.5 The Offer Owner (Receiver) agrees to provide reasonable assistance and clarification rounds during the learning period. Unless otherwise agreed, up to (<span class="inline-input" style="font-size:14px;">@Model.AssistanceRounds</span>) rounds of revision or guidance may be requested by the Sender, within the agreed exchange duration.
+            <br />
+            1.6 The agreed duration for this exchange is
+            <span class="inline-input" style="font-size:14px;">@Model.LearningDays</span>
+            days, with an agreed digital token payment of
+            @if (isSender && editableMode)
+            {
+                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", id = "visibleTokenOffer", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;" })
+            }
+            else
+            {
+                <span class="inline-input" style="font-size:14px;">@Model.TokenOffer</span>
+            }
+            tokens. <br />
+            1.7 The exchange shall commence on
+            @{
+                // Fallback: if CompletionDate is not set, calculate it as ContractDate + LearningDays + 1.
+                var contractDate = Model.ContractDate ?? DateTime.Now;
+                var completionDate = Model.CompletionDate ?? contractDate.AddDays(Model.LearningDays + 1);
+            }
+            <span class="inline-input" style="font-weight:600;font-size:14px;">@contractDate.ToString("dd MMMM, yyyy")</span>
+            and must be completed by the day of
+            <span class="inline-input" style="font-size:14px;">@completionDate.ToString("dd MMMM, yyyy").</span> <p style="display: inline;font-size:14px;">(This completion date is automatically calculated based on the Contract Signing Date plus the agreed Exchange Duration and an additional T+1 backup day...)</p>
+        </li>
+        <br />
+        <li>
+            <strong>Term of Agreement:</strong><br />
+            2.1 This Agreement remains effective from the commencement date until the specified completion date,
+            unless terminated earlier according to the conditions herein. <br />
+            2.2 Should additional time be necessary, both Parties must mutually agree upon an extension in
+            writing through the SkillSwap Platform prior to the original completion date.
+            <br />
+        </li>
+        <br />
+        <li>
+            <strong>Commitments of the Parties:</strong><br />
+            3.1 Both Parties agree to provide truthful, accurate, and comprehensive details regarding
+            their skills and services.<br />
+            3.2 Services must be delivered promptly, professionally, and exactly as agreed.<br />
+            3.3 Both Parties agree to maintain respectful, ethical, and clear communication throughout
+            the duration of the exchange.
+        </li>
+        <br />
+        <li>
+            <strong>Prohibited Conduct:</strong><br />
+            The Parties expressly agree not to engage in: 4.1 Fraudulent activities, <br /> misrepresentation, or dishonesty.<br />
+            4.2 Providing false or misleading information.<br />
+            4.3 Any conduct causing financial, reputational, or other forms of harm.<br />
+            4.4 Unprofessional or disrespectful behavior.
+        </li>
+        <br />
+        <li>
+            <strong>Confidentiality and Privacy:</strong><br />
+            Both Parties must strictly maintain confidentiality regarding all shared information,
+            only disclosing details if explicitly authorized by the other Party or required by law.
+        </li>
+        <br />
+        <li>
+            <strong>Breach of Agreement and Enforcement:</strong><br />
+            In the event of a breach, the following actions will be taken: 6.1 Immediate <br /> termination of services by the breaching Party.<br />
+            6.2 Liability of the breaching Party for incurred damages.<br />
+            6.3 Potential legal action within the jurisdiction of India, including adherence to all applicable
+            provisions of the Indian Contract Act, 1872, and the Information Technology Act, 2000,
+            governing electronic agreements and digital transactions.<br />
+            6.4 Reporting breaches to SkillSwap administration and professional platforms including LinkedIn,
+            Facebook, Instagram, Twitter, and relevant forums.<br />
+            6.5 Flagging of the offending Party’s SkillSwap profile and reporting across other professional
+            platforms if inappropriate, unprofessional, or disrespectful behavior is identified.
+        </li>
+        <br />
+        <li>
+            <strong>Measures to Enhance Trust:</strong><br />
+            Both Parties commit to: 7.1 Prompt and responsive communication.<br />
+            7.2 Regular updates and complete transparency throughout the exchange.<br />
+            7.3 Mutual feedback to ensure quality and satisfaction.<br />
+            7.4 Clearly defined procedures for resolving misunderstandings or disputes.
+        </li>
+        <br />
+        <li>
+            <strong>Protection of SkillSwap Platform:</strong><br />
+            8.1 Both Parties acknowledge that SkillSwap acts solely as an intermediary platform to facilitate exchanges.<br />
+            8.2 The Platform will provide assistance at every stage to amicably resolve disputes, misunderstandings, or legal issues between Parties.<br />
+            8.3 SkillSwap holds no legal or financial responsibility for disputes, breaches, misrepresentations,
+            or other issues arising from this Agreement. The Parties explicitly waive the right to involve SkillSwap in legal or administrative proceedings.
+        </li>
+        <br />
+        <li>
+            <strong>Dispute Resolution:</strong><br />
+            Any disputes arising shall initially be addressed through negotiation or mediation. If unresolved,
+            arbitration procedures under the Arbitration and Conciliation Act, 1996, will apply within
+            the jurisdiction of India.
+        </li>
+        <br />
+        <li>
+            <strong>Governing Law:</strong><br />
+            This Agreement shall be governed by and interpreted under the laws of India. Specifically,
+            this Agreement complies with the provisions of the Indian Contract Act, 1872, and
+            the Information Technology Act, 2000.
+        </li>
+        <br />
+        <li>
+            <strong>Entire Agreement:</strong><br />
+            This Agreement constitutes the complete understanding between the Parties, superseding any previous
+            verbal or written discussions or agreements.
+        </li>
+        <br />
+        <li>
+            <strong>Amendments:</strong><br />
+            Any changes or modifications must be documented in writing and mutually agreed upon by both Parties
+            to be valid.
+        </li>
+        <br />
+        <li>
+            <strong>Optional Additional Terms (e.g., specific conditions, communication preferences, penalty clauses):</strong><br />
+            @if (editableMode)
+            {
+                @Html.TextAreaFor(m => m.AdditionalTerms, new { @class = "inline-input", placeholder = "Enter additional terms", style = "width:90%; height:60px; font-size:14px;" })
+            }
+            else
+            {
+                <span class="display" style="font-size:14px;">@(!string.IsNullOrWhiteSpace(Model.AdditionalTerms) ? Model.AdditionalTerms : "N/A")</span>
+            }
+        </li>
+        <br />
+        <li>
+            <strong>Process Flow of Exchange:</strong><br />
+            Clearly outline the detailed steps involved in the exchange process, including key milestones or checkpoints:
+            <br />
+            @if (editableMode)
+            {
+                <div id="bulletContainer">
+                    <ul id="flowSteps" style="list-style-type: none; padding-left: 0;">
+                        @{
+                            var steps = Model.FlowDescription?.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                            ?? new string[] { "", "", "" };
+
+                            for (int i = 0; i < steps.Length; i++)
+                            {
+                                <li class="flow-item">
+                                    <input type="text" name="flowStep" class="bullet-point form-control" value="@steps[i]" placeholder="Step @(i + 1)" style="flex: 1;" />
+                                </li>
+                            }
+                        }
+                    </ul>
+                    <button type="button" id="addMoreBtn" class="btn btn-secondary mt-2">➕ Add More</button>
+                </div>
+
+                <!-- Hidden field to be filled before submission -->
+                <input type="hidden" name="FlowDescription" id="flowDescriptionField" value="" />
+
+            }
+            else
+            {
+                @* Split the FlowDescription into lines and enumerate them *@
+                var steps = Model.FlowDescription
+                ?.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                ?? Array.Empty<string>();
+
+                <ol>
+                    @for (int i = 0; i < steps.Length; i++)
+                    {
+                        <li>@steps[i]</li>
+                    }
+                </ol>
+            }
+        </li>
+        <br />
+        <li>
+            <strong>Declaration and Acceptance:</strong><br />
+            By electronically signing below through the SkillSwap Platform, both Parties explicitly confirm
+            they have carefully read, fully understood, and agree to comply strictly with all terms, conditions,
+            obligations, and responsibilities outlined above. They acknowledge that this Agreement is legally
+            binding and enforceable.
+            <br />
+            <br />
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                <!-- Sender Acceptance Column -->
+                <div style="flex: 1;">
+                    @if (Model.HideSenderAcceptance)
+                    {
+                        <!-- display a message indicating that the sender's acceptance has been reset -->
+                        <div>
+                            <em>The sender's acceptance has been cleared due to modifications by the receiver.</em>
+                        </div>
+                    }
+                    else
+                    {
+                        <label>Sender Acceptance:</label>
+
+                        <br />
+                        <div>
+                            @if (isSender || Model.IsPdfDownload)
+                            {
+                                <span>Name (Registered):</span>
+                            }
+                            else
+                            {
+                                <span>Name:</span>
+                            }
+                            @if (Model.IsPreview || Model.IsPdfDownload)
+                            {
+                                <span class="inline-input">@Model.SenderName</span>
+                            }
+                            else
+                            {
+                                @Html.TextBoxFor(m => m.SenderName, new { @class = "inline-input", @readonly = "readonly" })
+                            }
+                        </div>
+                        <div>
+                            <span>
+                                @if (isSender && (editableMode || isSignMode))
+                                {
+                                    <!-- Sender Acceptance Section -->
+                                    <input asp-for="SenderAgreementAccepted" type="checkbox" id="senderAgreementCheckbox" />
+                                    <label for="senderAgreementCheckbox">I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</label>
+                                    @Html.TextBox("SenderAcceptanceDate", null, new { id = "visibleSenderAcceptanceDate", @class = "inline-input", type = "date" })
+                                    <span id="senderDateInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                        <img src="~/template_assets/images/icons8-info.svg" />
+                                        <span class="tooltip">Enter today's date. (format: DD-MM-YYYY).</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    if (Model.SenderAgreementAccepted && Model.SenderAcceptanceDate != null || Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Awaiting Sender's Review</span>
+                                    }
+                                }
+                            </span>
+                        </div>
+                        <div>
+                            <span>Signature:</span>
+                            @if (isSender && (editableMode || isSignMode))
+                            {
+                                @Html.TextBox("SenderSignature", null, new { id = "visibleSenderSignature", autocomplete = "off", @class = "inline-input", placeholder = "Sign Here" })
+                                <span id="senderSignatureInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your valid signature.</span>
+                                </span>
+                            }
+                            else
+                            {
+                                if (Model.IsPdfDownload)
+                                {
+                                    <span class="inline-input" style="font-size:14px">@Model.SenderSignature</span>
+                                }
+                                else
+                                {
+                                    var displaySenderSig = string.IsNullOrWhiteSpace(Model.SenderSignature) ? "[Signature]" : Model.SenderSignature;
+                                    <span class="inline-input" style="font-size:14px">@displaySenderSig</span>
+                                }
+                            }
+                        </div>
+                        <div>
+                            <span>Place:</span>
+                            @if (isSender && (editableMode || isSignMode))
+                            {
+                                @Html.TextBox("SenderPlace", null, new { id = "visibleSenderPlace", autocomplete = "off", @class = "inline-input", placeholder = "Place of sign", })
+                                <span id="senderPlaceInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                    <img src="~/template_assets/images/icons8-info.svg" />
+                                    <span class="tooltip">Enter your signing place.</span>
+                                </span>
+                            }
+                            else
+                            {
+                                if (Model.IsPdfDownload)
+                                {
+                                    <span class="inline-input" style="font-size:14px">@Model.SenderPlace</span>
+                                }
+                                else
+                                {
+                                    var displaySenderPlace = string.IsNullOrWhiteSpace(Model.SenderPlace) ? "[Signature]" : Model.SenderPlace;
+                                    <span class="inline-input" style="font-size:14px">@displaySenderPlace</span>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Receiver Acceptance Column -->
+                <div style="flex: 1;">
+                    @if (Model.HideReceiverAcceptance)
+                    {
+                        <div>
+                            <em>The receiver's acceptance has been cleared due to modifications by the sender.</em>
+                        </div>
+                    }
+                    else
+                    {
+                        <label>Receiver Acceptance:</label>
+
+                        <br />
+                        <div>
+                            @if (isReceiver || Model.IsPdfDownload)
+                            {
+                                <span>Name (Registered):</span>
+                            }
+                            else
+                            {
+                                <span>Name:</span>
+                            }
+                            @if (Model.IsPreview || Model.IsPdfDownload)
+                            {
+                                <span class="inline-input">@Model.ReceiverName</span>
+                            }
+                            else
+                            {
+                                @Html.TextBoxFor(m => m.ReceiverName, new { @class = "inline-input", placeholder = "Enter receiver's name", @readonly = "readonly" })
+                            }
+                        </div>
+                        <div>
+                            <span>
+                                @if (isReceiver && (editableMode || isSignMode))
+                                {
+                                    var checkboxAttrs = new Dictionary<string, object> { { "id", "receiverAgreementCheckbox" } };
+                                    if (!editableMode)
+                                    {
+                                        checkboxAttrs["disabled"] = "disabled";
+                                    }
+                                    @Html.CheckBoxFor(m => m.ReceiverAgreementAccepted, checkboxAttrs)
+                                    <label for="receiverAgreementCheckbox">I Agree, Date:</label>
+                                    @Html.TextBox("ReceiverAcceptanceDate", Model.ReceiverAcceptanceDate?.ToString("yyyy-MM-dd"), new { @class = "inline-input", type = "date", id = "visibleReceiverAcceptanceDate" })
+                                    <span id="receiverdateInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                        <img src="~/template_assets/images/icons8-info.svg" />
+                                        <span class="tooltip">Enter today's date. (format: DD-MM-YYYY).</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    if (Model.ReceiverAgreementAccepted && Model.ReceiverAcceptanceDate != null || Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Awaiting Receiver's Review</span>
+                                    }
+                                }
+                            </span>
+                        </div>
+                        <div>
+                            <span>Signature:</span>
+                            @{
+                                if (isReceiver && (editableMode || isSignMode))
+                                {
+                                    var receiverSignAttributes = new Dictionary<string, object>
+                        {
+                        { "class", "inline-input" },
+                        { "placeholder", "Sign Here" },
+                        { "id", "visibleReceiverSignature" },
+                        { "autocomplete", "off" }
+                        };
+                                    @Html.TextBox("ReceiverSignature", Model.ReceiverSignature, receiverSignAttributes)
+                                    <span id="receiversignatureInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                        <img src="~/template_assets/images/icons8-info.svg" />
+                                        <span class="tooltip">Enter your valid signature.</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    if (Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input" style="font-size:14px">@Model.ReceiverSignature</span>
+                                    }
+                                    else
+                                    {
+                                        var displayRecSig = string.IsNullOrWhiteSpace(Model.ReceiverSignature) ? "[Signature]" : Model.ReceiverSignature;
+                                        <span class="inline-input" style="font-size:14px">@displayRecSig</span>
+                                    }
+                                }
+                            }
+                        </div>
+                        <div>
+                            <span>Place:</span>
+                            @{
+                                if (isReceiver && (editableMode || isSignMode))
+                                {
+                                    var receiverPlaceAttributes = new Dictionary<string, object>
+                        {
+                        { "class", "inline-input" },
+                        { "placeholder", "Place of sign" },
+                        { "id", "visibleReceiverPlace" },
+                        { "autocomplete", "off" }
+                        };
+                                    @Html.TextBox("ReceiverPlace", Model.ReceiverPlace, receiverPlaceAttributes)
+                                    <span id="receiverplaceInfo" class="info-icon" style="margin-left:5px; position: relative;">
+                                        <img src="~/template_assets/images/icons8-info.svg" />
+                                        <span class="tooltip">Enter your signing place.</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    if (Model.IsPdfDownload)
+                                    {
+                                        <span class="inline-input" style="font-size:14px">@Model.ReceiverPlace</span>
+                                    }
+                                    else
+                                    {
+                                        var displayRecPlace = string.IsNullOrWhiteSpace(Model.ReceiverPlace) ? "[Place]" : Model.ReceiverPlace;
+                                        <span class="inline-input" style="font-size:14px">@displayRecPlace</span>
+                                    }
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </li>
+    </ol>
+
+    <!-- Footer Section -->
+    <footer style="margin-top: 40px; border-top: 2px solid #000; padding-top: 20px; font-size: 1em; background-color: #f9f9f9;">
+        <h4 style="text-align: center; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Important Notice &amp; Contract Index</h4>
+        <p style="margin: 10px 0; line-height: 1.5;">
+            <strong>[Index 1] Version Declaration:</strong> <br />
+            This is version (@("v")@displayVersion) of the contract. All prior versions (e.g., v0, v1) are hereby nullified and shall no longer be considered valid or enforceable. A contract version becomes binding only upon acceptance by both Parties through confirmation and return. Only the most recently accepted version shall be considered legally binding.
+        </p>
+        <p style="margin: 10px 0; line-height: 1.5;">
+            <strong>[Index 2] Legal Binding Clause:</strong> <br />
+            This agreement will become legally binding once all parties have signed.
+        </p>
+        <p style="margin: 10px 0; line-height: 1.5;">
+            <strong>[Index 3] Acceptance Confirmation:</strong> <br />
+            Provision of valid acceptance details, a valid signature, signing place, and today’s date, confirms acknowledgment of the contract terms and permits final execution of this agreement.
+        </p>
+    </footer>
+
+</div>
+
+<style>
+    .info-icon {
+        cursor: pointer;
+    }
+
+        /* Tooltip styling */
+        .info-icon .tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translate(10px, -50%);
+            background-color: var(--color-foreground, #5c5c4f);
+            color: var(--color-background, #e6e2d6);
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+            /* Tooltip arrow */
+            .info-icon .tooltip::before {
+                content: "";
+                position: absolute;
+                left: -5px;
+                top: 50%;
+                transform: translateY(-50%);
+                border-top: 5px solid transparent;
+                border-bottom: 5px solid transparent;
+                border-right: 5px solid var(--color-foreground, #5c5c4f);
+            }
+
+        /* Show tooltip on hover */
+        .info-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+    .pdf-header {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    .pdf-status {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+        .pdf-status.preview {
+            color: #d9534f; /* red */
+        }
+
+        .pdf-status.pre-final {
+            color: #f0ad4e; /* orange */
+        }
+
+        .pdf-status.finalized {
+            color: #5cb85c; /* green */
+        }
+</style>

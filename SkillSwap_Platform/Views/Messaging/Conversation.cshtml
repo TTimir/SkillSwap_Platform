@@ -1,0 +1,499 @@
+﻿@using Humanizer
+@model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
+
+@{
+    ViewData["Title"] = "Conversations";
+    ViewData["SubTitle"] = "Creating meaningful connections, one message at a time.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row mb40">
+    <!-- Left Sidebar: Chat Contacts -->
+    <div class="col-lg-6 col-xl-5 col-xxl-4">
+        <div class="message_container">
+            <div class="inbox_user_list">
+                <div class="iu_heading pr35">
+                    <div class="chat_user_search">
+                        <form class="d-flex align-items-center" method="get" action="@Url.Action("Conversation", "Messaging")">
+                            <button class="btn" type="submit"><span class="far fa-magnifying-glass"></span></button>
+                            <input class="form-control" type="search" name="searchTerm" placeholder="Search" aria-label="Search" />
+                        </form>
+                    </div>
+                </div>
+                <div class="chat-member-list pr20">
+                    @foreach (var contact in Model.ChatMembers)
+                    {
+                        <div class="list-item pt5">
+                            <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
+                                <div class="d-flex align-items-center position-relative">
+                                    <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
+                                    <div class="d-sm-flex">
+                                        <div class="d-inline-block">
+                                            <div class="fz15 fw500 dark-color ff-heading mb-0">@contact.UserName</div>
+                                            <p class="preview">@contact.Designation</p>
+                                        </div>
+                                        <div class="iul_notific">
+                                            @{
+                                                // Parse the stored value
+                                                var dt = DateTime.Parse(contact.LastMessageTime);
+                                                // Explicitly specify that it’s local time
+                                                dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                                            }
+                                            <small>@dt.Humanize()</small>
+                                            @if (contact.UnreadCount > 0)
+                                            {
+                                                <div class="m_notif">@contact.UnreadCount</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Conversation Messages -->
+    <div class="col-lg-6 col-xl-7 col-xxl-8">
+        <div class="message_container mt30-md">
+            <div class="user_heading px-0 mx30">
+                @if (Model.OtherUserId == 0)
+                {
+                    <!-- Placeholder for no conversation selected -->
+                    <div class="no-chat-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; border: 1px dashed #ccc;">
+                        <img src="~/template_assets/images/inbox/No-Message_Open.svg" style="border-radius: 0; max-width:50%; margin-bottom: 20px;" />
+                        <p style="text-align: center;">Select a conversation from your inbox or profile to start chatting, your connections are just a click away.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="user_heading px-0 mx30">
+                        <div class="wrap">
+                            <img class="img-fluid mr10 rounded-circle" src="@Model.OtherUserProfileImage" alt="Profile" style="width: 60px;" />
+                            <div class="meta d-sm-flex justify-content-sm-between align-items-center">
+                                <div class="authors">
+                                    <h6 class="name mb-0">@Model.OtherUserName</h6>
+                                    <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
+                                </div>
+                                <div>
+                                    <a class="text-decoration-underline fz14 fw500 text-red ff-heading" href="#">Delete Conversation</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inbox_chatting_box">
+                        <ul id="chatContainer" class="chatting_content">
+                            @foreach (var msg in Model.Messages)
+                            {
+                                // Now you're looping over MessageItemVM directly.
+                                var currentSentTime = msg.SentDate.ToLocalTime().ToString("g");
+                                bool showHeader = false;
+
+                                msg.ShowHeader = showHeader;
+
+                                @await Html.PartialAsync("_MessageItem", msg)
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- Place the Reply Preview Container here, above the message input -->
+                    <div id="replyPreviewContainer" style="display:none; border: 1px solid #ddd; padding: 5px; margin-bottom: 40px; background-color: #f9f9f9;">
+                        <span id="replyPreviewDisplay" style="font-style: italic;"></span>
+                        <span class="icon-cancel" style="cursor: pointer; margin-left: 10px;">&times;</span>
+                    </div>
+
+                    @*=============== Region: Offer Preview Window ===============*@
+                    @if (ViewBag.OfferDetails != null)
+                    {
+                        var offer = (SkillSwap_Platform.Models.ViewModels.OfferDisplayVM)ViewBag.OfferDetails;
+                        <div class="card bg-light-subtle mt-4" id="offerPreviewWindow" style="margin-bottom: 60px;">
+                            <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
+                                            ? Url.Content(offer.PortfolioUrls.First())
+                                            : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
+                                 class="card-img-top" alt="Offer Thumbnail" style="border-radius:14px;">
+                            <div class="card-body">
+                                <div class="text-section">
+                                    <h5 class="card-title line-clamp2 fw-bold">@offer.Title</h5>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="card-title mb-0 mr15"><i class="flaticon-sandclock me-1"></i>@offer.TimeCommitmentDays Days</h5>
+                                        <h5 class="card-title mb-0"><i class="flaticon-recycle me-1"></i>@offer.AssistanceRounds Assistance</h5>
+                                    </div>
+                                    <div class="skills-section mt-2">
+                                        @if (offer.WillingSkills != null && offer.WillingSkills.Any())
+                                        {
+                                            <div>
+                                                <strong>Willing Skills: </strong>@string.Join(", ", offer.WillingSkills)
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="cta-section">
+                                    <div>@offer.TokenCost Token</div>
+                                    <a href="javascript:void(0);" id="btnRemoveOfferPreview">
+                                        Remove Offer
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mi_text">
+                        <div class="message_input">
+                            <form id="messageForm" method="post" enctype="multipart/form-data" action="@Url.Action("SendMessage", "Messaging")" class="d-flex flex-column">
+                                @Html.AntiForgeryToken()
+                                <!-- Passing the receiver and (if applicable) the offer id -->
+                                <input type="hidden" name="receiverUserId" value="@Model.OtherUserId" />
+                                <input type="hidden" id="replyPreview" name="replyPreview" value="" />
+                                <input type="hidden" id="replyMessageId" name="replyMessageId" value="" />
+                                @* If messaging relates to an offer, include it as a hidden field *@
+                                @if (Model.OfferId.HasValue)
+                                {
+                                    <input type="hidden" name="offerId" value="@Model.OfferId" />
+                                }
+                                <!-- Preview area for selected attachments -->
+                                <div id="filePreview" style="margin-bottom:10px;"></div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div id="errorContainer" style="display:none; color: red; margin-bottom: 10px;"></div>
+                                        <div class="input-group">
+                                            <!-- File upload icon -->
+                                            <div class="input-group-prepend">
+                                                <label class="input-group-text" for="fileInput" data-bs-toggle="tooltip" data-bs-placement="top" title="Allowed: Images, PDFs, Code, Archives (Max: 5MB)"
+                                                       style="cursor:pointer;background-color:#fff;border:none;">
+                                                    <i class="fa fa-paperclip"></i>
+                                                </label>
+                                            </div>
+                                            <div class="col-md-10">
+                                                <!-- Hidden file input supporting multiple selection -->
+                                                <input type="file" id="fileInput" name="attachments" multiple style="display:none" />
+                                                <!-- Main text input -->
+                                                <input type="text" id="messageInput" class="form-control" name="content" placeholder="Type a Message" aria-label="Message" style="height:50px;margin-bottom: 10px;" />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <!-- Send button -->
+                                                <div class="input-group-append">
+                                                    <button class="btn ud-btn btn-thm" type="submit" style="top:0">
+                                                        <i class="fal fa-arrow-right-long"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Payment Warning Container: hidden by default -->
+                                        <div id="WarningInfo" style="display:none; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 5px; margin-top: 5px;">
+                                            <i class="fa fa-info-circle"></i> Be aware: Payment-related messages may be associated with fraud.
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sent {
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .reply {
+        padding: 10px;
+        border-radius: 5px;
+        text-align: right;
+    }
+
+    .message_input {
+        margin-top: 20px;
+    }
+
+        .message_input input[type="text"] {
+            flex: 1;
+        }
+
+    .file-input-custom {
+        max-width: 150px;
+        position: relative;
+        z-index: 2;
+        /* Adjust margin as needed */
+        margin-right: 10px;
+    }
+
+    .card {
+        flex-direction: row;
+        border: 0;
+        box-shadow: 0 7px 7px rgba(0, 0, 0, 0.18);
+        margin: 3em auto;
+    }
+
+        .card.card.bg-light-subtle .card-title {
+            color: dimgrey;
+        }
+
+        .card img {
+            max-width: 25%;
+            margin: auto;
+            padding: 0.5em;
+            border-radius: 14px;
+        }
+
+    .card-body {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .text-section {
+        max-width: 60%;
+    }
+
+    .cta-section {
+        max-width: 40%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+    }
+
+        .cta-section .btn {
+            padding: 0.3em 0.5em;
+            /* color: #696969; */
+        }
+
+    .card.bg-light-subtle .cta-section .btn {
+        background-color: #898989;
+        border-color: #898989;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@section DynamicScript {
+    <script>
+        $(document).ready(function(){
+            // Reply button handler
+            $(document).on('click', '.icon-reply', function(){
+                var parentItem = $(this).closest('.message-item');
+                var previewText = parentItem.find('p').text().substring(0, 50);
+                var parentIdStr = parentItem.attr('id');
+                var parentId = parseInt(parentIdStr.split('-')[1], 10);
+
+                $('#replyPreview').val(previewText);
+                $('#replyMessageId').val(parentId);
+                $('#replyPreviewDisplay').text(previewText);
+                $('#replyPreviewContainer').show();
+                $('#replyPreviewContainer .icon-cancel').show();
+            });
+
+            $(document).on('click', '.icon-cancel', function(){
+                $('#replyPreview').val('');
+                $('#replyMessageId').val('');
+                $('#replyPreviewDisplay').text('');
+                $('#replyPreviewContainer').hide();
+                $(this).hide();
+            });
+
+            // Trigger file input when clicking the upload icon.
+            $('#fileInput').change(function(){
+                var previewContainer = $('#filePreview');
+                previewContainer.empty();
+                var files = this.files;
+                if(files.length > 0){
+                    $.each(files, function(index, file){
+                        if(file.type.startsWith("image/")){
+                            var reader = new FileReader();
+                            reader.onload = function(e){
+                                previewContainer.append(
+                                    '<div style="display:inline-block; margin-right:81%;">' +
+                                    '<img src="' + e.target.result + '" alt="' + file.name + '" style="max-width:100px; border:1px solid #ddd; border-radius:4px;" />' +
+                                    '</div>'
+                                );
+                            }
+                            reader.readAsDataURL(file);
+                        } else {
+                            previewContainer.append(
+                                '<div style="display:inline-block; margin-right:81%; padding:10px; border:1px solid #ddd; border-radius:4px;">' +
+                                '<i class="fa fa-file"></i> ' + file.name +
+                                '</div>'
+                            );
+                        }
+                    });
+                }
+            });
+
+            // Bind form submission once.
+            $('#messageForm').off('submit').on('submit', function(e){
+                e.preventDefault();
+                var formData = new FormData(this);
+                var $form = $(this);
+                $form.find('button[type="submit"]').prop('disabled', true);
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    success: function(result){
+                        // Check if result is JSON with an error message.
+                        if (result.success === false) {
+                            // Instead of alerting, display error message in the error container
+                            $('#errorContainer').html(result.error).show();
+                        } else {
+                            $('#errorContainer').hide().html('');
+                            $('#chatContainer').append(result);
+                            $form[0].reset();
+                            $('#filePreview').empty();
+                            $('#replyPreviewContainer').hide();
+                            $('#replyPreview').val('');
+                            $('#replyMessageId').val('');
+                            $("#offerPreviewWindow").hide();
+                            $("input[name='offerId']").val("");
+                            // Update the URL: remove "offerId" parameter while preserving "otherUserId"
+                            try {
+                                var currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.delete("offerId");
+                                // If "otherUserId" is already in the URL, it remains unaffected.
+                                window.history.replaceState({}, document.title, currentUrl.toString());
+                            } catch (error) {
+                                console.error("Error updating URL:", error);
+                            }
+                        }
+                        $form.find('button[type="submit"]').prop('disabled', false);
+                    },
+                    error: function(xhr, status, error){
+                        console.error("Error details:", xhr.responseText);
+                        alert('Error sending message');
+                        $form.find('button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Load sensitive words from the server (via ViewBag).
+            var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
+
+            // Monitor keyup events on the message input field.
+            $('#messageInput').on('keyup', function() {
+                var text = $(this).val().toLowerCase();
+                // Normalize the input text by removing spaces.
+                var normalizedText = text.replace(/\s+/g, '');
+                var warningTriggered = false;
+
+                // Log the normalized text.
+                console.log("Normalized input text:", normalizedText);
+
+                // Check if any normalized keyword exists in the normalized text.
+                privacyKeywords.forEach(function(keyword) {
+                    var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
+                    console.log("Checking for keyword:", normalizedKeyword);
+                    if (normalizedText.indexOf(normalizedKeyword) !== -1) {
+                        warningTriggered = true;
+                    }
+                });
+
+                // Show or hide the warning accordingly.
+                if (warningTriggered) {
+                    $('#WarningInfo')
+                        .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+                        .fadeIn();
+                } else {
+                    $('#WarningInfo').fadeOut();
+                }
+            });
+
+            // Scroll to original message on reply preview click.
+            $(document).on('click', '.go-to-parent', function(){
+                var parentId = $(this).data('parent-id');
+                var target = $('#message-' + parentId);
+                var container = $('#chatContainer');
+                if(target.length && container.length){
+                    container.animate({
+                        scrollTop: container.scrollTop() + target.position().top
+                    }, 500);
+                } else {
+                    alert('Original message not found.');
+                }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            // On page load, ensure the URL contains the stored "otherUserId" (if present)
+            try {
+                const storedOtherUserId = localStorage.getItem("otherUserId");
+                if (storedOtherUserId) {
+                    const currentUrl = new URL(window.location.href);
+                    if (!currentUrl.searchParams.get("otherUserId")) {
+                        currentUrl.searchParams.set("otherUserId", storedOtherUserId);
+                        window.history.replaceState({}, document.title, currentUrl.toString());
+                    }
+                }
+            } catch (error) {
+                console.error("Error restoring URL:", error);
+            }
+
+            // When the user clicks "Remove Offer", hide the offer preview,
+            // clear the hidden offer field, and update the URL.
+            $("#btnRemoveOfferPreview").on("click", function () {
+                // Hide the offer preview window and clear the offer field.
+                $("#offerPreviewWindow").hide();
+                $("input[name='offerId']").val("");
+
+                try {
+                    const currentUrl = new URL(window.location.href);
+                    // Preserve the otherUserId from the URL.
+                    const otherUserId = currentUrl.searchParams.get("otherUserId");
+                    // Remove the offerId parameter.
+                    currentUrl.searchParams.delete("offerId");
+                    // If otherUserId exists, ensure it remains in the URL.
+                    if (otherUserId) {
+                        currentUrl.searchParams.set("otherUserId", otherUserId);
+                        localStorage.setItem("otherUserId", otherUserId);
+                    }
+                    // Update the browser's URL without creating a new history entry.
+                    window.history.replaceState({}, document.title, currentUrl.toString());
+                } catch (error) {
+                    console.error("Error updating URL:", error);
+                }
+            });
+        });
+    </script>
+    }

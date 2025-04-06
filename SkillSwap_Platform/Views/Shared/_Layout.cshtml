@@ -8,17 +8,17 @@
     <meta name="CreativeLayers" content="ATFN">
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
     <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
     <link rel="stylesheet" href="/template_assets/css/menu.css">
     <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
     <link rel="stylesheet" href="/template_assets/css/flaticon.css">
     <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
     <link rel="stylesheet" href="/template_assets/css/animate.css">
     <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
     <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
     <link rel="stylesheet" href="/template_assets/css/style.css">
-    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
@@ -35,8 +35,9 @@
     <div class="wrapper ovh">
         @{
             var isAuthenticated = User?.Identity != null && User.Identity.IsAuthenticated;
+            var showAuthBanner = TempData["ShowAuthBanner"] as bool? ?? false;
         }
-        @if (isAuthenticated)
+        @if (isAuthenticated && showAuthBanner)
         {
             <section id="authBanner" class="header-top-home11 pt10 pb10">
                 <div class="container">
@@ -87,8 +88,9 @@
                                 </div>
                                 <!-- Responsive Menu -->
                                 <ul id="respMenu" class="ace-responsive-menu" data-menu-style="horizontal">
-                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">Home</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="#"><span class="title">Services</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Offers</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Talents</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="#"><span class="title">How It Works</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="#"><span class="title">About Us</span></a></li>
                                     <li><a class="list-item pe-0" href="page-contact.html">Contact</a></li>
@@ -215,33 +217,28 @@
                                         <li class="user_setting">
                                             <div class="dropdown">
                                                 <a class="btn" href="#" data-bs-toggle="dropdown">
-                                                   @*  @if (!string.IsNullOrEmpty(Model.User.ProfileImageUrl))
-                                                    {
-                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
+                                                    <!-- Profile Image -->
+                                                    @{
+                                                        var profileUrl = ViewData["UserProfileImage"] as string;
                                                     }
-                                                    else
-                                                    {
-                                                        <img src="/template_assets/images/resource/user.png" alt="user.png">
-                                                    } *@
-                                                    <img src="/template_assets/images/anonymous_image.jpg" width="50" alt="user.png">
+                                                    <div>
+                                                        <img src="@(!string.IsNullOrEmpty(profileUrl) ? Url.Content(profileUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                    </div>
                                                 </a>
                                                 <div class="dropdown-menu">
                                                     <div class="user_setting_content">
                                                         <p class="fz15 fw400 ff-heading mb10 pl30">Start</p>
-                                                        <a class="dropdown-item" href="page-dashboard.html"><i class="flaticon-home mr10"></i>Dashboard</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
                                                         <a class="dropdown-item" href="page-dashboard-proposal.html"><i class="flaticon-document mr10"></i>My Proposals</a>
                                                         <a class="dropdown-item" href="page-dashboard-save.html"><i class="flaticon-like mr10"></i>Saved</a>
                                                         <a class="dropdown-item" href="page-dashboard-message.html"><i class="flaticon-chat mr10"></i>Message</a>
                                                         <a class="dropdown-item" href="page-dashboard-reviews.html"><i class="flaticon-review-1 mr10"></i>Reviews</a>
-                                                        <a class="dropdown-item" href="page-dashboard-invoice.html"><i class="flaticon-receipt mr10"></i>Invoice</a>
-                                                        <a class="dropdown-item" href="page-dashboard-payouts.html"><i class="flaticon-dollar mr10"></i>Payouts</a>
-                                                        <a class="dropdown-item" href="page-dashboard-statement.html"><i class="flaticon-web mr10"></i>Statements</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p>
                                                         <a class="dropdown-item" href="page-dashboard-manage-service.html"><i class="flaticon-presentation mr10"></i>Manage Services</a>
                                                         <a class="dropdown-item" href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a>
                                                         <a class="dropdown-item" href="page-dashboard-favorites.html"><i class="flaticon-content mr10"></i>Manage Project</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
-                                                        <a class="dropdown-item active" href="page-dashboard-profile.html"><i class="flaticon-photo mr10"></i>My Profile</a>
+                                                        <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
                                                         <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                             @Html.AntiForgeryToken()
                                                             <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
@@ -508,9 +505,23 @@
     <script src="/template_assets/js/owl.js"></script>
     <script src="/template_assets/js/jquery.counterup.js"></script>
     <script src="/template_assets/js/isotop.js"></script>
+    <script src="/template_assets/js/scrollbalance.js"></script>
     <!-- Custom script for all pages -->
     <script src="/template_assets/js/script.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        $(function() {
+          var cols = $('.wrap .column');
+          var enabled = true;
+          var scrollbalance = new ScrollBalance(cols, {
+            minwidth: 1199
+          });
+          // bind to scroll and resize events
+          scrollbalance.bind();
+        });
+    </script>
+
+    @RenderSection("ProfileScript", required: false)
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,0 +1,42 @@
+﻿@model List<SkillSwap_Platform.Models.TblContract>
+
+@{
+    Layout = null;
+}
+
+<h2>Version History</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th>Created Date</th>
+            <th>Signed</th>
+            <th>Download</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var version in Model)
+        {
+            <tr>
+                <td>
+                    v@version.Version
+                    @if (version == Model.First())
+                    {
+                        <span class="badge bg-success">Latest</span>
+                    }
+                </td>
+                <td>@version.CreatedDate.ToString("g")</td>
+                <td>@(version.SignedBySender && version.SignedByReceiver ? "Yes" : "No")</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(version.ContractDocument))
+                    {
+                        <a class="btn btn-sm btn-outline-primary" href="@Url.Content($"~/contracts/{version.ContractDocument}")" target="_blank">
+                            Download
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

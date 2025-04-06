@@ -1,0 +1,412 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferEditVM
+
+@{
+    ViewData["Title"] = "Edit Offer";
+    ViewData["SubTitle"] = "Give your offer a quick update for better impact.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Back to Offers<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@using (Html.BeginForm("Edit", "UserOfferManage", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.OfferId)
+    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+        <div class="bdrb1 pb15 mb25">
+            <h5 class="list-title">Basic Information</h5>
+        </div>
+        <div class="col-xl-8">
+            <div class="row">
+                <div class="col-sm-12 mb20">
+                    <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Offer Title</label>
+                    <input asp-for="Title" type="text" class="form-control" placeholder="Enter offer title">
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="TokenCost" class="heading-color ff-heading fw500 mb10">Token Cost</label>
+                    <div class="input-group">
+                        <input asp-for="TokenCost" type="text" class="form-control" placeholder="Enter token cost">
+                        <span class="input-group-text">.00</span>
+                    </div>
+                    <span asp-validation-for="TokenCost" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="TimeCommitmentDays" class="heading-color ff-heading fw500 mb10">Time Commitment (Days)</label>
+                    <div class="input-group">
+                        <input asp-for="TimeCommitmentDays" type="text" class="form-control" placeholder="Enter days">
+                        <span class="input-group-text">days</span>
+                    </div>
+                    <span asp-validation-for="TimeCommitmentDays" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="FreelanceType" class="heading-color ff-heading fw500 mb10">Availability</label>
+                    <div class="bootselect-multiselect">
+                        <select asp-for="FreelanceType" asp-items="Model.FreelanceTypeOptions" class="selectpicker">
+                            <option value="">Select Availability</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="FreelanceType" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb20">
+                        <label asp-for="CollaborationMethod" class="heading-color ff-heading fw500 mb10">Collaboration Type <span class="text-danger">*</span></label>
+                        <div class="bootselect-multiselect">
+                            <select asp-for="CollaborationMethod" asp-items="Model.CollaborationOptions" class="selectpicker">
+                                <option value="">Select</option>
+                            </select>
+                            <span asp-validation-for="CollaborationMethod" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb20">
+                        <label asp-for="AssistanceRounds" class="heading-color ff-heading fw500 mb10">Assistance Rounds <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input asp-for="AssistanceRounds" type="number" class="form-control" placeholder="Enter Assistance Rounds">
+                        </div>
+                        <span asp-validation-for="AssistanceRounds" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="RequiredSkillLevel" class="heading-color ff-heading fw500 mb10">Partner's Skill Level</label>
+                    <div class="bootselect-multiselect">
+                        <select asp-for="RequiredSkillLevel" asp-items="Model.RequiredSkillLevelOptions" class="selectpicker">
+                            <option value="">Select Required Skill Level</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="RequiredSkillLevel" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="SelectedSkillIds" class="heading-color ff-heading fw500 mb10">Offered Skills</label>
+                    <div class="bootselect-multiselect">
+                        <select asp-for="SelectedSkillIds" class="selectpicker" multiple data-live-search="true">
+                            @foreach (var skill in Model.UserSkills)
+                            {
+                                bool isSelected = Model.SelectedSkillIds.Contains(int.Parse(skill.Value));
+                                if (isSelected)
+                                {
+                                    <option value="@skill.Value" selected="selected">@skill.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@skill.Value">@skill.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <span asp-validation-for="SelectedSkillIds" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6 mb20">
+                    <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Offer Category</label>
+                    <div class="bootselect-multiselect">
+                        <select asp-for="Category" asp-items="Model.CategoryOptions" class="selectpicker" data-live-search="true">
+                        <option value="">Select Category</option>
+                    </select>
+                    </div>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb20">
+                        <label asp-for="SelectedDevices" class="heading-color ff-heading fw500 mb10">Devices <span class="text-danger">*</span></label>
+                        <div class="bootselect-multiselect">
+                            <select asp-for="SelectedDevices" asp-items="Model.DeviceOptions" multiple class="selectpicker">
+                            </select>
+                            <span class="text-danger" data-valmsg-for="SelectedDevices" data-valmsg-replace="true"></span>
+                            <span asp-validation-for="SelectedDevices" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb20">
+                        <label asp-for="Tools" class="heading-color ff-heading fw500 mb10">Tools <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input asp-for="Tools" type="text" class="form-control" placeholder="e.g. Apache, Paint">
+                        </div>
+                        <small>*If no tool required then just type <i>' Not Required '</i></small>
+                        <span asp-validation-for="Tools" class="text-danger"></span>
+                        <span id="Tools" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="mb20">
+                        <label asp-for="SelectedWillingSkill" class="heading-color ff-heading fw500 mb10">Devices <span class="text-danger">*</span></label>
+                        <div class="bootselect-multiselect">
+                            <select asp-for="SelectedWillingSkill" asp-items="Model.WillingSkillOptions" class="selectpicker">
+                                <option value="">-- Select a Willing Skill --</option>
+                            </select>
+                            <span asp-validation-for="SelectedWillingSkill" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="mb10">
+                        <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work</label>
+                        <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this offer"></textarea>
+                        <span asp-validation-for="ScopeOfWork" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative">
+        <div class="bdrb1 pb15 mb25">
+            <h5 class="list-title">Upload Attachments</h5>
+        </div>
+        <div class="row">
+            <div class="col-12 col-xl-12">
+                <div id="imagePreview" class="image-preview-container">
+                    @* If there is an existing portfolio, render the images *@
+                    @if (!string.IsNullOrWhiteSpace(Model.Portfolio))
+                    {
+                        try
+                        {
+                            var portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(Model.Portfolio)
+                                        ?? new List<string>();
+                            foreach (var imageUrl in portfolioImages)
+                            {
+                                <img src="@imageUrl" alt="Portfolio Image" class="card-img-top existing-preview"
+                                     style="width:250px;height:200px;object-fit:cover;margin-right:10px;"
+                                     data-existing="true" />
+                            }
+                        }
+                        catch { /* Ignore if deserialization fails */ }
+                    }
+                </div>
+            </div>
+            <div class="col-6 col-xl-3 mt20">
+                <input type="file" id="uploadImages" name="PortfolioFiles" class="upload-img" accept=".jpg,.jpeg,.png" multiple />
+                <input type="hidden" id="PortfolioJson" name="Portfolio" value="@Model.Portfolio" />
+                <input type="hidden" id="FinalPortfolioOrder" name="FinalPortfolioOrder" value="@Model.FinalPortfolioOrder" />
+            </div>
+        </div>
+        <span id="uploadError" class="text-danger"></span>
+        <p class="text">Max file size is 1MB, Minimum dimensions: 329x245. Only JPG, JPEG, and PNG files are allowed.</p>
+        <div class="text-start">
+            <button type="submit" class="ud-btn btn-thm">Save & Publish<i class="fal fa-arrow-right-long"></i></button>
+        </div>
+    </div>
+}
+
+@section DynamicScript {
+    <script>
+                $(document).ready(function () {
+            var dt = new DataTransfer();
+            var maxFiles = 5;
+            var maxFileSize = 1 * 1024 * 1024; // 1 MB in bytes
+            var recommendedWidth = 329;
+            var recommendedHeight = 245;
+
+            $("#uploadImages").on("change", function () {
+                var files = this.files;
+                var errorContainer = $("#uploadError");
+                errorContainer.html("");
+                var errorMessages = [];
+                var filesProcessed = 0;
+
+                // Check if adding these files would exceed the maximum allowed.
+                if (dt.files.length + files.length > maxFiles) {
+                    errorMessages.push(`You can only add ${maxFiles - dt.files.length} more image(s).`);
+                    this.value = "";
+                    errorContainer.html(errorMessages.join("<br/>"));
+                    return;
+                }
+
+                $.each(files, function (index, file) {
+                    // Validate file type.
+                    if (!file.type.match("image/jpeg") && !file.type.match("image/png")) {
+                        errorMessages.push(`"${file.name}": Only JPG, JPEG, and PNG images are allowed.`);
+                        filesProcessed++;
+                        if (filesProcessed === files.length) {
+                            $("#uploadImages")[0].files = dt.files;
+                            renderPreviews();
+                            toggleUploadButton();
+                            if (errorMessages.length > 0) {
+                                errorContainer.html(errorMessages.join("<br/>"));
+                            }
+                        }
+                        return true; // Skip to next file.
+                    }
+
+                    // Validate file size.
+                    if (file.size > maxFileSize) {
+                        errorMessages.push(`"${file.name}": Maximum file size per image is 1 MB.`);
+                        filesProcessed++;
+                        if (filesProcessed === files.length) {
+                            $("#uploadImages")[0].files = dt.files;
+                            renderPreviews();
+                            toggleUploadButton();
+                            if (errorMessages.length > 0) {
+                                errorContainer.html(errorMessages.join("<br/>"));
+                            }
+                        }
+                        return true;
+                    }
+
+                    // Validate image dimensions asynchronously.
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        var img = new Image();
+                        img.onload = function () {
+                            if (img.naturalWidth !== recommendedWidth || img.naturalHeight !== recommendedHeight) {
+                                errorMessages.push(`"${file.name}": Image dimensions must be exactly ${recommendedWidth} x ${recommendedHeight} pixels.`);
+                            } else {
+                                dt.items.add(file);
+                            }
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                $("#uploadImages")[0].files = dt.files;
+                                renderPreviews();
+                                toggleUploadButton();
+                                if (errorMessages.length > 0) {
+                                    errorContainer.html(errorMessages.join("<br/>"));
+                                }
+                            }
+                        };
+                        img.onerror = function () {
+                            errorMessages.push(`"${file.name}": Unable to read image dimensions.`);
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                $("#uploadImages")[0].files = dt.files;
+                                renderPreviews();
+                                toggleUploadButton();
+                                if (errorMessages.length > 0) {
+                                    errorContainer.html(errorMessages.join("<br/>"));
+                                }
+                            }
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = function () {
+                        errorMessages.push(`"${file.name}": Error reading file.`);
+                        filesProcessed++;
+                        if (filesProcessed === files.length) {
+                            $("#uploadImages")[0].files = dt.files;
+                            renderPreviews();
+                            toggleUploadButton();
+                            if (errorMessages.length > 0) {
+                                errorContainer.html(errorMessages.join("<br/>"));
+                            }
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            // Render new file previews without removing existing ones.
+            function renderPreviews() {
+                // Remove only the previews added for new files.
+                $("#imagePreview").find("img[data-new='true']").remove();
+                $.each(dt.files, function (index, file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        var img = $("<img />", {
+                            src: e.target.result,
+                            alt: file.name,
+                            "data-index": index,
+                            "data-new": "true" // mark as new upload preview
+                        });
+                        $("#imagePreview").append(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Allow sorting for new images (existing ones remain in place)
+            $("#imagePreview").sortable({
+                update: reorderFiles,
+                items: "img[data-new='true']"
+            });
+
+            function reorderFiles() {
+                var reorderedDt = new DataTransfer();
+                // Reorder only new file previews.
+                $("#imagePreview img[data-new='true']").each(function () {
+                    reorderedDt.items.add(dt.files[$(this).data("index")]);
+                });
+                dt = reorderedDt;
+                $("#uploadImages")[0].files = dt.files;
+                updatePreviewDataIndices();
+            }
+
+            function updatePreviewDataIndices() {
+                $("#imagePreview img[data-new='true']").each(function (i) {
+                    $(this).attr("data-index", i);
+                });
+            }
+
+            // Double-click to remove preview.
+            $("#imagePreview").on("dblclick", "img", function () {
+                if ($(this).attr("data-new") === "true") {
+                    // Remove new upload preview.
+                    dt.items.remove($(this).index());
+                    $(this).remove();
+                    $("#uploadImages")[0].files = dt.files;
+                    toggleUploadButton();
+                    updatePreviewDataIndices();
+                } else {
+                    // For an existing image, remove it and update the hidden field.
+                    var imgSrc = $(this).attr("src");
+                    $(this).remove();
+                    // Update the hidden field (PortfolioJson) so that this URL is removed.
+                    var currentPortfolio = $("#PortfolioJson").val();
+                    if (currentPortfolio) {
+                        var arr = JSON.parse(currentPortfolio);
+                        arr = arr.filter(function (x) { return x !== imgSrc; });
+                        $("#PortfolioJson").val(JSON.stringify(arr));
+                    }
+                }
+            });
+
+            function toggleUploadButton() {
+                if (dt.files.length >= maxFiles) {
+                    $("#uploadImages").prop("disabled", true);
+                    $("#uploadError").html("You have reached the maximum limit of 5 images.");
+                } else {
+                    $("#uploadImages").prop("disabled", false);
+                }
+            }
+
+            $("form").on("submit", function () {
+                $("#uploadImages")[0].files = dt.files;
+            });
+        });
+    </script>
+}

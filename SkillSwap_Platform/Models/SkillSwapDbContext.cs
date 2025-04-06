@@ -16,6 +16,12 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
+
+    public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
+
+    public virtual DbSet<TblContract> TblContracts { get; set; }
+
     public virtual DbSet<TblEducation> TblEducations { get; set; }
 
     public virtual DbSet<TblExchange> TblExchanges { get; set; }
@@ -34,6 +40,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOffer> TblOffers { get; set; }
 
+    public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
+
     public virtual DbSet<TblReview> TblReviews { get; set; }
 
     public virtual DbSet<TblRole> TblRoles { get; set; }
@@ -51,8 +59,9 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
-
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
+
+    public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -60,6 +69,77 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PrivacySensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__PrivacyS__3214EC0759BCBFB6");
+
+            entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<SensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Sensitiv__3214EC079C0CB70F");
+
+            entity.Property(e => e.WarningMessage).HasMaxLength(500);
+            entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TblContract>(entity =>
+        {
+            entity.HasKey(e => e.ContractId).HasName("PK__TblContr__C90D3469E662177B");
+
+            entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.ContractUniqueId)
+                .HasMaxLength(100)
+                .HasDefaultValue("");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.FlowDescription).HasDefaultValue("");
+            entity.Property(e => e.ModeOfLearning).HasMaxLength(50);
+            entity.Property(e => e.OfferOwnerAvailability).HasMaxLength(100);
+            entity.Property(e => e.OppositeExperienceLevel).HasMaxLength(50);
+            entity.Property(e => e.ReceiverAcceptanceDate).HasColumnType("datetime");
+            entity.Property(e => e.ReceiverAddress).HasMaxLength(255);
+            entity.Property(e => e.ReceiverEmail).HasMaxLength(255);
+            entity.Property(e => e.ReceiverName).HasMaxLength(100);
+            entity.Property(e => e.ReceiverPlace).HasMaxLength(100);
+            entity.Property(e => e.ReceiverSignature).HasMaxLength(255);
+            entity.Property(e => e.ReceiverSkill).HasMaxLength(100);
+            entity.Property(e => e.ReceiverUserName).HasMaxLength(100);
+            entity.Property(e => e.SenderAddress).HasMaxLength(255);
+            entity.Property(e => e.SenderEmail).HasMaxLength(255);
+            entity.Property(e => e.SenderName).HasMaxLength(100);
+            entity.Property(e => e.SenderPlace).HasMaxLength(100);
+            entity.Property(e => e.SenderSignature).HasMaxLength(255);
+            entity.Property(e => e.SenderSkill).HasMaxLength(100);
+            entity.Property(e => e.SenderUserName).HasMaxLength(100);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.TokenOffer).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Version).HasDefaultValue(1);
+
+            entity.HasOne(d => d.Message).WithMany(p => p.TblContracts)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblMessages_MessageId");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblContracts)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblOffers_OfferId");
+
+            entity.HasOne(d => d.ReceiverUser).WithMany(p => p.TblContractReceiverUsers)
+                .HasForeignKey(d => d.ReceiverUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblUsers_ReceiverUserId");
+
+            entity.HasOne(d => d.SenderUser).WithMany(p => p.TblContractSenderUsers)
+                .HasForeignKey(d => d.SenderUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblContracts_TblUsers_SenderUserId");
+        });
+
         modelBuilder.Entity<TblEducation>(entity =>
         {
             entity.HasKey(e => e.EducationId);
@@ -69,8 +149,8 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.EducationId).HasColumnName("EducationID");
             entity.Property(e => e.Degree).HasMaxLength(100);
             entity.Property(e => e.DegreeName).HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(100);
             entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.FieldOfStudy).HasMaxLength(100);
             entity.Property(e => e.InstitutionName).HasMaxLength(200);
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.UniversityName).HasMaxLength(200);
@@ -90,6 +170,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DigitalTokenExchange).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ExchangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -171,6 +252,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Role).HasMaxLength(100);
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.Years).HasColumnType("decimal(5, 2)");
 
             entity.HasOne(d => d.User).WithMany(p => p.TblExperiences)
                 .HasForeignKey(d => d.UserId)
@@ -223,12 +305,17 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblMessages");
 
             entity.Property(e => e.MessageId).HasColumnName("MessageID");
+            entity.Property(e => e.IsApproved).HasDefaultValue(true);
             entity.Property(e => e.MeetingLink).HasMaxLength(500);
             entity.Property(e => e.ReceiverUserId).HasColumnName("ReceiverUserID");
             entity.Property(e => e.SenderUserId).HasColumnName("SenderUserID");
             entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblMessages)
+                .HasForeignKey(d => d.OfferId)
+                .HasConstraintName("FK_TblMessages_Offers_OfferId");
 
             entity.HasOne(d => d.ReceiverUser).WithMany(p => p.TblMessageReceiverUsers)
                 .HasForeignKey(d => d.ReceiverUserId)
@@ -269,19 +356,55 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblOffers");
 
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
+            entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
+            entity.Property(e => e.CollaborationMethod).HasMaxLength(50);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeliveryTimeDays).HasDefaultValue(3);
+            entity.Property(e => e.Device)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.DigitalTokenValue).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.FreelanceType).HasMaxLength(50);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ProvidesSourceFiles).HasDefaultValue(false);
+            entity.Property(e => e.RequiredSkillLevel).HasMaxLength(50);
+            entity.Property(e => e.SkillIdOfferOwner).HasMaxLength(100);
             entity.Property(e => e.TimeCommitmentDays).HasDefaultValue(1);
-            entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.TokenCost).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Tools)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.WillingSkill)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
 
             entity.HasOne(d => d.User).WithMany(p => p.TblOffers)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblOffers_Users");
+        });
+
+        modelBuilder.Entity<TblOfferPortfolio>(entity =>
+        {
+            entity.HasKey(e => e.PortfolioId).HasName("PK__tblOffer__6D3A139D4A53F9F0");
+
+            entity.ToTable("tblOfferPortfolio");
+
+            entity.Property(e => e.PortfolioId).HasColumnName("PortfolioID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileUrl).HasMaxLength(255);
+            entity.Property(e => e.OfferId).HasColumnName("OfferID");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferPortfolios)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OfferPortfolio_Offers");
         });
 
         modelBuilder.Entity<TblReview>(entity =>
@@ -303,6 +426,11 @@ public partial class SkillSwapDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblReviews_Exchanges");
 
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblReviews)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblReview_Offer");
+
             entity.HasOne(d => d.Reviewee).WithMany(p => p.TblReviewReviewees)
                 .HasForeignKey(d => d.RevieweeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -312,6 +440,11 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.ReviewerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblReviews_Reviewer");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblReviewUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblReview_User");
         });
 
         modelBuilder.Entity<TblRole>(entity =>
@@ -382,7 +515,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.CurrentLocation).HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Designation).HasMaxLength(50);
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FailedOtpAttempts).HasDefaultValue(0);
             entity.Property(e => e.FirstName).HasMaxLength(100);
@@ -391,7 +526,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.LastActive).HasColumnType("datetime");
             entity.Property(e => e.LastFailedOtpAttempt).HasColumnType("datetime");
             entity.Property(e => e.LastName).HasMaxLength(100);
-            entity.Property(e => e.Location).HasMaxLength(200);
             entity.Property(e => e.LockoutEndTime).HasColumnType("datetime");
             entity.Property(e => e.ModifiedDate).HasColumnType("datetime");
             entity.Property(e => e.PasswordHash).HasMaxLength(200);
@@ -403,6 +537,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Salt).HasMaxLength(200);
             entity.Property(e => e.TotpSecret).HasMaxLength(100);
             entity.Property(e => e.UserName).HasMaxLength(100);
+            entity.Property(e => e.Zip).HasMaxLength(20);
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
@@ -434,7 +569,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ApprovedByAdminId).HasColumnName("ApprovedByAdminID");
             entity.Property(e => e.ApprovedDate).HasColumnType("datetime");
             entity.Property(e => e.CertificateFilePath).HasMaxLength(500);
+            entity.Property(e => e.CertificateFrom).HasMaxLength(100);
             entity.Property(e => e.CertificateName).HasMaxLength(200);
+            entity.Property(e => e.CompleteDate).HasColumnType("datetime");
             entity.Property(e => e.SkillId).HasColumnName("SkillID");
             entity.Property(e => e.SubmittedDate)
                 .HasDefaultValueSql("(getdate())")
@@ -525,6 +662,30 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblWorkingTime_Users");
+        });
+
+        modelBuilder.Entity<UserSensitiveWord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserSens__3214EC074AE3ACA8");
+
+            entity.Property(e => e.DetectedOn)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_Message");
+
+            entity.HasOne(d => d.SensitiveWord).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.SensitiveWordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_SensitiveWord");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserSensitiveWords)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserSensitiveWords_User");
         });
 
         //modelBuilder.Entity<TblUserRole>(entity =>

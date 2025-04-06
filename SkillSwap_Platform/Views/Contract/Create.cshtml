@@ -1,0 +1,798 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ContractCreationVM
+
+@{
+    ViewData["Title"] = "Create Legal Contract";
+    Layout = null;
+    var currentUserId = Convert.ToInt32(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+    Model.ContractDate = Model.ContractDate ?? DateTime.Now;
+}
+<style>
+    .contract-document {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 2em auto;
+        max-width: 800px;
+        padding: 2em;
+        border: 1px solid #ccc;
+        background-color: #fafafa;
+        line-height: 1.6;
+    }
+
+        .contract-document h2 {
+            text-align: center;
+            margin-bottom: 1.5em;
+        }
+
+    .inline-input {
+        border: none;
+        border-bottom: 1px dotted #333;
+        font-weight: bold;
+        padding: 0 5px;
+        background: transparent;
+        width: auto;
+        min-width: 150px;
+    }
+
+        .inline-input:focus {
+            outline: none;
+            border-bottom-color: #007bff;
+        }
+
+    .display-field {
+        display: inline-block;
+        width: auto;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .contract-actions {
+        margin-top: 2em;
+        text-align: center;
+    }
+
+        .contract-actions button {
+            margin: 0 10px;
+        }
+    /* Styles for dynamic bullet list */
+    #bulletContainer ul {
+        list-style-type: disc;
+        padding-left: 20px;
+    }
+
+    #bulletContainer li {
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+    }
+
+    #bulletContainer .bullet-point {
+        width: 90%;
+        border: none;
+        border-bottom: 1px dotted #333;
+        background: transparent;
+        font-weight: bold;
+    }
+
+        #bulletContainer .bullet-point:focus {
+            outline: none;
+            border-bottom-color: #007bff;
+        }
+
+    #bulletContainer .remove-icon {
+        cursor: pointer;
+        color: red;
+        font-size: 16px;
+        margin-left: 10px;
+    }
+
+    #addMoreBtn {
+        margin-top: 10px;
+    }
+    /* Custom modal styles */
+    .custom-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-modal {
+        background: #fff;
+        padding: 20px;
+        max-width: 400px;
+        width: 90%;
+        border-radius: 4px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+        .custom-modal h3 {
+            margin-top: 0;
+        }
+
+        .custom-modal .modal-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+            .custom-modal .modal-actions button {
+                margin-left: 10px;
+            }
+</style>
+
+<!-- Begin Form -->
+<form asp-action="Create" method="post" id="contractForm">
+    @Html.AntiForgeryToken()
+    <div>
+        @{
+            Model.IsPreview = false; // Editable mode.
+            @await Html.PartialAsync("_ContractTemplate", Model);
+        }
+    </div>
+    @Html.HiddenFor(m => m.AccountSenderName)
+    @Html.HiddenFor(m => m.MessageId)
+    @Html.HiddenFor(m => m.OfferId)
+    @Html.HiddenFor(m => m.SenderUserId)
+    @Html.HiddenFor(m => m.ReceiverUserId)
+    @Html.HiddenFor(m => m.ContractDate)
+    @Html.HiddenFor(m => m.AssistanceRounds)
+    @Html.HiddenFor(m => m.OfferOwnerAvailability)
+    @Html.HiddenFor(m => m.ModeOfLearning)
+    @Html.HiddenFor(m => m.OppositeExperienceLevel)
+    @Html.HiddenFor(m => m.Category)
+    @Html.HiddenFor(m => m.SenderUserName)
+    @Html.HiddenFor(m => m.ReceiverUserName)
+    @Html.HiddenFor(m => m.SenderPlace)
+    @Html.HiddenFor(m => m.SenderSignature)
+    @Html.HiddenFor(m => m.ReceiverSignature)
+    @Html.HiddenFor(m => m.ReceiverPlace)
+    @Html.HiddenFor(m => m.Mode)
+    @Html.HiddenFor(m => m.ActionContext)
+    @Html.HiddenFor(m => m.SenderPlace)
+    <input type="hidden" name="FlowDescription" id="flowDescriptionField" value="" />
+    <div class="contract-actions">
+        <button type="button" onclick="disableAndPreview(this, event)" class="btn">Preview Contract</button>
+        <button type="submit" id="confirmSend" class="btn" disabled>Confirm and Send Contract</button>
+    </div>
+</form>
+
+<!-- Custom modal for name mismatch -->
+<div id="customModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h3>Name Mismatch</h3>
+        <p>
+            The entered sender name does not match your registered name (<span id="registeredNameSpan"></span>).
+            Do you want to proceed with the entered name?
+        </p>
+        <div class="modal-actions">
+            <button id="modalNoBtn" class="btn">No</button>
+            <button id="modalYesBtn" class="btn">Yes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom modal for maximum steps reached -->
+<div id="maxStepsModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h3>Notice</h3>
+        <p>Maximum number of steps reached.</p>
+        <div class="modal-actions">
+            <button id="maxStepsOkBtn" class="btn">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom modal for displaying validation errors -->
+<div id="errorModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h3>Error</h3>
+        <ul id="errorModalList" style="text-align:left; margin: 0; padding-left: 20px;"></ul>
+        <div class="modal-actions">
+            <button id="errorModalRetryBtn" class="btn">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Overlay -->
+<div id="processingOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <img src="~/template_assets/images/C_Loader.gif" />
+        <h3>Please wait...</h3>
+        <p style="margin: 10px 0; font-size: 14px; color: #555;">
+            Your contract is being prepared and sent. Please do not close or refresh this window.
+        </p>
+        <p style="margin: 5px 0; font-size: 13px; color: #888; font-style: italic;">
+            You’ll be redirected once it’s successfully sent.
+        </p>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // ----------------------------
+        // Modal Helper Functions
+        // ----------------------------
+        function showErrorModal(errors) {
+            var errorModalOverlay = document.getElementById("errorModalOverlay");
+            var errorModalList = document.getElementById("errorModalList");
+            errorModalList.innerHTML = "";
+            errors.forEach(function(err) {
+                var li = document.createElement("li");
+                li.textContent = err;
+                errorModalList.appendChild(li);
+            });
+            errorModalOverlay.style.display = "flex";
+        }
+
+        function hideErrorModal() {
+            document.getElementById("errorModalOverlay").style.display = "none";
+        }
+
+        function showModal() {
+            document.getElementById("customModalOverlay").style.display = "flex";
+        }
+        function hideModal() {
+            document.getElementById("customModalOverlay").style.display = "none";
+        }
+        function showMaxStepsModal() {
+            document.getElementById("maxStepsModalOverlay").style.display = "flex";
+        }
+        function hideMaxStepsModal() {
+            document.getElementById("maxStepsModalOverlay").style.display = "none";
+        }
+
+        // ----------------------------
+        // Error Modal Retry Button
+        // ----------------------------
+        var errorModalRetryBtn = document.getElementById("errorModalRetryBtn");
+        if (errorModalRetryBtn) {
+            errorModalRetryBtn.addEventListener("click", function () {
+                document.getElementById("errorModalOverlay").style.display = "none";
+            });
+        }
+
+        // ----------------------------
+        // Name Mismatch Check
+        // ----------------------------
+        var registeredName = '@Model.AccountSenderName'.trim();
+        var senderInput = document.getElementById("senderNameInput");
+        var registeredNameSpan = document.getElementById("registeredNameSpan");
+        if (registeredNameSpan) {
+            registeredNameSpan.innerText = registeredName;
+        }
+        if (senderInput) {
+            senderInput.addEventListener("blur", function () {
+                var enteredName = this.value.trim();
+                if (enteredName && enteredName.toLowerCase() !== registeredName.toLowerCase()) {
+                    showModal();
+                }
+            });
+        } else {
+            console.error("Sender input element not found.");
+        }
+
+        var modalNoBtn = document.getElementById("modalNoBtn");
+        if (modalNoBtn) {
+            modalNoBtn.addEventListener("click", function () {
+                if (senderInput) { senderInput.value = ""; }
+                hideModal();
+            });
+        }
+        var modalYesBtn = document.getElementById("modalYesBtn");
+        if (modalYesBtn) {
+            modalYesBtn.addEventListener("click", function () {
+                hideModal();
+            });
+        }
+
+        // ----------------------------
+        // Agreement Checkbox Handling
+        // ----------------------------
+        var senderAgreementCheckbox = document.getElementById("senderAgreementCheckbox");
+        var confirmSendButton = document.getElementById("confirmSend");
+        if (senderAgreementCheckbox && confirmSendButton) {
+            senderAgreementCheckbox.addEventListener("change", function () {
+                confirmSendButton.disabled = !this.checked;
+            });
+        } else {
+            console.error("Agreement checkbox or confirm button not found.");
+        }
+
+        // ----------------------------
+        // Bullet Point (Process Flow) Management
+        // ----------------------------
+        var addMoreBtn = document.getElementById("addMoreBtn");
+        if (addMoreBtn) {
+            addMoreBtn.addEventListener("click", function () {
+                var bulletContainer = document.querySelector("#bulletContainer ul");
+                var bulletCount = bulletContainer.querySelectorAll("li").length;
+                var maxSteps = 7;
+                if (bulletCount < maxSteps) {
+                    var newLi = document.createElement("li");
+                    var newInput = document.createElement("input");
+                    newInput.type = "text";
+                    newInput.className = "bullet-point";
+                    newInput.placeholder = "Step " + (bulletCount + 1);
+                    newLi.appendChild(newInput);
+                    if (bulletCount >= 3) {
+                        var removeIcon = document.createElement("span");
+                        removeIcon.className = "remove-icon";
+                        removeIcon.innerHTML = "&#10006;";
+                        removeIcon.style.cursor = "pointer";
+                        removeIcon.style.marginLeft = "10px";
+                        removeIcon.addEventListener("click", function () {
+                            newLi.remove();
+                            updatePlaceholders();
+                        });
+                        newLi.appendChild(removeIcon);
+                    }
+                    bulletContainer.appendChild(newLi);
+                } else {
+                    showErrorModal(["You cannot add more than " + maxSteps + " steps."]);
+                }
+            });
+        }
+
+        function updatePlaceholders() {
+            var liElements = document.querySelectorAll("#bulletContainer ul li");
+            liElements.forEach(function(li, index) {
+                var input = li.querySelector("input.bullet-point");
+                if (input) {
+                    input.placeholder = "Step " + (index + 1);
+                }
+            });
+        }
+
+        // ----------------------------
+        // Confirm & Send Validation (on form submission)
+        // ----------------------------
+        var form = document.getElementById("contractForm");
+        if (form) {
+            form.addEventListener("submit", function (e) {
+            var errors = [];
+
+            // Validate sender name.
+            var senderNameInput = document.getElementById("senderNameInput");
+            if (!senderNameInput) {
+                errors.push("Sender name input was not found.");
+            } else {
+                var senderName = senderNameInput.value.trim();
+                if (senderName === "" || senderName === "Your Name") {
+                    errors.push("Please enter your actual name.");
+                }
+            }
+
+            // Validate token offer.
+            var tokenOfferInput = document.querySelector("input[name='TokenOffer']");
+            if (!tokenOfferInput) {
+                errors.push("Token Offer input was not found.");
+            } else {
+                var tokenOfferValue = tokenOfferInput.value.trim();
+                if (tokenOfferValue === "" || parseFloat(tokenOfferValue) < 0) {
+                    errors.push("Your token amount isn’t valid. Your offer can even start with 0 tokens.");
+                }
+            }
+
+            // Validate offered skill.
+            var skillSelect = document.querySelector("select[name='OfferedSkill']");
+            if (!skillSelect) {
+                errors.push("Offered Skill selection was not found.");
+            } else {
+                var selectedSkill = skillSelect.value;
+                if (selectedSkill === "" || selectedSkill === "Select your skill") {
+                    errors.push("Please select your offered skill.");
+                }
+            }
+
+            function isPlaceholderSignature(value) {
+                // Matches patterns like "[Sign Here]", "Sign Here", "[ sign here", etc.
+                var regex = /^\[?\s*sign\s+here\s*\]?$/i;
+                return regex.test(value.trim());
+            }
+
+            // Validate sender signature.
+            var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+            if (!senderSignatureInput || senderSignatureInput.value.trim() === "" || isPlaceholderSignature(senderSignatureInput.value)) {
+                errors.push("Please provide your actual signature.");
+            }
+
+            function isPlaceholderPlace(value) {
+                // Matches patterns like "[Place of Sign]", "Place of Sign", "[ place of sign", etc.
+                var regex = /^\[?\s*place\s+of\s+sign\s*\]?$/i;
+                return regex.test(value.trim());
+            }
+
+            // Validate sender place of sign.
+            var senderPlaceInput = document.querySelector("input[name='SenderPlace']");
+            if (!senderPlaceInput || senderPlaceInput.value.trim() === "" || isPlaceholderPlace(senderPlaceInput.value)) {
+                errors.push("Please provide the actual place of signing.");
+            }
+
+            // Validate Acceptance Dates (must match today's date)
+            var senderAcceptanceDateInput = document.querySelector("input[name='SenderAcceptanceDate']");
+            if (!senderAcceptanceDateInput || senderAcceptanceDateInput.value.trim() === "") {
+                errors.push("Please enter the Sender Acceptance Date.");
+            } else {
+                var senderAcceptanceDate = new Date(senderAcceptanceDateInput.value);
+                var today = new Date();
+                if (senderAcceptanceDate.toDateString() !== today.toDateString()) {
+                    errors.push("Sender Acceptance Date must be today's date.");
+                }
+            }
+
+            // Validate process flow steps.
+            var bulletInputs = document.querySelectorAll(".bullet-point");
+            var bulletSteps = [];
+            var hasEmptyStep = false;
+                bulletInputs.forEach(function (input) {
+                   var val = input.value.trim();
+                   if (!val) {
+                       hasEmptyStep = true;
+                   } else {
+                       bulletSteps.push(val);
+                   }
+                });
+                if (bulletSteps.length < 3) {
+                    errors.push("To create an impactful flow, please add at least 3 steps.");
+                }
+                if (hasEmptyStep) {
+                    errors.push("Please fill in all the step fields you have added, or remove any empty ones.");
+                }
+
+                // If any errors were found, prevent submission and show the error modal.
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    showErrorModal(errors);
+                    return false;
+                }
+
+                // Otherwise, combine the bullet points into the hidden FlowDescription field.
+                document.getElementById("flowDescriptionField").value = bulletSteps.join("\n");
+
+                //disable pointer events on the whole document.
+                document.body.style.pointerEvents = "none";
+                // Show the processing overlay.
+                var overlay = document.getElementById("processingOverlay");
+                if (overlay) {
+                    overlay.style.display = "flex";
+                }
+
+               // Delay then submit.
+                setTimeout(function () {
+                    $("#contractForm").off("submit").submit();
+                }, 5050);
+            });
+        }
+
+        var maxStepsOkBtn = document.getElementById("maxStepsOkBtn");
+        if (maxStepsOkBtn) {
+            maxStepsOkBtn.addEventListener("click", function () {
+                hideMaxStepsModal();
+            });
+        }
+
+        // ----------------------------
+        // Preview Contract Function
+        // ----------------------------
+        window.previewContract = function(e) {
+            if (e && typeof e.preventDefault === "function") {
+                e.preventDefault();
+            }
+            var errors = [];
+            // Validate sender name.
+            var senderNameInput = document.getElementById("senderNameInput");
+            if (!senderNameInput) {
+                errors.push("Sender name input was not found.");
+            } else {
+                var senderName = senderNameInput.value.trim();
+                if (senderName === "" || senderName === "Your Name") {
+                    errors.push("Please enter your actual name.");
+                }
+            }
+            // Validate token offer.
+            var tokenOfferInput = document.querySelector("input[name='TokenOffer']");
+            if (!tokenOfferInput) {
+                errors.push("Token Offer input was not found.");
+            } else {
+                var tokenOfferValue = tokenOfferInput.value.trim();
+                if (tokenOfferValue === "" || parseFloat(tokenOfferValue) < 0) {
+                    errors.push("Your token amount isn’t valid. Your offer can even start with 0 tokens.");
+                }
+            }
+            // Validate offered skill.
+            var skillSelect = document.querySelector("select[name='OfferedSkill']");
+            if (!skillSelect) {
+                errors.push("Offered Skill selection was not found.");
+            } else {
+                var selectedSkill = skillSelect.value;
+                if (selectedSkill === "" || selectedSkill === "Select your skill") {
+                    errors.push("Please select your offered skill.");
+                }
+            }
+            // Validate sender signature.
+            var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+            if (!senderSignatureInput || senderSignatureInput.value.trim() === "") {
+                errors.push("Please provide your signature.");
+            }
+            // Validate process flow steps.
+            var bulletInputs = document.querySelectorAll(".bullet-point");
+            var bulletSteps = [];
+            var hasEmptyStep = false;
+            bulletInputs.forEach(function (input) {
+                var val = input.value.trim();
+                if (!val) {
+                    hasEmptyStep = true;
+                } else {
+                    bulletSteps.push(val);
+                }
+            });
+            if (bulletSteps.length < 3) {
+                errors.push("To create an impactful flow, please add at least 3 steps.");
+            }
+            if (hasEmptyStep) {
+                errors.push("Please fill in all the step fields you have added, or remove any empty ones.");
+            }
+            if (errors.length > 0) {
+                showErrorModal(errors);
+                return;
+            }
+            document.getElementById("flowDescriptionField").value = bulletSteps.join("\n");
+            var form = document.getElementById("contractForm");
+            form.action = '@Url.Action("PreviewFromForm", "Contract")';
+            form.target = "_blank";
+            setTimeout(function () {
+                form.submit();
+                form.target = "";
+                form.action = '@Url.Action("Create", "Contract")';
+            }, 100);
+        };
+
+        // ----------------------------
+        // Anti-Double-Submission Helper for Preview
+        // ----------------------------
+        window.previewContract = function(e) {
+            if (e && typeof e.preventDefault === "function") {
+                e.preventDefault();
+            }
+            var errors = [];
+            var senderNameInput = document.getElementById("senderNameInput");
+            if (!senderNameInput) {
+                errors.push("Sender name input was not found.");
+            } else {
+                var senderName = senderNameInput.value.trim();
+                if (senderName === "" || senderName === "Your Name") {
+                    errors.push("Please enter your actual name.");
+                }
+            }
+            var tokenOfferInput = document.querySelector("input[name='TokenOffer']");
+            if (!tokenOfferInput) {
+                errors.push("Token Offer input was not found.");
+            } else {
+                var tokenOfferValue = tokenOfferInput.value.trim();
+                if (tokenOfferValue === "" || parseFloat(tokenOfferValue) < 0) {
+                    errors.push("Your token amount isn’t valid. Your offer can even start with 0 tokens.");
+                }
+            }
+            var skillSelect = document.querySelector("select[name='OfferedSkill']");
+            if (!skillSelect) {
+                errors.push("Offered Skill selection was not found.");
+            } else {
+                var selectedSkill = skillSelect.value;
+                if (selectedSkill === "" || selectedSkill === "Select your skill") {
+                    errors.push("Please select your offered skill.");
+                }
+            }
+            var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+            if (!senderSignatureInput || senderSignatureInput.value.trim() === "") {
+                errors.push("Please provide your signature.");
+            }
+            var bulletInputs = document.querySelectorAll(".bullet-point");
+            var bulletSteps = [];
+            var hasEmptyStep = false;
+            bulletInputs.forEach(function (input) {
+                var val = input.value.trim();
+                if (!val) {
+                    hasEmptyStep = true;
+                } else {
+                    bulletSteps.push(val);
+                }
+            });
+            if (bulletSteps.length < 3) {
+                errors.push("To create an impactful flow, please add at least 3 steps.");
+            }
+            if (hasEmptyStep) {
+                errors.push("Please fill in all the step fields you have added, or remove any empty ones.");
+            }
+            if (errors.length > 0) {
+                showErrorModal(errors);
+                return;
+            }
+            document.getElementById("flowDescriptionField").value = bulletSteps.join("\n");
+            var form = document.getElementById("contractForm");
+            form.action = '@Url.Action("PreviewFromForm", "Contract")';
+            form.target = "_blank";
+            setTimeout(function () {
+                form.submit();
+                form.target = "";
+                form.action = '@Url.Action("Create", "Contract")';
+            }, 100);
+        };
+
+        window.disableAndPreview = function(button, e) {
+            if (e && typeof e.preventDefault === "function") {
+                e.preventDefault();
+            }
+            button.disabled = true;
+            previewContract(e);
+            setTimeout(function() {
+                button.disabled = false;
+            }, 6000);
+        };
+    });
+</script>
+
+<!-- Sender Acceptance Validation JS -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Sender Acceptance Elements - ensure these match your HTML
+        var senderAgreementCheckbox = document.getElementById("senderAgreementCheckbox");
+        var senderAcceptanceDateInput = document.querySelector("input[name='SenderAcceptanceDate']");
+        var senderSignatureInput = document.querySelector("input[name='SenderSignature']");
+        var senderPlaceInput = document.querySelector("input[name='SenderPlace']");
+
+        // Tooltip elements for sender acceptance.
+        var senderDateInfo = document.getElementById("senderDateInfo");
+        var senderSignatureInfo = document.getElementById("senderSignatureInfo");
+        var senderPlaceInfo = document.getElementById("senderPlaceInfo");
+
+        function validateSenderFields() {
+            var today = new Date().toISOString().split("T")[0];
+            var valid = true;
+            if (!senderAgreementCheckbox || !senderAgreementCheckbox.checked) {
+                valid = false;
+            }
+            if (!senderAcceptanceDateInput.value || senderAcceptanceDateInput.value.trim() === "" || senderAcceptanceDateInput.value !== today) {
+                valid = false;
+                if (senderDateInfo) { senderDateInfo.style.display = "inline-block"; }
+            } else {
+                if (senderDateInfo) { senderDateInfo.style.display = "none"; }
+            }
+            if (!senderSignatureInput.value.trim() || senderSignatureInput.value.trim().toLowerCase() === "[sign here]") {
+                valid = false;
+                if (senderSignatureInfo) { senderSignatureInfo.style.display = "inline-block"; }
+            } else {
+                if (senderSignatureInfo) { senderSignatureInfo.style.display = "none"; }
+            }
+            if (!senderPlaceInput.value.trim() || senderPlaceInput.value.trim().toLowerCase() === "[place of sign]") {
+                valid = false;
+                if (senderPlaceInfo) { senderPlaceInfo.style.display = "inline-block"; }
+            } else {
+                if (senderPlaceInfo) { senderPlaceInfo.style.display = "none"; }
+            }
+            var confirmButton = document.getElementById("confirmSend");
+            if (confirmButton) {
+                confirmButton.disabled = !valid;
+            }
+            return valid;
+        }
+        if (senderAgreementCheckbox) {
+            senderAgreementCheckbox.addEventListener("change", validateSenderFields);
+        }
+        if (senderAcceptanceDateInput) {
+            senderAcceptanceDateInput.addEventListener("change", validateSenderFields);
+        }
+        if (senderSignatureInput) {
+            senderSignatureInput.addEventListener("keyup", validateSenderFields);
+        }
+        if (senderPlaceInput) {
+            senderPlaceInput.addEventListener("keyup", validateSenderFields);
+        }
+        validateSenderFields();
+    });
+</script>
+
+<script>
+    (function() {
+        "use strict";
+
+        // Disable right-click, copy, cut, paste, text selection, etc.
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+        ['copy', 'cut', 'paste'].forEach(function(evt) {
+            document.addEventListener(evt, function(e) {
+                e.preventDefault();
+            });
+        });
+        document.addEventListener("selectstart", function(e) {
+            e.preventDefault();
+        });
+        document.body.style.userSelect = "none";
+        document.addEventListener("dragstart", function(e) {
+            e.preventDefault();
+        });
+
+        // Block specific key combinations
+        document.onkeydown = function(e) {
+            var blockedCombinations = [
+                { keyCode: 123 }, // F12
+                { ctrlKey: true, shiftKey: true, keyCode: 73 }, // Ctrl+Shift+I
+                { ctrlKey: true, shiftKey: true, keyCode: 74 }, // Ctrl+Shift+J
+                { ctrlKey: true, keyCode: 85 }, // Ctrl+U
+                { ctrlKey: true, keyCode: 67 }, // Ctrl+C
+                { ctrlKey: true, keyCode: 86 }, // Ctrl+V
+                { ctrlKey: true, keyCode: 88 }  // Ctrl+X
+            ];
+            for (var i = 0; i < blockedCombinations.length; i++) {
+                var combo = blockedCombinations[i];
+                if ((combo.keyCode && e.keyCode === combo.keyCode) &&
+                    (combo.ctrlKey ? e.ctrlKey : true) &&
+                    (combo.shiftKey ? e.shiftKey : true)) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        };
+
+        // Overlay creation functions
+        function showOverlay() {
+            // If the overlay already exists, do nothing.
+            if (document.getElementById("devtoolsOverlay")) return;
+
+            var overlay = document.createElement("div");
+            overlay.id = "devtoolsOverlay";
+            overlay.style.position = "fixed";
+            overlay.style.top = 0;
+            overlay.style.left = 0;
+            overlay.style.width = "100%";
+            overlay.style.height = "100%";
+            overlay.style.backgroundColor = "rgba(0,0,0,0.95)";
+            overlay.style.color = "white";
+            overlay.style.zIndex = "9999";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.fontSize = "24px";
+            overlay.style.textAlign = "center";
+            overlay.innerHTML = "Warning: Developer tools detected. For security reasons, the content is disabled.";
+            document.body.appendChild(overlay);
+        }
+
+        function removeOverlay() {
+            var overlay = document.getElementById("devtoolsOverlay");
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Detect Developer Tools using difference in window dimensions
+        var devtools = { open: false };
+        var threshold = 160; // You may adjust the threshold as needed.
+        setInterval(function() {
+            var widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            var heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            if (widthThreshold || heightThreshold) {
+                if (!devtools.open) {
+                    devtools.open = true;
+                    console.warn("Developer tools detected.");
+                    // Instead of closing the window, show a blocking overlay.
+                    showOverlay();
+                }
+            } else {
+                if (devtools.open) {
+                    devtools.open = false;
+                    removeOverlay();
+                }
+            }
+        }, 500);
+    })();
+</script>
+

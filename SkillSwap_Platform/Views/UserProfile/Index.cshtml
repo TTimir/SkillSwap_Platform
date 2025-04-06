@@ -1,0 +1,1009 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.UserProfileVM
+@using System.Text.RegularExpressions
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+<style>
+    .tag {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease-in-out;
+    }
+
+    .approved-tag {
+    background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+    color: #2ecc71;
+    border-left: 5px solid #2ecc71;
+    border-right: 0.1px solid #2ecc71;
+    border-top: 0.1px solid #2ecc71;
+    border-bottom: 0.1px solid #2ecc71;
+    }
+
+    .not-approved-tag {
+    background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+    color: #e74c3c;
+    border-left: 5px solid #e74c3c;
+    border-right: 0.1px solid #e74c3c;
+    border-top: 0.1px solid #e74c3c;
+    border-bottom: 0.1px solid #e74c3c;
+    }
+
+    .approved-tag i {
+    color: #2ecc71; /* Green for approved */
+    }
+
+    .not-approved-tag i {
+    color: #e74c3c; /* Red for not approved */
+    }
+
+    .certificate-preview {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    max-width: 600px;
+    }
+
+    /* Consistent preview container for certificate previews */
+    .preview-container {
+    position: relative;
+    width: 100%;
+    max-width: 300px; /* forces a consistent width for all previews */
+    height: 180px;    /* fixed height */
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid #ddd; /* optional border */
+    }
+
+    /* Force images and iframes (PDFs) to fill the container while preserving aspect ratio */
+    .preview-container img.img-preview,
+    .preview-container iframe.pdf-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
+    }
+
+    /* Hover overlay styles */
+    .preview-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 48px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    }
+    .preview-container:hover .preview-overlay {
+    cursor: pointer;
+    opacity: 1;
+    }
+
+    /* ✅ Remove default style for offered skills */
+    .offered-skill {
+    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+    color: #2ecc71 !important;
+    border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    backdrop-filter: blur(5px);
+    }
+
+    /* Make the row a flex container so its children (columns) are equal height */
+    .row.equal-height {
+    display: flex;
+    flex-wrap: wrap;
+    }
+
+    /* Make each column a flex container */
+    .row.equal-height > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+    }
+
+    /* Ensure the card fills the available space */
+    .listing-style1 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* Optional: set a min-height if needed */
+    min-height: 450px;
+    }
+
+    /* Prevent the image area from stretching */
+    .list-thumb {
+    flex: 0 0 auto;
+    }
+
+    /* Let the text content grow equally */
+    .list-content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    }
+
+    /* Optional: Limit the title text to two lines with ellipsis */
+    .list-content .list-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    }
+
+  .share-card a {
+    position: relative;
+  }
+  .share-card a::after {
+    content: attr(title);
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 12px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+  .share-card a:hover::after {
+    opacity: 1;
+  }
+  /* Overlay covers entire viewport with blur background */
+    .share-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      display: none; /* Hidden by default */
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    /* Modal card in center */
+    .share-modal {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      position: relative;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Close button in modal */
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    /* Modal header */
+    .share-modal h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    /* Input and button container */
+    .share-content {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    /* Input styling */
+    .share-content input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+</style>
+<div class="body_content bgc-thm3">
+    <!-- Breadcumb Sections -->
+    <section class="breadcumb-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-lg-10">
+                    <div class="breadcumb-style1 mb10-xs">
+                        <div class="breadcumb-list">
+                            <a href="@Url.Action("Index", "Home")">Home</a>
+                            <a href="#!account">Account</a>
+                            <a href="#!profile">@ViewData["Title"]</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-lg-2">
+                    <div class="d-flex align-items-center justify-content-sm-end">
+                        <div id="shareBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;">
+                            <span class="icon flaticon-share dark-color fz12 mr10"></span>
+                            <div class="h6 mb-0">Share</div>
+                        </div>
+                        <div class="share-save-widget d-flex align-items-center ml15">
+                            <span class="icon flaticon-like dark-color fz12 mr10"></span>
+                            <div class="h6 mb-0">Save</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Overlay Modal -->
+    <div id="shareOverlay" class="share-overlay">
+      <div class="share-modal">
+        <button id="closeShare" class="close-btn">&times;</button>
+        <h3>Share This Profile</h3>
+        <div class="share-content ui-content">
+          <input type="text" id="shareLink" readonly value="https://yourprofilelink.com" />
+          <button id="copyShare" class="ud-btn btn-thm">Copy </button>
+        </div>
+      </div>
+    </div>
+    <!-- Service Details -->
+    <section class="pt0 pb90 pb30-md">
+        <div class="container">
+            <div class="row wrap wow fadeInUp">
+                <div class="col-lg-8">
+                    <div class="column">
+                        <div class="px30 pt30 pb-0 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                            <div class="position-relative overflow-hidden d-flex align-items-center">
+                                <div class="row">
+                                    <div class="col-xl-12">
+                                        <div class="position-relative">
+                                            <div class="list-meta d-sm-flex align-items-center">
+                                                <a class="position-relative freelancer-single-style" href="#!profileimage">
+                                                    <!-- Profile Image -->
+                                                    @{
+                                                        var profileUrl = ViewData["UserProfileImage"] as string;
+                                                        var isOnline = (ViewData["IsOnline"] as bool?) ?? false;
+                                                    }
+                                                    <div>
+                                                        @if (isOnline)
+                                                        {
+                                                            <span class="online"></span>
+                                                        }
+                                                        <img src="@(!string.IsNullOrEmpty(profileUrl) ? Url.Content(profileUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:100%;" />
+                                                    </div>
+
+                                                    @*<span class="online"></span>
+                                                    <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
+                                                </a>
+                                                <div class="ml20 ml0-xs">
+                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName <small>(<i>@("@")@Model.User.UserName</i>)</small></h5>
+                                                    <p class="mb-0">@Model.User.Designation</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item mb5-sm"><i class="fas fa-star vam fz10 review-color me-2"></i> 4.82 94 reviews</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-place vam fz20 me-2"></i> @Model.User.City, @Model.User.Country</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToString("MMMM d, yyyy")</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="opacity-100 mt30">
+                            <div class="row mt30">
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-target"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Job Success</h5>
+                                            <p class="mb-0 text">98%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-goal"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Total Jobs</h5>
+                                            <p class="mb-0 text">921</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-fifteen"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">Total Hours</h5>
+                                            <p class="mb-0 text">1,499</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-xl-3 px-0">
+                                    <div class="iconbox-style1 contact-style d-flex align-items-start mb30">
+                                        <div class="icon flex-shrink-0"><span class="flaticon-file-1"></span></div>
+                                        <div class="details">
+                                            <h5 class="title">In Queue Service</h5>
+                                            <p class="mb-0 text">20</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-about">
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4>Description</h4>
+                                <p class="text mb30">@Model.User.AboutMe </p>
+                                <p class="text mb30">@Model.User.AboutMe</p>
+                            </div>
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Education</h4>
+                                <div class="educational-quality">
+                                    @foreach (var education in Model.Educations)
+                                    {
+                                        <div class="m-circle text-thm">M</div>
+                                        <div class="wrapper mb40">
+                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToString("yyyy")</span>
+                                            <h5 class="mt15">@education.DegreeName</h5>
+                                            <h6 class="text-thm">@education.InstitutionName</h6>
+                                            <p>@(string.IsNullOrWhiteSpace(education.Description) ? "No description available." : education.Description)</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Work & Experience</h4>
+                                <div class="educational-quality">
+                                    @foreach (var experience in Model.Experiences)
+                                    {
+                                        <div class="m-circle text-thm">M</div>
+                                        <div class="wrapper mb40">
+                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToString("MM/yyyy")</span>
+                                            <h5 class="mt15">@experience.Position</h5>
+                                            <h6 class="text-thm">@experience.CompanyName</h6>
+                                            <p>@(string.IsNullOrWhiteSpace(experience.Description) ? "No description available." : experience.Description)</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="p30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Awards and Certificates</h4>
+                                <div class="educational-quality ps-0">
+                                    <div class="container">
+                                        <div class="row">
+                                            @for (int i = 0; i < Model.Certificates.Count(); i++)
+                                            {
+                                                var certificate = Model.Certificates.ElementAt(i);
+
+                                                <!-- Start New Row for Every Two Certificates -->
+                                                @if (i % 2 == 0 && i != 0)
+                                                {
+                                                    @:</div><div class="row">
+                                                }
+
+                                                <div class="col-md-6">
+                                                    <div class="wrapper mb40">
+                                                        <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
+                                                            @if (certificate.IsApproved)
+                                                            {
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToString("MMMM dd, yyyy")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span><i class="fas fa-times-circle"></i> Not Approved</span>
+                                                            }
+                                                        </span>
+                                                        <h5 class="mt15">
+                                                            @certificate.CertificateName
+                                                            @if (certificate.CompleteDate.HasValue)
+                                                            {
+                                                                <small>(Completed on @certificate.CompleteDate.Value.ToString("MMMM d, yyyy"))</small>
+                                                            }
+                                                        </h5>
+                                                        <h6 class="text-thm">@certificate.CertificateFrom</h6>
+                                                        <div class="certificate-preview">
+                                                            @if (!string.IsNullOrEmpty(certificate.CertificateFilePath))
+                                                            {
+                                                                string fileExtension = System.IO.Path.GetExtension(certificate.CertificateFilePath).ToLower();
+                                                                if (fileExtension == ".pdf")
+                                                                {
+                                                                    <!-- PDF Preview wrapped with preview container -->
+                                                                    <div class="preview-container" data-preview-type="pdf" data-src="@certificate.CertificateFilePath">
+                                                                        <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
+                                                                        <div class="preview-overlay"><i class="fas fa-search-plus" style="color:#5BBB7B"></i></div>
+                                                                    </div>
+                                                                    <br />
+                                                                    <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
+                                                                        <i class="fas fa-download me-2"></i> Download Certificate
+                                                                    </a>
+                                                                }
+                                                                else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                                                                {
+                                                                    <!-- Image Preview wrapped with preview container -->
+                                                                    <div class="preview-container" data-preview-type="image" data-src="@certificate.CertificateFilePath">
+                                                                        <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
+                                                                        <div class="preview-overlay"><i class="flaticon-search " style="color:#5BBB7B"></i></div>
+                                                                    </div>
+                                                                    <br />
+                                                                    <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
+                                                                        <i class="fas fa-download me-2" style="transform:rotate(0deg)"></i> Download Certificate
+                                                                    </a>
+                                                                }
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px30 pt30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h4 class="mb30">Featured Offers</h4>
+                                <div class="row equal-height">
+                                    @if (Model.Offers != null && Model.Offers.Any())
+                                    {
+                                        foreach (var offer in Model.Offers)
+                                        {
+                                            <div class="col-sm-6 col-xl-4">
+                                                <div class="listing-style1">
+                                                    <div class="list-thumb">
+                                                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+                                                            @if (offer.PortfolioImages != null && offer.PortfolioImages.Any())
+                                                            {
+                                                                foreach (var image in offer.PortfolioImages)
+                                                                {
+                                                                    <div class="item">
+                                                                        <img class="w-100" src="@image" alt="@offer.Title">
+                                                                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                // List of default images.
+                                                                var defaultImages = new List<string>
+                                                                {
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                                };
+
+                                                                // Use a deterministic approach:
+                                                                // Compute the index using the offer's unique identifier (OfferId) modulo the number of defaults.
+                                                                int index = offer.OfferId % defaultImages.Count;
+                                                                var selectedImage = defaultImages[index];
+
+                                                                <div class="item">
+                                                                    <img class="w-100" src="@selectedImage" style="width:329px;height:200px;" alt="@offer.Title">
+                                                                    <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div class="list-content">
+                                                        <p class="list-text body-color fz14 mb-1">@offer.Category</p>
+                                                        <h6 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
+                                                        <div class="review-meta d-flex align-items-center">
+                                                            <i class="fas fa-star fz10 review-color me-2"></i>
+                                                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                                        </div>
+                                                        <hr class="my-2">
+                                                        <div class="list-meta mt15">
+                                                            <div class="budget">
+                                                                <p class="mb-0 body-color">Known skill is<span class="fz15 fw500 dark-color ms-1">@offer.SkillName</span></p>
+                                                                <p class="mb-0 body-color">Commitment days<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays</span></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="col-12">
+                                            <p class="text-muted">No offers available.</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="product_single_content mb30 p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <div class="mbp_pagination_comments">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="total_review mb30">
+                                                <h4>80 Reviews</h4>
+                                            </div>
+                                            <div class="d-md-flex align-items-center mb30">
+                                                <div class="total-review-box d-flex align-items-center text-center mb30-sm">
+                                                    <div class="wrapper mx-auto">
+                                                        <div class="t-review mb15">4.96</div>
+                                                        <h5>Exceptional</h5>
+                                                        <p class="text mb-0">3,014 reviews</p>
+                                                    </div>
+                                                </div>
+                                                <div class="wrapper ml60 ml0-sm">
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">5 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 90%;" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">58</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">4 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar w-75" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">20</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">3 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar w-50" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">15</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">2 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 30%;" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">2</div>
+                                                    </div>
+                                                    <div class="review-list d-flex align-items-center mb10">
+                                                        <div class="list-number">1 Star</div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: 20%;" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                        <div class="value text-end">1</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
+                                                <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
+                                                <div class="ml20">
+                                                    <h6 class="mt-0 mb-0">Bessie Cooper</h6>
+                                                    <div><span class="fz14">12 March 2022</span></div>
+                                                </div>
+                                            </div>
+                                            <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
+                                            <div class="review_cansel_btns d-flex">
+                                                <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
+                                                <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="mbp_first position-relative d-flex align-items-center justify-content-start mt30 mb30-sm">
+                                                <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
+                                                <div class="ml20">
+                                                    <h6 class="mt-0 mb-0">Darrell Steward</h6>
+                                                    <div><span class="fz14">12 March 2022</span></div>
+                                                </div>
+                                            </div>
+                                            <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
+                                            <div class="review_cansel_btns d-flex pb30">
+                                                <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
+                                                <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="position-relative">
+                                                <a href="page-service-single.html" class="ud-btn btn-light-thm">See More<i class="fal fa-arrow-right-long"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bsp_reveiw_wrt p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                <h6 class="fz17">Add a Review</h6>
+                                <p class="text">Your email address will not be published. Required fields are marked *</p>
+                                <h6>Your rating of this product</h6>
+                                <div class="d-flex">
+                                    <i class="fas fa-star review-color"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                    <i class="far fa-star review-color ms-2"></i>
+                                </div>
+                                <form class="comments_form mt30 mb30-md">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-4">
+                                                <label class="fw500 fz16 ff-heading dark-color mb-2">Comment</label>
+                                                <textarea class="pt15" rows="6" placeholder="There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Name</label>
+                                                <input type="text" class="form-control" placeholder="Ali Tufan">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Email</label>
+                                                <input type="email" class="form-control" placeholder="creativelayers088">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="checkbox-style1 d-block d-sm-flex align-items-center justify-content-between mb20">
+                                                <label class="custom_checkbox fz15 ff-heading">
+                                                    Save my name, email, and website in this browser for the next time I comment.
+                                                    <input type="checkbox">
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </div>
+                                            <a href="" class="ud-btn btn-thm">Send<i class="fal fa-arrow-right-long"></i></a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="column">
+                        <div class="blog-sidebar ms-lg-auto">
+                            @if (!string.IsNullOrWhiteSpace(Model.User.PersonalWebsite) || !string.IsNullOrWhiteSpace(Model.User.SocialMediaLinks))
+                            {
+                                <div class="social-icons sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                   @{
+                                        var socialLinks = new Dictionary<string, string>();
+                                        if (!string.IsNullOrWhiteSpace(Model.User.SocialMediaLinks))
+                                        {
+                                            try
+                                            {
+                                                socialLinks = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(Model.User.SocialMediaLinks);
+                                                // Convert keys to lowercase
+                                                socialLinks = socialLinks.ToDictionary(x => x.Key.ToLowerInvariant(), x => x.Value);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                <div style="color:red;">Error parsing social media links: @ex.Message</div>
+                                            }
+                                        }
+                                    }
+                                    <div class="share-card">
+                                        <header style="display:flex; justify-content:space-between; align-items:center; padding-bottom:15px; border-bottom:1px solid #ebedf9; margin-bottom:10px;">
+                                            <span style="font-size:21px;">Social Profiles</span>
+                                        </header>
+                                        <div class="content" style="margin-top:20px;">
+                                            <p style="font-size:16px; margin-bottom:10px;">Find me on</p>
+                                                <ul class="icons" style="display:flex; flex-wrap:wrap; justify-content:flex-start; gap:10px; margin:0; margin-bottom: 20px; padding:0; list-style:none;">
+                                                @if (socialLinks.ContainsKey("github") && !string.IsNullOrWhiteSpace(socialLinks["github"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["github"]" title="GitHub" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#111; border:1px solid #111; border-radius: 4px;">
+                                                            <i class="fa-brands fa-github"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("linkedin") && !string.IsNullOrWhiteSpace(socialLinks["linkedin"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["linkedin"]" title="Linkedin" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#0077B5; border:1px solid #0077B5; border-radius: 4px;">
+                                                            <i class="fab fa-linkedin-in"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("twitter") && !string.IsNullOrWhiteSpace(socialLinks["twitter"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["twitter"]" title="Twitter" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#1DA1F2 ; border:1px solid #1DA1F2 ; border-radius: 4px;">
+                                                            <i class="fa-brands fa-twitter"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("instagram") && !string.IsNullOrWhiteSpace(socialLinks["instagram"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["instagram"]" title="Instagram" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#d62976; border:1px solid #d62976; border-radius: 4px;">
+                                                            <i class="fab fa-instagram"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("facebook") && !string.IsNullOrWhiteSpace(socialLinks["facebook"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["facebook"]" title="GitHub" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#1877F2; border:1px solid #1877F2; border-radius: 4px;">
+                                                            <i class="fab fa-facebook-f"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("behance") && !string.IsNullOrWhiteSpace(socialLinks["behance"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["behance"]" title="Behance" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#053eff; border:1px solid #053eff; border-radius: 4px;">
+                                                            <i class="fa-brands fa-behance"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (socialLinks.ContainsKey("pinterest") && !string.IsNullOrWhiteSpace(socialLinks["pinterest"]))
+                                                {
+                                                    <li style="margin-bottom: 5px;">
+                                                        <a href="@socialLinks["pinterest"]" title="Pinterest" style="display:flex; align-items:center; justify-content:center; height:50px; width:50px; font-size:20px; color:#E60023; border:1px solid #E60023; border-radius: 4px;">
+                                                            <i class="fa-brands fa-pinterest"></i>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                            @{
+                                                var portfolioUrl = !string.IsNullOrWhiteSpace(Model.User.PersonalWebsite)
+                                                                     ? Model.User.PersonalWebsite
+                                                                     : "";
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(portfolioUrl))
+                                            {
+                                                <p style="font-size:16px; margin-bottom:10px;">Or open portoflio:</p>
+                                                <div class="field" style="display:flex; align-items:center; gap:10px; height:45px; border-radius:4px; padding:0 5px; border:1px solid #757171;">
+                                                    <i class="url-icon uil uil-link" style="width:50px; font-size:18px; text-align:center;"></i>
+                                                    <input type="text" readonly value="@portfolioUrl" style="width:100%; height:100%; border:none; outline:none; font-size:15px;">
+                                                    <a href="@portfolioUrl" target="_blank" style="color:#5BBB7B; padding:5px 10px;">
+                                                        <img src="~/template_assets/images/icon/icons8-external-link-20.svg" title="@portfolioUrl" alt="external link" />                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            <div class="price-widget pt25 bdrs12 default-box-shadow1s">
+                                <h3 class="widget-title">
+                                    @if (Model.RecommendedPercentage > 0)
+                                    {
+                                        <small class="text-success fw-bold">@($"{Model.RecommendedPercentage:0.##}% Recommended")</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted fw-bold" style="font-size:16px;">⭐ Be the first to recommend!</small>
+                                    }
+                                </h3>
+                                <div class="category-list mt20">
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-place text-thm2 pe-2 vam"></i>Location</span> <span class="">@Model.User.City, @Model.User.Country</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToString("MMMM dd, yyyy")</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-calendar text-thm2 pe-2 vam"></i>Last Exchange</span> 
+                                        <span class=""> 
+                                            @if (Model.LastExchangeDays >= 0)
+                                            {
+                                                @if (Model.LastExchangeDays == 0)
+                                                {
+                                                    <span class="text-success fw-bold">🚀 Delivered today</span>
+                                                }
+                                                else if (Model.LastExchangeDays == 1)
+                                                {
+                                                    <span class="">Delivered yesterday</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@Model.LastExchangeDays days ago</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">🚀 Ready to deliver!</span>
+                                            }
+                                        </span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        <span class="text"><i class="flaticon-briefcase text-thm2 pe-2 vam"></i>Years of Experience</span> 
+                                        <span class="">
+                                            @if (string.IsNullOrEmpty(Model.User.Experience) || Model.User.Experience == "0" || Model.User.Experience.Contains("0.0"))
+                                            {
+                                                <span class="text-muted">🌱 Growing fast!</span> <!-- 🌱 Encouraging message -->
+                                            }
+                                            else
+                                            {
+                                                <span class="">@Model.User.Experience</span>
+                                            }                                            
+                                         </span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
+                                        @{
+                                              // If user has languages, list them; otherwise, show a default message
+                                              var userLanguages = Model.Languages.Any()
+                                                  ? string.Join(", ", Model.Languages.Select(l => l.Language))
+                                                  : "<span class='text-muted'>🌍 No Languages Listed</span>";
+                                         }                               
+                                        <span class="text"><i class="flaticon-translator text-thm2 pe-2 vam"></i>Languages</span> <span class="">@Html.Raw(userLanguages)</span>
+                                    </a>
+                                    <a class="d-flex align-items-center justify-content-between mb-3" href="">
+                                        @{
+                                           // Loop through languages to find English
+                                            var englishEntry = Model.Languages.FirstOrDefault(l => l.Language.Equals("English", StringComparison.OrdinalIgnoreCase));
+
+                                            // Default message if English is missing
+                                            string englishLevel = "<span class='text-muted'>🌍 No English Proficiency Stated</span>";
+
+                                            if (englishEntry != null && !string.IsNullOrEmpty(englishEntry.Proficiency))
+                                            {
+                                                englishLevel = $"<span class='text-success'>{englishEntry.Proficiency}</span>"; // Show proficiency in green
+                                            }
+                                            else if (englishEntry != null)
+                                            {
+                                                englishLevel = "<span class='text-success'>🌱 Learning</span>"; // If English exists but no level is given
+                                            }
+                                        }                                       
+                                        <span class="text"><i class="flaticon-sliders text-thm2 pe-2 vam"></i>English Level</span> <span class="">@Html.Raw(englishLevel)</span>
+                                    </a>
+                                </div>
+                                <div class="d-grid">
+                                    @{
+                                        // Get the logged-in user's ID (ensure it is parsed as an int)
+                                        var loggedInUserId = Convert.ToInt32(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+                                        var isOwnProfile = (loggedInUserId == Model.User.UserId);
+                                    }
+                                    @if (isOwnProfile)
+                                    {
+                                        <a href="javascript:void(0);" onclick="alert('You cannot message yourself!');" class="ud-btn btn-thm">
+                                          Send Message <i class="fal fa-arrow-right-long"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = Model.User.UserId })" class="ud-btn btn-thm">
+                                          Send Message <i class="fal fa-arrow-right-long"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                            <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                <h4 class="widget-title">My Skills</h4>
+                                <div class="tag-list mt30">
+                                    @if (Model.Skills != null && Model.Skills.Any())
+                                    {
+                                        @foreach (var skill in Model.Skills)
+                                        {
+                                            <a href="#!" class="@(skill.IsOffered ? "offered-skill" : "")">
+                                                @skill.Name
+                                            </a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No skills added yet.</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="sidebar-widget mb30 pb20 bdrs12 default-box-shadow1s">
+                                <h4 class="widget-title">Willing to Learn</h4>
+                                <div class="tag-list mt30">
+                                    @if (!string.IsNullOrWhiteSpace(Model.User.DesiredSkillAreas)) 
+                                    {
+                                        var willingSkills = Model.User.DesiredSkillAreas.Split(',');
+                                
+                                        @foreach (var skill in willingSkills)
+                                        {
+                                            <a href="#!">@skill.Trim()</a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No skills added yet.</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<!-- Modal for Large Preview -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-0 position-relative">
+         <div id="previewContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section ProfileScript {
+    
+    <script>
+        $(document).on('click', '.preview-container', function(){
+            var previewType = $(this).data('preview-type');
+            var src = $(this).data('src');
+            var contentHtml = '';
+
+            if(previewType === 'image'){
+                contentHtml = '<img src="'+src+'" class="img-fluid" style="width:100%;">';
+            } else if(previewType === 'pdf'){
+                contentHtml = '<iframe src="'+src+'#toolbar=0" style="width:100%; height:500px; border:none;"></iframe>';
+            }
+
+            $('#previewContent').html(contentHtml);
+            $('#previewModal').modal('show');
+        });
+    </script>
+    <script>
+      // Attach copy functionality to the copy button(s) within the share card
+      document.querySelectorAll('.field button').forEach(btn => {
+          btn.addEventListener('click', function () {
+              var field = this.parentElement;
+              var input = field.querySelector('input');
+              input.select();
+              try {
+                  var successful = document.execCommand("copy");
+                  if(successful){
+                      field.classList.add("active");
+                      this.innerText = "Copied";
+                      setTimeout(() => {
+                          window.getSelection().removeAllRanges();
+                          field.classList.remove("active");
+                          this.innerText = "Copy";
+                      }, 3000);
+                  }
+              } catch (e) {
+                  console.error("Copy command failed", e);
+              }
+          });
+      });
+    </script>
+     <script>
+        // Show overlay when share button is clicked
+        document.getElementById("shareBtn").addEventListener("click", function () {
+          var shareInput = document.getElementById("shareLink");
+          // Set the share link input to the full current URL initially
+          shareInput.value = window.location.href;
+          document.getElementById("shareOverlay").style.display = "flex";
+        });
+
+        // Close overlay when close button is clicked
+        document.getElementById("closeShare").addEventListener("click", function () {
+          document.getElementById("shareOverlay").style.display = "none";
+        });
+
+        // Copy functionality for share input
+        document.getElementById("copyShare").addEventListener("click", function () {
+          var input = document.getElementById("shareLink");
+          input.select();
+          try {
+            var successful = document.execCommand("copy");
+            if (successful) {
+              var btn = this;
+              var originalText = btn.innerText;
+              btn.innerText = "Copied";
+              setTimeout(function () {
+                btn.innerText = originalText;
+              }, 3000);
+            }
+          } catch (e) {
+            console.error("Copy command failed", e);
+          }
+       });
+  </script>
+}
+
+

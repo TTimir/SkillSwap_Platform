@@ -622,19 +622,27 @@
                                     </div>
                                     @if (TempData["SuccessMessage"] != null)
                                     {
-                                        <div class="message-alart-style1">
-                                            <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
-                                                @TempData["SuccessMessage"]
-                                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        <div class="col-lg-12">
+                                            <div class="ui-content">
+                                                <div class="message-alart-style1">
+                                                    <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                                                        @TempData["SuccessMessage"]
+                                                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     }
                                     @if (TempData["ErrorMessage"] != null)
                                     {
-                                        <div class="message-alart-style1">
-                                            <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
-                                                @TempData["ErrorMessage"]
-                                                <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        <div class="col-lg-12">
+                                            <div class="ui-content">
+                                                <div class="message-alart-style1">
+                                                    <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                                        @TempData["ErrorMessage"]
+                                                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     }

@@ -1,0 +1,292 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.FreelancersVM.UserProfileListVM
+
+@{
+    ViewData["Title"] = "Talent List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .offer-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .offer-card .list-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .offer-card .list-title {
+            min-height: 48px; /* Ensure consistent spacing for title */
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .offer-card .budget {
+            text-align: right;
+        }
+
+    /* Make the row a flex container so its children (columns) are equal height */
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+        /* Make each column a flex container */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+</style>
+
+<!-- Breadcumb Sections -->
+<section class="breadcumb-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcumb-style1">
+                    <div class="breadcumb-list">
+                        <a href="@Url.Action("Index", "Home")">Home</a>
+                        <a href="#!talents">@ViewData["Title"]</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="breadcumb-section pt-0">
+    <div class="cta-service-v6 cta-banner mx-auto maxw1700 pt120 pt60-sm pb120 pb60-sm bdrs16 position-relative d-flex align-items-center">
+        <img class="service-v3-vector d-none d-lg-block" src="/template_assets/images/about/about-4.png" alt="">
+        <div class="container">
+            <div class="row wow fadeInUp">
+                <div class="col-xl-7">
+                    <div class="position-relative">
+                        <h2 class="text-white">Design & Creative</h2>
+                        <p class="text mb30 text-white">Give your visitor a smooth online experience with a solid UX design</p>
+                        <div class="advance-search-tab bgc-white p10 bdrs4" style="border-radius:18px;">
+                            <form method="get" action="@Url.Action("PublicProfileList", "UserProfileList")" class="form-search position-relative">
+                                <div class="row">
+                                    <div class="col-md-5 col-lg-6 col-xl-6">
+                                        <div class="advance-search-field ">
+                                            <div class="box-search bb1-sm">
+                                                <span class="icon far fa-magnifying-glass"></span>
+                                                <input class="form-control" type="text" name="keyword" value="@Model.Keyword" placeholder="What are you looking for?">
+                                                <div class="search-suggestions">
+                                                    <h6 class="fz14 ml30 mt25 mb-3">Popular Search</h6>
+                                                    <div class="box-suggestions">
+                                                        <ul class="px-0 m-0 pb-4">
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app development</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app builder</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile legends</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app ui ux design</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile game app development</div>
+                                                                </div>
+                                                            </li>
+                                                            <li>
+                                                                <div class="info-product">
+                                                                    <div class="item_title">mobile app design</div>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-lg-4 col-xl-3">
+                                        <div class="advance-search-field">
+                                            <input class="form-control" type="text" name="location" style="border-radius:12px;" placeholder="Search by location..." value="@Model.Location">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-lg-2 col-xl-3">
+                                        <div class="text-center text-xl-start">
+                                            <button class="ud-btn btn-thm w-100" type="submit" style="border-radius:12px;">Search</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Listings All Lists -->
+<section class="pt30 pb90">
+    <div class="container">
+       
+        <div class="row equal-height">
+            @if (Model.Profiles != null && Model.Profiles.Count > 0)
+            {
+                foreach (var profile in Model.Profiles)
+                {
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="listing-style1 text-center style3 offer-card hover-box-shadow">
+                            <div class="list-thumb">
+                                <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
+                                    <img class="rounded-circle mx-auto" src="@profile.ProfileImage" alt="@profile.UserName" style="max-width:100%;" />
+                                    @{
+                                        // Check if ViewData contains the online status.
+                                        bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
+                                    }
+                                    @if (isOnline)
+                                    {
+                                        <span class="online"></span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="list-content">
+                                <h5 class="title mb-1">@profile.UserName</h5>
+                                <p class="mb-0">@profile.Designation</p>
+                                <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color fw500">4.9</span> (595 reviews)</p></div>
+                                <div class="skill-tags d-flex align-items-center justify-content-center mb5">
+                                    @{
+                                        var skillList = profile.OfferedSkillAreas ?? new List<string>();
+                                        int count = skillList.Count;
+                                        int maxDisplay = count < 3 ? count : 3;
+                                    }
+                                    @for (int i = 0; i < maxDisplay; i++)
+                                    {
+                                        <span class="tag me-2">@skillList[i]</span>
+                                    }
+                                </div>
+                                <hr class="opacity-100 mt20 mb15">
+                                <div class="fl-meta d-flex align-items-center justify-content-between">
+                                    <a class="meta fw500 text-start">Location<br><span class="fz14 fw400">@profile.City, @profile.Country</span></a>
+                                    <a class="meta fw500 text-start">Recomm.<br><span class="fz14 fw400">@(profile.Recommendation?.ToString("N1") ?? "0.0")</span></a>
+                                    <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@(profile.JobSuccessRate?.ToString("P0") ?? "0%")</span></a>
+                                </div>
+                                <div class="d-grid mt15">
+                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90" target="_blank">View Profile<i class="fal fa-arrow-right-long"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <p>No profiles found.</p>
+                </div>
+            }
+        </div>
+        @if (Model.TotalPages > 1)
+        {
+            var start = ((Model.CurrentPage - 1) * 20) + 1;
+            var end = Math.Min(start + 4, Model.Profiles.Count + ((Model.TotalPages - 1) * 20)); // This ensures last page shows correct count
+
+            <nav aria-label="Offer pagination">
+                <ul class="pagination justify-content-center mt-4">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = Model.CurrentPage - 1 })"><span class="fas fa-angle-left"></span></a>
+                        </li>
+                    }
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = i })">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("PublicOfferList", new { page = Model.CurrentPage + 1 })"><span class="fas fa-angle-right"></span></a>
+                        </li>
+                    }
+                </ul>
+                <p class="mt-2 mb-0 pagination_page_count text-center text-dark fw-semibold">
+                    @start – @end of @((Model.TotalPages * 20)) profile available
+                </p>
+            </nav>
+        }
+    </div>
+</section>
+
+@section ProfileScript {
+    <script>
+        $(document).ready(function() {
+            // For each toggle link with the class "toggle-options"
+            $('.toggle-options').each(function() {
+                var $toggle = $(this);
+                // Get the target container ID and the number of visible items from data attributes
+                var targetId = $toggle.data('target');
+                var visibleCount = parseInt($toggle.data('visible-count')) || 5;
+                // Select all option items within the target container
+                var $options = $('#' + targetId + ' .option-item');
+                var extraCount = $options.length - visibleCount;
+
+                // If there are more items than the visible count, hide extras and update the toggle text dynamically
+                if ($options.length > visibleCount) {
+                    $options.slice(visibleCount).hide();
+                    // Set the toggle text to the number of hidden items (e.g., "3+ view")
+                    $toggle.show().text(extraCount + "+ view");
+
+                    $toggle.on('click', function(e) {
+                        e.preventDefault();
+                        if ($toggle.text().trim() === extraCount + "+ view") {
+                            $options.slice(visibleCount).slideDown();
+                            $toggle.text("Show Less");
+                        } else {
+                            $options.slice(visibleCount).slideUp(function() {
+                                $toggle.text(extraCount + "+ view");
+                            });
+                        }
+                    });
+                } else {
+                    $toggle.hide();
+                }
+            });
+        });
+    </script>
+    <script>
+        document.getElementById("clearFilters").addEventListener("click", function () {
+            // Clear all input/select fields in the form
+            var form = document.getElementById("filterForm");
+            // Loop over form elements and clear their value
+            Array.from(form.elements).forEach(function (el) {
+                if (el.tagName.toLowerCase() === "select") {
+                    el.selectedIndex = 0;
+                } else if (el.type === "checkbox" || el.type === "radio") {
+                    el.checked = false;
+                } else {
+                    el.value = "";
+                }
+            });
+            // Optionally, submit the form after clearing
+            form.submit();
+        });
+    </script>
+}
+
+

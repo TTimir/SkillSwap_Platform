@@ -1,0 +1,251 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.OnBoardVM.ProfileCompletionVM
+
+@{
+    ViewData["Title"] = "Step 2: Complete Your Profile";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - SkillSwap</title>
+    <!-- css file -->
+    <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
+    <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/template_assets/css/flaticon.css">
+    <link rel="stylesheet" href="/template_assets/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="/template_assets/css/animate.css">
+    <link rel="stylesheet" href="/template_assets/css/slider.css">
+    <link rel="stylesheet" href="/template_assets/css/jquery-ui.min.css">
+    <link rel="stylesheet" href="/template_assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/template_assets/css/style.css">
+    <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
+    <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
+    <link rel="stylesheet" href="/template_assets/css/onboardstyle.css">
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="/template_assets/css/responsive.css">
+    <!-- Favicon -->
+    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <!-- Apple Touch Icon -->
+    <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
+    <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+    <style>
+        #profileImage {
+            width: 100px; /* Fixed width */
+            height: 100px; /* Fixed height */
+            object-fit: contain; /* Ensures the image fits without cropping */
+            border: 2px dashed #ccc; /* Optional: border for clarity */
+            background-color: #f4f4f4; /* Optional: background for better visibility */
+        }
+    </style>
+</head>
+<body>
+    <!-- Minimal Navigation Bar -->
+    <header class="header-nav">
+        <div class="container-custom">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a class="active" href="#">Onboarding</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Onboarding Content -->
+    <div class="container-custom">
+        <div class="onboarding-title">Onboarding</div>
+
+        <!-- Progress Timeline with extra spacing -->
+        <div class="progress-timeline">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <span class="step-number">1</span>
+                    <div class="step-label">Account Type</div>
+                </div>
+                <div class="progress-step active">
+                    <span class="step-number">2</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">3</span>
+                    <div class="step-label">Skills &amp; Experience</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">4</span>
+                    <div class="step-label">Preference</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">5</span>
+                    <div class="step-label">Certificate</div>
+                </div>
+                <div class="progress-step">
+                    <span class="step-number">6</span>
+                    <div class="step-label">Additional Info</div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
+        <p class="mb-4 text-center">Tell us a bit about yourself.</p>
+
+        @using (Html.BeginForm("ProfileCompletion", "Onboarding", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+
+                        @if (ViewBag.ErrorMessage != null)
+                        {
+                            <div class="col-lg-12">
+                                <div class="ui-content">
+                                    <div class="message-alart-style1">
+                                        <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                                            @ViewBag.ErrorMessage
+                                            <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-xl-8 mb-5">
+                            <div class="profile-box d-sm-flex align-items-center mb30">
+                                <div class="profile-img mb20-sm">
+                                    <img id="profileImage" class="rounded-circle wa-xs" src="/template_assets/images/No_image.png" width="100" alt="Profile Image">
+                                </div>
+                                <div class="profile-content ml20 ml0-xs">
+                                    <div class="d-flex align-items-center mx-3 mb-2">
+                                        <label for="fileInput" class="upload-btn ml10" style="cursor: pointer;">Upload Images</label>
+                                        <input asp-for="ProfileImageFile" type="file" id="fileInput" accept=".jpg, .jpeg, .png" style="display: none;">
+                                    </div>
+                                    <p class="text mb-0 mx-3">Max file size is 1MB, Minimum dimension: 330x300. Suitable files: .jpg & .png</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12">
+
+                            <div class="row gy-4">
+                                <!-- Designation -->
+                                <div class="col-md-6">
+                                    <label asp-for="Designation" class="form-label">Designation  <span class="text-danger">*</span></label>
+                                    <input asp-for="Designation" type="text" class="form-control" name="Designation" placeholder="Enter your designation">
+                                    <span asp-validation-for="Designation" class="text-danger"></span>
+                                </div>
+
+                                <!-- Location -->
+                                <div class="col-md-6">
+                                    <label asp-for="Location" class="form-label">Location  <span class="text-danger">*</span></label>
+                                    <input asp-for="Location" type="text" class="form-control" name="Location" placeholder="Enter your location">
+                                    <span asp-validation-for="Location" class="text-danger"></span>
+                                </div>
+
+                                <!-- Address -->
+                                <div class="col-md-6">
+                                    <label asp-for="Address" class="form-label">Address <span class="text-danger">*</span></label>
+                                    <input asp-for="Address" type="text" class="form-control" name="Address" placeholder="Enter your address">
+                                    <span asp-validation-for="Address" class="text-danger"></span>
+                                </div>
+
+                                <!-- City -->
+                                <div class="col-md-6">
+                                    <label asp-for="City" class="form-label">City <span class="text-danger">*</span></label>
+                                    <input asp-for="City" type="text" class="form-control" name="City" placeholder="Enter your city">
+                                    <span asp-validation-for="City" class="text-danger"></span>
+                                </div>
+
+                                <!-- Country -->
+                                <div class="col-md-6">
+                                    <label asp-for="Country" class="form-label">Country <span class="text-danger">*</span></label>
+                                    <input asp-for="Country" type="text" class="form-control" name="Country" placeholder="Enter your country">
+                                    <span asp-validation-for="Country" class="text-danger"></span>
+                                </div>
+
+                                <!-- Zip Code -->
+                                <div class="col-md-6">
+                                    <label asp-for="Zip" class="form-label">Zip Code <span class="text-danger">*</span></label>
+                                    <input asp-for="Zip" type="text" class="form-control" name="Zip" placeholder="Enter your postal code">
+                                    <span asp-validation-for="Zip" class="text-danger"></span>
+                                </div>
+
+                                <!-- Introduction -->
+                                <div class="col-md-12">
+                                    <label asp-for="AboutMe" class="form-label">Introduce Yourself <span class="text-danger">*</span></label>
+                                    <textarea asp-for="AboutMe" cols="30" rows="6" placeholder="Describe yourself..."></textarea>
+                                    <span asp-validation-for="AboutMe" class="text-danger"></span>
+                                </div>
+                            </div>
+
+
+                            <div class="text-center my-4">
+                                <button type="submit" class="ud-btn btn-dark mb25 me-4">
+                                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                                @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        }
+    </div>
+
+    <script>
+        function selectRole(role, element) {
+          var cards = document.querySelectorAll('.card-role');
+          cards.forEach(function(card) {
+            card.classList.remove('selected');
+            card.querySelector('input[type="radio"]').checked = false;
+          });
+          element.classList.add('selected');
+          element.querySelector('input[type="radio"]').checked = true;
+        }
+    </script>
+    <!-- Wrapper End -->
+    <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
+    <script src="/template_assets/js/bootstrap.min.js"></script>
+    <script src="/template_assets/js/bootstrap-select.min.js"></script>
+    <script src="/template_assets/js/ace-responsive-menu.js"></script>
+    <script src="/template_assets/js/dashboard-script.js"></script>
+    <!-- Custom script for all pages -->
+    <script src="/template_assets/js/script.js"></script>
+
+    <script>
+         document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const img = document.getElementById('profileImage');
+
+            if (file) {
+                // Validate file size (1MB max)
+                if (file.size > 1024 * 1024) {
+                    alert('File size exceeds 1MB.');
+                    event.target.value = ''; // Reset the input
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result; // Set the uploaded image
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+    </script>
+</body>
+</html>

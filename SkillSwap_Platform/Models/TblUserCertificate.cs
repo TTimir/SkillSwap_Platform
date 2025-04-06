@@ -13,6 +13,10 @@ public partial class TblUserCertificate
 
     public string? CertificateFilePath { get; set; }
 
+    public DateTime? CompleteDate { get; set; }
+
+    public string? CertificateFrom { get; set; }
+
     public DateTime SubmittedDate { get; set; }
 
     public bool IsApproved { get; set; }

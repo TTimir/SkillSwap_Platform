@@ -1,0 +1,44 @@
+﻿@model IEnumerable<SkillSwap_Platform.Models.TblMessageAttachment>
+
+<div class="message-attachments">
+    @foreach (var attachment in Model)
+    {
+        if (attachment.ContentType.StartsWith("image/"))
+        {
+            <!-- For images: show a clickable thumbnail -->
+            <a href="@Url.Content(attachment.FilePath)" target="_blank" class="attachment-thumbnail-link">
+                <img src="@Url.Content(attachment.FilePath)" alt="@attachment.FileName" class="attachment-thumbnail" style="border-radius:0" />
+            </a>
+        }
+        else
+        {
+            <!-- For other file types: show a file icon and name -->
+            <div class="attachment-file">
+                <a href="@Url.Content(attachment.FilePath)" target="_blank">
+                    <i class="fa fa-file"></i> @attachment.FileName
+                </a>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .message-attachments {
+        margin-top: 10px;
+    }
+
+    .attachment-thumbnail-link {
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    .attachment-thumbnail {
+        max-width: 100px;
+        border-radius: 0px;
+        border: 1px solid #ddd;
+    }
+
+    .attachment-file {
+        margin-top: 5px;
+    }
+</style>

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SkillSwap_Platform.Models.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SkillSwap_Platform.Models;
 
@@ -19,9 +21,27 @@ public partial class TblMessage
 
     public bool IsRead { get; set; }
 
+    public string? ReplyPreview { get; set; }
+
+    public int? ReplyToMessageId { get; set; }
+
+    public bool IsFlagged { get; set; }
+
+    public bool IsApproved { get; set; }
+
+    public int? OfferId { get; set; }
+
+    [NotMapped]
+    public OfferDisplayVM OfferPreview { get; set; }
+    public virtual TblOffer? Offer { get; set; }
+
     public virtual TblUser ReceiverUser { get; set; } = null!;
 
     public virtual TblUser SenderUser { get; set; } = null!;
 
+    public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
+
     public virtual ICollection<TblMessageAttachment> TblMessageAttachments { get; set; } = new List<TblMessageAttachment>();
+
+    public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();
 }

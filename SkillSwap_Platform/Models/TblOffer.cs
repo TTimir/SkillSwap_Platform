@@ -9,9 +9,9 @@ public partial class TblOffer
 
     public int UserId { get; set; }
 
-    public string Title { get; set; } = null!;
+    public string? Title { get; set; }
 
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
 
     public decimal TokenCost { get; set; }
 
@@ -21,7 +21,51 @@ public partial class TblOffer
 
     public bool IsActive { get; set; }
 
+    public string? Category { get; set; }
+
+    public decimal? DigitalTokenValue { get; set; }
+
+    public string? Portfolio { get; set; }
+
+    public string? SkillIdOfferOwner { get; set; }
+
+    public string? FreelanceType { get; set; }
+
+    public string? RequiredSkillLevel { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedDate { get; set; }
+
+    public string? Device { get; set; }
+
+    public string? Tools { get; set; }
+
+    public string? ScopeOfWork { get; set; }
+
+    public int? AssistanceRounds { get; set; }
+
+    public bool? ProvidesSourceFiles { get; set; }
+
+    public int? DeliveryTimeDays { get; set; }
+
+    public string? CollaborationMethod { get; set; }
+
+    public string WillingSkill { get; set; } = null!;
+
+    public double? JobSuccessRate { get; set; }
+
+    public double? RecommendedPercentage { get; set; }
+
+    public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
+
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
+
+    public virtual ICollection<TblMessage> TblMessages { get; set; } = new List<TblMessage>();
+
+    public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();
+
+    public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 
     public virtual TblUser User { get; set; } = null!;
 }

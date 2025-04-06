@@ -1,11 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Controllers;
+using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.Contracts;
+using SkillSwap_Platform.Services.PDF;
+using SkillSwap_Platform.Services.Repository;
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpContextAccessor();
 
 // ✅ Load Encryption Key and store securely
 string encryptionKey = builder.Configuration.GetValue<string>("EncryptionConfig:EncryptionKey");
@@ -25,8 +32,26 @@ var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>
         item.UseSqlServer(config.GetConnectionString("dbcs")));
 
+builder.Services.AddHttpClient();
+
 // Register user service
+builder.Services.AddHostedService<ContractExpirationService>();
+builder.Services.AddScoped<IContractPreparationService, ContractPreparationService>();
+builder.Services.AddScoped<IContractHandlerService, ContractHandlerService>();
+builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+builder.Services.AddScoped<IPdfGenerator, PuppeteerPdfGenerator>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<ISensitiveWordService, SensitiveWordService>();
+builder.Services.AddScoped<UserProfilesFilter>();
+
+builder.Services.AddControllersWithViews(options =>
+{
+    // Add the custom filter globally
+    options.Filters.AddService<UserProfilesFilter>();
+});
 
 builder.Services.AddDistributedMemoryCache(); // Stores session in memory
 builder.Services.AddSession(options =>
@@ -37,22 +62,46 @@ builder.Services.AddSession(options =>
 });
 
 // ✅ Add Authentication and ensure scheme consistency
-builder.Services.AddAuthentication("SkillSwapAuth")
-    .AddCookie("SkillSwapAuth", options =>
+//builder.Services.AddAuthentication("SkillSwapAuth")
+//    .AddCookie("SkillSwapAuth", options =>
+//    {
+//        options.LoginPath = "/Home/Login";   // Redirect to login if unauthorized
+//        options.AccessDeniedPath = "/Home/AccessDenied"; // Redirect if forbidden
+//        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
+//        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+//    });
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "SkillSwapAuth";
+    options.DefaultSignInScheme = "SkillSwapAuth";
+    options.DefaultChallengeScheme = "SkillSwapAuth";
+})
+.AddCookie("SkillSwapAuth", options =>
+{
+    options.LoginPath = "/Home/Login";
+    options.AccessDeniedPath = "/Home/AccessDenied";
+    options.Cookie.Name = "SkillSwapAuth";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.Events.OnRedirectToLogin = context =>
     {
-        options.LoginPath = "/Home/Login";   // Redirect to login if unauthorized
-        options.AccessDeniedPath = "/Home/AccessDenied"; // Redirect if forbidden
-        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    });
+        // Log the redirect URL for debugging.
+        Console.WriteLine($"Redirecting to login from {context.Request.Path}");
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+});
+
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -67,6 +116,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();  // 🔴 Must be before Authorization
 app.UseAuthorization();
+app.UseMiddleware<UpdateLastActiveMiddleware>();
 
 app.MapControllerRoute(
     name: "default",
