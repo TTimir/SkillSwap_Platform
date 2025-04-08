@@ -61,8 +61,8 @@ namespace SkillSwap_Platform.Controllers
             {
                 var user = await _context.TblUsers
                 .Include(u => u.TblReviewReviewees) // ✅ Includes reviews
-                .Include(u => u.TblExchangeLastStatusChangedByNavigations) // ✅ First set of exchanges
-                .Include(u => u.TblExchangeRequesters) // ✅ Second set of exchanges
+                //.Include(u => u.TblExchangeLastStatusChangedByNavigations) // ✅ First set of exchanges
+                //.Include(u => u.TblExchangeRequesters) // ✅ Second set of exchanges
                 .Include(u => u.TblOffers) // ✅ User's offers
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
@@ -73,15 +73,17 @@ namespace SkillSwap_Platform.Controllers
                 int positiveReviews = user.TblReviewReviewees.Count(r => r.Rating >= 4);
                 user.RecommendedPercentage = totalReviews > 0 ? (positiveReviews * 100.0 / totalReviews) : 0;
 
-                // Combine both exchange sets for success rate calculation
-                var allExchanges = user.TblExchangeLastStatusChangedByNavigations
-                    .Concat(user.TblExchangeRequesters)
-                    .ToList();
+                // Retrieve all exchanges where the user is either the OfferOwner or the OtherUser.
+                var allExchanges = await _context.TblExchanges
+                    .Where(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId)
+                    .ToListAsync();
 
                 int totalExchanges = allExchanges.Count;
-                int successfulExchanges = allExchanges.Count(e => e.IsSuccessful); // ✅ Count successful ones
+                int successfulExchanges = allExchanges.Count(e => e.IsSuccessful);
+                double jobSuccessRate = totalExchanges > 0 ? (successfulExchanges * 100.0 / totalExchanges) : 0;
 
-                user.JobSuccessRate = totalExchanges > 0 ? (successfulExchanges * 100.0 / totalExchanges) : 0;
+                // Update the user's JobSuccessRate property.
+                user.JobSuccessRate = jobSuccessRate;
 
                 // Update all offers belonging to this user
                 foreach (var offer in user.TblOffers)

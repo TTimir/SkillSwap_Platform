@@ -9,8 +9,6 @@ public partial class TblExchange
 
     public int OfferId { get; set; }
 
-    public int RequesterId { get; set; }
-
     public DateTime ExchangeDate { get; set; }
 
     public DateTime LastStatusChangeDate { get; set; }
@@ -37,11 +35,15 @@ public partial class TblExchange
 
     public bool IsSuccessful { get; set; }
 
+    public int? OfferOwnerId { get; set; }
+
+    public int? OtherUserId { get; set; }
+
+    public string? ThisMeetingLink { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;
-
-    public virtual TblUser Requester { get; set; } = null!;
 
     public virtual TblSkill? SkillIdOfferOwnerNavigation { get; set; }
 

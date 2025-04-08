@@ -92,9 +92,7 @@ public partial class TblUser
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
 
-    public virtual ICollection<TblExchange> TblExchangeLastStatusChangedByNavigations { get; set; } = new List<TblExchange>();
-
-    public virtual ICollection<TblExchange> TblExchangeRequesters { get; set; } = new List<TblExchange>();
+    public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 
     public virtual ICollection<TblExperience> TblExperiences { get; set; } = new List<TblExperience>();
 
@@ -134,5 +132,4 @@ public partial class TblUser
 
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
-
 }

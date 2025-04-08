@@ -327,7 +327,7 @@
     </div>
 
     <div class="contract-actions">
-        
+
         @if (Model.Version >= 3 && Model.Mode == "Review" && !Model.IsPdfDownload)
         {
             <div id="finalMessage" style="margin-bottom: 1em; font-weight: bold; color: red;">
@@ -494,6 +494,7 @@
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script>
+        // IMPROVED: Use IIFE to encapsulate functionality.
         (function() {
             "use strict";
 

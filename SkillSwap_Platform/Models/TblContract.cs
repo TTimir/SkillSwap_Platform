@@ -55,8 +55,6 @@ public partial class TblContract
 
     public int Version { get; set; }
 
-    public int? ParentContractId { get; set; }
-
     public string? SenderName { get; set; }
 
     public string? SenderSkill { get; set; }
@@ -92,6 +90,8 @@ public partial class TblContract
     public string? SenderUserName { get; set; }
 
     public string? ReceiverUserName { get; set; }
+
+    public int? ParentContractId { get; set; }
 
     public int? BaseContractId { get; set; }
 

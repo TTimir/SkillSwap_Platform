@@ -5,6 +5,15 @@
     ViewData["Title"] = "Conversations";
     ViewData["SubTitle"] = "Creating meaningful connections, one message at a time.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    // Retrieve current user ID from claims.
+    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    int currentUserId = 0;
+    if (!string.IsNullOrEmpty(userIdClaim))
+    {
+        int.TryParse(userIdClaim, out currentUserId);
+    }
+    var contractDetails = Model.Messages.FirstOrDefault(m => m.ContractDetails != null)?.ContractDetails;
 }
 
 <div class="col-lg-12">
@@ -110,12 +119,46 @@
                                     <h6 class="name mb-0">@Model.OtherUserName</h6>
                                     <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
                                 </div>
-                                <div>
-                                    <a class="text-decoration-underline fz14 fw500 text-red ff-heading" href="#">Delete Conversation</a>
+                                <div class="dropdown">
+                                    <button class="btn btn-link p-0" type="button" id="conversationOptionsBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Options">
+                                        <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="conversationOptionsBtn">
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Meeting", new { otherUserId = Model.OtherUserId })" title="Start an online meeting">
+                                                <i class="fa fa-video-camera"></i> Online Meeting
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Calendar")" title="Schedule a meeting on your calendar">
+                                                <i class="fa fa-calendar"></i> Calendar Schedule
+                                            </a>
+                                        </li>
+                                        <li>
+                                            @if (contractDetails == null)
+                                            {
+                                                <a class="dropdown-item" href="@Url.Action("Create", "Contract", new { messageId = Model.OtherUserId })" title="Send a contract invitation">
+                                                    <i class="fa fa-file-contract"></i> Contract Exchange
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="dropdown-item text-muted" title="Contract invitation already sent">
+                                                    <i class="fa fa-file-contract"></i> Contract invite sent
+                                                </span>
+                                            }
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="@Url.Action("DeleteConversation", "Messaging", new { otherUserId = Model.OtherUserId })" onclick="return confirm('Are you sure you want to delete this conversation?');">
+                                                <i class="fa fa-trash"></i> Delete Conversation
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="inbox_chatting_box">
                         <ul id="chatContainer" class="chatting_content">
                             @foreach (var msg in Model.Messages)

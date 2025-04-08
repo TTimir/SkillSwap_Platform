@@ -468,7 +468,7 @@
                                 @if (isReceiver && (editableMode || isSignMode))
                                 {
                                     var checkboxAttrs = new Dictionary<string, object> { { "id", "receiverAgreementCheckbox" } };
-                                    if (!editableMode)
+                                    if (!editableMode && Model.Mode != "Sign")
                                     {
                                         checkboxAttrs["disabled"] = "disabled";
                                     }

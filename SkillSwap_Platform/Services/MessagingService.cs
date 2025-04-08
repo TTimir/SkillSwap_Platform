@@ -1,15 +1,21 @@
-﻿using SkillSwap_Platform.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.Repository;
+using System.Diagnostics.Contracts;
 
 namespace SkillSwap_Platform.Services
 {
     public class MessagingService : IMessagingService
     {
         private readonly IMessageRepository _messageRepository;
+        private readonly SkillSwapDbContext _context;
+        private readonly ILogger<MessagingService> _logger;
 
-        public MessagingService(IMessageRepository messageRepository)
+        public MessagingService(IMessageRepository messageRepository, SkillSwapDbContext context, ILogger<MessagingService> logger)
         {
             _messageRepository = messageRepository;
+            _context = context;
+            _logger = logger;
         }
 
         public async Task<TblMessage?> GetMessageAsync(int messageId)
@@ -78,5 +84,6 @@ namespace SkillSwap_Platform.Services
         {
             await _messageRepository.MarkMessageAsReadAsync(messageId);
         }
+
     }
 }

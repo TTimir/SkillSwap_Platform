@@ -1,0 +1,117 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.ExchangeDetailsVM
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="row align-items-center justify-content-between pb40">
+    <div class="col-xl-4">
+        <div class="dashboard_title_area">
+            <h2>Invoice</h2>
+            <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="dashboard_search_meta">
+            <div class="search_area">
+                <input type="text" class="form-control bdrs4" placeholder="Search Invoice">
+                <label><span class="far fa-magnifying-glass"></span></label>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                <table class="table-style3 table at-savesearch">
+                    <thead class="t-head">
+                        <tr>
+                            <th scope="col">Exchange ID</th>
+                            <th scope="col">Exchange Date</th>
+                            <th scope="col">Amount</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="t-body">
+                        <tr>
+                            <th scope="row">
+                                <div>@("#")@Model.Exchange.ExchangeId <span class="ms-3">@Model.Offer.Title</span></div>
+                            </th>
+                            <td class="vam">@Model.Exchange.LastStatusChangeDate</td>
+                            <td class="vam">@Model.Contract.TokenOffer</td>
+                            <td class="vam"><span class="pending-style style1">@Model.Exchange.Status</span></td>
+                            <td class="vam">
+                                <a href="" class="table-action fz15 fw500 text-thm2" data-bs-toggle="tooltip" data-bs-placement="top" title="View"><span class="flaticon-website me-2 vam"></span> View</a>
+                            </td>
+                        </tr>
+                        <!-- Timeline / Changes Row -->
+                        <tr>
+                            <td colspan="6">
+                                <strong>Timeline / Changes:</strong>
+                                <table class="table table-borderless">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Sr. No</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Step</th>
+                                            <th scope="col">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        @{
+                                            int counter = 1;
+                                        }
+                                        @if (Model.Exchange.TblExchangeHistories != null && Model.Exchange.TblExchangeHistories.Any())
+                                        {
+                                            @foreach (var history in Model.Exchange.TblExchangeHistories.OrderBy(h => h.ChangeDate))
+                                            {
+                                                <tr>
+                                                    <td>@counter</td>
+                                                    <td>@history.ChangeDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")</td>
+                                                    <td>@history.ChangedStatus</td>
+                                                    <td>@history.Reason</td>
+                                                </tr>
+                                                    counter++;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="3">No timeline steps available.</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                @* <div class="mbp_pagination text-center mt30">
+                    <ul class="page_navigation">
+                        <li class="page-item">
+                            <a class="page-link" href="#"> <span class="fas fa-angle-left"></span></a>
+                        </li>
+                        <li class="page-item"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item active" aria-current="page">
+                            <a class="page-link" href="#">2 <span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">4</a></li>
+                        <li class="page-item"><a class="page-link" href="#">5</a></li>
+                        <li class="page-item"><a class="page-link" href="#">...</a></li>
+                        <li class="page-item"><a class="page-link" href="#">20</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#"><span class="fas fa-angle-right"></span></a>
+                        </li>
+                    </ul>
+                    <p class="mt10 mb-0 pagination_page_count text-center">1 – 20 of 300+ property available</p>
+                </div> *@
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+

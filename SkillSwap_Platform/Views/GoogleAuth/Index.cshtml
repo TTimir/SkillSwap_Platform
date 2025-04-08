@@ -1,0 +1,81 @@
+﻿@model string
+@{
+    ViewData["Title"] = "Event Created";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+    <style>
+        /* Global style */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f1f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        /* Centered card container */
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+            padding: 40px;
+            max-width: 360px;
+            text-align: center;
+        }
+            /* Heading styling */
+            .card h2 {
+                margin-top: 0;
+                font-size: 24px;
+                color: #202124;
+            }
+            /* Paragraph styling */
+            .card p {
+                font-size: 16px;
+                color: #5f6368;
+                margin-bottom: 20px;
+            }
+        /* Link styling for meeting URL */
+        .meeting-link {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .meeting-link:hover {
+                text-decoration: underline;
+            }
+        /* Warning message styling */
+        .warning {
+            color: #d93025;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Event Created Successfully</h2>
+        <p>Your Skill Swap session has been scheduled.</p>
+        @if (!string.IsNullOrEmpty(Model))
+        {
+            <p>
+                Join your Google Meet session here:
+                <a class="meeting-link" href="@Model" target="_blank">@Model</a>
+            </p>
+        }
+        else
+        {
+            <p class="warning">Warning: The meeting URL could not be retrieved.</p>
+        }
+    </div>
+</body>
+</html>

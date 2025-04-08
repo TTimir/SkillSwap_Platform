@@ -81,7 +81,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch the most recent completed exchange (job) for the user.
                 var lastCompletedExchange = await _context.TblExchanges
-                    .Where(e => e.RequesterId == user.UserId || e.LastStatusChangedBy == user.UserId)
+                    .Where(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId)
                     .Where(e => e.Status == "Completed")
                     .OrderByDescending(e => e.LastStatusChangeDate)
                     .FirstOrDefaultAsync();
@@ -217,9 +217,9 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch the most recent completed exchange (job)
                 var lastCompletedExchange = await _context.TblExchanges
-                    .Where(e => e.RequesterId == userId || e.LastStatusChangedBy == userId) // Job done by the user
-                    .Where(e => e.Status == "Completed") // Only completed transactions
-                    .OrderByDescending(e => e.LastStatusChangeDate) // Get the most recent one
+                    //.Where(e => e.RequesterId == userId || e.LastStatusChangedBy == userId) // Job done by the user
+                    //.Where(e => e.Status == "Completed") // Only completed transactions
+                    //.OrderByDescending(e => e.LastStatusChangeDate) // Get the most recent one
                     .FirstOrDefaultAsync();
 
                 // Calculate days since last completed job
