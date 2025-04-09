@@ -1,5 +1,6 @@
-﻿@using Humanizer
-@model SkillSwap_Platform.Models.ViewModels.MessagesVM.MessageItemVM
+﻿@model SkillSwap_Platform.Models.ViewModels.MessagesVM.MessageItemVM
+@using Humanizer
+@using System.Text.RegularExpressions
 
 <style>
     .offered-skill {
@@ -140,10 +141,10 @@
                             </a>
 
 
-                            @if ((Model.ContractDetails != null) && 
-                            (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                            (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                            (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                            @if ((Model.ContractDetails != null) &&
+                           (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                    class="btn btn-sm btn-primary" style="color:#fff">
@@ -206,8 +207,25 @@
                     </div>
                 }
 
-                <p>@Model.Content</p>
-            }
+                // Detect whether the message is a meeting card based on a marker in Model.Content.
+                bool isMeetingCard = !string.IsNullOrWhiteSpace(Model.Content) &&
+                Model.Content.Contains("[MEETING_ID:");
+
+                // Remove the marker text for meeting cards.
+                string meetingContent = isMeetingCard
+                ? Regex.Replace(Model.Content, @"\[\s*MEETING_ID:\d+\s*\]", "").Trim()
+                : string.Empty;
+
+                @* Render the meeting card if applicable *@
+                @if (isMeetingCard)
+                {
+                    @Html.Raw(meetingContent)
+                }
+                else
+                {
+                    @* Only render the plain text when this is not a meeting card *@
+                    <p>@Model.Content</p>
+                }            }
             else
             {
                 @* Offer Preview for received messages *@
@@ -360,7 +378,26 @@
                         <hr style="flex: 1; border: none; border-top: 1px solid #ccc;" />
                     </div>
                 }
-                <p>@Model.Content</p>
+                // Detect whether the message is a meeting card based on a marker in Model.Content.
+                bool isMeetingCard = !string.IsNullOrWhiteSpace(Model.Content) &&
+                Model.Content.Contains("[MEETING_ID:");
+
+                // Remove the marker text for meeting cards.
+                string meetingContent = isMeetingCard
+                ? Regex.Replace(Model.Content, @"\[\s*MEETING_ID:\d+\s*\]", "").Trim()
+                : string.Empty;
+
+                @* Render the meeting card if applicable *@
+                @if (isMeetingCard)
+                {
+                    @Html.Raw(meetingContent)
+                }
+                else
+                {
+                    @* Only render the plain text when this is not a meeting card *@
+                    <p>@Model.Content</p>
+                }    
+                
                 @if (!(Model.IsFlagged && !Model.IsApproved))
                 {
                     <span class="icon-action icon-reply" title="Reply">

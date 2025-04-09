@@ -25,6 +25,9 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         // Computed property: true if the current user sent this message.
         public bool IsSentByCurrent => SenderUserID == CurrentUserID;
 
+        public bool IsMeetingCard { get; set; }
+        public string MeetingTitle { get; set; }
+        public string MeetingLink { get; set; }
 
         public int? OfferId { get; set; }
         public OfferDisplayVM OfferDetails { get; set; }

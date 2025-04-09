@@ -145,7 +145,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Return the Google Meet join URL to the user.
                 var joinUrl = createdEvent.ConferenceData?.EntryPoints?[0]?.Uri;
-                
+
                 var scheduledDateTime = newEvent.Start.DateTime ?? DateTime.Now;
                 var duration = (newEvent.End.DateTime - newEvent.Start.DateTime)?.TotalMinutes ?? 60;
 
@@ -173,17 +173,20 @@ namespace SkillSwap_Platform.Controllers
                     MeetingSessionNumber = nextSessionNumber
                 };
 
-                
+
                 // Save the meeting record to the database.
                 _dbContext.TblMeetings.Add(meetingRecord);
                 await _dbContext.SaveChangesAsync();
 
                 // Store the newly created meeting record id in session.
                 HttpContext.Session.SetInt32(sessionKey, meetingRecord.MeetingId);
-                
+
+                // Insert the meeting invitation as a system message.
+                await InsertMeetingCardMessageAsync(meetingRecord, offer);
+
                 if (exchange == null)
                 {
-                   
+                    return NotFound("Exchange record not found.");
                 }
 
                 // Store Exchange history record.
@@ -253,7 +256,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Update the meeting record with the provided notes, and mark the meeting as 'Completed'.
                 meeting.MeetingNotes = meetingNotes;
-                meeting.MeetingRating = Rating; 
+                meeting.MeetingRating = Rating;
                 meeting.Status = "Completed";  // or whatever status you need to capture
                 meeting.UpdatedDate = DateTime.UtcNow;
 
@@ -284,6 +287,53 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        /// <summary>
+        /// Inserts a system message (meeting card) into the messaging table so that both users see the meeting invitation.
+        /// Assumes that TblMessage has additional properties such as MessageType and MeetingId.
+        /// </summary>
+        private async Task InsertMeetingCardMessageAsync(TblMeeting meetingRecord, TblOffer offer)
+        {
+            try
+            {
+                // Build a unique prefix that helps to identify this meeting message later.
+                string meetingPrefix = $"[MEETING_ID:{meetingRecord.MeetingId}]";
+                string meetingMessageContent = $@"
+                    <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: #f9f9f9;'>
+                        <h4 style='margin-top: 0; font-family:Arial, sans-serif;'>Meeting Scheduled</h4>
+                        <p style='font-family:Arial, sans-serif;'>
+                            Meeting for <strong>{offer.Title}</strong> has been scheduled.
+                        </p>
+                        <div style='margin-top: 10px;'>
+                            <a href='{meetingRecord.MeetingLink}' target='_blank' class='btn btn-primary'
+                               style='text-decoration:none; padding:10px 20px; background-color:#007bff; color:#fff; border-radius:4px; display:inline-block;'>
+                                Join Meeting
+                            </a>
+                        </div>
+                        <div style='margin-top:10px; font-size:0.9em; color:#555;'>
+                            <p>Session Number: {meetingRecord.MeetingSessionNumber}</p>
+                            <p>Meeting ID: {meetingRecord.MeetingId}</p>
+                        </div>
+                    </div>
+                    {meetingPrefix}";
+
+                var meetingMessage = new TblMessage
+                {
+                    SenderUserId = meetingRecord.CreatorUserId,
+                    ReceiverUserId = meetingRecord.OtherUserId,
+                    Content = meetingMessageContent,
+                    SentDate = DateTime.UtcNow
+                };
+
+                _dbContext.TblMessages.Add(meetingMessage);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inserting meeting card message for MeetingId: {MeetingId}", meetingRecord.MeetingId);
+                throw;
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> UpdateMeetingSession(int meetingId, DateTime meetingStartTime, DateTime actualEndTime)
         {
@@ -309,10 +359,40 @@ namespace SkillSwap_Platform.Controllers
             await _dbContext.SaveChangesAsync();
 
             // Build the session key used previously.
-            var sessionKey = $"MeetingRecord_{meeting.OfferId}_{meeting.OtherUserId}_{meeting.CreatorUserId}";
-            HttpContext.Session.Remove(sessionKey);
+            //var sessionKey = $"MeetingRecord_{meeting.OfferId}_{meeting.OtherUserId}_{meeting.CreatorUserId}";
+            //HttpContext.Session.Remove(sessionKey);
+
+            await UpdateMeetingCardMessageAsync(meetingId, actualEndTime);
 
             return Ok();
+        }
+
+        /// <summary>
+        /// Updates the meeting card message in the messaging table to mark that the meeting has ended.
+        /// Identifies the message by using the reserved prefix in the content.
+        /// </summary>
+        private async Task UpdateMeetingCardMessageAsync(int meetingId, DateTime actualEndTime)
+        {
+            try
+            {
+                // Search for the meeting card message using the reserved prefix.
+                string meetingPrefix = $"[MEETING_ID:{meetingId}]";
+                var meetingMessage = await _dbContext.TblMessages
+                    .FirstOrDefaultAsync(m => m.Content.StartsWith(meetingPrefix));
+
+                if (meetingMessage != null)
+                {
+                    meetingMessage.Content = $"{meetingPrefix} Meeting ended at {actualEndTime.ToLocalTime():g}";
+
+                    _dbContext.TblMessages.Update(meetingMessage);
+                    await _dbContext.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating meeting card message for MeetingId: {MeetingId}", meetingId);
+                throw;
+            }
         }
 
         /// <summary>
