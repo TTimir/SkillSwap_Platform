@@ -85,8 +85,11 @@ namespace SkillSwap_Platform.Controllers
                     int recentCount = await _context.TblMeetings
                         .Where(m => m.CreatorUserId == currentUserId &&
                                     m.OfferId == exchange.OfferId &&
-                                    m.Status == "Scheduled" &&
                                     m.CreatedDate >= oneHourAgo)
+                        .CountAsync();
+
+                    int totalSessionsCount = await _context.TblMeetings
+                        .Where(m => m.ExchangeId == exchange.ExchangeId)
                         .CountAsync();
 
                     // If count is below threshold, the user may launch a new meeting.
@@ -141,7 +144,7 @@ namespace SkillSwap_Platform.Controllers
                         Description = exchange.Description,
                         OfferImageUrl = offerImageUrl,
                         CanLaunchMeeting = canLaunch,
-                        RecentMeetingLaunchCount = recentCount
+                        RecentMeetingLaunchCount = totalSessionsCount
                     });
                 }
 
@@ -163,11 +166,11 @@ namespace SkillSwap_Platform.Controllers
         }
 
         // GET: /Exchange/Details/{id}
-        public async Task<IActionResult> Details(int id, int timelinePage = 1)
+        public async Task<IActionResult> Details(int id, int timelinePage = 1, string search = null)
         {
             try
             {
-                int timelinePageSize = 5;
+                int timelinePageSize = 10;
 
                 // Retrieve the exchange record along with its related Offer and History records.
                 var exchange = await _context.TblExchanges
@@ -181,13 +184,17 @@ namespace SkillSwap_Platform.Controllers
                     return NotFound();
                 }
 
-                var allHistory = exchange.TblExchangeHistories.OrderBy(h => h.ChangeDate).ToList();
-                int totalHistoryCount = allHistory.Count;
-                int timelineTotalPages = (int)Math.Ceiling(totalHistoryCount / (double)timelinePageSize);
+                // Filter histories based on the search term if provided.
+                var allTimelineHistory = exchange.TblExchangeHistories.AsQueryable();
 
-                var pagedHistory = allHistory.Skip((timelinePage - 1) * timelinePageSize)
-                                             .Take(timelinePageSize)
-                                             .ToList();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    allTimelineHistory = allTimelineHistory.Where(h =>
+                        h.ChangedStatus.Contains(search) ||
+                        h.Reason.Contains(search));
+                }
+
+                allTimelineHistory = allTimelineHistory.OrderBy(h => h.ChangeDate);
 
                 // Retrieve the contract associated with this exchange using the OfferId.
                 var contract = await _context.TblContracts
@@ -195,14 +202,89 @@ namespace SkillSwap_Platform.Controllers
                     .OrderByDescending(c => c.ContractId)
                     .FirstOrDefaultAsync();
 
+                // Retrieve meeting records for this exchange
+                var meetingRecords = await _context.TblMeetings
+                    .Where(m => m.ExchangeId == exchange.ExchangeId)
+                    .OrderBy(m => m.CreatedDate)
+                    .ToListAsync();
+
+                int meetingSessionNumber = 1;
+                var meetingEvents = meetingRecords.Select(m =>
+                {
+                    // Here, the Duration is already calculated using m.DurationMinutes.
+                    // If you want to use a different logic when m.MeetingEndTime is null, you can add it.
+                    var duration = TimeSpan.FromMinutes(m.DurationMinutes);
+
+                    return new ExchangeEventVM
+                    {
+                        EventDate = m.CreatedDate,
+                        EventType = "Online Meeting",
+                        StepOrMeetingType = m.MeetingType, // Ensure that this property has a valid value.
+                        Description = m.MeetingNotes,
+                        Duration = duration,
+                        SessionNumber = meetingSessionNumber++,  // Assign computed session number.
+                        MeetingRank = m.MeetingRating?.ToString() ?? "-",
+                        MeetingStartTime = m.MeetingStartTime
+                    };
+                }).ToList();
+
+                var timelineEvents = exchange.TblExchangeHistories.Select(h =>
+                {
+                    // Option 1: If you have loaded the user names already or have a helper mapping,
+                    // you can set StatusChangedByName as needed.
+                    string statusChangedBy = "N/A";
+                    // For example, if h.ChangedBy is not null, you could lookup the user name.
+                    // (You could pre-load user data to avoid N+1 queries.)
+                    if (h.ChangedBy.HasValue)
+                    {
+                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == h.ChangedBy.Value);
+                        if (user != null)
+                            statusChangedBy = user.UserName;
+                    }
+
+                    return new ExchangeEventVM
+                    {
+                        EventDate = h.ChangeDate,
+                        EventType = "Timeline/ Change",
+                        StepOrMeetingType = h.ChangedStatus,
+                        Description = h.Reason,
+                        SessionNumber = null,
+                        // These are not meeting events so MeetingStartTime is not set.
+                        MeetingStartTime = null,
+                        StatusChangedByName = statusChangedBy
+                    };
+                }).ToList();
+
+                // Merge and sort both events by date (for example, ascending order)
+                var allCombinedEvents = timelineEvents
+                    .Concat(meetingEvents)
+                    .OrderBy(e => e.EventDate)
+                    .ToList();
+
+                // Now paginate the merged list:
+                int pageSize = timelinePageSize; // Use your timelinePageSize
+                int totalCombinedCount = allCombinedEvents.Count;
+                int combinedTotalPages = (int)Math.Ceiling(totalCombinedCount / (double)pageSize);
+
+                var pagedCombinedEvents = allCombinedEvents
+                    .Skip((timelinePage - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select((e, index) => { e.SrNo = index + 1 + ((timelinePage - 1) * pageSize); return e; })
+                    .ToList();
+
                 var viewModel = new ExchangeDetailsVM
                 {
                     Exchange = exchange,
                     Contract = contract,
-                    PagedHistory = pagedHistory,
+                    PagedHistory = allTimelineHistory.ToList(),
+                    MeetingRecords = meetingRecords,
                     TimelineCurrentPage = timelinePage,
-                    TimelineTotalPages = timelineTotalPages
+                    TimelineTotalPages = combinedTotalPages,
+                    SearchTerm = search,
+                    CombinedEvents = pagedCombinedEvents
                 };
+
+                viewModel.CombinedEvents = pagedCombinedEvents;
 
                 return View(viewModel);
             }

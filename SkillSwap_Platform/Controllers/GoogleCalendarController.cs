@@ -149,6 +149,9 @@ namespace SkillSwap_Platform.Controllers
                 var scheduledDateTime = newEvent.Start.DateTime ?? DateTime.Now;
                 var duration = (newEvent.End.DateTime - newEvent.Start.DateTime)?.TotalMinutes ?? 60;
 
+                var previousSessionsCount = await _dbContext.TblMeetings.CountAsync(m => m.ExchangeId == exchange.ExchangeId);
+                int nextSessionNumber = previousSessionsCount + 1;
+
                 // Create a new meeting record to save in the database.
                 var meetingRecord = new TblMeeting
                 {
@@ -166,7 +169,8 @@ namespace SkillSwap_Platform.Controllers
                     MeetingStartTime = scheduledDateTime,
                     MeetingNotes = string.Empty,
                     MeetingType = "Google Meet",
-                    Location = newEvent.Location
+                    Location = newEvent.Location,
+                    MeetingSessionNumber = nextSessionNumber
                 };
 
                 
@@ -189,7 +193,7 @@ namespace SkillSwap_Platform.Controllers
                     OfferId = offer.OfferId,
                     ChangeDate = DateTime.UtcNow,
                     ChangedStatus = "Meeting Launched",
-                    Reason = $"Online meeting launched. MeetingID: {meetingRecord.MeetingId}, Join URL: {joinUrl}",
+                    Reason = $"Online meeting launched. Session #{meetingRecord.MeetingSessionNumber} (MeetingID: {meetingRecord.MeetingId})",
                     ChangedBy = userId
                 };
                 _dbContext.TblExchangeHistories.Add(historyRecord);
@@ -198,7 +202,8 @@ namespace SkillSwap_Platform.Controllers
                 var vm = new MeetingLaunchVM
                 {
                     JoinUrl = joinUrl,
-                    MeetingRecordId = meetingRecord.MeetingId
+                    MeetingRecordId = meetingRecord.MeetingId,
+                    SessionNumber = meetingRecord.MeetingSessionNumber
                 };
 
                 return View("CreateEvent", vm);
@@ -212,7 +217,7 @@ namespace SkillSwap_Platform.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SaveMeetingNotes(int meetingId, string meetingNotes)
+        public async Task<IActionResult> SaveMeetingNotes(int meetingId, string meetingNotes, int Rating)
         {
             try
             {
@@ -223,6 +228,13 @@ namespace SkillSwap_Platform.Controllers
                     // Optionally, you can re-render the CreateEvent view with the error.
                     // Here we simply return a BadRequest.
                     return BadRequest("Meeting notes are required.");
+                }
+
+                // Validate the rating is within an acceptable range.
+                if (Rating < 1 || Rating > 5)
+                {
+                    ModelState.AddModelError("Rating", "A valid rating between 1 and 5 is required.");
+                    return BadRequest("A valid rating between 1 and 5 is required.");
                 }
 
                 if (meetingId == 0)
@@ -241,6 +253,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Update the meeting record with the provided notes, and mark the meeting as 'Completed'.
                 meeting.MeetingNotes = meetingNotes;
+                meeting.MeetingRating = Rating; 
                 meeting.Status = "Completed";  // or whatever status you need to capture
                 meeting.UpdatedDate = DateTime.UtcNow;
 
@@ -254,7 +267,7 @@ namespace SkillSwap_Platform.Controllers
                     OfferId = meeting.OfferId ?? 0,
                     ChangeDate = DateTime.UtcNow,
                     ChangedStatus = "Meeting Completed",
-                    Reason = $"Meeting feedback submitted: {meetingNotes}",
+                    Reason = $"Meeting feedback submitted with rating {Rating}: {meetingNotes}",
                     // Retrieve the current user's id.
                     ChangedBy = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId) ? userId : 0
                 };
@@ -272,7 +285,7 @@ namespace SkillSwap_Platform.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateMeetingSession(int meetingId, DateTime actualEndTime)
+        public async Task<IActionResult> UpdateMeetingSession(int meetingId, DateTime meetingStartTime, DateTime actualEndTime)
         {
             var meeting = await _dbContext.TblMeetings.FirstOrDefaultAsync(m => m.MeetingId == meetingId);
             if (meeting == null)
@@ -280,8 +293,14 @@ namespace SkillSwap_Platform.Controllers
                 return NotFound("Meeting record not found.");
             }
 
+            // Use the meetingStartTime passed from the client instead of the one stored in the DB.
+            int duration = (int)(actualEndTime - meetingStartTime).TotalMinutes;
+
+            if (duration < 1) duration = 1;
+
             // Calculate duration in minutes based on the meeting start time.
-            meeting.DurationMinutes = (int)(actualEndTime - meeting.MeetingStartTime).TotalMinutes;
+            meeting.DurationMinutes = duration;
+            meeting.MeetingEndTime = actualEndTime;
             meeting.ActualEndTime = actualEndTime;
             meeting.Status = "Completed";
             meeting.UpdatedDate = DateTime.UtcNow;

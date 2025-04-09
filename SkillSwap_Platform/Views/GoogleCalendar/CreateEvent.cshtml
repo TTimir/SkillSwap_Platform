@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
     <style>
         body {
             margin: 0;
@@ -158,6 +159,32 @@
             padding: 0.5rem;
             border-radius: 50%;
         }
+
+        .rating-stars {
+            display: inline-block;
+            font-size: 1.5rem;
+        }
+
+            .rating-stars input[type="radio"] {
+                display: none;
+            }
+
+            .rating-stars label {
+                cursor: pointer;
+                padding: 0 0.1rem;
+            }
+
+            .rating-stars svg {
+                fill: #ccc; /* Default star color */
+                transition: fill 0.2s ease;
+            }
+
+            .rating-stars label:hover svg,
+            .rating-stars label:hover ~ label svg,
+            .rating-stars input[type="radio"]:checked ~ label svg {
+                fill: #FFD700; /* Gold color on hover or when selected */
+            }
+
     </style>
 </head>
 <body>
@@ -264,12 +291,55 @@
                         <!-- Hidden field for meeting id -->
                         <input type="hidden" name="meetingId" id="MeetingId" value="0" />
                         <div class="form-group">
-                            <label for="MeetingNotes">Enter your meeting notes or feedback:</label>
+                            <label for="MeetingNotes">Enter your meeting notes or feedback<span class="text-danger">*</span>:</label>
                             <textarea id="MeetingNotes" name="MeetingNotes" class="form-control" rows="4" placeholder="Enter your meeting notes/feedback here..." required></textarea>
                         </div>
+                        <!-- Star Rating Input -->
+                        <div class="form-group rating-group">
+                            <label>Meeting Quality/Rating<span class="text-danger">*</span>:</label>
+                            <div class="rating-stars">
+                                <input type="radio" id="star5" name="Rating" value="5" required />
+                                <label for="star5" title="5 star">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star4" name="Rating" value="4" required />
+                                <label for="star4" title="4 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star3" name="Rating" value="3" required />
+                                <label for="star3" title="3 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star2" name="Rating" value="2" required />
+                                <label for="star2" title="2 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star1" name="Rating" value="1" required />
+                                <label for="star1" title="1 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+                            </div>
+                            <span asp-validation-for="Rating" class="text-danger"></span>
+                        </div>
+
                     </div>
+
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                        <button type="submit" class="btn btn-success">Submit Feedback</button>
                     </div>
                 </div>
             </form>
@@ -285,9 +355,7 @@
         var meetingUrl = '@Model.JoinUrl'; // from model
         var popupWindow = null;
         var pollTimer = null;
-
-        console.log("Meeting URL:", meetingUrl);
-        console.log("Meeting Record ID:", meetingRecordId);
+        var meetingLaunchTime = null;
 
         function joinMeeting() {
             if (!meetingUrl) {
@@ -297,6 +365,9 @@
             // Open the Google Meet window as a popup.
             popupWindow = window.open(meetingUrl, "GoogleMeet", "width=800,height=600");
 
+            // Record the time the meeting starts (when the window opens).
+            meetingLaunchTime = new Date();
+            
             // Disable the join button to avoid multiple clicks
             joinBtn.disabled = true;
 
@@ -307,7 +378,6 @@
                     window.clearInterval(pollTimer);
                     pollTimer = null;
                     var meetingEndTime = new Date();
-                    console.log("Popup closed. Meeting ended at:", meetingEndTime);
 
                     // Call the backend to update the meeting session
                     $.ajax({
@@ -315,10 +385,10 @@
                         type: 'POST',
                         data: {
                             meetingId: meetingRecordId,
-                            actualEndTime: meetingEndTime.toISOString()
+                             meetingStartTime: meetingLaunchTime.toISOString(),
+                             actualEndTime: meetingEndTime.toISOString()
                         },
                         success: function () {
-                            console.log("Meeting session updated.");
                             // Show the feedback modal once the meeting has ended.
                             $("#MeetingId").val(meetingRecordId);
                             $("#feedbackModal").modal('show');
@@ -351,10 +421,8 @@
             // For example, if meetingUrl is "https://meet.google.com/abc-defg-hij",
             // then the meeting id will be "abc-defg-hij"
             var extractedMeetingId = urlObj.pathname.substring(1);
-            console.log("Extracted Meeting ID:", extractedMeetingId);
             document.getElementById("meetingId").value = extractedMeetingId;
         } catch (e) {
-            console.error("Error parsing meeting URL:", e);
             document.getElementById("meetingId").value = "";
         }
     </script>

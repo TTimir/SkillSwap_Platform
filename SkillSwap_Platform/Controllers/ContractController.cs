@@ -932,6 +932,35 @@ namespace SkillSwap_Platform.Controllers
             return File(pdfBytes, "application/pdf", filename);
         }
 
+        public async Task<IActionResult> ViewFinalizedContractPdf(int contractId)
+        {
+            // Retrieve the contract record using contractId
+            var contract = await _context.TblContracts.FirstOrDefaultAsync(c => c.ContractId == contractId);
+            if (contract == null)
+            {
+                _logger.LogWarning("Contract with id {contractId} was not found.", contractId);
+                return NotFound();
+            }
+
+            string relativeFilePath = contract.ContractDocument; // Adjust the property name if necessary.
+            if (string.IsNullOrEmpty(relativeFilePath))
+            {
+                _logger.LogWarning("No finalized contract path found for contract id {contractId}.", contractId);
+                return NotFound("Finalized contract file not found.");
+            }
+            string absoluteFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativeFilePath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(absoluteFilePath))
+            {
+                _logger.LogWarning("File {absoluteFilePath} for contract id {contractId} does not exist.", absoluteFilePath, contractId);
+                return NotFound("File not found.");
+            }
+
+            // Open a stream and return the file with the application/pdf mime type.
+            var fileStream = new FileStream(absoluteFilePath, FileMode.Open, FileAccess.Read);
+            return File(fileStream, "application/pdf");
+        }
+
         public async Task<IActionResult> VersionHistory(int messageId, int offerId)
         {
             var versions = await _context.TblContracts

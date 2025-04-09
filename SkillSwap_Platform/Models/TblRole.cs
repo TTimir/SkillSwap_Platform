@@ -12,4 +12,5 @@ public partial class TblRole
 
     public virtual ICollection<TblUser> Users { get; set; } = new List<TblUser>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
+
 }

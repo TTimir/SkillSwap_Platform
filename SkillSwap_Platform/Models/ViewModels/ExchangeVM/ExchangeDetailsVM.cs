@@ -8,7 +8,13 @@
         public TblOffer Offer => Exchange.Offer;
         public TblContract Contract { get; set; }
         public IEnumerable<TblExchangeHistory> PagedHistory { get; set; }
+        public List<TblMeeting> MeetingRecords { get; set; }
         public int TimelineCurrentPage { get; set; }
         public int TimelineTotalPages { get; set; }
+        public string SearchTerm { get; set; }
+        public string LastStatusChangedByName { get; set; }
+
+        public IEnumerable<ExchangeEventVM> CombinedEvents { get; set; }
+
     }
 }

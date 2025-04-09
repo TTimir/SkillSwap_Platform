@@ -1,22 +1,29 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.ExchangeDetailsVM
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Exchange History & Timeline";
+    ViewData["SubTitle"] = "Review your exchange journey, every update and milestone captured for you.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="row align-items-center justify-content-between pb40">
     <div class="col-xl-4">
         <div class="dashboard_title_area">
-            <h2>Invoice</h2>
-            <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+            <h2>@ViewData["Title"]</h2>
+            <p class="text">@ViewData["SubTitle"]</p>
         </div>
     </div>
     <div class="col-xl-4">
         <div class="dashboard_search_meta">
             <div class="search_area">
-                <input type="text" class="form-control bdrs4" placeholder="Search Invoice">
-                <label><span class="far fa-magnifying-glass"></span></label>
+                <form id="searchForm" method="get" action="@Url.Action("Details")" class="search_area">
+                    <input type="hidden" name="id" value="@Model.Exchange.ExchangeId" />
+                    <input type="hidden" name="timelinePage" value="@Model.TimelineCurrentPage" />
+                    <input type="text" name="search" class="form-control bdrs4" placeholder="Search Timeline / Changes" value="@Model.SearchTerm" />
+                    <label onclick="document.getElementById('searchForm').submit();" style="cursor:pointer;">
+                        <span class="far fa-magnifying-glass"></span>
+                    </label>
+                </form>
             </div>
         </div>
     </div>
@@ -32,7 +39,7 @@
                             <th scope="col">Exchange Date</th>
                             <th scope="col">Amount</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Description</th>
+                            <th scope="col">Contract Pdf</th>
                         </tr>
                     </thead>
                     <tbody class="t-body">
@@ -42,9 +49,16 @@
                             </th>
                             <td class="vam">@Model.Exchange.LastStatusChangeDate</td>
                             <td class="vam">@Model.Contract.TokenOffer</td>
-                            <td class="vam"><span class="pending-style style1">@Model.Exchange.Status</span></td>
+                            <td class="vam"><span class="pending-style style2">@Model.Exchange.Status</span></td>
                             <td class="vam">
-                                <a href="" class="table-action fz15 fw500 text-thm2" data-bs-toggle="tooltip" data-bs-placement="top" title="View"><span class="flaticon-website me-2 vam"></span> View</a>
+                                <a href="@Url.Action("ViewFinalizedContractPdf", "Contract", new { contractId = Model.Contract.ContractId })"
+                                   target="_blank"
+                                   class="table-action fz15 fw500 text-thm2"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="View Finalized Contract PDF">
+                                    <span class="flaticon-website me-2 vam"></span> View
+                                </a>
                             </td>
                         </tr>
                         <!-- Timeline / Changes Row -->
@@ -54,27 +68,62 @@
                                 <table class="table table-borderless">
                                     <thead class="t-head">
                                         <tr>
-                                            <th scope="col">Sr. No</th>
-                                            <th scope="col">Date</th>
-                                            <th scope="col">Step</th>
-                                            <th scope="col">Description</th>
+                                            <th>Sr. No</th>
+                                            <th>Date</th>
+                                            <th>Meeting Start Time</th>
+                                            <th>Type</th>
+                                            <th>Step</th>
+                                            <th>Description / Notes</th>
+                                            <th>Session (#)</th>
+                                            <th>Duration</th>
+                                            <th>Rank</th>
+                                            <th>Status Changed By</th>
                                         </tr>
                                     </thead>
                                     <tbody class="t-body">
                                         @{
-                                            int counter = 1;
+                                            // Assuming MeetingRecords is a collection of meeting objects with a MeetingStartTime property.
+                                            // For example, choose the most recent meeting by MeetingStartTime.
+                                            var lastMeeting = Model.MeetingRecords?.OrderByDescending(m => m.MeetingStartTime).FirstOrDefault();
+                                            var meetingStartTime = lastMeeting?.MeetingStartTime;
                                         }
-                                        @if (Model.Exchange.TblExchangeHistories != null && Model.Exchange.TblExchangeHistories.Any())
+                                        @if (Model.CombinedEvents != null && Model.CombinedEvents.Any())
                                         {
-                                            @foreach (var history in Model.Exchange.TblExchangeHistories.OrderBy(h => h.ChangeDate))
+                                            foreach (var ev in Model.CombinedEvents)
                                             {
                                                 <tr>
-                                                    <td>@counter</td>
-                                                    <td>@history.ChangeDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")</td>
-                                                    <td>@history.ChangedStatus</td>
-                                                    <td>@history.Reason</td>
+                                                    <td>@ev.SrNo</td>
+                                                    <td>@ev.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                                                    <td>
+                                                        @(ev.MeetingStartTime != null ? ev.MeetingStartTime.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") : "-")
+                                                    </td>
+                                                    <td>@ev.EventType</td>
+                                                    <td>@ev.StepOrMeetingType</td>
+                                                    <td>@ev.Description</td>
+                                                    <td>
+                                                        @if (ev.SessionNumber.HasValue)
+                                                        {
+                                                            @ev.SessionNumber.Value
+                                                        }
+                                                        else
+                                                        {
+                                                            @("-")
+                                                        }
+                                                    </td>
+                                                    <td>@(ev.Duration.HasValue ? $"{ev.Duration.Value.TotalMinutes} mins" : "-")</td>
+                                                    <td>
+                                                        @(ev.MeetingRank ?? "-")
+                                                        @if (ev.MeetingRank != null)
+                                                        {
+                                                            <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                                                <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                                            </svg>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @(ev.StatusChangedByName ?? "-")
+                                                    </td>
                                                 </tr>
-                                                    counter++;
                                             }
                                         }
                                         else
@@ -89,29 +138,71 @@
                         </tr>
                     </tbody>
                 </table>
-                @* <div class="mbp_pagination text-center mt30">
-                    <ul class="page_navigation">
-                        <li class="page-item">
-                            <a class="page-link" href="#"> <span class="fas fa-angle-left"></span></a>
-                        </li>
-                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item active" aria-current="page">
-                            <a class="page-link" href="#">2 <span class="sr-only">(current)</span></a>
-                        </li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item"><a class="page-link" href="#">4</a></li>
-                        <li class="page-item"><a class="page-link" href="#">5</a></li>
-                        <li class="page-item"><a class="page-link" href="#">...</a></li>
-                        <li class="page-item"><a class="page-link" href="#">20</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#"><span class="fas fa-angle-right"></span></a>
-                        </li>
-                    </ul>
-                    <p class="mt10 mb-0 pagination_page_count text-center">1 – 20 of 300+ property available</p>
-                </div> *@
+                @if (Model.TimelineTotalPages > 1)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            @* Previous page link *@
+                            @if (Model.TimelineCurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Details", new { id = Model.Exchange.ExchangeId, timelinePage = Model.TimelineCurrentPage - 1 })">
+                                        <span class="fas fa-angle-left"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <span class="fas fa-angle-left"></span>
+                                    </span>
+                                </li>
+                            }
+
+                            @* Page number links *@
+                            @for (int i = 1; i <= Model.TimelineTotalPages; i++)
+                            {
+                                if (i == Model.TimelineCurrentPage)
+                                {
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Details", new { id = Model.Exchange.ExchangeId, timelinePage = i })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            @* Next page link *@
+                            @if (Model.TimelineCurrentPage < Model.TimelineTotalPages)
+                            {
+                                <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                    <a class="page-link" href="@Url.Action("Details", new { id = Model.Exchange.ExchangeId, timelinePage = Model.TimelineCurrentPage + 1 })">
+                                        <span class="fas fa-angle-right"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                    <span class="page-link">
+                                        <span class="fas fa-angle-right"></span>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            Page @Model.TimelineCurrentPage of @Model.TimelineTotalPages
+                        </p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
-        </div>
+</div>
 
