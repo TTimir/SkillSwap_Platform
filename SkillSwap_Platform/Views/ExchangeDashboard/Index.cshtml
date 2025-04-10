@@ -53,16 +53,13 @@
                                                 }
                                             </div>
                                             <div class="details ml15 ml0-md mb15-md">
+                                                <small class="text-muted">@item.Category</small>
                                                 <h5 class="title mb-2">
                                                     <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
                                                         @item.OfferTitle
                                                     </a>
                                                 </h5>
-                                                @{
-                                                    var contractIdFull = item.ContractUniqueId;
-                                                    var contractIdLast6 = contractIdFull.Length >= 6 ? contractIdFull.Substring(contractIdFull.Length - 6) : contractIdFull;
-                                                }
-                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Contract Unique Id: @contractIdFull"><i class="flaticon-contract fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @contractIdLast6</p>
+                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-money fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
                                                 <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                                                 <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
                                             </div>

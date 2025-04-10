@@ -93,9 +93,9 @@
                                             {
                                                 <tr>
                                                     <td>@ev.SrNo</td>
-                                                    <td>@ev.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                                                    <td>@ev.EventDate.ToString("dd MMM yyyy, HH:mm")</td>
                                                     <td>
-                                                        @(ev.MeetingStartTime != null ? ev.MeetingStartTime.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") : "-")
+                                                        @(ev.MeetingStartTime != null ? ev.MeetingStartTime.Value.ToString("dd MMM yyyy, HH:mm") : "-")
                                                     </td>
                                                     <td>@ev.EventType</td>
                                                     <td>@ev.StepOrMeetingType</td>

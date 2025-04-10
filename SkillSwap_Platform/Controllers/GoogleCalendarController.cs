@@ -26,6 +26,7 @@ namespace SkillSwap_Platform.Controllers
         }
 
         // Creates a calendar event with a Google Meet conference link.
+        [Obsolete]
         public async Task<IActionResult> CreateEvent(int? exchangeId, int otherUserId)
         {
             try
@@ -305,8 +306,8 @@ namespace SkillSwap_Platform.Controllers
                         </p>
                         <div style='margin-top: 10px;'>
                             <a href='{meetingRecord.MeetingLink}' target='_blank' class='btn btn-primary'
-                               style='text-decoration:none; padding:10px 20px; background-color:#007bff; color:#fff; border-radius:4px; display:inline-block;'>
-                                Join Meeting
+                               class='ud-btn btn-light-thm'>
+                                Join Meeting <i class='fal fa-arrow-right-long'></i>
                             </a>
                         </div>
                         <div style='margin-top:10px; font-size:0.9em; color:#555;'>
@@ -321,7 +322,11 @@ namespace SkillSwap_Platform.Controllers
                     SenderUserId = meetingRecord.CreatorUserId,
                     ReceiverUserId = meetingRecord.OtherUserId,
                     Content = meetingMessageContent,
-                    SentDate = DateTime.UtcNow
+                    MessageType = "MeetingCard",
+                    SentDate = DateTime.UtcNow,
+                    MeetingLink = meetingRecord.MeetingLink,
+                    OfferId = meetingRecord.OfferId,
+                    ExchangeId = meetingRecord.ExchangeId
                 };
 
                 _dbContext.TblMessages.Add(meetingMessage);

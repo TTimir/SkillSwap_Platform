@@ -44,6 +44,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
 
+    public virtual DbSet<TblResource> TblResources { get; set; }
+
     public virtual DbSet<TblReview> TblReviews { get; set; }
 
     public virtual DbSet<TblRole> TblRoles { get; set; }
@@ -330,6 +332,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.MessageId).HasColumnName("MessageID");
             entity.Property(e => e.IsApproved).HasDefaultValue(true);
             entity.Property(e => e.MeetingLink).HasMaxLength(500);
+            entity.Property(e => e.MessageType)
+                .HasMaxLength(50)
+                .HasDefaultValue("Normal");
             entity.Property(e => e.ReceiverUserId).HasColumnName("ReceiverUserID");
             entity.Property(e => e.SenderUserId).HasColumnName("SenderUserID");
             entity.Property(e => e.SentDate)
@@ -428,6 +433,18 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.OfferId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_OfferPortfolio_Offers");
+        });
+
+        modelBuilder.Entity<TblResource>(entity =>
+        {
+            entity.HasKey(e => e.ResourceId).HasName("PK__tblResou__4ED1816F2249D411");
+
+            entity.ToTable("tblResources");
+
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.ResourceType).HasMaxLength(50);
+            entity.Property(e => e.Title).HasMaxLength(200);
         });
 
         modelBuilder.Entity<TblReview>(entity =>

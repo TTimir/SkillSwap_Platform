@@ -1,0 +1,262 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceListVM
+
+@{
+    ViewData["Title"] = "List";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.Action("SelectOffer", "ResourceSharing")" class="ud-btn btn-dark default-box-shadow2">
+            Share Resource<i class="fal fa-arrow-right-long"></i>
+        </a>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <button class="nav-link active fw500 ps-0" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Received Items</button>
+                        <button class="nav-link fw500" id="nav-item2-tab" data-bs-toggle="tab" data-bs-target="#nav-item2" type="button" role="tab" aria-controls="nav-item2" aria-selected="false">My Shared Items</button>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            @if (Model.ReceivedResources != null && Model.ReceivedResources.Any())
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Type</th>
+                                            <th scope="col">Received Date</th>
+                                            <th scope="col">File/Link</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody class="t-body">
+                                        @foreach (var resource in Model.ReceivedResources)
+                                        {
+                                            <tr>
+                                                <th class="dashboard-img-service" scope="row">
+                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                            <h6 class="list-title mb-0">@resource.Title</h6>
+                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                <li>@resource.Description</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                                <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToString("MMMM dd, yyyy")</span></td>
+                                                <td class="align-top">
+                                                    <div class="d-flex">
+                                                        @if (resource.ResourceType.ToLower() == "link")
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
+                                                        }
+                                                        else if (resource.ResourceType.ToLower() == "image")
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-document"></span></a>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <p>No resources have been shared by the opposite party.</p>
+                            }
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        @if (Model.CurrentPage > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })">
+                                                    <span class="fas fa-angle-left"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                            </li>
+                                        }
+
+                                        @for (int i = 1; i <= Model.ReceivedResourcesTotalPages; i++)
+                                        {
+                                            if (i == Model.CurrentPage)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                                </li>
+                                            }
+                                        }
+
+                                        @if (Model.CurrentPage < Model.ReceivedResourcesTotalPages)
+                                        {
+                                            <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })">
+                                                    <span class="fas fa-angle-right"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @Model.CurrentPage of @Model.ReceivedResourcesTotalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="nav-item2" role="tabpanel" aria-labelledby="nav-item2-tab">
+                        <div class="packages_table table-responsive">
+                            @if (Model.MyResources != null && Model.MyResources.Any())
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Type</th>
+                                            <th scope="col">Received Date</th>
+                                            <th scope="col">File/Link</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+
+                                        @foreach (var resource in Model.MyResources)
+                                        {
+                                            <tr>
+                                                <th class="dashboard-img-service" scope="row">
+                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                            <h6 class="list-title mb-0">@resource.Title</h6>
+                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                <li>@resource.Description</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                                <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToString("MMMM dd, yyyy")</span></td>
+                                                <td class="align-top">
+                                                    <div class="d-flex">
+                                                        @if (resource.ResourceType.ToLower() == "link")
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
+                                                        }
+                                                        else if (resource.ResourceType.ToLower() == "image")
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-document"></span></a>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <p>No resources shared by you yet.</p>
+                            }
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        @if (Model.CurrentPage > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })">
+                                                    <span class="fas fa-angle-left"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                            </li>
+                                        }
+
+                                        @for (int i = 1; i <= Model.MyResourcesTotalPages; i++)
+                                        {
+                                            if (i == Model.CurrentPage)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                                </li>
+                                            }
+                                        }
+
+                                        @if (Model.CurrentPage < Model.MyResourcesTotalPages)
+                                        {
+                                            <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })">
+                                                    <span class="fas fa-angle-right"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @Model.CurrentPage of @Model.MyResourcesTotalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

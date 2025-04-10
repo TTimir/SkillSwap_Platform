@@ -144,7 +144,9 @@ namespace SkillSwap_Platform.Controllers
                         Description = exchange.Description,
                         OfferImageUrl = offerImageUrl,
                         CanLaunchMeeting = canLaunch,
-                        RecentMeetingLaunchCount = totalSessionsCount
+                        RecentMeetingLaunchCount = totalSessionsCount,
+                        Category = exchange.Offer.Category,
+                        Token = contract.TokenOffer
                     });
                 }
 
@@ -214,7 +216,13 @@ namespace SkillSwap_Platform.Controllers
                     // Here, the Duration is already calculated using m.DurationMinutes.
                     // If you want to use a different logic when m.MeetingEndTime is null, you can add it.
                     var duration = TimeSpan.FromMinutes(m.DurationMinutes);
-
+                    // Retrieve the creator's name using the CreatorUserId.
+                    var statusChangedBy = "N/A";
+                    var creator = _context.TblUsers.FirstOrDefault(u => u.UserId == m.CreatorUserId);
+                    if (creator != null)
+                    {
+                        statusChangedBy = creator.UserName;
+                    }
                     return new ExchangeEventVM
                     {
                         EventDate = m.CreatedDate,
@@ -224,7 +232,8 @@ namespace SkillSwap_Platform.Controllers
                         Duration = duration,
                         SessionNumber = meetingSessionNumber++,  // Assign computed session number.
                         MeetingRank = m.MeetingRating?.ToString() ?? "-",
-                        MeetingStartTime = m.MeetingStartTime
+                        MeetingStartTime = m.MeetingStartTime,
+                        StatusChangedByName = statusChangedBy
                     };
                 }).ToList();
 

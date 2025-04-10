@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SkillSwap_Platform.Models;
@@ -283,6 +284,27 @@ namespace SkillSwap_Platform.Controllers
                         exchangeSkillName = contract?.ReceiverSkill;
                     }
 
+                    int exchangeId = 0;
+                    OfferDisplayVM? offerDisplay = null;
+                    if (msg.MessageType == "ResourceNotification" && msg.ResourceId.HasValue)
+                    {
+                        // Retrieve the resource record using the resource identifier.
+                        var resource = await _context.TblResources.FirstOrDefaultAsync(r => r.ResourceId == msg.ResourceId);
+                        if (resource != null)
+                        {
+                            // Assuming your TblResource entity contains these properties.
+                            exchangeId = resource.ExchangeId ?? 0;
+                            offerId = resource.OfferId;
+
+                            // Optionally populate additional details.
+                            offerDisplay = new OfferDisplayVM
+                            {
+                                OfferId = resource.OfferId ?? 0,
+                                Title = resource.Title,
+                            };
+                        }
+                    }
+
                     messageViewModels.Add(new MessageItemVM
                     {
                         MessageId = msg.MessageId,
@@ -292,6 +314,8 @@ namespace SkillSwap_Platform.Controllers
                         SenderProfileImage = msg.SenderUser?.ProfileImageUrl,
                         SentDate = msg.SentDate,
                         Content = msg.Content,
+                        MessageType = msg.MessageType,
+                        ResourceId = msg.ResourceId,
                         ReplyPreview = msg.ReplyPreview,
                         ReplyMessageId = msg.ReplyToMessageId,
                         Attachments = msg.TblMessageAttachments,
@@ -299,7 +323,9 @@ namespace SkillSwap_Platform.Controllers
                         IsFlagged = msg.IsFlagged,
                         IsApproved = msg.IsApproved,
                         OfferDetails = msg.OfferId.HasValue ? msg.OfferPreview : null,
-                        ContractDetails = contract, // ✅ assign latest contract
+                        ExchangeId = exchangeId,
+                        OfferId = offerId,
+                        ContractDetails = contract,
                         OfferedSkillName = offeredSkillName,
                         ReceiverSkillName = exchangeSkillName,
                     });
@@ -428,6 +454,27 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
 
+                    // Normalize the text content from the form.
+                    content = content?.Trim() ?? string.Empty;
+
+                    // Determine the message type:
+                    string messageType = "Normal";
+
+                    // If no text is provided, but there is an attachment:
+                    if (string.IsNullOrEmpty(content) && attachments != null && attachments.Any())
+                    {
+                        // If there is only one attachment and its MIME type starts with "image/", mark it as an Image.
+                        if (attachments.Count == 1 && attachments.First().ContentType.ToLower().StartsWith("image/"))
+                        {
+                            messageType = "Image";
+                        }
+                        else
+                        {
+                            // Otherwise, treat it as a generic File (if multiple attachments or non-image type)
+                            messageType = "File";
+                        }
+                    }
+
                     // Create the new message.
                     var message = new TblMessage
                     {
@@ -439,7 +486,8 @@ namespace SkillSwap_Platform.Controllers
                         SentDate = DateTime.UtcNow,
                         IsRead = false,
                         IsFlagged = false,
-                        OfferId = offerId
+                        OfferId = offerId,
+                        MessageType = messageType
                     };
 
                     _context.TblMessages.Add(message);

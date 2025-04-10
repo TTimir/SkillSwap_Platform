@@ -11,6 +11,8 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public string SenderProfileImage { get; set; }
         public DateTime SentDate { get; set; }
         public string Content { get; set; }
+        public string MessageType { get; set; } = "Normal";
+        public int? ResourceId { get; set; }
         public bool IsRead { get; set; }
         public bool ShowHeader { get; set; }
         public MessageStatus Status { get; set; }
@@ -32,6 +34,8 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public int? OfferId { get; set; }
         public OfferDisplayVM OfferDetails { get; set; }
 
+        public int ExchangeId { get; set; }
+        
         public TblContract? ContractDetails { get; set; }
         public bool IsContractPending => ContractDetails?.Status == "Pending";
 

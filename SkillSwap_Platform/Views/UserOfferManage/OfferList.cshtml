@@ -145,38 +145,60 @@
                                     }
                                 </tbody>
                             </table>
-                            @if (Model.TotalPages > 1)
+                            @if (Model.CurrentPage > 1)
                             {
-                                var start = ((Model.CurrentPage - 1) * 5) + 1;
-                                var end = Math.Min(start + 4, Model.Offers.Count + ((Model.TotalPages - 1) * 5)); // This ensures last page shows correct count
-
-                                <nav aria-label="Offer pagination">
-                                    <ul class="pagination justify-content-center mt-4">
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
                                         @if (Model.CurrentPage > 1)
                                         {
                                             <li class="page-item">
-                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })"><span class="fas fa-angle-left"></span></a>
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })">
+                                                    <span class="fas fa-angle-left"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><span class="fas fa-angle-left"></span></span>
                                             </li>
                                         }
 
                                         @for (int i = 1; i <= Model.TotalPages; i++)
                                         {
-                                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                                <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
-                                            </li>
+                                            if (i == Model.CurrentPage)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
+                                                </li>
+                                            }
                                         }
 
                                         @if (Model.CurrentPage < Model.TotalPages)
                                         {
-                                            <li class="page-item">
-                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })"><span class="fas fa-angle-right"></span></a>
+                                            <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })">
+                                                    <span class="fas fa-angle-right"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                <span class="page-link"><span class="fas fa-angle-right"></span></span>
                                             </li>
                                         }
                                     </ul>
-                                    <p class="mt-2 mb-0 pagination_page_count text-center text-dark fw-semibold">
-                                        @start – @end of @((Model.TotalPages * 5)) offers available
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @Model.CurrentPage of @Model.TotalPages
                                     </p>
-                                </nav>
+                                </div>
                             }
                         </div>
                     </div>

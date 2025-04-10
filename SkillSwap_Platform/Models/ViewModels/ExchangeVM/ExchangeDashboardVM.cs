@@ -27,5 +27,7 @@
         public bool CanLaunchMeeting { get; set; }
         public int RecentMeetingLaunchCount { get; set; }
 
+        public string Category { get; set; }
+        public decimal? Token { get; set; }
     }
 }
