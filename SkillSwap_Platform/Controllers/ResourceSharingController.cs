@@ -352,6 +352,42 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Download(int resourceId)
+        {
+            // Retrieve the resource record from the database
+            var resource = await _dbContext.TblResources.FindAsync(resourceId);
+            if (resource == null)
+            {
+                TempData["ErrorMessage"] = "Resource not found.";
+                return RedirectToAction("List", new { exchangeId = 0, offerId = 0 });
+            }
+
+            // Build the physical file path; assuming resource.FilePath is the public relative URL like "/uploads/resources/filename.ext"
+            string fileRelativePath = resource.FilePath.TrimStart('/');
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", fileRelativePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                TempData["ErrorMessage"] = "File not found on the server.";
+                return RedirectToAction("List", new { exchangeId = resource.ExchangeId, offerId = resource.OfferId });
+            }
+
+            // Determine MIME type. You can use a library such as Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider,
+            // or for a generic code file, you might want to force download using "application/octet-stream".
+            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out string contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            // Read the file bytes.
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+            // The third parameter (the fileDownloadName) forces download in the browser.
+            return File(fileBytes, contentType, Path.GetFileName(filePath));
+        }
+
         /// <summary>
         /// Retrieves the current logged-in user’s ID from claims.
         /// </summary>

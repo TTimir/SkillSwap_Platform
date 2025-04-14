@@ -23,6 +23,10 @@ public partial class TblContract
 
     public DateTime? UpdatedDate { get; set; }
 
+    public DateTime? AcceptedDate { get; set; }
+
+    public DateTime? DeclinedDate { get; set; }
+
     public decimal? TokenOffer { get; set; }
 
     public string? ContractDocument { get; set; }

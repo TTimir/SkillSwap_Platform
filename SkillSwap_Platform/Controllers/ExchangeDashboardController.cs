@@ -54,6 +54,9 @@ namespace SkillSwap_Platform.Controllers
                 // For each exchange, retrieve the associated history records
                 foreach (var exchange in exchanges)
                 {
+                    var meetingRecord = await _context.TblInPersonMeetings
+                        .FirstOrDefaultAsync(m => m.ExchangeId == exchange.ExchangeId);
+
                     // In your controller loop:
                     var history = await _context.TblExchangeHistories
                         .Where(h => h.ExchangeId == exchange.ExchangeId)
@@ -146,7 +149,10 @@ namespace SkillSwap_Platform.Controllers
                         CanLaunchMeeting = canLaunch,
                         RecentMeetingLaunchCount = totalSessionsCount,
                         Category = exchange.Offer.Category,
-                        Token = contract.TokenOffer
+                        Token = contract.TokenOffer,
+                        IsMeetingEnded = exchange.IsMeetingEnded,
+                        MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
+                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
                     });
                 }
 
@@ -168,7 +174,7 @@ namespace SkillSwap_Platform.Controllers
         }
 
         // GET: /Exchange/Details/{id}
-        public async Task<IActionResult> Details(int id, int timelinePage = 1, string search = null)
+        public async Task<IActionResult> Details(int id, int timelinePage = 1, string search = null, string sortOrder = "desc")
         {
             try
             {
@@ -204,46 +210,89 @@ namespace SkillSwap_Platform.Controllers
                     .OrderByDescending(c => c.ContractId)
                     .FirstOrDefaultAsync();
 
-                // Retrieve meeting records for this exchange
-                var meetingRecords = await _context.TblMeetings
-                    .Where(m => m.ExchangeId == exchange.ExchangeId)
-                    .OrderBy(m => m.CreatedDate)
-                    .ToListAsync();
-
+                string normalizedMode = (exchange.ExchangeMode ?? "").Trim().ToLowerInvariant();
+                // Retrieve meeting records based on the exchange mode and map into a common view model.
+                List<ExchangeEventVM> meetingEvents = new List<ExchangeEventVM>();
                 int meetingSessionNumber = 1;
-                var meetingEvents = meetingRecords.Select(m =>
+
+                if (normalizedMode.Contains("online"))
                 {
-                    // Here, the Duration is already calculated using m.DurationMinutes.
-                    // If you want to use a different logic when m.MeetingEndTime is null, you can add it.
-                    var duration = TimeSpan.FromMinutes(m.DurationMinutes);
-                    // Retrieve the creator's name using the CreatorUserId.
-                    var statusChangedBy = "N/A";
-                    var creator = _context.TblUsers.FirstOrDefault(u => u.UserId == m.CreatorUserId);
-                    if (creator != null)
+                    // For online meetings, query the TblMeetings table.
+                    var onlineMeetings = await _context.TblMeetings
+                        .Where(m => m.ExchangeId == exchange.ExchangeId)
+                        .OrderBy(m => m.CreatedDate)
+                        .ToListAsync();
+
+                    foreach (var meeting in onlineMeetings)
                     {
-                        statusChangedBy = creator.UserName;
+                        DateTime meetingStartTime = meeting.MeetingStartTime;
+                        TimeSpan duration = TimeSpan.FromMinutes(meeting.DurationMinutes);
+                        string notes = meeting.MeetingNotes;
+                        int? createdBy = meeting.CreatorUserId;
+                        string creatorName = "N/A";
+                        if (createdBy.HasValue)
+                        {
+                            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == createdBy.Value);
+                            if (user != null)
+                                creatorName = user.UserName;
+                        }
+
+                        meetingEvents.Add(new ExchangeEventVM
+                        {
+                            EventDate = meeting.CreatedDate,
+                            EventType = "Online Meeting",
+                            StepOrMeetingType = "Session",
+                            Description = notes,
+                            Duration = duration,
+                            SessionNumber = meetingSessionNumber++,
+                            MeetingStartTime = meetingStartTime,
+                            StatusChangedByName = creatorName,
+                            MeetingRank = meeting.MeetingRating.ToString()
+                        });
                     }
-                    return new ExchangeEventVM
+                }
+                else
+                {
+                    // For in-person meetings, query the TblInPersonMeetings table.
+                    var inPersonMeetings = await _context.TblInPersonMeetings
+                        .Where(m => m.ExchangeId == exchange.ExchangeId)
+                        .OrderBy(m => m.CreatedDate)
+                        .ToListAsync();
+
+                    foreach (var meeting in inPersonMeetings)
                     {
-                        EventDate = m.CreatedDate,
-                        EventType = "Online Meeting",
-                        StepOrMeetingType = m.MeetingType, // Ensure that this property has a valid value.
-                        Description = m.MeetingNotes,
-                        Duration = duration,
-                        SessionNumber = meetingSessionNumber++,  // Assign computed session number.
-                        MeetingRank = m.MeetingRating?.ToString() ?? "-",
-                        MeetingStartTime = m.MeetingStartTime,
-                        StatusChangedByName = statusChangedBy
-                    };
-                }).ToList();
+                        DateTime meetingStartTime = meeting.MeetingScheduledDateTime ?? meeting.CreatedDate;
+                        TimeSpan duration = meeting.InpersonMeetingDurationMinutes.HasValue
+                            ? TimeSpan.FromMinutes(meeting.InpersonMeetingDurationMinutes.Value)
+                            : TimeSpan.Zero;
+                        string notes = meeting.MeetingNotes;
+                        int? createdBy = meeting.CreatedByUserId;
+                        string creatorName = "N/A";
+                        if (createdBy.HasValue)
+                        {
+                            var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == createdBy.Value);
+                            if (user != null)
+                                creatorName = user.UserName;
+                        }
+
+                        meetingEvents.Add(new ExchangeEventVM
+                        {
+                            EventDate = meeting.CreatedDate,
+                            EventType = "In-Person Meeting",
+                            StepOrMeetingType = "Session",
+                            Description = notes,
+                            Duration = duration,
+                            SessionNumber = meetingSessionNumber++,
+                            MeetingStartTime = meetingStartTime,
+                            StatusChangedByName = creatorName
+                        });
+                    }
+                }
 
                 var timelineEvents = exchange.TblExchangeHistories.Select(h =>
                 {
-                    // Option 1: If you have loaded the user names already or have a helper mapping,
                     // you can set StatusChangedByName as needed.
                     string statusChangedBy = "N/A";
-                    // For example, if h.ChangedBy is not null, you could lookup the user name.
-                    // (You could pre-load user data to avoid N+1 queries.)
                     if (h.ChangedBy.HasValue)
                     {
                         var user = _context.TblUsers.FirstOrDefault(u => u.UserId == h.ChangedBy.Value);
@@ -267,30 +316,60 @@ namespace SkillSwap_Platform.Controllers
                 // Merge and sort both events by date (for example, ascending order)
                 var allCombinedEvents = timelineEvents
                     .Concat(meetingEvents)
-                    .OrderBy(e => e.EventDate)
                     .ToList();
 
-                // Now paginate the merged list:
-                int pageSize = timelinePageSize; // Use your timelinePageSize
-                int totalCombinedCount = allCombinedEvents.Count;
-                int combinedTotalPages = (int)Math.Ceiling(totalCombinedCount / (double)pageSize);
+                if (sortOrder.ToLowerInvariant() == "asc")
+                {
+                    allCombinedEvents = allCombinedEvents.OrderBy(e => e.MeetingStartTime ?? e.EventDate).ToList();
+                }
+                else
+                {
+                    allCombinedEvents = allCombinedEvents.OrderByDescending(e => e.MeetingStartTime ?? e.EventDate).ToList();
+                }
+
+                // Paginate the combined events.
+                int totalCombinedCount = allCombinedEvents.Count();
+                int combinedTotalPages = (int)Math.Ceiling(totalCombinedCount / (double)timelinePageSize);
 
                 var pagedCombinedEvents = allCombinedEvents
-                    .Skip((timelinePage - 1) * pageSize)
-                    .Take(pageSize)
-                    .Select((e, index) => { e.SrNo = index + 1 + ((timelinePage - 1) * pageSize); return e; })
+                    .Skip((timelinePage - 1) * timelinePageSize)
+                    .Take(timelinePageSize)
+                    .Select((e, index) => { e.SrNo = index + 1 + ((timelinePage - 1) * timelinePageSize); return e; })
                     .ToList();
 
+                // For in-person meeting details, if available, get from meetingRecord.
+                string meetingLocation = "-";
+                string scheduledTime = "-";
+                if (!normalizedMode.Contains("online"))
+                {
+                    var inPersonMeetingRecord = await _context.TblInPersonMeetings.FirstOrDefaultAsync(m => m.ExchangeId == exchange.ExchangeId);
+                    if (inPersonMeetingRecord != null)
+                    {
+                        meetingLocation = inPersonMeetingRecord.MeetingLocation ?? "-";
+                        scheduledTime = inPersonMeetingRecord.MeetingScheduledDateTime.HasValue
+                            ? inPersonMeetingRecord.MeetingScheduledDateTime.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                            : "-";
+                    }
+                }
                 var viewModel = new ExchangeDetailsVM
                 {
                     Exchange = exchange,
                     Contract = contract,
+                    SelectedExchange = exchange,
                     PagedHistory = allTimelineHistory.ToList(),
-                    MeetingRecords = meetingRecords,
+                    InpersonMeetingRecords = normalizedMode.Contains("online")
+                        ? new List<TblInPersonMeeting>()
+                        : await _context.TblInPersonMeetings
+                                .Where(m => m.ExchangeId == exchange.ExchangeId)
+                                .OrderBy(m => m.CreatedDate)
+                                .ToListAsync(),
                     TimelineCurrentPage = timelinePage,
                     TimelineTotalPages = combinedTotalPages,
                     SearchTerm = search,
-                    CombinedEvents = pagedCombinedEvents
+                    CombinedEvents = pagedCombinedEvents,
+                    SortOrder = sortOrder,
+                    MeetingLocation = meetingLocation,
+                    MeetingScheduledTime = scheduledTime
                 };
 
                 viewModel.CombinedEvents = pagedCombinedEvents;

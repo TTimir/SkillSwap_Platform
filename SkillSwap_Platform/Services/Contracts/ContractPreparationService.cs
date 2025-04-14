@@ -44,8 +44,28 @@ namespace SkillSwap_Platform.Services.Contracts
                 .Select(x => new SelectListItem { Text = x.Skill.SkillName, Value = x.SkillId.ToString() })
                 .ToListAsync();
 
-            var offerSkillId = offer?.SkillIdOfferOwner.ToString();
-            var offerOwnerSkillName = receiverSkills.FirstOrDefault(x => x.Value == offerSkillId)?.Text ?? "N/A";
+            string offerOwnerSkillName = "N/A";
+            if (offer != null && !string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner))
+            {
+                // Split the comma-separated skill IDs
+                var skillIdStrings = offer.SkillIdOfferOwner.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var skillNames = new List<string>();
+                foreach (var skillIdStr in skillIdStrings)
+                {
+                    var trimmed = skillIdStr.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                    {
+                        // Look up each skill from the receiverSkills list (which is already loaded)
+                        var skillItem = receiverSkills.FirstOrDefault(r => r.Value == trimmed);
+                        if (skillItem != null)
+                        {
+                            skillNames.Add(skillItem.Text);
+                        }
+                    }
+                }
+                if (skillNames.Any())
+                    offerOwnerSkillName = string.Join(", ", skillNames);
+            }
 
             return new ContractCreationVM
             {
@@ -79,7 +99,7 @@ namespace SkillSwap_Platform.Services.Contracts
                 ContractDate = DateTime.Now,
                 TokenOffer = offer.TokenCost,
                 LearningDays = learningDays,
-                OfferedSkill = offerSkillId,
+                OfferedSkill = offerOwnerSkillName,
                 OfferOwnerSkill = offerOwnerSkillName,
                 SenderOfferedSkills = senderSkills,
                 AdditionalTerms = "",

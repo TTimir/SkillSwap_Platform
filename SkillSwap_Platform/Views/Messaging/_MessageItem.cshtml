@@ -2,6 +2,42 @@
 @using Humanizer
 @using System.Text.RegularExpressions
 
+@{
+    var exchange = Model.Exchange ?? new SkillSwap_Platform.Models.TblExchange();
+    bool isCurrentUserVerified = false;
+    var offer = Model.OfferDetails;
+
+    // Only check if exchange is not null (it should be populated in your controller)
+    if (exchange != null && exchange.ExchangeId > 0)
+    {
+        if (Model.CurrentUserID == exchange.OfferOwnerId)
+        {
+            isCurrentUserVerified = exchange.IsInpersonMeetingVerifiedByOfferOwner;
+        }
+        else if (Model.CurrentUserID == exchange.OtherUserId)
+        {
+            isCurrentUserVerified = exchange.IsInpersonMeetingVerifiedByOtherParty;
+        }
+    }
+    // Calculate the meeting end time if start time and duration are provided.
+    DateTime? meetingStart = Model.InPersonMeeting?.MeetingScheduledDateTime;
+    double? durationMinutes = Model.InPersonMeeting?.InpersonMeetingDurationMinutes;
+    DateTime? meetingEnd = null;
+    if (meetingStart.HasValue && durationMinutes.HasValue)
+    {
+        meetingEnd = meetingStart.Value.AddMinutes(durationMinutes.Value);
+    }
+    // Determine whether the meeting session has expired.
+    bool meetingExpired = meetingEnd.HasValue && DateTime.Now > meetingEnd.Value;
+    bool bothVerified = exchange.IsInpersonMeetingVerifiedByOfferOwner && exchange.IsInpersonMeetingVerifiedByOtherParty;
+
+    // Detect whether the message is a meeting card based on a marker in Model.Content.
+    bool isMeetingCard = !string.IsNullOrWhiteSpace(Model.Content) &&
+    Model.Content.Contains("[MEETING_ID:");
+
+    bool isInPersonMeetNotification = Model.MessageType == "InPersonMeetNotification";
+}
+
 <style>
     .offered-skill {
         background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
@@ -59,10 +95,9 @@
                     </span>
                 }
                 @* Offer Preview for sent messages *@
-                @if (Model.OfferDetails != null)
+                @if (offer != null && !isMeetingCard)
                 {
-                    var offer = Model.OfferDetails;
-                    <div class="navpill-style1" style="margin-bottom: 40%;">
+                    <div class="navpill-style1" style="margin-bottom: 35%;">
                         <ul class="nav nav-pills mb30" id="pills-tab" role="tablist">
                             <li class="nav-item">
                                 <button class="nav-link active fw500 dark-color">@offer.TokenCost Token</button>
@@ -141,10 +176,10 @@
                             </a>
 
 
-                            @if ((Model.ContractDetails != null) && 
-                            (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                            (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                            (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                            @if ((Model.ContractDetails != null) &&
+                           (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                    class="btn btn-sm btn-primary" style="color:#fff">
@@ -207,18 +242,144 @@
                     </div>
                 }
 
-                // Detect whether the message is a meeting card based on a marker in Model.Content.
-                bool isMeetingCard = !string.IsNullOrWhiteSpace(Model.Content) &&
-                Model.Content.Contains("[MEETING_ID:");
-
-                // Remove the marker text for meeting cards.
-                string meetingContent = isMeetingCard
-                ? Regex.Replace(Model.Content, @"\[\s*MEETING_ID:\d+\s*\]", "").Trim()
-                : string.Empty;
-
                 @if (isMeetingCard)
                 {
-                    @Html.Raw(meetingContent)
+                    @Html.Raw(Model.Content)
+                }
+                else if (Model.MessageType == "InPersonMeetNotification" && Model.Exchange != null)
+                {
+                    @Html.Raw(Model.Content)
+                    <div class="exchange-verification-card">
+                        <h5>Exchange Verification</h5>
+                        <div class="exchange-verification-info">
+                            <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
+                            <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
+                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            @if (meetingEnd.HasValue)
+                            {
+                                <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />
+                            }
+                        </div>
+                        @if (meetingExpired)
+                        {
+                            <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
+                            <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
+                                    class="ud-btn btn-light-thm mb25 me-4"
+                                    style="border:none;" disabled>
+                                Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            @if (exchange.ExchangeId > 0 && !bothVerified)
+                            {
+                                <!-- Button to open the OTP modal -->
+                                <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId" class="ud-btn btn-light-thm mb25 me-4" style="border:none; ">
+                                    Show OTP <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                            }
+                            else if (exchange.ExchangeId > 0 && bothVerified)
+                            {
+                                <p class="text-success">
+                                    Meeting verified on @Model.InPersonMeeting.InpersonMeetingVerifiedDate?.ToLocalTime().ToString("g")
+                                </p>
+                            }
+                        }
+
+                        @if (!meetingExpired && bothVerified)
+                        {
+                            <button type="button" class="ud-btn btn-thm2 me-4" data-bs-toggle="modal" data-bs-target="#proofModal">
+                                Submit Proof of Meeting <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        }
+                    </div>
+
+                    <!-- OTP Modal -->
+                    <div id="otpModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="otpModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="otpModalLabel">Meeting OTP</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    @if (meetingExpired)
+                                    {
+                                        <p class="text-danger">The meeting session has expired. OTP submission is no longer allowed.</p>
+                                    }
+                                    else
+                                    {
+                                        @if (!isCurrentUserVerified)
+                                        {
+                                            <p>
+                                                Please ask <strong id="opponentName">
+                                                    @if (Model.CurrentUserID == Model.Exchange.OfferOwnerId)
+                                                    {
+                                                        @Model.ExchangeOtherUserName
+                                                    }
+                                                    else
+                                                    {
+                                                        @Model.ExchangeOfferOwnerName
+                                                    }
+                                                </strong> for their OTP, then enter it here to verify the meeting.
+                                            </p>
+                                            <!-- The OTP value will be set dynamically via AJAX -->
+                                            <p>Your Meeting OTP: <strong id="otpValue"></strong></p>
+                                            <div class="form-group">
+                                                <input type="text" id="enteredOtp" class="form-control" placeholder="Enter OTP to verify">
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <p>You have already verified your OTP. Please share your OTP with <strong>@Model.SenderName</strong> if needed.</p>
+                                        }
+                                    }
+                                </div>
+                                <div class="modal-footer">
+                                    @if (!isCurrentUserVerified && !meetingExpired)
+                                    {
+                                        <button type="button" id="verifyOtpBtn" class="ud-btn btn-thm">Verify OTP</button>
+                                    }
+                                    <button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Camera & Proof Modal for Proof-Of-Meeting -->
+                    <input type="hidden" id="scheduledTimeInput" value="@Model.InPersonMeeting.MeetingScheduledDateTime" />
+                    <!-- Start Proof Modal -->
+                    <div class="modal fade" id="proofModal" tabindex="-1" role="dialog" aria-labelledby="proofModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <form id="proofForm" asp-action="UploadMeetingProof" asp-controller="ExchangeInPerson" method="post" enctype="multipart/form-data">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="proofModalLabel">Capture Proof of Meeting Start</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <!-- Video preview element -->
+                                        <video id="video" width="100%" autoplay></video>
+                                        <!-- Hidden canvas for snapshot -->
+                                        <canvas id="canvas" style="display:none;"></canvas>
+                                        <!-- Hidden inputs -->
+                                        <input type="hidden" name="ExchangeId" value="@Model.Exchange.ExchangeId" />
+                                        <input type="hidden" name="ProofDateTime" id="ProofDateTime" />
+                                        <input type="hidden" name="ProofLocation" id="ProofLocation" />
+                                        <input type="hidden" name="CapturedProof" id="CapturedProof" />
+                                        <!-- Preview container -->
+                                        <div id="proofPreviewContainer" style="margin-top: 10px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" id="captureBtn" class="ud-btn btn-dark">Capture Photo</button>
+                                        <button type="submit" class="ud-btn btn-thm">Submit Start Proof</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 }
                 else
                 {
@@ -234,10 +395,9 @@
             else
             {
                 @* Offer Preview for received messages *@
-                @if (Model.OfferDetails != null)
+                @if (offer != null && !isMeetingCard)
                 {
-                    var offer = Model.OfferDetails;
-                    <div class="navpill-style1" style="margin-bottom: 40%;">
+                    <div class="navpill-style1" style="margin-bottom: 35%;">
                         <ul class="nav nav-pills mb30" id="pills-tab" role="tablist">
                             <li class="nav-item">
                                 <button class="nav-link active fw500 dark-color">@offer.TokenCost Token</button>
@@ -286,6 +446,12 @@
                                     </small>
                                     <small class="text-muted d-block">
                                         <i class="flaticon-recycle me-1"></i>@offer.AssistanceRounds Assistance
+                                    </small>
+                                    <small class="text-muted d-block tag-list mb-1">
+                                        Offer Skill: <br /> <a href="#!offerskill" class="offered-skill"> @(offer.SkillNames != null ? string.Join(", ", offer.SkillNames) : "")</a>
+                                    </small>
+                                    <small class="text-muted d-block tag-list mb-1">
+                                        Interested in: <br /> <a href="#!willingskill"> @(offer.WillingSkills != null ? string.Join(", ", offer.WillingSkills) : "")</a>
                                     </small>
                                 </div>
                             </div>
@@ -384,23 +550,149 @@
                     </div>
                 }
 
-                // Detect whether the message is a meeting card based on a marker in Model.Content.
-                bool isMeetingCard = !string.IsNullOrWhiteSpace(Model.Content) &&
-                Model.Content.Contains("[MEETING_ID:");
-
-                // Remove the marker text for meeting cards.
-                string meetingContent = isMeetingCard
-                ? Regex.Replace(Model.Content, @"\[\s*MEETING_ID:\d+\s*\]", "").Trim()
-                : string.Empty;
-
                 @if (isMeetingCard)
                 {
-                    @Html.Raw(meetingContent)
+                    @Html.Raw(Model.Content)
+                }
+                else if (Model.MessageType == "InPersonMeetNotification" && Model.Exchange != null)
+                {
+                    @Html.Raw(Model.Content)
+                    <div class="exchange-verification-card">
+                        <h5>Exchange Verification</h5>
+                        <div class="exchange-verification-info">
+                            <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
+                            <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
+                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            @if (meetingEnd.HasValue)
+                            {
+                                <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />
+                            }
+                        </div>
+                        @if (meetingExpired)
+                        {
+                            <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
+                            <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
+                                    class="ud-btn btn-light-thm mb25 me-4"
+                                    style="border:none;" disabled>
+                                Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            @if (exchange.ExchangeId > 0 && !bothVerified)
+                            {
+                                <!-- Button to open the OTP modal -->
+                                <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId" class="ud-btn btn-light-thm mb25 me-4" style="border:none; ">
+                                    Show OTP <i class="fal fa-arrow-right-long"></i>
+                                </button>
+                            }
+                            else if (exchange.ExchangeId > 0 && bothVerified)
+                            {
+                                <p class="text-success">
+                                    Meeting verified on @Model.InPersonMeeting.InpersonMeetingVerifiedDate?.ToLocalTime().ToString("g")
+                                </p>
+                            }
+                        }
+
+                        @if (!meetingExpired && bothVerified)
+                        {
+                            <button type="button" class="ud-btn btn-thm2 me-4" data-bs-toggle="modal" data-bs-target="#proofModal">
+                                Submit Proof of Meeting <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        }
+                    </div>
+
+                    <!-- OTP Modal -->
+                    <div id="otpModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="otpModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="otpModalLabel">Meeting OTP</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    @if (meetingExpired)
+                                    {
+                                        <p class="text-danger">The meeting session has expired. OTP submission is no longer allowed.</p>
+                                    }
+                                    else
+                                    {
+                                        @if (!isCurrentUserVerified)
+                                        {
+                                            <p>
+                                                Please ask <strong id="opponentName">
+                                                    @if (Model.CurrentUserID == Model.Exchange.OfferOwnerId)
+                                                    {
+                                                        @Model.ExchangeOtherUserName
+                                                    }
+                                                    else
+                                                    {
+                                                        @Model.ExchangeOfferOwnerName
+                                                    }
+                                                </strong> for their OTP, then enter it here to verify the meeting.
+                                            </p>
+                                            <!-- The OTP value will be set dynamically via AJAX -->
+                                            <p>Your Meeting OTP: <strong id="otpValue"></strong></p>
+                                            <div class="form-group">
+                                                <input type="text" id="enteredOtp" class="form-control" placeholder="Enter OTP to verify">
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <p>You have already verified your OTP. Please share your OTP with <strong>@Model.SenderName</strong> if needed.</p>
+                                        }
+                                    }
+                                </div>
+                                <div class="modal-footer">
+                                    @if (!isCurrentUserVerified && !meetingExpired)
+                                    {
+                                        <button type="button" id="verifyOtpBtn" class="ud-btn btn-thm">Verify OTP</button>
+                                    }
+                                    <button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Camera & Proof Modal for Proof-Of-Meeting -->
+                    <input type="hidden" id="scheduledTimeInput" value="@Model.InPersonMeeting.MeetingScheduledDateTime" />
+                    <!-- Start Proof Modal -->
+                    <div class="modal fade" id="proofModal" tabindex="-1" role="dialog" aria-labelledby="proofModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <form id="proofForm" asp-action="UploadMeetingProof" asp-controller="ExchangeInPerson" method="post" enctype="multipart/form-data">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="proofModalLabel">Capture Proof of Meeting Start</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <!-- Video preview element -->
+                                        <video id="video" width="100%" autoplay></video>
+                                        <!-- Hidden canvas for snapshot -->
+                                        <canvas id="canvas" style="display:none;"></canvas>
+                                        <!-- Hidden inputs -->
+                                        <input type="hidden" name="ExchangeId" value="@Model.Exchange.ExchangeId" />
+                                        <input type="hidden" name="ProofDateTime" id="ProofDateTime" />
+                                        <input type="hidden" name="ProofLocation" id="ProofLocation" />
+                                        <input type="hidden" name="CapturedProof" id="CapturedProof" />
+                                        <!-- Preview container -->
+                                        <div id="proofPreviewContainer" style="margin-top: 10px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" id="captureBtn" class="ud-btn btn-dark">Capture Photo</button>
+                                        <button type="submit" class="ud-btn btn-thm">Submit Start Proof</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 }
                 else
                 {
-                    @* Only render the plain text when this is not a meeting card *@
                     <p>@Model.Content</p>
+                    @* Only render the plain text when this is not a meeting card *@
                     @if (Model.MessageType == "ResourceNotification" && Model.ResourceId.HasValue)
                     {
                         <br />
@@ -409,7 +701,6 @@
                         </button>
                     }
                 }
-
                 @if (!(Model.IsFlagged && !Model.IsApproved))
                 {
                     <span class="icon-action icon-reply" title="Reply">
@@ -583,6 +874,48 @@
             background-color: #F1FCFA;
             color: #222;
         }
+
+    /* Styling for the Exchange Verification card */
+    .exchange-verification-card {
+        border: 1px solid #007bff;
+        background: #f2f9ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        max-width: 500px;
+    }
+
+        .exchange-verification-card h5 {
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+    .exchange-verification-info {
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    /* OTP Section Styling */
+    #otpSection {
+        margin-top: 15px;
+    }
+    /* Proof of Meeting Section */
+    .proof-upload-section {
+        margin-top: 20px;
+        border: 1px solid #28a745;
+        background: #e8f5e9;
+        padding: 15px;
+        border-radius: 8px;
+        max-width: 500px;
+    }
+
+        .proof-upload-section label {
+            font-weight: bold;
+        }
+
+    .proof-preview {
+        margin-top: 10px;
+        max-width: 200px;
+    }
 
     /* Icon action styling */
     .icon-action {

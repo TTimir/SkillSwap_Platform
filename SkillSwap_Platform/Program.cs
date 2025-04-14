@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Controllers;
@@ -6,6 +7,7 @@ using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.Contracts;
+using SkillSwap_Platform.Services.Meeting;
 using SkillSwap_Platform.Services.PDF;
 using SkillSwap_Platform.Services.Repository;
 using System.Diagnostics;
@@ -35,7 +37,6 @@ builder.Services.AddDbContext<SkillSwapDbContext>(item =>
 builder.Services.AddHttpClient();
 
 // Register user service
-builder.Services.AddHostedService<ContractExpirationService>();
 builder.Services.AddScoped<IContractPreparationService, ContractPreparationService>();
 builder.Services.AddScoped<IContractHandlerService, ContractHandlerService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
@@ -46,6 +47,9 @@ builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<ISensitiveWordService, SensitiveWordService>();
 builder.Services.AddScoped<UserProfilesFilter>();
+builder.Services.AddScoped<ExchangeMeetingService>();
+builder.Services.AddHostedService<ContractExpirationService>();
+builder.Services.AddHostedService<MeetingTimeoutHostedService>();
 
 builder.Services.AddControllersWithViews(options =>
 {

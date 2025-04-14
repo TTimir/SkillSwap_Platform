@@ -161,9 +161,9 @@
         }
 
         .rating-stars {
-            display: inline-block;
-            flex-direction: row-reverse;
+            display: inline-flex;
             font-size: 1.5rem;
+            direction: rtl;
         }
 
             .rating-stars input[type="radio"] {
@@ -171,6 +171,7 @@
             }
 
             .rating-stars label {
+                direction: ltr;
                 cursor: pointer;
                 padding: 0 0.1rem;
             }
@@ -299,22 +300,8 @@
                         <div class="form-group rating-group">
                             <label>Meeting Quality/Rating<span class="text-danger">*</span>:</label>
                             <div class="rating-stars">
-                                <input type="radio" id="star1" name="Rating" value="1" required />
-                                <label for="star1" title="1 star">
-                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
-                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
-                                    </svg>
-                                </label>
-
-                                <input type="radio" id="star2" name="Rating" value="2" required />
-                                <label for="star2" title="2 stars">
-                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
-                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
-                                    </svg>
-                                </label>
-
-                                <input type="radio" id="star3" name="Rating" value="3" required />
-                                <label for="star3" title="3 stars">
+                                <input type="radio" id="star5" name="Rating" value="5" required />
+                                <label for="star5" title="5 star">
                                     <svg viewBox="0 0 576 512" width="1em" height="1em">
                                         <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
                                     </svg>
@@ -327,8 +314,22 @@
                                     </svg>
                                 </label>
 
-                                <input type="radio" id="star5" name="Rating" value="5" required />
-                                <label for="star5" title="5 stars">
+                                <input type="radio" id="star3" name="Rating" value="3" required />
+                                <label for="star3" title="3 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star2" name="Rating" value="2" required />
+                                <label for="star2" title="2 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star1" name="Rating" value="1" required />
+                                <label for="star1" title="1 stars">
                                     <svg viewBox="0 0 576 512" width="1em" height="1em">
                                         <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
                                     </svg>

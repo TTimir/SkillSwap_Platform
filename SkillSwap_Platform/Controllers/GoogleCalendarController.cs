@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Google.Apis.Auth.OAuth2.Responses;
 using SkillSwap_Platform.Models.ViewModels.MeetingVM;
+using Newtonsoft.Json.Linq;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -59,6 +60,16 @@ namespace SkillSwap_Platform.Controllers
                 {
                     _logger.LogError("Associated offer for exchange id {ExchangeId} is null.", exchangeId);
                     return NotFound("Offer not found.");
+                }
+
+                if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
+            exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                {
+                    exchange.IsInOnlineExchange = true;
+                }
+                else
+                {
+                    exchange.IsInOnlineExchange = false;
                 }
 
                 // Build a unique session key for this meeting record.
@@ -179,6 +190,37 @@ namespace SkillSwap_Platform.Controllers
                 _dbContext.TblMeetings.Add(meetingRecord);
                 await _dbContext.SaveChangesAsync();
 
+                // Check if the exchange mode is online using the ExchangeMode column.
+                // Ensure that the value comparison is case-insensitive.
+                if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
+                    exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Initialize a JSON array from the existing MeetingsJson property,
+                    // or start a new array if it's null or empty.
+                    JArray meetingsArray = string.IsNullOrEmpty(exchange.ThisMeetingLink)
+                        ? new JArray()
+                        : JArray.Parse(exchange.ThisMeetingLink);
+
+                    // Create a JSON object representing this meeting session.
+                    JObject meetingSession = new JObject
+                    {
+                        { "SessionNumber", nextSessionNumber },
+                        { "MeetingId", meetingRecord.MeetingId },
+                        { "MeetingLink", joinUrl },
+                        { "CreatedDate", DateTime.UtcNow.ToString("o") } // ISO 8601 format
+                    };
+
+                    // Add the meeting session object to the JSON array.
+                    meetingsArray.Add(meetingSession);
+
+                    // Serialize the updated JSON array back to a string and store it in the exchange record.
+                    exchange.ThisMeetingLink = meetingsArray.ToString();
+
+                    // Update the exchange record in the database.
+                    _dbContext.TblExchanges.Update(exchange);
+                    await _dbContext.SaveChangesAsync();
+                }
+
                 // Store the newly created meeting record id in session.
                 HttpContext.Session.SetInt32(sessionKey, meetingRecord.MeetingId);
 
@@ -195,6 +237,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     ExchangeId = exchange.ExchangeId,
                     OfferId = offer.OfferId,
+                    ActionType = "Online Meeting",
                     ChangeDate = DateTime.UtcNow,
                     ChangedStatus = "Meeting Launched",
                     Reason = $"Online meeting launched. Session #{meetingRecord.MeetingSessionNumber} (MeetingID: {meetingRecord.MeetingId})",
@@ -267,11 +310,11 @@ namespace SkillSwap_Platform.Controllers
                 // Log an exchange history record for tracking (adjust the mapping as per your domain model).
                 var historyRecord = new TblExchangeHistory
                 {
-                    ExchangeId = meeting.ExchangeId ?? 0,
+                    ExchangeId = meeting.ExchangeId,
                     OfferId = meeting.OfferId ?? 0,
                     ChangeDate = DateTime.UtcNow,
                     ChangedStatus = "Meeting Completed",
-                    Reason = $"Meeting feedback submitted with rating {Rating}: {meetingNotes}",
+                    Reason = $"Meeting feedback submitted with rating {Rating} and notes: {meetingNotes}",
                     // Retrieve the current user's id.
                     ChangedBy = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId) ? userId : 0
                 };
@@ -299,23 +342,22 @@ namespace SkillSwap_Platform.Controllers
                 // Build a unique prefix that helps to identify this meeting message later.
                 string meetingPrefix = $"[MEETING_ID:{meetingRecord.MeetingId}]";
                 string meetingMessageContent = $@"
-                    <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: #f9f9f9;'>
+                    {meetingPrefix}
+                    <div style='border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: rgba(91, 187, 123, 0.05);'>
                         <h4 style='margin-top: 0; font-family:Arial, sans-serif;'>Meeting Scheduled</h4>
                         <p style='font-family:Arial, sans-serif;'>
                             Meeting for <strong>{offer.Title}</strong> has been scheduled.
                         </p>
                         <div style='margin-top: 10px;'>
-                            <a href='{meetingRecord.MeetingLink}' target='_blank' class='btn btn-primary'
-                               class='ud-btn btn-light-thm'>
-                                Join Meeting <i class='fal fa-arrow-right-long'></i>
+                            <a href='{meetingRecord.MeetingLink}' target='_blank' class='ud-btn btn-light-thm me-4'>
+                                Join Meeting <i class=""fal fa-arrow-right-long""></i>
                             </a>
                         </div>
-                        <div style='margin-top:10px; font-size:0.9em; color:#555;'>
+                        <div style='margin-top:5px; font-size:0.9em; color:#555;'>
                             <p>Session Number: {meetingRecord.MeetingSessionNumber}</p>
                             <p>Meeting ID: {meetingRecord.MeetingId}</p>
                         </div>
-                    </div>
-                    {meetingPrefix}";
+                    </div>";
 
                 var meetingMessage = new TblMessage
                 {

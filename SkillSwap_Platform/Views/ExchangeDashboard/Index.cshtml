@@ -2,8 +2,8 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
-    ViewData["Title"] = "Exchange Overview";
-    ViewData["SubTitle"] = "Your go-to spot for all your exchange details. organized, clear, and simple.";
+    ViewData["Title"] = "Exchange Details";
+    ViewData["SubTitle"] = "Manage your exchange records with clarity and ease.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -59,7 +59,7 @@
                                                         @item.OfferTitle
                                                     </a>
                                                 </h5>
-                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-money fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
+                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
                                                 <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                                                 <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
                                             </div>
@@ -82,17 +82,55 @@
                                     </div>
                                 </td>
                                 <td class="vam" style="padding:0;">
-                                    @if (item.CanLaunchMeeting == true)
+                                    @if (!string.IsNullOrEmpty(item.ExchangeMode) &&
+                                   item.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <a href="@Url.Action("Authorize", "GoogleAuth", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm me-4">
-                                            Launch Meet S@("#")@(item.RecentMeetingLaunchCount + 1) <i class="fal fa-arrow-right-long"></i>
-                                        </a>
+                                        // For online mode, show the online launch meeting option.
+                                        if (item.CanLaunchMeeting)
+                                        {
+                                            <a href="@Url.Action("Authorize", "GoogleAuth", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm me-4"
+                                               data-bs-toggle="tooltip" data-bs-placement="top" title="Launch Online Meet (Session @(item.RecentMeetingLaunchCount + 1))">
+                                                Online Meet (S# @(item.RecentMeetingLaunchCount + 1)) <i class="fal fa-arrow-right-long"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="font-weight-bold text-danger"
+                                                  data-bs-toggle="tooltip" data-bs-placement="top" title="Too many online meetings have been launched. Please wait for an hour.">
+                                                <i class="fal fa-exclamation-triangle"></i> Online Meeting Limit Reached
+                                            </span>
+                                        }
                                     }
                                     else
                                     {
-                                        <span class="font-weight-bold text-danger" title="You have launched too many meetings recently. Please wait for an hour.">
-                                            <i class="fal fa-exclamation-triangle"></i> Meeting Launch Limit Reached
-                                        </span>
+                                        // For in-person mode, display a different button.
+                                        <a href="@Url.Action("ScheduleInPerson", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm me-4"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="Schedule In-Person Meet">
+                                            In-Person Meet <i class="fal fa-arrow-right-long"></i>
+                                        </a>
+                                        @if (!string.IsNullOrWhiteSpace(item.ExchangeMode) &&
+                                       item.ExchangeMode.ToLower().Contains("in-person") &&
+                                       !item.IsMeetingEnded &&
+                                       item.MeetingScheduledDateTime.HasValue && item.InpersonMeetingDurationMinutes.HasValue)
+                                        {
+                                            // Calculate the expected meeting end time.
+                                            DateTime scheduledTime = item.MeetingScheduledDateTime.Value; // assume stored in UTC
+                                            int durationMinutes = item.InpersonMeetingDurationMinutes.Value;
+                                            DateTime meetingEndTime = scheduledTime.AddMinutes(durationMinutes);
+
+                                            // Define a threshold such as 10 minutes before the expected end.
+                                            DateTime buttonThreshold = meetingEndTime.AddMinutes(-10);
+
+                                            // Check if the current time is at or after this threshold.
+                                            if (DateTime.UtcNow >= buttonThreshold)
+                                            {
+                                                <a href="@Url.Action("EnterEndMeetingDetails", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId })"
+                                                   class="ud-btn btn-thm2 me-4"
+                                                   data-bs-toggle="tooltip" data-bs-placement="top" title="Enter End Meeting Details">
+                                                    Enter Meeting End Details <i class="fal fa-arrow-right-long"></i>
+                                                </a>
+                                            }
+                                        }
                                     }
                                 </td>
                             </tr>

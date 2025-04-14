@@ -15,7 +15,7 @@
     var isSender = currentUserId == Model.SenderUserId;
     var isReceiver = currentUserId == Model.ReceiverUserId;
     // For signing mode, force editable mode for the sender.
-    if (isSender && (Model.Mode == "Create" || Model.Mode == "Edit" || Model.Mode == "Sign"))
+    if (isSender && (Model.Mode == "Create" || Model.Mode == "Edit" || Model.Mode == "Sign") || Model.Status == "Accepted")
     {
         Model.IsPreview = false;
     }
@@ -27,7 +27,7 @@
     @if (Model.IsPdfDownload)
     {
         <div class="pdf-header">
-            @if (Model.IsPreview)
+            @if (Model.IsPreview || !(Model.SenderAgreementAccepted && Model.ReceiverAgreementAccepted))
             {
                 <p class="pdf-status preview">PREVIEW: This document is a draft and is not legally binding.</p>
             }
@@ -43,7 +43,7 @@
     }
 
     <p style="font-size: 14px; font-weight: bold;">
-        Contract Unique ID: @Model.ContractUniqueId
+        Contract Unique ID: @(Model.ContractUniqueId ?? "On Create")
     </p>
     <p style="display: flex; justify-content: space-between; align-items: center;">
         @{
@@ -133,16 +133,20 @@
             1.2 In return, The Receiver agrees to provide the following skill/service:
             @if (Model.Mode == "Create")
             {
-                @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly", style = "font-size:14px;" })
+                @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly", style = "width:100%;font-size:14px;", })
             }
             else
             {
-                <span class="inline-input" style="font-size:14px;">@Model.OfferOwnerSkill</span>
+                @Html.TextBoxFor(m => m.OfferOwnerSkill, new { @class = "inline-input", placeholder = "Offer Owner Skill", @readonly = "readonly", style = "width:100%;font-size:14px;", })
+                @* <span class="inline-input" style="width:100%;font-size:14px;">@Model.OfferOwnerSkill</span> *@
             }
             under the category “<span class="inline-input" style="font-size:14px;">@Model.Category</span>,” as specified in the original offer listing.<br />
             1.3 The learning objective/description for this exchange is:
-            @Html.TextBoxFor(m => m.LearningObjective, new { @class = "inline-input", style = "font-size:14px;", @readonly = "readonly" })
-            , and the Offer Owner (Receiver) requires that the learner (Sender) possess an <span class="inline-input" style="font-size:14px;">@Model.OppositeExperienceLevel</span> level of proficiency to fully benefit from the instruction.
+            <span class="inline-input" style="width:100%; font-size:14px; white-space: pre-wrap; word-wrap: break-word;">
+                @Model.LearningObjective
+            </span>
+@*             @Html.TextAreaFor(m => m.LearningObjective, new { @class = "inline-input", style = "width:100%;font-size:14px; white-space: pre-wrap;", @rows = "5", @readonly = "readonly" })
+ *@            , and the Offer Owner (Receiver) requires that the learner (Sender) possess an <span class="inline-input" style="font-size:14px;">@Model.OppositeExperienceLevel</span> level of proficiency to fully benefit from the instruction.
             <br />
             1.4 The mode of learning/instruction is <span class="inline-input" style="font-size:14px;">@Model.ModeOfLearning</span>
             and the Offer Owner (Receiver) is available on a

@@ -66,7 +66,9 @@ namespace SkillSwap_Platform.Controllers
                             PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
                                                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
                                                 : new List<string>(),
-                            SkillNames = new List<string>(),
+                            SkillNames = !string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner)
+                                ? await GetOfferedSkillNames(tblOffer.SkillIdOfferOwner)
+                                : new List<string>(),
                             OfferOwnerId = offerOwnerId,
                             WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                         };
@@ -203,36 +205,25 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
+                // --- Prepare message view models.
                 var messageViewModels = new List<MessageItemVM>();
-                // --- NEW: For each message that has an OfferId, load its offer details and attach to the message.
+
+                // Remove the offerDisplayedInChat flag so that every offer message loads its offer preview.
                 foreach (var msg in messages)
                 {
+                    int? effectiveOfferId = msg.OfferId ?? offerId;
+
                     if (msg.OfferId.HasValue)
                     {
+                        // Load the offer details for every message that has an OfferId.
                         var tblOffer = await _context.TblOffers
                             .Include(o => o.User)
-                            .FirstOrDefaultAsync(o => o.OfferId == msg.OfferId.Value);
+                            .FirstOrDefaultAsync(o => o.OfferId == effectiveOfferId.Value);
                         if (tblOffer != null)
                         {
-                            // Prepare offered skill names list
-                            var offeredSkillNames = new List<string>();
-                            if (!string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner))
-                            {
-                                // Parse the comma-separated skill IDs into a list of ints.
-                                var offeredSkillIds = tblOffer.SkillIdOfferOwner
-                                    .Split(',')
-                                    .Select(s => s.Trim())
-                                    .Where(s => int.TryParse(s, out _))
-                                    .Select(int.Parse)
-                                    .ToList();
-
-                                // Load all skills into memory and filter by the parsed IDs.
-                                var allSkills = await _context.TblSkills.ToListAsync();
-                                offeredSkillNames = allSkills
-                                    .Where(s => offeredSkillIds.Contains(s.SkillId))
-                                    .Select(s => s.SkillName)
-                                    .ToList();
-                            }
+                            List<string> offeredSkillNames = !string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner)
+                                ? await GetOfferedSkillNames(tblOffer.SkillIdOfferOwner)
+                                : new List<string>();
 
                             msg.OfferPreview = new OfferDisplayVM
                             {
@@ -244,11 +235,20 @@ namespace SkillSwap_Platform.Controllers
                                 PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
                                                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
                                                 : new List<string>(),
-                                SkillNames = offeredSkillNames, // Populate as needed
-                                OfferOwnerId = tblOffer.UserId,
+                                SkillNames = offeredSkillNames,
+                                OfferOwnerId = tblOffer.User != null ? tblOffer.User.UserId : tblOffer.UserId,
                                 WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>()
                             };
                         }
+                        else
+                        {
+                            // In case the offer is missing from the database.
+                            msg.OfferPreview = null;
+                        }
+                    }
+                    else
+                    {
+                        msg.OfferPreview = null;
                     }
 
                     var contract = await _context.TblContracts
@@ -305,6 +305,34 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
 
+                    TblExchange? exchangeEntity = null;
+                    if (msg.MessageType == "InPersonMeetNotification" && msg.ExchangeId != null)
+                    {
+                        exchangeEntity = await _context.TblExchanges
+                                           .FirstOrDefaultAsync(e => e.ExchangeId == msg.ExchangeId);
+                    }
+                    // If this message represents an in-person meeting notification,
+                    // load the matching meeting record.
+                    TblInPersonMeeting meeting = null;
+                    if (msg.MessageType == "InPersonMeetNotification")
+                    {
+                        meeting = await _context.TblInPersonMeetings
+                                   .FirstOrDefaultAsync(m => m.ExchangeId == msg.ExchangeId);
+                    }
+
+                    // Lookup the usernames based on the exchange record, if available
+                    string exchangeOfferOwnerName = "N/A";
+                    string exchangeOtherUserName = "N/A";
+                    if (exchangeEntity != null)
+                    {
+                        var offerOwnerUser = await _context.TblUsers.FindAsync(exchangeEntity.OfferOwnerId);
+                        var otherUserEntity = await _context.TblUsers.FindAsync(exchangeEntity.OtherUserId);
+                        if (offerOwnerUser != null)
+                            exchangeOfferOwnerName = offerOwnerUser.UserName;
+                        if (otherUserEntity != null)
+                            exchangeOtherUserName = otherUserEntity.UserName;
+                    }
+
                     messageViewModels.Add(new MessageItemVM
                     {
                         MessageId = msg.MessageId,
@@ -322,12 +350,16 @@ namespace SkillSwap_Platform.Controllers
                         IsRead = msg.IsRead,
                         IsFlagged = msg.IsFlagged,
                         IsApproved = msg.IsApproved,
-                        OfferDetails = msg.OfferId.HasValue ? msg.OfferPreview : null,
+                        OfferDetails = msg.OfferPreview,
                         ExchangeId = exchangeId,
                         OfferId = offerId,
                         ContractDetails = contract,
                         OfferedSkillName = offeredSkillName,
                         ReceiverSkillName = exchangeSkillName,
+                        Exchange = exchangeEntity,
+                        InPersonMeeting = meeting,
+                        ExchangeOfferOwnerName = exchangeOfferOwnerName,
+        ExchangeOtherUserName = exchangeOtherUserName
                     });
                 }
 
@@ -418,39 +450,48 @@ namespace SkillSwap_Platform.Controllers
 
                     // Check for duplicate offer: if an offer is attached, ensure no message from this sender
                     // to the receiver already has it.
-                    int? finalOfferId = null;
-                    if (int.TryParse(Request.Form["attachedOfferId"], out int parsedOfferId))
+                    int? usedOfferId = null;
+                    if (int.TryParse(Request.Form["offerId"], out int parsedOfferId))
                     {
-                        finalOfferId = parsedOfferId;
-                    }
-                    finalOfferId ??= offerId;
-
-                    // 1. Check in TblMessages if an offer has already been sent in this conversation.
-                    if (finalOfferId.HasValue)
-                    {
-                        bool offerAlreadySent = await _context.TblMessages.AnyAsync(m =>
-                            m.SenderUserId == senderUserId &&
-                            m.ReceiverUserId == receiverUserId &&
-                            m.OfferId == finalOfferId.Value);
-                        if (offerAlreadySent)
-                        {
-                            string errorMsg = "Offer already sent in the conversation.";
-                            return Json(new { success = false, error = errorMsg });
-                        }
+                        usedOfferId = parsedOfferId;
                     }
 
-                    // 2. Check in TblContracts if a contract already exists for this conversation.
-                    if (finalOfferId.HasValue)
+                    // 1. Check in TblContracts if a contract already exists for this conversation.
+                    if (usedOfferId.HasValue)
                     {
-                        bool contractExists = await _context.TblContracts.AnyAsync(c =>
-                            c.MessageId == offerId && // or use an appropriate identifier from your conversation context
-                            ((c.SenderUserId == senderUserId && c.ReceiverUserId == receiverUserId) ||
-                             (c.SenderUserId == receiverUserId && c.ReceiverUserId == senderUserId))
-                        );
-                        if (contractExists)
+                        var existingContract = await _context.TblContracts
+                            .Where(c =>
+                                c.OfferId == usedOfferId.Value &&
+                                ((c.SenderUserId == senderUserId && c.ReceiverUserId == receiverUserId) ||
+                                 (c.SenderUserId == receiverUserId && c.ReceiverUserId == senderUserId))
+                            )
+                            .OrderByDescending(c => c.DeclinedDate ?? c.CreatedDate)
+                            .FirstOrDefaultAsync();
+
+                        if (existingContract != null)
                         {
-                            string errorMsg = "A contract for this conversation has already been sent.";
-                            return Json(new { success = false, error = errorMsg });
+                            if (existingContract.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string errorMsg = "A contract for this conversation has already been accepted.";
+                                return Json(new { success = false, error = errorMsg });
+                            }
+
+                            if (existingContract.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                            {
+                                DateTime referenceDate = existingContract.DeclinedDate ?? existingContract.CreatedDate;
+                                if ((DateTime.UtcNow - referenceDate).TotalDays < 5)
+                                {
+                                    string errorMsg = "You can resend the contract invite only 5 days after the previous invite was declined.";
+                                    return Json(new { success = false, error = errorMsg });
+                                }
+                            }
+
+                            if (existingContract.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase)
+                                || existingContract.Status.Equals("Review", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string errorMsg = "A contract for this conversation is already pending review.";
+                                return Json(new { success = false, error = errorMsg });
+                            }
                         }
                     }
 
@@ -486,7 +527,7 @@ namespace SkillSwap_Platform.Controllers
                         SentDate = DateTime.UtcNow,
                         IsRead = false,
                         IsFlagged = false,
-                        OfferId = offerId,
+                        OfferId = usedOfferId,
                         MessageType = messageType
                     };
 
@@ -582,13 +623,15 @@ namespace SkillSwap_Platform.Controllers
 
                     // Load offer details if an offerId is provided
                     OfferDisplayVM offerDisplay = null;
-                    if (offerId.HasValue)
+                    if (usedOfferId.HasValue)
                     {
                         var tblOffer = await _context.TblOffers
                             .Include(o => o.User)
-                            .FirstOrDefaultAsync(o => o.OfferId == offerId.Value);
+                            .FirstOrDefaultAsync(o => o.OfferId == usedOfferId.Value);
                         if (tblOffer != null)
                         {
+                            int offerOwnerId = (tblOffer.User != null) ? tblOffer.User.UserId : tblOffer.UserId;
+
                             offerDisplay = new OfferDisplayVM
                             {
                                 OfferId = tblOffer.OfferId,
@@ -599,10 +642,14 @@ namespace SkillSwap_Platform.Controllers
                                 PortfolioUrls = !string.IsNullOrWhiteSpace(tblOffer.Portfolio)
                                                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(tblOffer.Portfolio)
                                                 : new List<string>(),
-                                SkillNames = new List<string>(),
+                                SkillNames = !string.IsNullOrWhiteSpace(tblOffer.SkillIdOfferOwner)
+                                        ? await GetOfferedSkillNames(tblOffer.SkillIdOfferOwner)
+                                        : new List<string>(),
                                 OfferOwnerId = tblOffer.UserId,
                                 WillingSkills = tblOffer.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>()
                             };
+
+                            ViewBag.OfferDetails = offerDisplay;
                         }
                     }
 
@@ -665,6 +712,24 @@ namespace SkillSwap_Platform.Controllers
             if (int.TryParse(userIdClaim, out int userId))
                 return userId;
             throw new Exception("User ID not found in claims.");
+        }
+        private async Task<List<string>> GetOfferedSkillNames(string skillIds)
+        {
+            if (string.IsNullOrWhiteSpace(skillIds))
+                return new List<string>();
+
+            var offeredSkillIds = skillIds
+                .Split(',')
+                .Select(s => s.Trim())
+                .Where(s => int.TryParse(s, out _))
+                .Select(int.Parse)
+                .ToList();
+
+            var allSkills = await _context.TblSkills.ToListAsync();
+            return allSkills
+                .Where(s => offeredSkillIds.Contains(s.SkillId))
+                .Select(s => s.SkillName)
+                .ToList();
         }
 
         /// <summary>

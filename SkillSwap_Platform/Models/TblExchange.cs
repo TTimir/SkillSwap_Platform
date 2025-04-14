@@ -39,7 +39,21 @@ public partial class TblExchange
 
     public int? OtherUserId { get; set; }
 
+    public bool IsInOnlineExchange { get; set; }
+
+    public bool IsInPersonExchange { get; set; }
+
     public string? ThisMeetingLink { get; set; }
+
+    public bool IsInpersonMeetingVerified { get; set; }
+
+    public string? InpersonMeetingOtp { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOfferOwner { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOtherParty { get; set; }
+
+    public bool IsMeetingEnded { get; set; }
 
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
@@ -50,6 +64,14 @@ public partial class TblExchange
     public virtual TblSkill? SkillIdRequesterNavigation { get; set; }
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
+
+    public virtual ICollection<TblExchangeSkill> TblExchangeSkills { get; set; } = new List<TblExchangeSkill>();
+
+    public virtual ICollection<TblInPersonMeeting> TblInPersonMeetings { get; set; } = new List<TblInPersonMeeting>();
+
+    public virtual ICollection<TblInpersonMeetingProof> TblInpersonMeetingProofs { get; set; } = new List<TblInpersonMeetingProof>();
+
+    public virtual ICollection<TblMeeting> TblMeetings { get; set; } = new List<TblMeeting>();
 
     public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 

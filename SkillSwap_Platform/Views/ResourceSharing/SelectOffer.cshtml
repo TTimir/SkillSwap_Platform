@@ -1,17 +1,44 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceSelectionVM
 
 @{
-    ViewData["Title"] = "Select Offer";
+    ViewData["Title"] = "Resource Exchange";
+    ViewData["SubTitle"] = "Easily share your resources and create rewarding exchanges.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="col-lg-12">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
-        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+        <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
 </div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <div class="row">
     <div class="col-xl-12">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
@@ -51,10 +78,8 @@
                                     </th>
                                     <td class="vam"><span class="pending-style style2">@offer.Status</span></td>
                                     <td class="vam">
-                                        <a asp-controller="ResourceSharing" asp-action="Create" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Share a Resource" class="table-action fz15 fw500 text-thm2"><span class="fal fa-arrow-right-long me-2 vam" style="transform:rotate(-45deg)"></span> Share Resource</a>
-                                        <br />
-                                        <br />
-                                        <a asp-controller="ResourceSharing" asp-action="List" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Shared Resources" class="table-action fz15 fw500 text-thm2"><span class="flaticon-file-1 me-2 vam"></span> Shared Resources</a>
+                                        <a asp-controller="ResourceSharing" asp-action="Create" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Share a Resource" class="table-action fz15 fw500 text-thm2"><span class="flaticon-rocket me-2 vam" style="transform:rotate(-45deg)"></span> Share</a>
+                                        <a asp-controller="ResourceSharing" asp-action="List" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Shared Resources" class="table-action fz15 fw500 text-thm2"><span class="flaticon-file-1 me-2 vam"></span> Resources</a>
                                     </td>
                                 </tr>
                             }

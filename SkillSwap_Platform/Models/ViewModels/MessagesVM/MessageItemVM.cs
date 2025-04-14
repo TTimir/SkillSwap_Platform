@@ -35,7 +35,13 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public OfferDisplayVM OfferDetails { get; set; }
 
         public int ExchangeId { get; set; }
-        
+
+        public TblExchange? Exchange { get; set; }
+        public TblInPersonMeeting? InPersonMeeting { get; set; }
+
+        public string ExchangeOfferOwnerName { get; set; }
+        public string ExchangeOtherUserName { get; set; }
+
         public TblContract? ContractDetails { get; set; }
         public bool IsContractPending => ContractDetails?.Status == "Pending";
 

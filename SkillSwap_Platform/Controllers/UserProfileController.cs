@@ -116,7 +116,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     OfferId = o.OfferId,
                     Title = o.Title,
-                   Designation = user.Designation,
+                    Designation = user.Designation,
                     Category = o.Category,
                     Description = o.Description,
                     TimeCommitmentDays = o.TimeCommitmentDays,

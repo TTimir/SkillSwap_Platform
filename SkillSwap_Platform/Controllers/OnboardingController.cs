@@ -85,7 +85,7 @@ namespace SkillSwap_Platform.Controllers
 
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    
+
                     return RedirectToAction(nameof(ProfileCompletion));
                 }
                 catch (Exception ex)

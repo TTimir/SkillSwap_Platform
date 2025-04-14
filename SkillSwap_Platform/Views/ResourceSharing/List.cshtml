@@ -1,14 +1,15 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceListVM
 
 @{
-    ViewData["Title"] = "List";
+    ViewData["Title"] = "Resource Exchanges";
+    ViewData["SubTitle"] = "Keep track of what you’ve shared and received, all in one place.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="col-lg-9">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
-        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+        <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
 <div class="col-lg-3">
@@ -19,6 +20,32 @@
     </div>
 </div>
 </div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <div class="row">
     <div class="col-xl-12">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
@@ -72,7 +99,7 @@
                                                         }
                                                         else
                                                         {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-document"></span></a>
+                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
                                                         }
                                                     </div>
                                                 </td>
@@ -184,7 +211,7 @@
                                                         }
                                                         else
                                                         {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-document"></span></a>
+                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
                                                         }
                                                     </div>
                                                 </td>

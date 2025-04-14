@@ -1,9 +1,20 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.ExchangeDetailsVM
 
 @{
-    ViewData["Title"] = "Exchange History & Timeline";
+    ViewData["Title"] = "Exchange Timeline";
     ViewData["SubTitle"] = "Review your exchange journey, every update and milestone captured for you.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var exchange = Model.SelectedExchange;
+    // Normalize the exchange mode so that we can correctly handle different variants.
+    string modeRaw = Model.Exchange.ExchangeMode ?? "";
+    string mode = modeRaw.Trim().ToLowerInvariant();
+
+    bool isOnline = mode == "online";
+    bool isInPerson = mode.Contains("inperson") || mode.Contains("in person") || mode.Contains("in-person");
+
+    var currentSortOrder = Model.SortOrder?.ToLowerInvariant() ?? "desc";
+    string toggleSortOrder = currentSortOrder == "asc" ? "desc" : "asc";
 }
 
 <div class="row align-items-center justify-content-between pb40">
@@ -65,75 +76,149 @@
                         <tr>
                             <td colspan="6">
                                 <strong>Timeline / Changes:</strong>
-                                <table class="table table-borderless">
-                                    <thead class="t-head">
-                                        <tr>
-                                            <th>Sr. No</th>
-                                            <th>Date</th>
-                                            <th>Meeting Start Time</th>
-                                            <th>Type</th>
-                                            <th>Step</th>
-                                            <th>Description / Notes</th>
-                                            <th>Session (#)</th>
-                                            <th>Duration</th>
-                                            <th>Rank</th>
-                                            <th>Status Changed By</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="t-body">
-                                        @{
-                                            // Assuming MeetingRecords is a collection of meeting objects with a MeetingStartTime property.
-                                            // For example, choose the most recent meeting by MeetingStartTime.
-                                            var lastMeeting = Model.MeetingRecords?.OrderByDescending(m => m.MeetingStartTime).FirstOrDefault();
-                                            var meetingStartTime = lastMeeting?.MeetingStartTime;
-                                        }
-                                        @if (Model.CombinedEvents != null && Model.CombinedEvents.Any())
-                                        {
-                                            foreach (var ev in Model.CombinedEvents)
-                                            {
-                                                <tr>
-                                                    <td>@ev.SrNo</td>
-                                                    <td>@ev.EventDate.ToString("dd MMM yyyy, HH:mm")</td>
-                                                    <td>
-                                                        @(ev.MeetingStartTime != null ? ev.MeetingStartTime.Value.ToString("dd MMM yyyy, HH:mm") : "-")
-                                                    </td>
-                                                    <td>@ev.EventType</td>
-                                                    <td>@ev.StepOrMeetingType</td>
-                                                    <td>@ev.Description</td>
-                                                    <td>
-                                                        @if (ev.SessionNumber.HasValue)
+                                @if (Model.CombinedEvents != null && Model.CombinedEvents.Any())
+                                {
+                                    <table class="table table-borderless">
+                                        <thead class="t-head">
+                                            <tr>
+                                                <th>Sr. No</th>
+                                                <th>
+                                                    <a href="@Url.Action("Details", new {
+                                                            id = Model.Exchange.ExchangeId,
+                                                            timelinePage = Model.TimelineCurrentPage,
+                                                            search = Model.SearchTerm,
+                                                            sortOrder = toggleSortOrder
+                                                        })" style="text-decoration:none; color:inherit;">
+                                                        Date
+                                                        @if (currentSortOrder == "asc")
                                                         {
-                                                            @ev.SessionNumber.Value
+                                                            <i class="fas fa-sort-up" title="Arrange in Asc Order"></i>
                                                         }
                                                         else
                                                         {
-                                                            @("-")
+                                                            <i class="fas fa-sort-down" title="Arrange in Desc Order"></i>
                                                         }
-                                                    </td>
-                                                    <td>@(ev.Duration.HasValue ? $"{ev.Duration.Value.TotalMinutes} mins" : "-")</td>
-                                                    <td>
-                                                        @(ev.MeetingRank ?? "-")
-                                                        @if (ev.MeetingRank != null)
+                                                </th>
+                                                @if (isOnline)
+                                                {
+                                                    <th>Meeting Start Time</th>
+                                                }
+                                                else if (isInPerson)
+                                                {
+                                                    <th>Meeting Location</th>
+                                                    <th>Scheduled Time</th>
+                                                }
+                                                <th>Type</th>
+                                                @if (isOnline)
+                                                {
+                                                    <th>Step</th>
+                                                }
+                                                <th>Description / Notes</th>
+                                                @if (isOnline)
+                                                {
+                                                    <th>Session (#)</th>
+                                                    <th>Duration</th>
+                                                }
+                                                @if (isOnline)
+                                                {
+                                                    <th>Rating</th>
+                                                }
+                                                <th>Changed By</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="t-body">
+                                            @{
+                                                // Assuming MeetingRecords is a collection of meeting objects with a MeetingStartTime property.
+                                                var lastMeeting = Model.MeetingRecords?.OrderByDescending(m => m.MeetingStartTime).FirstOrDefault();
+                                                var meetingStartTime = lastMeeting?.MeetingStartTime;
+                                            }
+                                            @if (Model.CombinedEvents != null && Model.CombinedEvents.Any())
+                                            {
+                                                foreach (var ev in Model.CombinedEvents)
+                                                {
+                                                    <tr>
+                                                        <td>@ev.SrNo</td>
+                                                        <td>@ev.EventDate.ToString("dd MMM yyyy, HH:mm")</td>
+                                                        @if (isOnline)
                                                         {
-                                                            <svg viewBox="0 0 576 512" width="1em" height="1em">
-                                                                <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
-                                                            </svg>
+                                                            <td>
+                                                                @if (ev.MeetingStartTime != null)
+                                                                {
+                                                                    @(ev.MeetingStartTime != null ? ev.MeetingStartTime.Value : "-")
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>-</span>
+                                                                }
+                                                            </td>
                                                         }
-                                                    </td>
-                                                    <td>
-                                                        @(ev.StatusChangedByName ?? "-")
-                                                    </td>
+                                                        else if (isInPerson)
+                                                        {
+                                                            <td>
+                                                                @if (!string.IsNullOrEmpty(Model.MeetingLocation))
+                                                                {
+                                                                    @Model.MeetingLocation
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>-</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                @if (!string.IsNullOrEmpty(Model.MeetingScheduledTime))
+                                                                {
+                                                                    @Model.MeetingScheduledTime
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>-</span>
+                                                                }
+                                                            </td>
+                                                        }
+                                                        <td>@ev.EventType</td>
+                                                        @if (isOnline)
+                                                        {
+                                                            <td>@ev.StepOrMeetingType</td>
+                                                        }
+                                                        <td>@ev.Description</td>
+                                                        @if (isOnline)
+                                                        {
+                                                            <td>
+                                                                @if (ev.SessionNumber.HasValue)
+                                                                {
+                                                                    @ev.SessionNumber.Value
+                                                                }
+                                                                else
+                                                                {
+                                                                    @("-")
+                                                                }
+                                                            </td>
+                                                            <td>@(ev.Duration.HasValue ? $"{ev.Duration.Value.TotalMinutes} mins" : "-")</td>
+                                                            <td>
+                                                                @(ev.MeetingRank ?? "-")
+                                                                @if (ev.MeetingRank != null)
+                                                                {
+                                                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                                                    </svg>
+                                                                }
+                                                            </td>
+                                                        }
+                                                        <td>
+                                                            @(ev.StatusChangedByName ?? "-")
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="3">No timeline steps available.</td>
                                                 </tr>
                                             }
-                                        }
-                                        else
-                                        {
-                                            <tr>
-                                                <td colspan="3">No timeline steps available.</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                }
                             </td>
                         </tr>
                     </tbody>

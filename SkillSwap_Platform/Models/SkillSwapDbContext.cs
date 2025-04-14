@@ -28,7 +28,13 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblExchangeHistory> TblExchangeHistories { get; set; }
 
+    public virtual DbSet<TblExchangeSkill> TblExchangeSkills { get; set; }
+
     public virtual DbSet<TblExperience> TblExperiences { get; set; }
+
+    public virtual DbSet<TblInPersonMeeting> TblInPersonMeetings { get; set; }
+
+    public virtual DbSet<TblInpersonMeetingProof> TblInpersonMeetingProofs { get; set; }
 
     public virtual DbSet<TblKycUpload> TblKycUploads { get; set; }
 
@@ -61,7 +67,6 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserReport> TblUserReports { get; set; }
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
-
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
 
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
@@ -95,12 +100,14 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.ContractId).HasName("PK__TblContr__C90D3469E662177B");
 
+            entity.Property(e => e.AcceptedDate).HasColumnType("datetime");
             entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
             entity.Property(e => e.Category).HasMaxLength(100);
             entity.Property(e => e.ContractUniqueId)
                 .HasMaxLength(100)
                 .HasDefaultValue("");
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.DeclinedDate).HasColumnType("datetime");
             entity.Property(e => e.FlowDescription).HasDefaultValue("");
             entity.Property(e => e.ModeOfLearning).HasMaxLength(50);
             entity.Property(e => e.OfferOwnerAvailability).HasMaxLength(100);
@@ -184,6 +191,9 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ExchangeMode)
                 .HasMaxLength(20)
                 .HasDefaultValue("Online");
+            entity.Property(e => e.InpersonMeetingOtp)
+                .HasMaxLength(100)
+                .HasColumnName("InpersonMeetingOTP");
             entity.Property(e => e.LastStatusChangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -194,10 +204,7 @@ public partial class SkillSwapDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
             entity.Property(e => e.StatusChangeReason).HasMaxLength(500);
-            entity.Property(e => e.ThisMeetingLink)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasColumnName("thisMeetingLink");
+            entity.Property(e => e.ThisMeetingLink).HasColumnName("thisMeetingLink");
             entity.Property(e => e.TokensPaid).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.LastStatusChangedByNavigation).WithMany(p => p.TblExchanges)
@@ -225,13 +232,16 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblExchangeHistory");
 
             entity.Property(e => e.HistoryId).HasColumnName("HistoryID");
+            entity.Property(e => e.ActionType).HasMaxLength(50);
             entity.Property(e => e.ChangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ChangedStatus).HasMaxLength(50);
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.MeetingVerifiedDate).HasColumnType("datetime");
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
             entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.VerificationNote).HasMaxLength(500);
 
             entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.TblExchangeHistories)
                 .HasForeignKey(d => d.ChangedBy)
@@ -241,6 +251,25 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.ExchangeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblExchangeHistory_Exchange");
+        });
+
+        modelBuilder.Entity<TblExchangeSkill>(entity =>
+        {
+            entity.HasKey(e => e.ExchangeSkillId).HasName("PK__tblExcha__1DA7221AAE6F3C7B");
+
+            entity.ToTable("tblExchangeSkills");
+
+            entity.Property(e => e.Role).HasMaxLength(50);
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblExchangeSkills)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblExchangeSkills_Exchange");
+
+            entity.HasOne(d => d.Skill).WithMany(p => p.TblExchangeSkills)
+                .HasForeignKey(d => d.SkillId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblExchangeSkills_Skills");
         });
 
         modelBuilder.Entity<TblExperience>(entity =>
@@ -263,6 +292,55 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblExperience_Users");
+        });
+
+        modelBuilder.Entity<TblInPersonMeeting>(entity =>
+        {
+            entity.HasKey(e => e.InPersonMeetingId).HasName("PK__TblInPer__32D8C5478EC8E95C");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.InpersonMeetingOtpOfferOwner).HasMaxLength(50);
+            entity.Property(e => e.InpersonMeetingOtpOtherParty).HasMaxLength(50);
+            entity.Property(e => e.InpersonMeetingVerifiedDate).HasColumnType("datetime");
+            entity.Property(e => e.InpersonMeetingVerifiedDateOfferOwner).HasColumnType("datetime");
+            entity.Property(e => e.InpersonMeetingVerifiedDateOtherParty).HasColumnType("datetime");
+            entity.Property(e => e.MeetingLocation).HasMaxLength(255);
+            entity.Property(e => e.MeetingScheduledDateTime).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblInPersonMeetings)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblInPersonMeetings_TblExchanges");
+        });
+
+        modelBuilder.Entity<TblInpersonMeetingProof>(entity =>
+        {
+            entity.HasKey(e => e.ProofId).HasName("PK__TblInper__E33C700C8A22B7C5");
+
+            entity.ToTable("TblInpersonMeetingProof");
+
+            entity.Property(e => e.CapturedByUsername).HasMaxLength(255);
+            entity.Property(e => e.EndProofDateTime).HasColumnType("datetime");
+            entity.Property(e => e.EndProofImageUrl).HasMaxLength(255);
+            entity.Property(e => e.EndProofLocation).HasMaxLength(255);
+            entity.Property(e => e.StartProofDateTime).HasColumnType("datetime");
+            entity.Property(e => e.StartProofImageUrl)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.StartProofLocation)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+            entity.Property(e => e.UploadedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblInpersonMeetingProofs)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblMeetingProof_TblExchanges");
         });
 
         modelBuilder.Entity<TblKycUpload>(entity =>
@@ -307,6 +385,8 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.MeetingId).HasName("PK__TblMeeti__E9F9E94CE58BA0C1");
 
+            entity.ToTable("tblMeetings");
+
             entity.Property(e => e.ActualEndTime).HasColumnType("datetime");
             entity.Property(e => e.ActualStartTime).HasColumnType("datetime");
             entity.Property(e => e.CreatedDate)
@@ -321,6 +401,11 @@ public partial class SkillSwapDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Scheduled");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblMeetings)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblMeetings_Exchange");
         });
 
         modelBuilder.Entity<TblMessage>(entity =>
@@ -503,7 +588,9 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.ToTable("tblSkills");
 
-            entity.Property(e => e.SkillId).HasColumnName("SkillID");
+            entity.Property(e => e.SkillId)
+                .ValueGeneratedNever()
+                .HasColumnName("SkillID");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.SkillCategory).HasMaxLength(100);
             entity.Property(e => e.SkillName).HasMaxLength(100);

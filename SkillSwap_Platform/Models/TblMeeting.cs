@@ -37,9 +37,11 @@ public partial class TblMeeting
 
     public string? Location { get; set; }
 
-    public int? ExchangeId { get; set; }
+    public int ExchangeId { get; set; }
 
     public int MeetingSessionNumber { get; set; }
 
     public int? MeetingRating { get; set; }
+
+    public virtual TblExchange Exchange { get; set; } = null!;
 }

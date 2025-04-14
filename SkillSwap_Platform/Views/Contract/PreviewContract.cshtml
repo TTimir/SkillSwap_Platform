@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Contract Preview";
-    if (Model.Mode != "Edit" && Model.Mode != "Sign")
+    if (Model.Mode != "Edit" && Model.Mode != "Sign" && Model.Status != "Accepted")
     {
         Model.IsPreview = true;
     }
@@ -238,7 +238,7 @@
         if (Model.IsPdfDownload)
         {
             // When generating the PDF, use a different watermark based on preview vs. final state.
-            if (Model.IsPreview)
+            if (Model.IsPreview || !(Model.SenderAgreementAccepted && Model.ReceiverAgreementAccepted))
             {
                 watermarkText = "PREVIEW ONLY – Not Yet Signed";
             }
@@ -246,7 +246,7 @@
             {
                 watermarkText = "REVIEW VERSION – Subject to Final Approval";
             }
-            else
+            else if (Model.Version >= 3)
             {
                 watermarkText = "FINALIZED – Legally Binding";
             }

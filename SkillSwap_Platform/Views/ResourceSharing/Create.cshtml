@@ -1,14 +1,15 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceInputVM
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Share Your Resource";
+    ViewData["SubTitle"] = "Tell us about your resource and share it off to spark a meaningful exchange.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <div class="col-lg-9">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
-        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+        <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
 <div class="col-lg-3">
@@ -53,6 +54,7 @@
             </div>
             <div class="col-xl-8">
                 <form id="resourceForm" asp-action="Create" class="form-style1" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="OwnerUserId" />
                     <input type="hidden" asp-for="ExchangeId" />
                     <input type="hidden" asp-for="OfferId" />
