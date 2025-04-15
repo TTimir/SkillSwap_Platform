@@ -4,6 +4,7 @@ using SkillSwap_Platform.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.CodeAnalysis.Text;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -27,24 +28,18 @@ namespace SkillSwap_Platform.Controllers
                 int currentUserId = GetCurrentUserId();
                 int pageSize = 5;
 
-                // Count total exchanges for current user
-                var totalExchanges = await _context.TblExchanges
-                    .Where(e => (e.OtherUserId ?? 0) == currentUserId
-                        || (e.OfferOwnerId ?? 0) == currentUserId)
-                    .CountAsync();
-
-                int totalPages = (int)Math.Ceiling(totalExchanges / (double)pageSize);
-
                 // Retrieve exchanges where the current user is either the requester or the offer owner
                 var exchanges = await _context.TblExchanges
                     .Include(e => e.Offer)
                     .Where(e => (e.OtherUserId ?? 0) == currentUserId
                         || (e.OfferOwnerId ?? 0) == currentUserId)
                     .OrderByDescending(e => e.ExchangeDate)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
                     .ToListAsync();
 
+                // Filter active exchanges only.
+                exchanges = exchanges
+                    .Where(e => !e.IsCompleted && !e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
                 var dashboardItems = new List<ExchangeDashboardItemVM>();
 
                 // Define a threshold and time window.
@@ -131,7 +126,20 @@ namespace SkillSwap_Platform.Controllers
                         }
                     }
 
-                    dashboardItems.Add(new ExchangeDashboardItemVM
+                    // In the dashboard Items loop
+                    bool isOnlineCompleted = false;
+                    if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
+                        exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Find at least one online meeting session for this exchange marked as Completed.
+                        var onlineMeetingCompleted = await _context.TblMeetings
+                            .Where(m => m.ExchangeId == exchange.ExchangeId && m.Status == "Completed")
+                            .FirstOrDefaultAsync();
+                        isOnlineCompleted = (onlineMeetingCompleted != null);
+                    }
+
+                    // Build the dashboard item.
+                    var dashboardItem = new ExchangeDashboardItemVM
                     {
                         Exchange = exchange,
                         History = history,
@@ -150,17 +158,28 @@ namespace SkillSwap_Platform.Controllers
                         RecentMeetingLaunchCount = totalSessionsCount,
                         Category = exchange.Offer.Category,
                         Token = contract.TokenOffer,
+                        IsOnlineMeetingCompleted = isOnlineCompleted,
                         IsMeetingEnded = exchange.IsMeetingEnded,
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
                         InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
-                    });
+                    };
+
+                    dashboardItems.Add(dashboardItem);
                 }
+
+                // Implement paging on active dashboard items.
+                int totalActive = dashboardItems.Count;
+                var pagedActive = dashboardItems
+                    .OrderByDescending(item => item.Exchange.ExchangeDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
 
                 var viewModel = new ExchangeDashboardVM
                 {
-                    ExchangeItems = dashboardItems,
+                    ActiveExchangeItems = pagedActive,
                     CurrentPage = page,
-                    TotalPages = totalPages
+                    TotalPages = (int)Math.Ceiling(totalActive / (double)pageSize)
                 };
 
                 return View(viewModel);
@@ -169,6 +188,161 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading exchange dashboard for user {UserId}", GetCurrentUserId());
                 TempData["ErrorMessage"] = "An error occurred while loading the exchange dashboard.";
+                return RedirectToAction("Error", "Home");
+            }
+        }
+
+        // GET: /ExchangeDashboard/ExchangeHistory
+        [Authorize]
+        public async Task<IActionResult> ExchangeHistory(int completedPage = 1, int declinedPage = 1)
+        {
+            try
+            {
+                int currentUserId = GetCurrentUserId();
+                int pageSize = 5;
+
+                // Retrieve all exchanges for the current user.
+                var exchanges = await _context.TblExchanges
+                    .Include(e => e.Offer)
+                    .Where(e => (e.OtherUserId ?? 0) == currentUserId || (e.OfferOwnerId ?? 0) == currentUserId)
+                    .OrderByDescending(e => e.ExchangeDate)
+                    .ToListAsync();
+
+                // Filter history exchanges into two categories:
+                // Completed: exchanges that are marked as completed (and not declined).
+                // Declined: exchanges whose Status equals "Declined" (you could also check for another flag if needed).
+                var completedExchanges = exchanges
+                    .Where(e => e.IsCompleted && !e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                var declinedExchanges = exchanges
+                    .Where(e => e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                // Build dashboard items for both lists.
+                Func<TblExchange, Task<ExchangeDashboardItemVM>> buildDashboardItem = async (exchange) =>
+                {
+                    var meetingRecord = await _context.TblInPersonMeetings.FirstOrDefaultAsync(m => m.ExchangeId == exchange.ExchangeId);
+
+                    var history = await _context.TblExchangeHistories
+                        .Where(h => h.ExchangeId == exchange.ExchangeId)
+                        .OrderByDescending(h => h.ChangeDate)
+                        .ToListAsync();
+
+                    int offerOwnerId = exchange.OfferOwnerId ?? 0;
+                    int otherUserIdFromExchange = exchange.OtherUserId ?? 0;
+                    int otherUserId = (currentUserId == offerOwnerId) ? otherUserIdFromExchange : offerOwnerId;
+
+                    int totalSessionsCount = await _context.TblMeetings
+                        .Where(m => m.ExchangeId == exchange.ExchangeId)
+                        .CountAsync();
+
+                    string offerImageUrl = "/template_assets/images/default-offer.png";
+                    if (exchange.Offer != null && !string.IsNullOrEmpty(exchange.Offer.Portfolio))
+                    {
+                        var portfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(exchange.Offer.Portfolio);
+                        if (portfolioUrls != null && portfolioUrls.Any())
+                        {
+                            offerImageUrl = portfolioUrls.First();
+                        }
+                    }
+
+                    var contract = await _context.TblContracts
+                        .Where(c => c.OfferId == exchange.OfferId)
+                        .OrderByDescending(c => c.ContractId)
+                        .FirstOrDefaultAsync();
+                    string contractUniqueId = contract != null ? contract.ContractUniqueId : exchange.ExchangeId.ToString();
+
+                    string lastStatusChangedByName = "N/A";
+                    if (exchange.LastStatusChangedBy.HasValue)
+                    {
+                        var user = await _context.TblUsers.FirstOrDefaultAsync(u => u.UserId == exchange.LastStatusChangedBy.Value);
+                        if (user != null)
+                            lastStatusChangedByName = user.UserName;
+                    }
+
+                    bool isOnlineCompleted = false;
+                    if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
+                        exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var onlineMeetingCompleted = await _context.TblMeetings
+                            .Where(m => m.ExchangeId == exchange.ExchangeId && m.Status == "Completed")
+                            .FirstOrDefaultAsync();
+                        isOnlineCompleted = (onlineMeetingCompleted != null);
+                    }
+
+                    return new ExchangeDashboardItemVM
+                    {
+                        Exchange = exchange,
+                        History = history,
+                        OfferOwnerId = offerOwnerId,
+                        OtherUserId = otherUserId,
+                        ContractUniqueId = contractUniqueId,
+                        OfferTitle = exchange.Offer?.Title ?? "N/A",
+                        ExchangeStartDate = exchange.ExchangeDate,
+                        Status = exchange.Status,
+                        ExchangeMode = exchange.ExchangeMode,
+                        LastStatusChangedBy = exchange.LastStatusChangedBy,
+                        LastStatusChangedByName = lastStatusChangedByName,
+                        Description = exchange.Description,
+                        OfferImageUrl = offerImageUrl,
+                        CanLaunchMeeting = false, // History view typically won't show meeting launch options.
+                        RecentMeetingLaunchCount = totalSessionsCount,
+                        Category = exchange.Offer.Category,
+                        Token = contract.TokenOffer,
+                        IsOnlineMeetingCompleted = isOnlineCompleted,
+                        IsMeetingEnded = exchange.IsMeetingEnded,
+                        MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
+                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
+                    };
+                };
+
+                var completedItems = new List<ExchangeDashboardItemVM>();
+                foreach (var ex in completedExchanges)
+                {
+                    completedItems.Add(await buildDashboardItem(ex));
+                }
+
+                var declinedItems = new List<ExchangeDashboardItemVM>();
+                foreach (var ex in declinedExchanges)
+                {
+                    declinedItems.Add(await buildDashboardItem(ex));
+                }
+
+                // Apply paging separately.
+                int totalCompleted = completedItems.Count;
+                int totalDeclined = declinedItems.Count;
+
+                var pagedCompleted = completedItems
+                    .OrderByDescending(item => item.Exchange.ExchangeDate)
+                    .Skip((completedPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                var pagedDeclined = declinedItems
+                    .OrderByDescending(item => item.Exchange.ExchangeDate)
+                    .Skip((declinedPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // For simplicity, assume paging only on one set if needed.
+                // Here, we build the view model without paging controls.
+                var viewModel = new ExchangeDashboardVM
+                {
+                    ActiveExchangeItems = new List<ExchangeDashboardItemVM>(), // Not shown on history page.
+                    CompletedExchangeItems = pagedCompleted,
+                    DeclinedExchangeItems = pagedDeclined,
+                    CompletedCurrentPage = completedPage,
+                    CompletedTotalPages = (int)Math.Ceiling(totalCompleted / (double)pageSize),
+                    DeclinedCurrentPage = declinedPage,
+                    DeclinedTotalPages = (int)Math.Ceiling(totalDeclined / (double)pageSize)
+                };
+
+                return View("ExchangeHistory", viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading exchange history for user {UserId}", GetCurrentUserId());
+                TempData["ErrorMessage"] = "An error occurred while loading the exchange history.";
                 return RedirectToAction("Error", "Home");
             }
         }
@@ -201,7 +375,6 @@ namespace SkillSwap_Platform.Controllers
                         h.ChangedStatus.Contains(search) ||
                         h.Reason.Contains(search));
                 }
-
                 allTimelineHistory = allTimelineHistory.OrderBy(h => h.ChangeDate);
 
                 // Retrieve the contract associated with this exchange using the OfferId.
@@ -289,29 +462,31 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
-                var timelineEvents = exchange.TblExchangeHistories.Select(h =>
-                {
-                    // you can set StatusChangedByName as needed.
-                    string statusChangedBy = "N/A";
-                    if (h.ChangedBy.HasValue)
-                    {
-                        var user = _context.TblUsers.FirstOrDefault(u => u.UserId == h.ChangedBy.Value);
-                        if (user != null)
-                            statusChangedBy = user.UserName;
-                    }
+                var timelineEvents = allTimelineHistory
+    .AsEnumerable()  // switch to LINQ-to-Objects so you can use a statement body lambda
+    .Select(h =>
+    {
+        string statusChangedBy = "N/A";
+        if (h.ChangedBy.HasValue)
+        {
+            // This lookup now occurs in memory.
+            var user = _context.TblUsers.FirstOrDefault(u => u.UserId == h.ChangedBy.Value);
+            if (user != null)
+                statusChangedBy = user.UserName;
+        }
+        return new ExchangeEventVM
+        {
+            EventDate = h.ChangeDate,
+            EventType = "Timeline/Change",
+            StepOrMeetingType = h.ChangedStatus,
+            Description = h.Reason,
+            SessionNumber = null,
+            MeetingStartTime = null,
+            StatusChangedByName = statusChangedBy
+        };
+    })
+    .ToList();
 
-                    return new ExchangeEventVM
-                    {
-                        EventDate = h.ChangeDate,
-                        EventType = "Timeline/ Change",
-                        StepOrMeetingType = h.ChangedStatus,
-                        Description = h.Reason,
-                        SessionNumber = null,
-                        // These are not meeting events so MeetingStartTime is not set.
-                        MeetingStartTime = null,
-                        StatusChangedByName = statusChangedBy
-                    };
-                }).ToList();
 
                 // Merge and sort both events by date (for example, ascending order)
                 var allCombinedEvents = timelineEvents
@@ -383,6 +558,175 @@ namespace SkillSwap_Platform.Controllers
                 return RedirectToAction("Index", "ExchangeDashboard");
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkExchangeCompleted(int exchangeId)
+        {
+            var exchange = await _context.TblExchanges.FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+            if (exchange == null)
+            {
+                return NotFound("Exchange not found.");
+            }
+
+            // Check that there is a completed online meeting (if required).
+            var completedOnlineMeeting = await _context.TblMeetings
+                .Where(m => m.ExchangeId == exchangeId && m.Status == "Completed")
+                .FirstOrDefaultAsync();
+            if (completedOnlineMeeting == null)
+            {
+                TempData["ErrorMessage"] = "You must complete an online meeting before marking the exchange as complete.";
+                return RedirectToAction("Index", "ExchangeDashboard");
+            }
+
+            // Mark exchange as completed.
+            exchange.Status = "Completed";
+            exchange.IsCompleted = true;
+            exchange.CompletionDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // Log a history record.
+            int userId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int uid) ? uid : 0;
+            var historyRecord = new TblExchangeHistory
+            {
+                ExchangeId = exchange.ExchangeId,
+                OfferId = exchange.OfferId,
+                ChangeDate = DateTime.UtcNow,
+                ChangedStatus = "Exchange Completed",
+                Reason = "Exchange marked as completed by the user after successful online meeting and feedback.",
+                ChangedBy = userId
+            };
+            _context.TblExchangeHistories.Add(historyRecord);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Exchange marked as completed.";
+
+            // Redirect to the review page for that exchange.
+            return RedirectToAction("ReviewExchange", new { exchangeId = exchange.ExchangeId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ReviewExchange(int exchangeId)
+        {
+            // Retrieve the exchange record (optional, to show details on the review page).
+            var exchange = await _context.TblExchanges
+                .Include(e => e.Offer)
+                .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+            if (exchange == null)
+            {
+                return NotFound("Exchange not found.");
+            }
+
+            // Check if cookies for reviewer details exist.
+            string reviewerName = Request.Cookies["ReviewerName"] ?? string.Empty;
+            string reviewerEmail = Request.Cookies["ReviewerEmail"] ?? string.Empty;
+
+            // Create a view model pre-populated with some exchange details.
+            var reviewVm = new ExchangeReviewVM
+            {
+                ExchangeId = exchange.ExchangeId,
+                OfferTitle = exchange.Offer?.Title ?? "N/A",
+                ReviewerName = reviewerName,     
+                ReviewerEmail = reviewerEmail         
+            };
+
+            return View(reviewVm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewExchange(ExchangeReviewVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Collect the validation error messages
+                var validationErrors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                // Log the errors (assumes you have an ILogger<T> injected into your controller)
+                _logger.LogError(
+                    "Model validation failed. Errors: {ValidationErrors}",
+                    string.Join(" | ", validationErrors)
+                );
+
+                return View(model);
+            }
+
+            // Retrieve the exchange record to obtain the OfferId.
+            var exchange = await _context.TblExchanges.FirstOrDefaultAsync(e => e.ExchangeId == model.ExchangeId);
+            if (exchange == null)
+            {
+                ModelState.AddModelError(string.Empty, "Exchange not found.");
+                return View(model);
+            }
+
+            // Determine the current user's id.
+            int reviewerId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int uid) ? uid : 0;
+
+            // Determine the reviewee id.
+            // For example, if the current user is the OfferOwner, then the other party (reviewee) is in OtherUserId.
+            // Otherwise, if the current user equals OtherUserId, then the reviewee is the OfferOwnerId.
+            int revieweeId = 0;
+            if (reviewerId == exchange.OfferOwnerId)
+            {
+                revieweeId = exchange.OtherUserId ?? 0;
+            }
+            else if (reviewerId == exchange.OtherUserId)
+            {
+                revieweeId = exchange.OfferOwnerId ?? 0;
+            }
+            // Optionally, add error handling if revieweeId remains 0.
+            if (revieweeId == 0)
+            {
+                ModelState.AddModelError(string.Empty, "Unable to determine the reviewee for this exchange.");
+                return View(model);
+            }
+
+            // Here you would store the review details in the database.
+            // For example, assume you have a TblExchangeReview table.
+            var review = new TblReview
+            {
+                ExchangeId = model.ExchangeId,
+                OfferId = exchange.OfferId,
+                ReviewerId = reviewerId,            // Current user is the reviewer.
+                RevieweeId = revieweeId,            // The other party being reviewed.
+                Rating = model.Rating,
+                Comments = model.Comments,
+                CreatedDate = DateTime.UtcNow,
+                ReviewerName = model.ReviewerName,
+                ReviewerEmail = model.ReviewerEmail,
+                UserId = revieweeId
+            };
+
+            _context.TblReviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            // If the user checked RememberMe, store their details in cookies (for 30 days).
+            if (model.RememberMe)
+            {
+                var cookieOptions = new CookieOptions
+                {
+                    Expires = DateTime.UtcNow.AddDays(30),
+                    HttpOnly = false, // if you want client-side access for autofill
+                    Secure = true     // if your site uses HTTPS
+                };
+                model.RememberMe = true; // Ensure the model reflects the user's choice.
+                Response.Cookies.Append("ReviewerName", model.ReviewerName ?? string.Empty, cookieOptions);
+                Response.Cookies.Append("ReviewerEmail", model.ReviewerEmail ?? string.Empty, cookieOptions);
+            }
+            else
+            {
+                // Optionally, remove cookies if the user didn't select RememberMe.
+                Response.Cookies.Delete("ReviewerName");
+                Response.Cookies.Delete("ReviewerEmail");
+            }
+
+            TempData["SuccessMessage"] = "Thank you for your review!";
+            // Optionally redirect to a page that shows the exchange history or back to the dashboard.
+            return RedirectToAction("Index", "ExchangeDashboard");
+        }
+
 
         /// <summary>
         /// Retrieves the current user's ID from the claims.

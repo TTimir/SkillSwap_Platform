@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Services;
 using System.Globalization;
@@ -31,20 +32,45 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public async Task<IActionResult> OfferDetails(int offerId)
         {
-            // Use default values for recommendedPercentage and jobSuccessRate.
-            double recommendedPercentage = 0;
-            double jobSuccessRate = 0;
-
             try
             {
                 // Fetch the offer including its portfolio items.
                 var offer = await _context.TblOffers
                     .Include(o => o.TblOfferPortfolios)
+                    .Include(o => o.User)
                     .FirstOrDefaultAsync(o => o.OfferId == offerId);
-
                 if (offer == null)
                 {
                     return NotFound("Offer not found.");
+                }
+
+                // 2. Retrieve reviews related to the offer.
+                var reviews = await _context.TblReviews
+                    .Where(r => r.OfferId == offerId)
+                    .Include(r => r.Reviewer)
+                    .OrderByDescending(r => r.CreatedDate)
+                    .ToListAsync();
+
+                // 3. Calculate the Recommended Percentage.
+                double recommendedPercentage = 0;
+                int totalReviews = reviews.Count;
+                if (totalReviews > 0)
+                {
+                    // For example, consider reviews with a rating of 4 or higher as positive.
+                    int positiveReviews = reviews.Count(r => r.Rating >= 4);
+                    recommendedPercentage = (positiveReviews / (double)totalReviews) * 100;
+                }
+
+                // 4. Calculate the Job Success Rate based on exchanges related to this offer.
+                double jobSuccessRate = 0;
+                var offerExchanges = await _context.TblExchanges
+                    .Where(e => e.OfferId == offer.OfferId)
+                    .ToListAsync();
+                if (offerExchanges.Any())
+                {
+                    int completedCount = offerExchanges.Count(e =>
+                        e.Status != null && e.Status.Trim().ToLower() == "completed");
+                    jobSuccessRate = (completedCount / (double)offerExchanges.Count()) * 100;
                 }
 
                 // Determine the online status of the offer owner.
@@ -84,6 +110,7 @@ namespace SkillSwap_Platform.Controllers
                     .Where(u => u.UserId == offer.UserId)
                     .Select(u => new UserDetailsVM
                     {
+                        UserId = u.UserId,
                         Username = u.UserName,
                         FirstName = u.FirstName,
                         LastName = u.LastName,
@@ -166,6 +193,79 @@ namespace SkillSwap_Platform.Controllers
                     _logger.LogError(ex, "Error fetching comparable offers for Offer {OfferId}", offerId);
                 }
 
+                // ***************** NEW LOGIC FOR REVIEW ************************
+                // Determine if the current logged-in user has completed an exchange for this offer.
+                int? currentUserId = null;
+                bool isExchangeCompleted = false;
+                TblExchange completedExchange = null;
+
+                if (User.Identity.IsAuthenticated)
+                {
+                    if (int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int uid))
+                    {
+                        currentUserId = uid;
+                        // Rewrite the predicate so that it can be translated:
+                        completedExchange = await _context.TblExchanges.FirstOrDefaultAsync(e =>
+                            e.OfferId == offer.OfferId &&
+                            (e.OfferOwnerId == uid || e.OtherUserId == uid) &&
+                            e.Status != null && e.Status.ToLower() == "completed");
+                        isExchangeCompleted = completedExchange != null;
+                    }
+                }
+                // *****************************************************************
+
+                int activeExchangeCount = 0;
+                if (User.Identity.IsAuthenticated && offer != null)
+                {
+                    // Get the current logged in user's ID.
+                    int uid = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                    // Use the offer's ID to limit the search only to exchanges for this offer.
+                    // Then, decide which column to compare based on the user's role on this offer.
+                    if (offer.UserId == uid)
+                    {
+                        // The current user is the offer owner, so count exchanges where they are the owner.
+                        activeExchangeCount = _context.TblExchanges
+                            .Where(e => e.OfferId == offer.OfferId
+                                     && e.OfferOwnerId == uid
+                                     && e.Status != null
+                                     && e.Status.Trim().ToLower() != "completed")
+                            .Count();
+                    }
+                    else
+                    {
+                        // The current user is not the owner, so count exchanges where they are the other party.
+                        activeExchangeCount = _context.TblExchanges
+                            .Where(e => e.OfferId == offer.OfferId
+                                     && e.OtherUserId == uid
+                                     && e.Status != null
+                                     && e.Status.Trim().ToLower() != "completed")
+                            .Count();
+                    }
+                }
+
+                // Asynchronously update the view count without blocking the request.
+                // Fire-and-forget:
+                string sessionKey = $"OfferViewed_{offer.OfferId}";
+                if (HttpContext.Session.GetString(sessionKey) == null)
+                {
+                    // This user hasn't viewed this offer in the current session; update the view count.
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            offer.Views++;  // Increment the view count (make sure your model includes a Views property)
+                            await _context.SaveChangesAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error updating view count for offer {OfferId}", offerId);
+                        }
+                    });
+                    // Set the session flag so that subsequent refreshes in the same session won't increment the count.
+                    HttpContext.Session.SetString(sessionKey, "true");
+                }
+
                 var model = new OfferDisplayVM
                 {
                     OfferId = offer.OfferId,
@@ -186,10 +286,18 @@ namespace SkillSwap_Platform.Controllers
                     SkillNames = skillNames,
                     Device = offer.Device,
                     Tools = offer.Tools,
-                    RecommendedPercentage = recommendedPercentage.ToString("N2"),
-                    JobSuccessRate = jobSuccessRate,
+                    RecommendedPercentage = recommendedPercentage.ToString("N2"),  // e.g., "75.00"
+                    JobSuccessRate = jobSuccessRate, // e.g., 75.00 (you can format in the view)
                     CompareOffers = comparableOffers,
-                    IsOnline = isOnline
+                    IsOnline = isOnline,
+                    IsExchangeCompleted = isExchangeCompleted,
+                    Review = new OfferExchangeReviewVM()
+                    {
+                        ExchangeId = completedExchange?.ExchangeId ?? 0,
+                    },
+                    Reviews = reviews,
+                    ActiveExchangeCount = activeExchangeCount,
+                    Views = offer.Views
                 };
 
                 return View(model);
@@ -207,7 +315,7 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> PublicOfferList(
-            string category, int? skillId, string keyword, string sortOption, 
+            string category, int? skillId, string keyword, string sortOption,
             int? maxTimeCommitment, string skillLevel, string designTool,
             string freelanceType, string interactionMode, int page = 1, int pageSize = 20)
         {
@@ -245,7 +353,7 @@ namespace SkillSwap_Platform.Controllers
 
                 if (!string.IsNullOrEmpty(freelanceType))
                     offersQuery = offersQuery.Where(o => o.FreelanceType == freelanceType);
-               
+
                 if (!string.IsNullOrEmpty(interactionMode))
                     offersQuery = offersQuery.Where(o => o.CollaborationMethod == interactionMode);
 
@@ -386,7 +494,7 @@ namespace SkillSwap_Platform.Controllers
                                             ? "/template_assets/images/No_Profile_img.png"
                                             : o.User.ProfileImageUrl,
                         Thumbnail = portfolio.FirstOrDefault(),
-                        PortfolioImages = portfolio 
+                        PortfolioImages = portfolio
                     };
                 }).ToList();
 

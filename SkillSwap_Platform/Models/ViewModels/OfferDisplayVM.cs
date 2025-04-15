@@ -1,4 +1,7 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels
+﻿using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
+using System.ComponentModel.DataAnnotations;
+
+namespace SkillSwap_Platform.Models.ViewModels
 {
     public class OfferDisplayVM
     {
@@ -29,6 +32,15 @@
 
         public int OfferOwnerId { get; set; }
 
+        // Add a flag or property to indicate if the exchange is completed
+        public bool IsExchangeCompleted { get; set; }
+        public int ActiveExchangeCount { get; set; }
+        public int Views { get; set; }
+
+        // Nest a review view model (if you want to handle review inputs here)
+        public OfferExchangeReviewVM Review { get; set; }
+        public IEnumerable<TblReview> Reviews { get; set; }
+
     }
 
     public class UserLanguageVM
@@ -49,6 +61,25 @@
         public string Location { get; set; }
         public string City { get; set; }
         public string Country { get; set; }
+    }
 
+    public class OfferExchangeReviewVM
+    {
+        public int ExchangeId { get; set; }
+        public int OfferId { get; set; }
+
+        [Required(ErrorMessage = "Please provide a rating.")]
+        [Range(1, 5, ErrorMessage = "A valid rating between 1 and 5 is required.")]
+        public int Rating { get; set; }  // e.g. a score between 1 and 5
+        [Required(ErrorMessage = "Comments are required.")]
+        [StringLength(300, ErrorMessage = "Comments cannot exceed 1000 characters.")]
+        public string Comments { get; set; }
+        [Required(ErrorMessage = "Your name is required.")]
+        public string ReviewerName { get; set; }
+
+        [Required(ErrorMessage = "Your email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid Email Address.")]
+        public string ReviewerEmail { get; set; }
+        public bool RememberMe { get; set; }
     }
 }

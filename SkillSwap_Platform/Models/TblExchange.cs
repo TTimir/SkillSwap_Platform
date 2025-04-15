@@ -55,6 +55,10 @@ public partial class TblExchange
 
     public bool IsMeetingEnded { get; set; }
 
+    public bool IsCompleted { get; set; }
+
+    public DateTime? CompletionDate { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;

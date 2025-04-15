@@ -1,0 +1,341 @@
+﻿@{
+    ViewData["Title"] = "ExchangeHistory";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <button class="nav-link active fw500 ps-0" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Completed Exchanges</button>
+                        <button class="nav-link fw500" id="nav-item2-tab" data-bs-toggle="tab" data-bs-target="#nav-item2" type="button" role="tab" aria-controls="nav-item2" aria-selected="false">Declined Exchanges</button>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            @if (Model.CompletedExchangeItems != null && Model.CompletedExchangeItems.Count > 0)
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Details</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Last Changed By</th>
+                                            <th scope="col">Meeting</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        @foreach (var item in Model.CompletedExchangeItems)
+                                        {
+                                            <tr>
+                                                <th class="ps-0" scope="row">
+                                                    <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                                        <div class="d-lg-flex align-items-lg-center">
+                                                            <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                                @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
+                                                                @if (!string.IsNullOrEmpty(item.OfferImageUrl))
+                                                                {
+                                                                    <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>N/A</span>
+                                                                }
+                                                            </div>
+                                                            <div class="details ml15 ml0-md mb15-md">
+                                                                <small class="text-muted">@item.Category</small>
+                                                                <h5 class="title mb-2">
+                                                                    <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
+                                                                        @item.OfferTitle
+                                                                    </a>
+                                                                </h5>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                                <td style="padding:0;">
+                                                    <h5 class="@(item.Status == "Finalized"
+                                                    ? "pending-style style1"
+                                                    : item.Status == "Completed"
+                                                        ? "pending-style style2"
+                                                        : item.Status == "Declined"
+                                                            ? "pending-style style3"
+                                                            : "")">
+                                                        @item.Status
+                                                    </h5>
+                                                </td>
+                                                <td style="padding:0;">
+                                                    <div class="d-flex">
+                                                        @if (item.LastStatusChangedByName != null)
+                                                        {
+                                                            @("@")
+
+                                                            @item.LastStatusChangedByName
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>N/A</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <!-- For completed exchanges, you might display just the details or a "Completed" label -->
+                                                    <span class="pending-style style4" data-bs-toggle="tooltip" title="Exchange Completed">
+                                                        Completed <i class="fal fa-check"></i>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                @if (Model.CompletedCurrentPage > 1)
+                                {
+                                    <div class="mbp_pagination text-center mt30">
+                                        <ul class="page_navigation">
+                                            @if (Model.CompletedCurrentPage > 1)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("ExchangeHistory", new { completedPage  = Model.CompletedCurrentPage  - 1 })">
+                                                        <span class="fas fa-angle-left"></span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item disabled">
+                                                    <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                                </li>
+                                            }
+
+                                            @for (int i = 1; i <= Model.CompletedTotalPages; i++)
+                                            {
+                                                if (i == Model.CompletedCurrentPage)
+                                                {
+                                                    <li class="page-item active" aria-current="page">
+                                                        <span class="page-link">@i</span>
+                                                    </li>
+                                                }
+                                                else
+                                                {
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="@Url.Action("ExchangeHistory", new { completedPage = i })">@i</a>
+                                                    </li>
+                                                }
+                                            }
+
+                                            @if (Model.CompletedCurrentPage < Model.CompletedTotalPages)
+                                            {
+                                                <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                    <a class="page-link" href="@Url.Action("ExchangeHistory", new { page = Model.CompletedCurrentPage + 1 })">
+                                                        <span class="fas fa-angle-right"></span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                    <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                                </li>
+                                            }
+                                        </ul>
+                                        <p class="mt10 mb-0 pagination_page_count text-center">
+                                            Page @Model.CompletedCurrentPage of @Model.CompletedTotalPages
+                                        </p>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p>No exchanges marked as completed.</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="nav-item2" role="tabpanel" aria-labelledby="nav-item2-tab">
+                        <div class="packages_table table-responsive">
+                            @if (Model.DeclinedExchangeItems != null && Model.DeclinedExchangeItems.Count > 0)
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Details</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Last Changed By</th>
+                                            <th scope="col">Meeting</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        @foreach (var item in Model.DeclinedExchangeItems)
+                                        {
+                                            <tr>
+                                                <th class="ps-0" scope="row">
+                                                    <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                                        <div class="d-lg-flex align-items-lg-center">
+                                                            <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                                @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
+                                                                @if (!string.IsNullOrEmpty(item.OfferImageUrl))
+                                                                {
+                                                                    <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span>N/A</span>
+                                                                }
+                                                            </div>
+                                                            <div class="details ml15 ml0-md mb15-md">
+                                                                <small class="text-muted">@item.Category</small>
+                                                                <h5 class="title mb-2">
+                                                                    <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
+                                                                        @item.OfferTitle
+                                                                    </a>
+                                                                </h5>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                                <td style="padding:0;">
+                                                    <h5 class="@(item.Status == "Finalized"
+                                                    ? "pending-style style1"
+                                                    : item.Status == "Completed"
+                                                        ? "pending-style style2"
+                                                        : item.Status == "Declined"
+                                                            ? "pending-style style3"
+                                                            : "")">
+                                                        @item.Status
+                                                    </h5>
+                                                </td>
+                                                <td style="padding:0;">
+                                                    <div class="d-flex">
+                                                        @if (item.LastStatusChangedByName != null)
+                                                        {
+                                                            @("@")
+
+                                                            @item.LastStatusChangedByName
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>N/A</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <!-- For completed exchanges, you might display just the details or a "Completed" label -->
+                                                    <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Completed">
+                                                        Declined <i class="fal fa-check"></i>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                @if (Model.DeclinedCurrentPage > 1)
+                                {
+                                    <div class="mbp_pagination text-center mt30">
+                                        <ul class="page_navigation">
+                                            @if (Model.DeclinedCurrentPage > 1)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("ExchangeHistory", new { declinedPage  = Model.DeclinedCurrentPage  - 1 })">
+                                                        <span class="fas fa-angle-left"></span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item disabled">
+                                                    <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                                </li>
+                                            }
+
+                                            @for (int i = 1; i <= Model.DeclinedTotalPages; i++)
+                                            {
+                                                if (i == Model.DeclinedCurrentPage)
+                                                {
+                                                    <li class="page-item active" aria-current="page">
+                                                        <span class="page-link">@i</span>
+                                                    </li>
+                                                }
+                                                else
+                                                {
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="@Url.Action("ExchangeHistory", new { declinedPage  = i })">@i</a>
+                                                    </li>
+                                                }
+                                            }
+
+                                            @if (Model.DeclinedCurrentPage < Model.DeclinedTotalPages)
+                                            {
+                                                <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                    <a class="page-link" href="@Url.Action("ExchangeHistory", new { declinedPage  = Model.DeclinedCurrentPage  + 1 })">
+                                                        <span class="fas fa-angle-right"></span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                    <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                                </li>
+                                            }
+                                        </ul>
+                                        <p class="mt10 mb-0 pagination_page_count text-center">
+                                            Page @Model.DeclinedCurrentPage  of @Model.DeclinedTotalPages
+                                        </p>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p>No exchanges marked as declined.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

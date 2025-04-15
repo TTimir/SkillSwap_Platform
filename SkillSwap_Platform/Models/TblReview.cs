@@ -23,6 +23,16 @@ public partial class TblReview
 
     public int UserId { get; set; }
 
+    public string? ReviewerName { get; set; }
+
+    public string? ReviewerEmail { get; set; }
+
+    public bool RememberMe { get; set; }
+
+    public int HelpfulCount { get; set; }
+
+    public int NotHelpfulCount { get; set; }
+
     public virtual TblExchange Exchange { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;

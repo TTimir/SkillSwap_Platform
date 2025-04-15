@@ -183,6 +183,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblExchanges");
 
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.CompletionDate).HasColumnType("datetime");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.DigitalTokenExchange).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ExchangeDate)
@@ -544,7 +545,9 @@ public partial class SkillSwapDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
             entity.Property(e => e.RevieweeId).HasColumnName("RevieweeID");
+            entity.Property(e => e.ReviewerEmail).HasMaxLength(255);
             entity.Property(e => e.ReviewerId).HasColumnName("ReviewerID");
+            entity.Property(e => e.ReviewerName).HasMaxLength(255);
 
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblReviews)
                 .HasForeignKey(d => d.ExchangeId)
@@ -857,6 +860,7 @@ public partial class SkillSwapDbContext : DbContext
         modelBuilder.Entity<TblUser>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
 
         OnModelCreatingPartial(modelBuilder);
     }

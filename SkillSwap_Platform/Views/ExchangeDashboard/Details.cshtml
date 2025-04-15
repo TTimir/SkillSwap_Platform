@@ -60,7 +60,17 @@
                             </th>
                             <td class="vam">@Model.Exchange.LastStatusChangeDate</td>
                             <td class="vam">@Model.Contract.TokenOffer</td>
-                            <td class="vam"><span class="pending-style style2">@Model.Exchange.Status</span></td>
+                            <td class="vam">
+                                <span class="@(Model.Exchange.Status == "Finalized"
+                                ? "pending-style style1"
+                                : Model.Exchange.Status == "Completed"
+                                    ? "pending-style style2"
+                                    : Model.Exchange.Status == "Declined"
+                                        ? "pending-style style3"
+                                        : "pending-style style1")">
+                                    @Model.Exchange.Status
+                                </span>
+                            </td>
                             <td class="vam">
                                 <a href="@Url.Action("ViewFinalizedContractPdf", "Contract", new { contractId = Model.Contract.ContractId })"
                                    target="_blank"

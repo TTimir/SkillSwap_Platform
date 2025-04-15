@@ -2,8 +2,14 @@
 {
     public class ExchangeDashboardVM
     {
-        public List<ExchangeDashboardItemVM> ExchangeItems { get; set; }
+        public List<ExchangeDashboardItemVM> ActiveExchangeItems { get; set; }
+        public List<ExchangeDashboardItemVM> CompletedExchangeItems { get; set; }
+        public List<ExchangeDashboardItemVM> DeclinedExchangeItems { get; set; }
         public TblExchange SelectedExchange { get; set; }
+        public int CompletedCurrentPage { get; set; }
+        public int CompletedTotalPages { get; set; }
+        public int DeclinedCurrentPage { get; set; }
+        public int DeclinedTotalPages { get; set; }
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
     }
@@ -31,6 +37,7 @@
         public string Category { get; set; }
         public decimal? Token { get; set; }
 
+        public bool IsOnlineMeetingCompleted { get; set; }
         public bool IsMeetingEnded { get; set; }
         public DateTime? MeetingScheduledDateTime { get; set; }
         public int? InpersonMeetingDurationMinutes { get; set; }
