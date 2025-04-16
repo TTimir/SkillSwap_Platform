@@ -21,6 +21,8 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string Tools { get; set; }
         public string ScopeOfWork { get; set; }
         public int AssistanceRounds { get; set; }
+        public double UserRating { get; set; }
+        public int ReviewCount { get; set; }
         public string RecommendedPercentage { get; set; }
         public double JobSuccessRate { get; set; }
         public List<string> WillingSkills { get; set; }
@@ -29,6 +31,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<UserLanguageVM> UserLanguages { get; set; }
         public List<UserDetailsVM> UserDetails { get; set; }
         public List<CompareOfferVM> CompareOffers { get; set; } = new List<CompareOfferVM>();
+        public List<TblOffer> RelatedOffers { get; set; } = new List<TblOffer>();
 
         public int OfferOwnerId { get; set; }
 

@@ -388,13 +388,13 @@
                                 <h5 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId  })">@offer.Title</a></h5>
                                 <div class="review-meta d-flex align-items-center">
                                     <i class="fas fa-star fz10 review-color me-2"></i>
-                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@offer.AverageRating.ToString("0.00")</span>@offer.ReviewCount reviews</p>
                                 </div>
                                 <hr class="my-2">
                                 <div class="list-meta d-flex justify-content-between align-items-center mt15">
                                     <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                         <span class="position-relative mr10">
-                                            <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:25%">
+                                            <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
                                             <span class="online-badge"></span>
                                         </span>
                                         <span class="fz14">@offer.UserName</span>

@@ -20,6 +20,54 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
         }
 
+        #region Helper Method to Update User Aggregates
+
+        // This helper method recalculates and updates a user’s aggregate metrics
+        // (review count, average rating, recommended percentage, and job success rate)
+        // and saves them into the user record.
+        private async Task UpdateUserAggregatesAsync(int userId)
+        {
+            // Retrieve all reviews written for this user.
+            var userReviews = await _context.TblReviews
+                                    .Where(r => r.UserId == userId)
+                                    .ToListAsync();
+
+            int count = userReviews.Count;
+            // Calculate the average rating.
+            decimal avgRating = count > 0 ? (decimal)userReviews.Average(r => r.Rating) : 0;
+            // Count how many reviews are positive (for example, rating >= 4).
+            int positiveCount = count > 0 ? userReviews.Count(r => r.Rating >= 4) : 0;
+            // Calculate the recommended percentage.
+            decimal recommendedPercentage = count > 0 ? (positiveCount / (decimal)count) * 100 : 0;
+
+            // Retrieve all exchanges where the user participated either as the offer owner or as the other party.
+            var userExchanges = await _context.TblExchanges
+                                    .Where(e => e.OfferOwnerId == userId || e.OtherUserId == userId)
+                                    .ToListAsync();
+            int totalExchanges = userExchanges.Count;
+            int completedExchanges = totalExchanges > 0
+                                     ? userExchanges.Count(e => e.Status != null && e.Status.Trim().ToLower() == "completed")
+                                     : 0;
+            // Calculate the job success rate based on the percentage of completed exchanges.
+            decimal jobSuccessRate = totalExchanges > 0 ? (completedExchanges / (decimal)totalExchanges) * 100 : 0;
+
+            // Retrieve the user entity and update the properties.
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user != null)
+            {
+                user.ReviewCount = count;
+                user.AverageRating = avgRating;
+                user.RecommendedPercentage = (double?)recommendedPercentage;
+                user.JobSuccessRate = (double?)jobSuccessRate;
+
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        #endregion
+
+        #region Review GET and POST Actions
+
         // GET: /ExchangeReview/Review?exchangeId=...
         [HttpGet]
         public async Task<IActionResult> Review(int exchangeId)
@@ -123,6 +171,17 @@ namespace SkillSwap_Platform.Controllers
                 return Forbid();
             }
 
+            // *** NEW: Prevent the same user from submitting more than two reviews for this exchange ***
+            int existingReviewCount = await _context.TblReviews
+                .Where(r => r.ExchangeId == model.ExchangeId && r.ReviewerId == currentUserId)
+                .CountAsync();
+            if (existingReviewCount >= 2)
+            {
+                TempData["ErrorMessage"] = "You have already submitted two reviews for this exchange.";
+                return RedirectToAction("OfferDetails", "UserOfferDetails", new { offerId = model.OfferId });
+            }
+            // *** End of new check ***
+
             // Determine the reviewee's user id based on the current user's participation.
             int revieweeId = 0;
             if (exchange.OfferOwnerId == currentUserId)
@@ -142,7 +201,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             // Create a new review record. (Ensure TblReview exists and its properties match.)
-            var review = new TblReview
+            var newReview = new TblReview
             {
                 ExchangeId = model.ExchangeId,
                 OfferId = exchange.OfferId,
@@ -157,8 +216,11 @@ namespace SkillSwap_Platform.Controllers
                 UserId = revieweeId
             };
 
-            _context.TblReviews.Add(review);
+            _context.TblReviews.Add(newReview);
             await _context.SaveChangesAsync();
+
+            // Update aggregates for the reviewed user.
+            await UpdateUserAggregatesAsync(newReview.UserId);
 
             // If user checked "Remember Me", store their name and email in cookies.
             if (model.RememberMe)
@@ -183,6 +245,9 @@ namespace SkillSwap_Platform.Controllers
             return RedirectToAction("OfferDetails", "UserOfferDetails", new { offerId = model.OfferId });
         }
 
+        #endregion
+
+        #region Vote Action for Review Voting
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Vote(int reviewId, string vote)
@@ -229,6 +294,6 @@ namespace SkillSwap_Platform.Controllers
                 notHelpfulCount = review.NotHelpfulCount
             });
         }
-
+        #endregion
     }
 }

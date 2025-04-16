@@ -59,6 +59,10 @@ public partial class TblExchange
 
     public DateTime? CompletionDate { get; set; }
 
+    public DateTime? RequestDate { get; set; }
+
+    public DateTime? ResponseDate { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;

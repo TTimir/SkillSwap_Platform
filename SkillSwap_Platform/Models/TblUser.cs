@@ -80,6 +80,10 @@ public partial class TblUser
 
     public bool IsOnboardingCompleted { get; set; }
 
+    public decimal? AverageRating { get; set; }
+
+    public int? ReviewCount { get; set; }
+
     public double? JobSuccessRate { get; set; }
 
     public double? RecommendedPercentage { get; set; }

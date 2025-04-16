@@ -99,6 +99,10 @@ public partial class TblContract
 
     public int? BaseContractId { get; set; }
 
+    public DateTime? RequestDate { get; set; }
+
+    public DateTime? ResponseDate { get; set; }
+
     public virtual TblMessage Message { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;

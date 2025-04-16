@@ -661,6 +661,22 @@ namespace SkillSwap_Platform.Controllers
                         ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                     };
 
+                    // Determine the signing timestamps for request and response.
+                    if (originalContract.RequestDate == default(DateTime))
+                    {
+                        // This is the first party signing:
+                        newFinalContract.RequestDate = DateTime.UtcNow; // Record first signature.
+                        newFinalContract.ResponseDate = null;           // No response yet.
+                    }
+                    else
+                    {
+                        // A signing has already occurred.
+                        // Copy the first party's signing time.
+                        newFinalContract.RequestDate = originalContract.RequestDate;
+                        // Record the second party's signing time as the response.
+                        newFinalContract.ResponseDate = DateTime.UtcNow;
+                    }
+
                     // Role-based assignment:
                     if (isReceiver)
                     {
@@ -700,7 +716,6 @@ namespace SkillSwap_Platform.Controllers
                     // This code would go after the final contract has been created and saved.
                     if (newFinalContract.Status == "Accepted")
                     {
-
                         var digitalTokenExchange = newFinalContract.TokenOffer;
 
                         // Create an exchange record.
@@ -721,7 +736,9 @@ namespace SkillSwap_Platform.Controllers
                             LastStatusChangedBy = GetUserId(), // assuming current user is the one finalizing
                             StatusChangeReason = "Final agreement/ contract signature from both parties",
                             DigitalTokenExchange = digitalTokenExchange,  // update as needed
-                            IsSuccessful = true
+                            IsSuccessful = true,
+                            RequestDate = newFinalContract.RequestDate,
+                            ResponseDate = newFinalContract.ResponseDate
                         };
 
                         _context.TblExchanges.Add(exchange);

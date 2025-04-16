@@ -120,6 +120,8 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ReceiverSignature).HasMaxLength(255);
             entity.Property(e => e.ReceiverSkill).HasMaxLength(100);
             entity.Property(e => e.ReceiverUserName).HasMaxLength(100);
+            entity.Property(e => e.RequestDate).HasColumnType("datetime");
+            entity.Property(e => e.ResponseDate).HasColumnType("datetime");
             entity.Property(e => e.SenderAddress).HasMaxLength(255);
             entity.Property(e => e.SenderEmail).HasMaxLength(255);
             entity.Property(e => e.SenderName).HasMaxLength(100);
@@ -199,6 +201,8 @@ public partial class SkillSwapDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
+            entity.Property(e => e.RequestDate).HasColumnType("datetime");
+            entity.Property(e => e.ResponseDate).HasColumnType("datetime");
             entity.Property(e => e.SkillIdOfferOwner).HasColumnName("SkillID_OfferOwner");
             entity.Property(e => e.SkillIdRequester).HasColumnName("SkillID_Requester");
             entity.Property(e => e.Status)
@@ -639,6 +643,9 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.UserId).HasColumnName("UserID");
             entity.Property(e => e.Address).HasMaxLength(200);
+            entity.Property(e => e.AverageRating)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(5, 2)");
             entity.Property(e => e.City).HasMaxLength(100);
             entity.Property(e => e.ContactNo).HasMaxLength(20);
             entity.Property(e => e.Country).HasMaxLength(100);
@@ -860,7 +867,6 @@ public partial class SkillSwapDbContext : DbContext
         modelBuilder.Entity<TblUser>()
             .HasIndex(u => u.Email)
             .IsUnique();
-
 
         OnModelCreatingPartial(modelBuilder);
     }

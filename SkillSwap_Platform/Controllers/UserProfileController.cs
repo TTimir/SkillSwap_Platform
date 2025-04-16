@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+using System.Linq;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -111,23 +112,70 @@ namespace SkillSwap_Platform.Controllers
                     .Where(s => skillIds.Contains(s.SkillId.ToString()))
                     .ToList();
 
+                var reviewAggregates = await _context.TblReviews
+                    .GroupBy(r => r.OfferId)
+                    .Select(g => new {
+                        OfferId = g.Key,
+                        ReviewCount = g.Count(),
+                        AverageRating = g.Average(r => r.Rating)
+                    })
+                    .ToDictionaryAsync(x => x.OfferId);
+
                 // Map each offer to its view model.
-                var offerVMs = offers.Select(o => new OfferDetailsVM
+                var offerVMs = offers.Select(o =>
                 {
-                    OfferId = o.OfferId,
-                    Title = o.Title,
-                    Designation = user.Designation,
-                    Category = o.Category,
-                    Description = o.Description,
-                    TimeCommitmentDays = o.TimeCommitmentDays,
-                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
-                    SkillName = string.Join(", ",
-                        o.SkillIdOfferOwner
-                         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                         .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
-                         .Where(name => !string.IsNullOrEmpty(name))
-                    )
+                    // Default values if no reviews are available.
+                    int reviewCount = 0;
+                    double avgRating = 0;
+
+                    // Look for aggregated review data.
+                    if (reviewAggregates.TryGetValue(o.OfferId, out var agg))
+                    {
+                        reviewCount = agg.ReviewCount;
+                        avgRating = agg.AverageRating;
+                    }
+
+                    return new OfferDetailsVM
+                    {
+                        OfferId = o.OfferId,
+                        Title = o.Title,
+                        Designation = user.Designation,
+                        Category = o.Category,
+                        Description = o.Description,
+                        TimeCommitmentDays = o.TimeCommitmentDays,
+                        PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                        SkillName = string.Join(", ", o.SkillIdOfferOwner
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                            .Where(name => !string.IsNullOrEmpty(name))),
+                        AverageRating = avgRating,
+                        ReviewCount = reviewCount
+                    };
                 }).ToList();
+
+                // Retrieve the total exchanges for the user (as offer owner or as the other party)
+                var totalExchanges = await _context.TblExchanges
+                    .CountAsync(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId);
+
+                var exchangesWithResponse = await _context.TblExchanges
+                    .Where(e => e.ResponseDate.HasValue)
+                    .ToListAsync();
+
+                var averageResponseTime = exchangesWithResponse.Any()
+                    ? exchangesWithResponse.Average(e =>
+                        (e.ResponseDate.HasValue && e.RequestDate.HasValue)
+                            ? (e.ResponseDate.Value - e.RequestDate.Value).TotalHours
+                            : 0)
+                    : 0;
+
+                int activeExchangeCount = await _context.TblExchanges
+                    .CountAsync(e => (e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId) &&
+                     e.Status != null &&
+                     e.Status.Trim().ToLower() != "completed");
+
+                // For reviews, use the reviews associated with the user.
+                int totalReviewsUser = user.TblReviewReviewees.Count();
+                double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
                 // Build the public user profile view model.
                 var model = new UserProfileVM
@@ -140,7 +188,13 @@ namespace SkillSwap_Platform.Controllers
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
-                    Offers = offerVMs
+                    Offers = offerVMs,
+                    TotalExchanges = totalExchanges,
+                    AverageResponseTime = averageResponseTime.ToString("F2"),
+                    ActiveExchangeCount = activeExchangeCount,
+                    Reviews = user.TblReviewReviewees,
+                    ReviewCount = totalReviewsUser,
+                    AverageRating = avgRatingUser
                 };
 
                 return View("PublicProfile", model);
@@ -248,23 +302,70 @@ namespace SkillSwap_Platform.Controllers
                     .Where(s => skillIds.Contains(s.SkillId.ToString()))
                     .ToList();
 
+                var reviewAggregates = await _context.TblReviews
+                   .GroupBy(r => r.OfferId)
+                   .Select(g => new {
+                       OfferId = g.Key,
+                       ReviewCount = g.Count(),
+                       AverageRating = g.Average(r => r.Rating)
+                   })
+                   .ToDictionaryAsync(x => x.OfferId);
 
-                var offerVMs = offers.Select(o => new OfferDetailsVM
+                // Map each offer to its view model.
+                var offerVMs = offers.Select(o =>
                 {
-                    OfferId = o.OfferId,
-                    Title = o.Title,
-                    Designation = user.Designation,
-                    Category = o.Category,
-                    Description = o.Description,
-                    TimeCommitmentDays = o.TimeCommitmentDays,
-                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
-                    SkillName = string.Join(", ",
-                                    o.SkillIdOfferOwner
-                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                     .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
-                                     .Where(name => !string.IsNullOrEmpty(name))
-                                )
+                    // Default values if no reviews are available.
+                    int reviewCount = 0;
+                    double avgRating = 0;
+
+                    // Look for aggregated review data.
+                    if (reviewAggregates.TryGetValue(o.OfferId, out var agg))
+                    {
+                        reviewCount = agg.ReviewCount;
+                        avgRating = agg.AverageRating;
+                    }
+
+                    return new OfferDetailsVM
+                    {
+                        OfferId = o.OfferId,
+                        Title = o.Title,
+                        Designation = user.Designation,
+                        Category = o.Category,
+                        Description = o.Description,
+                        TimeCommitmentDays = o.TimeCommitmentDays,
+                        PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                        SkillName = string.Join(", ", o.SkillIdOfferOwner
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                            .Where(name => !string.IsNullOrEmpty(name))),
+                        AverageRating = avgRating,
+                        ReviewCount = reviewCount
+                    };
                 }).ToList();
+
+                // Retrieve the total exchanges for the user (as offer owner or as the other party)
+                var totalExchanges = await _context.TblExchanges
+                    .CountAsync(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId);
+
+                var exchangesWithResponse = await _context.TblExchanges
+                    .Where(e => e.ResponseDate.HasValue)
+                    .ToListAsync();
+
+                var averageResponseTime = exchangesWithResponse.Any()
+                    ? exchangesWithResponse.Average(e =>
+                        (e.ResponseDate.HasValue && e.RequestDate.HasValue)
+                            ? (e.ResponseDate.Value - e.RequestDate.Value).TotalHours
+                            : 0)
+                    : 0;
+
+                int activeExchangeCount = await _context.TblExchanges
+                    .CountAsync(e => (e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId) &&
+                     e.Status != null &&
+                     e.Status.Trim().ToLower() != "completed");
+
+                // For reviews, use the reviews associated with the user.
+                int totalReviewsUser = user.TblReviewReviewees.Count();
+                double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
@@ -277,7 +378,13 @@ namespace SkillSwap_Platform.Controllers
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
-                    Offers = offerVMs
+                    Offers = offerVMs,
+                    TotalExchanges = totalExchanges,
+                    AverageResponseTime = averageResponseTime.ToString("F2"),
+                    ActiveExchangeCount = activeExchangeCount,
+                    Reviews = user.TblReviewReviewees,
+                    ReviewCount = totalReviewsUser,
+                    AverageRating = avgRatingUser
                 };
 
                 return View(model);

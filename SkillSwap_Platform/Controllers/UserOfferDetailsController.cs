@@ -51,26 +51,32 @@ namespace SkillSwap_Platform.Controllers
                     .OrderByDescending(r => r.CreatedDate)
                     .ToListAsync();
 
-                // 3. Calculate the Recommended Percentage.
+                // Get all reviews written for this user – assuming the TblReview table stores a UserId for the reviewed user.
+                // (If you store user reviews in a separate table or using a different mechanism, adjust accordingly.)
+                var userReviews = await _context.TblReviews
+                    .Where(r => r.UserId == offer.UserId)
+                    .ToListAsync();
+
+                double userRating = userReviews.Count > 0 ? userReviews.Average(r => r.Rating) : 0;
+                int reviewCount = userReviews.Count;
                 double recommendedPercentage = 0;
-                int totalReviews = reviews.Count;
-                if (totalReviews > 0)
+                if (reviewCount > 0)
                 {
-                    // For example, consider reviews with a rating of 4 or higher as positive.
-                    int positiveReviews = reviews.Count(r => r.Rating >= 4);
-                    recommendedPercentage = (positiveReviews / (double)totalReviews) * 100;
+                    int positiveReviews = userReviews.Count(r => r.Rating >= 4);
+                    recommendedPercentage = (positiveReviews / (double)reviewCount) * 100;
                 }
 
-                // 4. Calculate the Job Success Rate based on exchanges related to this offer.
-                double jobSuccessRate = 0;
-                var offerExchanges = await _context.TblExchanges
-                    .Where(e => e.OfferId == offer.OfferId)
+                // (You must also compute the user's exchange success rate – for example, based on completed exchanges
+                // where the user was either the offer owner or the other party.)
+                double userJobSuccessRate = 0;
+                var userExchanges = await _context.TblExchanges
+                    .Where(e => e.OfferOwnerId == offer.UserId || e.OtherUserId == offer.UserId)
                     .ToListAsync();
-                if (offerExchanges.Any())
+                if (userExchanges.Any())
                 {
-                    int completedCount = offerExchanges.Count(e =>
+                    int completedExchanges = userExchanges.Count(e =>
                         e.Status != null && e.Status.Trim().ToLower() == "completed");
-                    jobSuccessRate = (completedCount / (double)offerExchanges.Count()) * 100;
+                    userJobSuccessRate = (completedExchanges / (double)userExchanges.Count) * 100;
                 }
 
                 // Determine the online status of the offer owner.
@@ -164,6 +170,22 @@ namespace SkillSwap_Platform.Controllers
                     // Process the fetched data in memory
                     comparableOffers = comparableOfferEntities.Select(o =>
                     {
+                        // Calculate the user's review metrics for this specific offer owner.
+                        var userReviewsForCompare = _context.TblReviews.Where(r => r.UserId == o.UserId).ToList();
+                        int compareReviewCount = userReviewsForCompare.Count;
+                        double compareAvgRating = compareReviewCount > 0 ? userReviewsForCompare.Average(r => r.Rating) : 0;
+                        int positiveCompareReviews = compareReviewCount > 0 ? userReviewsForCompare.Count(r => r.Rating >= 4) : 0;
+                        double compareRecommendedPercentage = compareReviewCount > 0 ? (positiveCompareReviews / (double)compareReviewCount) * 100 : 0;
+
+                        // Calculate exchange success rate for the comparable user.
+                        var userExchangesForCompare = _context.TblExchanges.Where(e => e.OfferOwnerId == o.UserId || e.OtherUserId == o.UserId).ToList();
+                        double compareJobSuccessRate = 0;
+                        if (userExchangesForCompare.Any())
+                        {
+                            int completedExchangesForCompare = userExchangesForCompare.Count(e =>
+                                e.Status != null && e.Status.Trim().ToLower() == "completed");
+                            compareJobSuccessRate = (completedExchangesForCompare / (double)userExchangesForCompare.Count) * 100;
+                        }
                         var shortTitle = GenerateShortTitle(o.Title);  // Generate short title
 
                         return new CompareOfferVM
@@ -179,8 +201,8 @@ namespace SkillSwap_Platform.Controllers
                             RequiredSkillLevel = o.RequiredSkillLevel,
                             CollaborationMethod = o.CollaborationMethod ?? "Not Provided",
                             AssistanceRounds = o.AssistanceRounds ?? 0,
-                            RecommendedPercentage = recommendedPercentage.ToString("N2"),
-                            JobSuccessRate = jobSuccessRate,
+                            RecommendedPercentage = compareRecommendedPercentage.ToString("N2"),
+                            JobSuccessRate = compareJobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
                             ProfileImage = portfolioUrls.FirstOrDefault()
@@ -266,6 +288,18 @@ namespace SkillSwap_Platform.Controllers
                     HttpContext.Session.SetString(sessionKey, "true");
                 }
 
+                // Retrieve related offers and exclude current user's offers if logged in.
+                IQueryable<TblOffer> relatedOffersQuery = _context.TblOffers
+                    .Where(o => o.Category == offer.Category && o.OfferId != offer.OfferId);
+                if (currentUserId.HasValue)
+                {
+                    relatedOffersQuery = relatedOffersQuery.Where(o => o.UserId != currentUserId.Value);
+                }
+                var relatedOffers = await relatedOffersQuery
+                    .OrderByDescending(o => o.Views)
+                    .Take(4)
+                    .ToListAsync();
+
                 var model = new OfferDisplayVM
                 {
                     OfferId = offer.OfferId,
@@ -286,8 +320,10 @@ namespace SkillSwap_Platform.Controllers
                     SkillNames = skillNames,
                     Device = offer.Device,
                     Tools = offer.Tools,
+                    UserRating = userRating,
+                    ReviewCount = reviewCount,
                     RecommendedPercentage = recommendedPercentage.ToString("N2"),  // e.g., "75.00"
-                    JobSuccessRate = jobSuccessRate, // e.g., 75.00 (you can format in the view)
+                    JobSuccessRate = userJobSuccessRate, // e.g., 75.00 (you can format in the view)
                     CompareOffers = comparableOffers,
                     IsOnline = isOnline,
                     IsExchangeCompleted = isExchangeCompleted,
@@ -297,7 +333,8 @@ namespace SkillSwap_Platform.Controllers
                     },
                     Reviews = reviews,
                     ActiveExchangeCount = activeExchangeCount,
-                    Views = offer.Views
+                    Views = offer.Views,
+                    RelatedOffers = relatedOffers
                 };
 
                 return View(model);
@@ -470,12 +507,32 @@ namespace SkillSwap_Platform.Controllers
                      .Skip((page - 1) * pageSize)
                      .Take(pageSize)
                     .ToListAsync();
+                
+                var reviewAggregates = await _context.TblReviews
+                    .GroupBy(r => r.OfferId)
+                    .Select(g => new {
+                        OfferId = g.Key,
+                        ReviewCount = g.Count(),
+                        AverageRating = g.Average(r => r.Rating)
+                    })
+                    .ToDictionaryAsync(x => x.OfferId);
 
                 var offerCards = offers.Select(o =>
                 {
                     var portfolio = string.IsNullOrWhiteSpace(o.Portfolio)
                         ? new List<string>()
                         : Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>();
+
+                    // Default values if no reviews are available.
+                    int reviewCount = 0;
+                    double avgRating = 0;
+
+                    // Look for aggregated review data.
+                    if (reviewAggregates.TryGetValue(o.OfferId, out var agg))
+                    {
+                        reviewCount = agg.ReviewCount;
+                        avgRating = agg.AverageRating;
+                    }
 
                     return new OfferCardVM
                     {
@@ -494,7 +551,9 @@ namespace SkillSwap_Platform.Controllers
                                             ? "/template_assets/images/No_Profile_img.png"
                                             : o.User.ProfileImageUrl,
                         Thumbnail = portfolio.FirstOrDefault(),
-                        PortfolioImages = portfolio
+                        PortfolioImages = portfolio,
+                        AverageRating = avgRating,
+                        ReviewCount = reviewCount
                     };
                 }).ToList();
 
@@ -606,6 +665,43 @@ namespace SkillSwap_Platform.Controllers
             }
 
             return string.Join(" ", importantWords);
+        }
+
+        private async Task UpdateUserAggregatesAsync(int userId)
+        {
+            // Get all reviews written for this user.
+            var userReviews = await _context.TblReviews
+                                .Where(r => r.UserId == userId)
+                                .ToListAsync();
+
+            int count = userReviews.Count;
+            decimal avgRating = count > 0 ? (decimal)userReviews.Average(r => r.Rating) : 0;
+
+            // For example, consider ratings of 4 or higher as positive.
+            int positiveCount = count > 0 ? userReviews.Count(r => r.Rating >= 4) : 0;
+            decimal recommendedPercentage = count > 0 ? (positiveCount / (decimal)count) * 100 : 0;
+
+            // Get exchanges in which this user participated (as offer owner or other party).
+            var userExchanges = await _context.TblExchanges
+                                 .Where(e => e.OfferOwnerId == userId || e.OtherUserId == userId)
+                                 .ToListAsync();
+            int totalExchanges = userExchanges.Count;
+            int completedExchanges = totalExchanges > 0
+                                      ? userExchanges.Count(e => e.Status != null && e.Status.Trim().ToLower() == "completed")
+                                      : 0;
+            decimal jobSuccessRate = totalExchanges > 0 ? (completedExchanges / (decimal)totalExchanges) * 100 : 0;
+
+            // Retrieve and update the user.
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user != null)
+            {
+                user.ReviewCount = count;
+                user.AverageRating = avgRating;
+                user.RecommendedPercentage = (double?)recommendedPercentage;
+                user.JobSuccessRate = (double?)jobSuccessRate;
+
+                await _context.SaveChangesAsync();
+            }
         }
 
         #endregion

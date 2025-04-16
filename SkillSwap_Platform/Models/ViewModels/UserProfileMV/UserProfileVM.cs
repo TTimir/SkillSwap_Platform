@@ -18,6 +18,12 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public int LastExchangeDays { get; set; }
         public double TotalYearsOfExperience { get; set; }
         public double RecommendedPercentage { get; set; }
+        public int TotalExchanges { get; set; }
+        public string AverageResponseTime { get; set; }
+        public int ActiveExchangeCount { get; set; }
+        public IEnumerable<TblReview> Reviews { get; set; }
+        public int ReviewCount { get; set; }
+        public double AverageRating { get; set; }
     }
 
     public class SkillVM

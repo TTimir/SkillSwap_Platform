@@ -515,28 +515,28 @@
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">4 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: @fourStarPercent%;" role="progressbar" aria-valuenow="@fourStarPercent%" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @fourStarPercent%;" role="progressbar" aria-valuenow="@fourStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">@fourStarPercent</div>
+                                                    <div class="value text-end">@fourStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">3 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: @threeStarPercent%;" role="progressbar" aria-valuenow="@threeStarPercent%" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @threeStarPercent%;" role="progressbar" aria-valuenow="@threeStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">@threeStarPercent</div>
+                                                    <div class="value text-end">@threeStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">2 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: @twoStarPercent%;" role="progressbar" aria-valuenow="@twoStarPercent%" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @twoStarPercent%;" role="progressbar" aria-valuenow="@twoStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">@twoStarPercent</div>
+                                                    <div class="value text-end">@twoStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">1 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: @oneStarCount%;" role="progressbar" aria-valuenow="@oneStarCount%" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @oneStarCount%;" role="progressbar" aria-valuenow="@oneStarCount" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
                                                     <div class="value text-end">@oneStarCount</div>
                                                 </div>
@@ -754,7 +754,7 @@
                                             <p class="mb-0">@("@")@details.Username</p>
                                         }
                                     }
-                                    <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color">@averageRating.ToString("0.00") </span> (@totalReviews reviews)</p></div>
+                                    <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color">@Model.UserRating.ToString("0.00") </span> (@Model.ReviewCount reviews)</p></div>
                                 </div>
                             </div>
                             <hr class="opacity-100">
@@ -773,9 +773,9 @@
                                     </a>
                                     <a class="meta fw500 text-start">
                                         Recomm.<br><span class="fz14 fw400">
-                                            @if (int.TryParse(Model.RecommendedPercentage, out int percentage) && percentage > 0)
+                                            @if (!string.IsNullOrEmpty(Model.RecommendedPercentage))
                                             {
-                                                <span>@percentage.ToString("N2")% positive.</span>
+                                                <span>@("%")@Model.RecommendedPercentage</span>
                                             }
                                             else
                                             {
@@ -784,7 +784,7 @@
 
                                         </span>
                                     </a>
-                                    <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">%@Model.JobSuccessRate</span></a>
+                                    <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">%@Model.JobSuccessRate.ToString("0.00")</span></a>
                                 </div>
                             </div>
                             <div class="d-grid mt30">
@@ -801,152 +801,162 @@
 </section>
 
 <!-- Listings -->
-<section class="pt30 pb90 pb30-md">
-    <div class="container">
-        <div class="row wow fadeInUp">
-            <div class="col-lg-12">
-                <div class="main-title mb35">
-                    <h2>People Who Viewed This Service Also Viewed </h2>
-                    <p class="text">Give your visitor a smooth online experience with a solid UX design</p>
+@if (Model.RelatedOffers != null && ((IEnumerable<SkillSwap_Platform.Models.TblOffer>)Model.RelatedOffers).Any())
+{
+    <section class="pt30 pb90 pb30-md">
+        <div class="container">
+            <div class="row wow fadeInUp">
+                <div class="col-lg-12">
+                    @{
+                        // Retrieve the current category from your model.
+                        var category = Model.Category;
+                        string dynamicMessage = string.Empty;
+
+                        // Set a message based on the category.
+                        switch (category)
+                        {
+                            case "Graphics & Design":
+                                dynamicMessage = "Give your visitor a smooth experience with creative graphic design that shows your brand.";
+                                break;
+                            case "Digital Marketing":
+                                dynamicMessage = "Give your visitor a smooth experience with smart digital marketing that gets results.";
+                                break;
+                            case "Writing & Translation":
+                                dynamicMessage = "Give your visitor a smooth experience with clear writing and translation that speaks to everyone.";
+                                break;
+                            case "Video & Animation":
+                                dynamicMessage = "Give your visitor a smooth experience with engaging videos and animations that tell your story.";
+                                break;
+                            case "Music & Audio":
+                                dynamicMessage = "Give your visitor a smooth experience with quality music and audio that sets the right mood.";
+                                break;
+                            case "Programming & Tech":
+                                dynamicMessage = "Give your visitor a smooth experience with reliable programming and tech solutions that work perfectly.";
+                                break;
+                            case "Business":
+                                dynamicMessage = "Give your visitor a smooth experience with smart business solutions that build trust.";
+                                break;
+                            case "Lifestyle":
+                                dynamicMessage = "Give your visitor a smooth experience with lifestyle design that inspires everyday living.";
+                                break;
+                            case "Trending":
+                                dynamicMessage = "Give your visitor a smooth experience with fresh design ideas that catch the eye.";
+                                break;
+                            default:
+                                dynamicMessage = "Give your visitor a smooth experience with great practices.";
+                                break;
+                        }
+                    }
+                    <div class="main-title mb35">
+                        <h2>People Who Viewed This Service Also Viewed </h2>
+                        <p class="text">@dynamicMessage</p>
+                    </div>
                 </div>
+            </div>
+            <div class="row wow fadeInUp equal-height">
+                @foreach (var related in Model.RelatedOffers)
+                {
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="listing-style1 offer-card">
+                            <div class="list-thumb">
+                                @{
+                                    // Explicitly cast the Portfolio property to string.
+                                    var portfolioData = (string)related.Portfolio;
+                                    string[] imageUrls = new string[0];
+
+                                    if (!string.IsNullOrWhiteSpace(portfolioData))
+                                    {
+                                        // Clean up the JSON array string by removing the surrounding [ and ] characters.
+                                        var cleanedData = portfolioData.Trim();
+                                        if (cleanedData.StartsWith("["))
+                                        {
+                                            cleanedData = cleanedData.Substring(1);
+                                        }
+                                        if (cleanedData.EndsWith("]"))
+                                        {
+                                            cleanedData = cleanedData.Substring(0, cleanedData.Length - 1);
+                                        }
+
+                                        // Now split using comma and remove any extra surrounding quotes for each URL.
+                                        imageUrls = cleanedData
+                                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(url => url.Trim().Trim('"'))
+                                        .ToArray();
+                                    }
+                                }
+
+                                @if (imageUrls != null && imageUrls.Length > 0)
+                                {
+                                    <div class="list-thumb">
+                                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+                                            @foreach (var image in imageUrls)
+                                            {
+                                                <div class="item">
+                                                    <img class="w-100" src="@image" alt="@related.Title" />
+                                                    <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })" class="listing-fav fz12">
+                                                        <span class="far fa-heart"></span>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    // Fallback to default images when no valid images are found
+                                    var relateddefaultImages = new List<string>
+                        {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                        };
+
+                                    int index = related.OfferId % relateddefaultImages.Count;
+                                    var selectedImage = relateddefaultImages[index];
+
+                                    <div class="list-thumb">
+                                        <img class="w-100" src="@selectedImage" alt="@related.Title" />
+                                        <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })" class="listing-fav fz12">
+                                            <span class="far fa-heart"></span>
+                                        </a>
+                                    </div>
+                                }
+
+                            </div>
+                            <div class="list-content">
+                                <p class="list-text body-color fz14 mb-1">@related.Category</p>
+                                <h5 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })">@related.Title</a></h5>
+                                <div class="review-meta d-flex align-items-center">
+                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@averageRating.ToString("0.00") </span>@totalReviews reviews</p>
+                                </div>
+                                <hr class="my-2">
+                                @if (related.User != null)
+                                {
+                                    <div class="list-meta d-flex justify-content-between align-items-center mt15">
+                                        <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = related.User.UserName })">
+                                            <span class="position-relative mr10">
+                                                <img class="rounded-circle" src="@(string.IsNullOrEmpty(related.User.ProfileImageUrl) ? "/template_assets/images/No_Profile_img.png" : related.User.ProfileImageUrl)" alt="Freelancer Photo" width="25">
+                                                <span class="online-badge"></span>
+                                            </span>
+                                            <span class="fz14">@related.User?.UserName</span>
+                                        </a>
+                                        <div class="budget">
+                                            <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@related.User?.Country</span></p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
-        <div class="row wow fadeInUp">
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-1.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Web & App Design</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will design modern websites in figma or adobe xd</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-1.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-2.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-5.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Art & Illustration</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will create modern flat design illustration</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-2.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Ali Tufan</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Design & Creative</p>
-                        <h5 class="list-title line-clamp2"><a href="page-services-single.html">I will build a fully responsive design in HTML,CSS, bootstrap, and javascript</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-3.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Web & App Design</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will do mobile app development for ios and android</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-4.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- Our Footer -->
 <section class="footer-style1 pt25 pb-0">
@@ -1077,6 +1087,42 @@
 <a class="scrollToHome" href="#"><i class="fas fa-angle-up"></i></a>
 
 <style>
+    .offer-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .offer-card .list-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .offer-card .list-title {
+            min-height: 48px; /* Ensure consistent spacing for title */
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .offer-card .budget {
+            text-align: right;
+        }
+
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+        /* Make each column a flex container */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
     .share-overlay {
         position: fixed;
         top: 0;
@@ -1150,7 +1196,7 @@
 
         .review_cansel_btns a.vote:hover {
             /* This hover color will be applied only if no custom color override is set,
-           but our script will override these values as needed */
+                       but our script will override these values as needed */
             color: #007bff;
         }
 
@@ -1312,7 +1358,7 @@
         });
     </script>
     <script>
-                 $(document).ready(function () {
+        $(document).ready(function () {
             $('.review_cansel_btns a.vote').click(function (e) {
                 e.preventDefault();
 
