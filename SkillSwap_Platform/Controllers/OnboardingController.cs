@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Skill_Swap.Models;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.OnBoardVM;
+using SkillSwap_Platform.Services.Email;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
@@ -12,10 +13,13 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<OnboardingController> _logger;
-        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger)
+        private readonly IEmailService _emailService;
+
+        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
         #region STEP 1: Select Role
@@ -873,9 +877,39 @@ namespace SkillSwap_Platform.Controllers
             // 🚀 Mark onboarding as completed
             user.IsOnboardingCompleted = true;
 
+            HttpContext.Session.Remove("TempUserId");
             try
             {
                 await _context.SaveChangesAsync();
+
+                // 🎉 Fire off the "onboarding complete" email
+                var htmlBody = $@"
+                      <p>Hi {user.FirstName},</p>
+                    
+                      <p>Great news—you’ve successfully completed your onboarding on <strong>SkillSwap</strong>! Here’s a quick game plan to get rolling:</p>
+                    
+                      <ul>
+                        <li>Give your profile a once‑over. A friendly bio and clear photo help other swappers get to know you.</li>
+                        <li>Post your first offer or request. It takes just a minute, and it puts your skills on the map.</li>
+                        <li>Browse the marketplace. Spot something cool? Say hello and kick‑off your first swap.</li>
+                        <li>And more…</li>
+                      </ul>
+                    
+                      <p>Before you jump in, take a moment to review your profile so it shines. Once you’re happy, dive right into the community and start creating meaningful connections.</p>
+                    
+                      <p>🔗 <a href="">Jump back in here</a></p>
+                    
+                      <p> We can’t wait to see the connections you create.</ p >
+                    
+                      <p> Happy swapping! < br /> The SkillSwap Team</ p >
+                    ".Trim();
+
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    $"You’re all set! Ready to Start Swapping, {user.FirstName}? 🎉",
+                    htmlBody,
+                    isBodyHtml: true
+                    );
             }
             catch (Exception ex)
             {
@@ -936,6 +970,7 @@ namespace SkillSwap_Platform.Controllers
             var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
             if (user != null && user.IsVerified)
             {
+                TempData["SuccessMessage"] = "Your account is sent for review! be kind and have patience.";
                 // If approved, redirect to the dashboard.
                 return RedirectToAction("Index", "Home");
             }

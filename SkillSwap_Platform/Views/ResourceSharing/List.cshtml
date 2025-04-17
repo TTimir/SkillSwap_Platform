@@ -209,6 +209,10 @@
                                                         {
                                                             <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
                                                         }
+                                                        else if (resource.ResourceType.ToLower() == "video")
+                                                        {
+                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource Video/download"><span class="flaticon-video-file"></span></a>
+                                                        }
                                                         else
                                                         {
                                                             <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>

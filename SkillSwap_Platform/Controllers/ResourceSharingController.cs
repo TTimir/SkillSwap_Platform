@@ -178,16 +178,26 @@ namespace SkillSwap_Platform.Controllers
                     }
 
                     // Perform additional validation for file size based on file extension.
-                    long maxFileSize = 5 * 1024 * 1024; // Default: 5 MB
+                    long maxFileSize;
                     string[] codeExtensions = new[] { ".cs", ".js", ".html", ".css", ".py", ".java", ".cpp", ".c", ".php", ".rb", ".go" };
                     string extension = Path.GetExtension(model.File.FileName)?.ToLowerInvariant() ?? string.Empty;
+                    string[] videoExtensions = new[] { ".mp4", ".mov", ".avi", ".wmv", ".mkv" };
                     if (codeExtensions.Contains(extension))
                     {
-                        maxFileSize = 100 * 1024 * 1024; // 100 MB for code files
+                        maxFileSize = 100 * 1024 * 1024;    // 100 MB for code
+                    }
+                    else if (videoExtensions.Contains(extension))
+                    {
+                        maxFileSize = 500 * 1024 * 1024;    // 500 MB for videos
+                    }
+                    else
+                    {
+                        maxFileSize = 5 * 1024 * 1024;      // 5 MB for images & other files
                     }
                     if (model.File.Length > maxFileSize)
                     {
-                        TempData["ErrorMessage"] = $"File size exceeds the allowed limit of {maxFileSize / (1024 * 1024)} MB.";
+                        TempData["ErrorMessage"] =
+                            $"File size exceeds the allowed limit of {maxFileSize / (1024 * 1024)} MB.";
                         return View("Create", model);
                     }
 

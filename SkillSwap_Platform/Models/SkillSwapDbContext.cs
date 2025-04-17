@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Skill_Swap.Models;
+using SkillSwap_Platform.Models.ViewModels;
 
 namespace SkillSwap_Platform.Models;
 
@@ -50,6 +51,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
 
+    public virtual DbSet<TblPasswordResetToken> TblPasswordResetTokens { get; set; }
+
     public virtual DbSet<TblResource> TblResources { get; set; }
 
     public virtual DbSet<TblReview> TblReviews { get; set; }
@@ -74,6 +77,7 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<UserGoogleToken> UserGoogleTokens { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
+    public DbSet<ReviewAggregate> ReviewAggregates { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -525,6 +529,19 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_OfferPortfolio_Offers");
         });
 
+        modelBuilder.Entity<TblPasswordResetToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TblPassw__3214EC07A7EA8FDC");
+
+            entity.HasIndex(e => e.Token, "IX_TblPasswordResetTokens_Token").IsUnique();
+
+            entity.Property(e => e.Token).HasMaxLength(200);
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblPasswordResetTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_TblPasswordResetTokens_TblUsers");
+        });
+
         modelBuilder.Entity<TblResource>(entity =>
         {
             entity.HasKey(e => e.ResourceId).HasName("PK__tblResou__4ED1816F2249D411");
@@ -672,6 +689,7 @@ public partial class SkillSwapDbContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValue("User");
             entity.Property(e => e.Salt).HasMaxLength(200);
+            entity.Property(e => e.SecurityStamp).HasDefaultValueSql("(newid())");
             entity.Property(e => e.TotpSecret).HasMaxLength(100);
             entity.Property(e => e.UserName).HasMaxLength(100);
             entity.Property(e => e.Zip).HasMaxLength(20);
@@ -867,6 +885,8 @@ public partial class SkillSwapDbContext : DbContext
         modelBuilder.Entity<TblUser>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
+        modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 
         OnModelCreatingPartial(modelBuilder);
     }

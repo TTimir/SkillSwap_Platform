@@ -15,18 +15,26 @@ using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using Newtonsoft.Json;
 using SkillSwap_Platform.Models.ViewModels.FreelancersVM;
+using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.PasswordReset;
+using SkillSwap_Platform.HelperClass.Extensions;
+using System.Text.RegularExpressions;
 
 namespace SkillSwap_Platform.Controllers;
 
 public class HomeController : Controller
 {
     private readonly IUserServices _userService;
+    private readonly IPasswordResetService _passwordReset;
     private readonly SkillSwapDbContext _dbcontext;
+    private readonly IEmailService _emailService;
 
-    public HomeController(IUserServices userService, SkillSwapDbContext context)
+    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
+        _passwordReset = passwordReset;
+        _emailService = emailService;
     }
 
     public async Task<IActionResult> Index()
@@ -55,21 +63,52 @@ public class HomeController : Controller
                 .Take(8)
                 .ToListAsync();
 
-            var trendingOfferVMs = trendingOffers.Select(o => new OfferCardVM
+            // fetch all reviews for those offers in one DB hit
+            var tOfferIds = trendingOffers.Select(o => o.OfferId).ToList();
+            // build a comma‑separated list of parameters
+            var idParams = string.Join(", ", tOfferIds);
+
+            // your raw SQL—no CTE, just a plain GROUP BY
+            var sql = $@"
+                        SELECT 
+                            OfferId, 
+                            COUNT(*)           AS Count, 
+                            AVG(CAST(Rating AS float)) AS Avg 
+                          FROM TblReviews 
+                         WHERE OfferId IN ({idParams})
+                         GROUP BY OfferId;
+                    ";
+
+            var aggregates = await _dbcontext
+                .Set<ReviewAggregate>()              // a “keyless” DbSet<ReviewAggregate> you configure in your DbContext
+                .FromSqlRaw(sql)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var tAggregates = aggregates.ToDictionary(x => x.OfferId);
+
+            var trendingOfferVMs = trendingOffers.Select(o =>
             {
-                OfferId = o.OfferId,
-                Title = o.Title,
-                ShortTitle = o.Title?.Length > 35 ? o.Title.Substring(0, 35) + "..." : o.Title,
-                UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
-                     ? "/template_assets/images/No_Profile_img.png"
-                     : o.User.ProfileImageUrl,
-                // Deserialize the portfolio JSON string into a List<string>.
-                PortfolioImages = !string.IsNullOrWhiteSpace(o.Portfolio)
-                 ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
-                 : new List<string>(),
-                Category = o.Category,
-                UserName = o.User?.UserName ?? "Unknown",
-                TimeCommitmentDays = o.TimeCommitmentDays
+                tAggregates.TryGetValue(o.OfferId, out var agg);
+                return new OfferCardVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    ShortTitle = o.Title?.Length > 35 ? o.Title[..35] + "..." : o.Title,
+                    UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
+                                         ? "/template_assets/images/No_Profile_img.png"
+                                         : o.User.ProfileImageUrl,
+                    PortfolioImages = !string.IsNullOrWhiteSpace(o.Portfolio)
+                                        ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
+                                        : new List<string>(),
+                    Category = o.Category,
+                    UserName = o.User?.UserName ?? "Unknown",
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+
+                    // ⭐ NEW
+                    AverageRating = agg?.Avg ?? 0,
+                    ReviewCount = agg?.Count ?? 0
+                };
             }).ToList();
 
             // Query highest rated freelancers (limit to 10)
@@ -91,17 +130,16 @@ public class HomeController : Controller
                     ? "/template_assets/images/No_Profile_img.png"
                     : u.ProfileImageUrl,
                 Location = u.Country,
-                Rating = u.TblReviewReviewees != null && u.TblReviewReviewees.Any()
-                    ? u.TblReviewReviewees.Average(r => r.Rating)
-                    : 0,
-                JobSuccess = u.JobSuccessRate,
+                Rating = (double)(u.AverageRating ?? 0m),
+                ReviewCount = u.ReviewCount ?? 0,
+                JobSuccess = u.JobSuccessRate ?? 0,
+                Recommendation = u.RecommendedPercentage ?? 0,
                 OfferedSkillAreas = u.TblUserSkills
                     .Where(us => us.IsOffering)
                     .OrderByDescending(us => us.ProficiencyLevel)
                     .Take(3)
                     .Select(us => us.Skill.SkillName)
                     .ToList(),
-                Recommendation = u.RecommendedPercentage
             }).ToList();
 
             var vm = new HomePageVM
@@ -293,7 +331,7 @@ public class HomeController : Controller
 
     // GET: /Home/LoginOtp
     [HttpGet]
-    public IActionResult LoginOtp(string returnUrl = null)
+    public async Task<IActionResult> LoginOtp(string returnUrl = null)
     {
         var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
         if (loginUser == null)
@@ -301,6 +339,32 @@ public class HomeController : Controller
             TempData["ErrorMessage"] = "Session expired. Please log in again.";
             return RedirectToAction("Login");
         }
+
+        // generate & email OTP
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
+        HttpContext.Session.SetString("LoginEmailOtp_Expires", DateTimeOffset.UtcNow.AddMinutes(5).ToString());
+
+        var htmlBody = $@"
+                  <p>Hi {loginUser.UserName},</p>
+                  <p>Here’s your one‑time login code: <strong>{emailOtp}</strong></p>
+                  <p>
+                    Enter this code on the SkillSwap login screen to access your account.<br/>
+                    The code is valid for the next 05 minutes.
+                  </p>
+                  <p>If you didn’t request this code, you can safely ignore this email.</p>
+                  <p>Thanks for being part of SkillSwap!<br/>
+                     The SkillSwap Team
+                  </p>
+                ";
+
+        await _emailService.SendEmailAsync(
+            loginUser.Email,
+            "Your SkillSwap login code",
+            htmlBody,
+            isBodyHtml: true    // or however your service flags an HTML payload
+        );
+
         ViewBag.ReturnUrl = returnUrl;
         return View(loginUser);
     }
@@ -319,12 +383,32 @@ public class HomeController : Controller
 
         try
         {
-            // Verify the OTP.
-            if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
+            var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
+            bool isTotp = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
+            bool isEmailOk = emailOtp != null && emailOtp == otp;
+
+            if (!isTotp && !isEmailOk)
             {
-                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+                TempData["ErrorMessage"] = "❌ Invalid code. Try your app or check your email.";
                 return RedirectToAction("LoginOtp", new { returnUrl });
             }
+
+            //// Verify the OTP.
+            //if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
+            //{
+            //    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+            //    return RedirectToAction("LoginOtp", new { returnUrl });
+            //}
+
+            var expires = DateTimeOffset.Parse(HttpContext.Session.GetString("LoginEmailOtp_Expires"));
+            if (DateTimeOffset.UtcNow > expires)
+            {
+                TempData["ErrorMessage"] = "❌ That code has expired. Please request a new one.";
+                return RedirectToAction(nameof(LoginOtp));
+            }
+
+            // clear it so it can't be replayed
+            HttpContext.Session.Remove("LoginEmailOtp");
 
             // OTP is valid, sign in the user
             await SignInUserAsync(loginUser, false);
@@ -358,6 +442,29 @@ public class HomeController : Controller
             return RedirectToAction("Register");
         }
 
+        // 1️⃣ Generate email OTP
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        HttpContext.Session.SetString("EmailOtp", emailOtp);
+
+        var htmlBody = $@"
+              <p>Hi {tempUser.UserName},</p>
+              <p>Thanks for joining <strong>SkillSwap</strong>! Here’s your one‑time verification code: <strong>{emailOtp}</strong></p>
+              <p>Enter this code to verify your email and activate your account.<br/>
+                 The code is valid for the next 05 minutes.</p>
+              <p>If you didn’t request this, feel free to ignore this message.</p>
+              <p>Welcome aboard,<br/>The SkillSwap Team</p>
+            ".Trim();
+
+        // 2️⃣ Send it
+        await _emailService.SendEmailAsync(
+            tempUser.Email,
+            subject: "Your SkillSwap verification code",
+            htmlBody,
+            isBodyHtml: true
+            );
+
+        TempData["EmailOtpSent"] = true;
+
         // Generate QR Code URL for TOTP setup.
         string qrCodeUrl = TotpHelper.GenerateQrCodeUrl(tempUser.TotpSecret, tempUser.Email);
         ViewBag.QrCodeUrl = qrCodeUrl;
@@ -371,7 +478,6 @@ public class HomeController : Controller
         try
         {
             var tempUser = HttpContext.Session.GetObjectFromJson<TblUser>("TempUser");
-            string password = HttpContext.Session.GetString("TempUser_Password");
 
             if (tempUser == null || tempUser.Email != email)
             {
@@ -379,12 +485,26 @@ public class HomeController : Controller
                 return RedirectToAction("Register");
             }
 
-            // Verify OTP.
-            if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+            // pull the email‐OTP we stored
+            var emailOtp = HttpContext.Session.GetString("EmailOtp");
+
+            // check Google Auth TOTP
+            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp);
+            // check email‐OTP
+            bool isEmailValid = emailOtp != null && emailOtp == otp;
+
+            if (!isTotpValid && !isEmailValid)
             {
-                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+                TempData["ErrorMessage"] = "❌ Invalid code. Try your authenticator app or the email code.";
                 return View("Setup2FA");
             }
+
+            // Verify OTP.
+            //if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+            //{
+            //    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+            //    return View("Setup2FA");
+            //}
 
             // Create and register the new user.
             var newUser = new TblUser
@@ -398,13 +518,16 @@ public class HomeController : Controller
                 IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
             };
 
+            string password = HttpContext.Session.GetString("TempUser_Password");
             var result = await _userService.RegisterUserAsync(newUser, password);
             if (!result)
             {
                 TempData["ErrorMessage"] = "⚠️ Registration failed. Please try again.";
                 return View("Setup2FA");
             }
-            HttpContext.Session.Clear();
+
+            // preserve TempUserId for onboardin
+            HttpContext.Session.SetInt32("TempUserId", newUser.UserId);
 
             // Remove automatic login
             // await SignInUserAsync(newUser, false);
@@ -442,6 +565,79 @@ public class HomeController : Controller
         }
         return RedirectToAction("Login", "Home");
     }
+    #endregion
+
+    #region PasswordReset
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword() => View();
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !ModelState.IsValidEmail(nameof(email)))
+        {
+            TempData["Error"] = "Please enter a valid email address.";
+            return View();
+        }
+
+        try
+        {
+            var origin = $"{Request.Scheme}://{Request.Host}";
+            await _passwordReset.SendResetLinkAsync(email, origin);
+            TempData["Info"] = "If that email is in our system, you will receive a password reset link shortly.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = "An error occurred. Please try again later.";
+        }
+
+        return RedirectToAction(nameof(ForgotPasswordConfirmation));
+    }
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ForgotPasswordConfirmation() => View();
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ResetPassword(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return RedirectToAction(nameof(ForgotPassword));
+
+        return View(model: token);
+    }
+
+    [HttpPost, AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(string token, string newPassword, string confirmPassword)
+    {
+        if (newPassword != confirmPassword)
+        {
+            ModelState.AddModelError("", "Passwords do not match.");
+            return View(model: token);
+        }
+        if (newPassword.Length < 6)
+        {
+            ModelState.AddModelError("", "Password must be at least 8 characters.");
+            return View(model: token);
+        }
+
+        var (succeeded, error) = await _passwordReset.ResetPasswordAsync(token, newPassword);
+        if (!succeeded)
+        {
+            ModelState.AddModelError("", error!);
+            return View(model: token);
+        }
+
+        return RedirectToAction(nameof(ResetPasswordConfirmation));
+    }
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ResetPasswordConfirmation() => View();
+
     #endregion
 
     #region Helper Methods

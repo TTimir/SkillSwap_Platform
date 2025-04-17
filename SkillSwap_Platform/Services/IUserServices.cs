@@ -10,7 +10,9 @@ namespace SkillSwap_Platform.Services
         Task<string> GetTotpQrCodeAsync(string email);
         Task<bool> VerifyTotpAsync(string email, string otp);
         Task<bool> AuthenticateUserAsync(HttpContext httpContext, string login, string password);
-
+        Task<bool> UpdatePasswordAsync(int userId, string newPassword);
+        Task<TblPasswordResetToken> GeneratePasswordResetTokenAsync(int userId);
+        Task<int?> ValidateAndConsumePasswordResetTokenAsync(string token);
         // New method to retrieve roles as strings
         Task<TblUser> GetUserByIdAsync(int userId);
         Task<TblUser> GetUserByUsername(string username);

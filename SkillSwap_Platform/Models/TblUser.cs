@@ -88,6 +88,8 @@ public partial class TblUser
 
     public double? RecommendedPercentage { get; set; }
 
+    public string SecurityStamp { get; set; } = null!;
+
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();
@@ -109,6 +111,8 @@ public partial class TblUser
     public virtual ICollection<TblMessage> TblMessageSenderUsers { get; set; } = new List<TblMessage>();
 
     public virtual ICollection<TblOffer> TblOffers { get; set; } = new List<TblOffer>();
+
+    public virtual ICollection<TblPasswordResetToken> TblPasswordResetTokens { get; set; } = new List<TblPasswordResetToken>();
 
     public virtual ICollection<TblReview> TblReviewReviewees { get; set; } = new List<TblReview>();
 

@@ -1,13 +1,16 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Controllers;
 using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.Contracts;
+using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.Meeting;
+using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.Services.PDF;
 using SkillSwap_Platform.Services.Repository;
 using System.Diagnostics;
@@ -50,6 +53,10 @@ builder.Services.AddScoped<UserProfilesFilter>();
 builder.Services.AddScoped<ExchangeMeetingService>();
 builder.Services.AddHostedService<ContractExpirationService>();
 builder.Services.AddHostedService<MeetingTimeoutHostedService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IPasswordHasher<TblUser>, PasswordHasher<TblUser>>();
+builder.Services
+    .AddTransient<IEmailService, SmtpEmailService>();
 
 builder.Services.AddControllersWithViews(options =>
 {

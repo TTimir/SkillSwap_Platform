@@ -36,6 +36,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string Designation { get; set; }
         public string ProfileImage { get; set; }
         public string Location { get; set; }
+        public int ReviewCount { get; set; }
         public double Rating { get; set; }
         public double? JobSuccess { get; set; }
         public double? Recommendation { get; set; }

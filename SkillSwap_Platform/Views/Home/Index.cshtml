@@ -513,8 +513,8 @@
                                                             <div class="review-meta d-flex align-items-center">
                                                                 <i class="fas fa-star fz10 review-color me-2"></i>
                                                                 <p class="mb-0 body-color fz14">
-                                                                    <span class="dark-color me-2">4.82</span>
-                                                                    94 reviews
+                                                                    <span class="dark-color me-2">@offer.AverageRating.ToString("0.00")</span>
+                                                                    @offer.ReviewCount reviews
                                                                 </p>
                                                             </div>
                                                             <hr class="my-2">
@@ -663,8 +663,8 @@
 
                                     <div class="review">
                                         <p>
-                                            <i class="fas fa-star fz10 review-color pr10"></i>
-                                            <span class="dark-color fw500">@freelancer.Rating</span> (@freelancer.JobSuccess reviews)
+                                            <i class="fas fa-star fz10 review-color pr5"></i>
+                                            <span class="dark-color fw500">@freelancer.Rating.ToString("0.00")</span> (@freelancer.ReviewCount reviews)
                                         </p>
                                     </div>
                                     <hr class="opacity-100 mt20 mb15">
@@ -675,11 +675,11 @@
                                         </a>
                                         <a class="meta fw500 text-start">
                                             Recomm.<br>
-                                            <span class="fz14 fw400">% @freelancer.Recommendation</span>
+                                            <span class="fz14 fw400"> @("%")@freelancer.Recommendation.ToString("0.##")</span>
                                         </a>
                                         <a class="meta fw500 text-start">
-                                            Job Success<br>
-                                            <span class="fz14 fw400">% @freelancer.JobSuccess</span>
+                                            Exchange Success<br>
+                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess.ToString("0.##")</span>
                                         </a>
                                     </div>
                                     <div class="d-grid mt15">

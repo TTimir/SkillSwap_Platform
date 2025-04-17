@@ -74,6 +74,7 @@
                                         <select asp-for="ResourceType" id="resourceTypeSelect" class="selectpicker">
                                             <option value="">Select</option>
                                             <option value="Image">Image</option>
+                                            <option value="Video">Video</option>
                                             <option value="File">File</option>
                                             <option value="Link">Link</option>
                                         </select>
@@ -100,7 +101,7 @@
                             <div class="profile-box d-sm-flex align-items-center mb30">
                                 <div class="profile-content ml20 ml0-xs">
                                     <div class="d-flex align-items-center mb10">
-                                        <label for="resourceFile" class="upload-btn ml10" style="cursor:pointer;">Upload Images</label>
+                                        <label for="resourceFile" class="upload-btn ml10" style="cursor:pointer;">Upload Resource</label>
                                     </div>
                                     <p class="text mb-0">Max file size is 5MB. Code file size limit is 100MB.</p>
                                 </div>
@@ -140,7 +141,14 @@
                 if (selectedType === "link") {
                     $("#urlInputDiv").show();
                     $("#fileUploadDiv, #filePreviewContainer").hide();
-                } else if (selectedType === "image" || selectedType === "file") {
+                } else if (selectedType === "image" || selectedType === "video" || selectedType === "file") {
+                    // show file picker and restrict by type
+                    var accept = selectedType === "image"
+                                 ? "image/*"
+                                 : selectedType === "video"
+                                   ? "video/*"
+                                   : "*/*";
+                    $("#resourceFile").attr("accept", accept);
                     $("#fileUploadDiv").show();
                     $("#urlInputDiv").hide();
                 } else {
