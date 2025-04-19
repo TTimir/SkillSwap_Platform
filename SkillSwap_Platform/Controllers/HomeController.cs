@@ -14,11 +14,11 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using Newtonsoft.Json;
-using SkillSwap_Platform.Models.ViewModels.FreelancersVM;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.HelperClass.Extensions;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Identity;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -161,6 +161,62 @@ public class HomeController : Controller
         }
 
     }
+
+    #region External Login
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult ExternalLogin(string provider, string returnUrl = "/")
+    {
+        if (string.IsNullOrEmpty(provider))
+            return RedirectToAction(nameof(Login));
+
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), new { returnUrl });
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = redirectUrl,
+            Items = { { "scheme", provider } }
+        };
+        return Challenge(props, provider);
+    }
+
+    // handles Google’s callback
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> ExternalLoginCallback(string returnUrl = "/")
+    {
+        // grab the result
+        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        if (!result.Succeeded)
+            return RedirectToAction(nameof(Login));
+
+        // pull the email claim
+        var email = result.Principal.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(email))
+            return RedirectToAction(nameof(Login));
+
+        // lookup or create your user
+        var user = await _userService.GetUserByUserNameOrEmailAsync(null, email);
+        if (user == null)
+        {
+            user = new TblUser
+            {
+                Email = email,
+                UserName = email,
+                IsVerified = true,
+                IsActive = true
+            };
+            await _userService.RegisterUserAsync(user, Guid.NewGuid().ToString("N"));
+        }
+
+        // sign in locally
+        await SignInUserAsync(user, true);
+
+        // clear the external cookie
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return LocalRedirect(returnUrl);
+    }
+
+    #endregion
 
     #region Register
 

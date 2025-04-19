@@ -9,6 +9,7 @@ using System.Security.Claims;
 using Google.Apis.Auth.OAuth2.Responses;
 using SkillSwap_Platform.Models.ViewModels.MeetingVM;
 using Newtonsoft.Json.Linq;
+using SkillSwap_Platform.Services.NotificationTrack;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -18,12 +19,14 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<GoogleCalendarController> _logger;
         private readonly SkillSwapDbContext _dbContext;
         private readonly TimeSpan _reuseThreshold = TimeSpan.FromHours(1);
+        private readonly INotificationService _notif;
 
-        public GoogleCalendarController(IConfiguration configuration, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext)
+        public GoogleCalendarController(IConfiguration configuration, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext, INotificationService notif)
         {
             _configuration = configuration;
             _logger = logger;
             _dbContext = dbContext;
+            _notif = notif;
         }
 
         // Creates a calendar event with a Google Meet conference link.
@@ -246,6 +249,15 @@ namespace SkillSwap_Platform.Controllers
                 _dbContext.TblExchangeHistories.Add(historyRecord);
                 await _dbContext.SaveChangesAsync();
 
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = userId,
+                    Title = "Online Meeting Scheduled",
+                    Message = "Online meeting scheduled successfully.",
+                    Url = Url.Action("Conversation", "Messaging"),
+                });
+
                 var vm = new MeetingLaunchVM
                 {
                     JoinUrl = joinUrl,
@@ -320,6 +332,15 @@ namespace SkillSwap_Platform.Controllers
                 };
                 _dbContext.TblExchangeHistories.Add(historyRecord);
                 await _dbContext.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = userId,
+                    Title = "Online Meeting Notes Saved",
+                    Message = "You successfully saved your notes of online meeting.",
+                    Url = Url.Action("Conversation", "Messaging"),
+                });
 
                 _logger.LogInformation("Meeting notes saved successfully for meeting id {MeetingId}.", meetingId);
                 return RedirectToAction("Index", "ExchangeDashboard");

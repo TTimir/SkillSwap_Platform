@@ -2,7 +2,9 @@
 using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.NotificationTrack;
 using System.Security.Cryptography;
+using System.Security.Policy;
 
 namespace SkillSwap_Platform.Services.PasswordReset
 {
@@ -12,17 +14,19 @@ namespace SkillSwap_Platform.Services.PasswordReset
         private readonly IUserServices _userService;
         private readonly IEmailService _emailService;
         private readonly ILogger<PasswordResetService> _logger;
-
+        private readonly INotificationService _notif;
         public PasswordResetService(
             SkillSwapDbContext db,
             IUserServices userService,
             IEmailService emailService,
-            ILogger<PasswordResetService> logger)
+            ILogger<PasswordResetService> logger, 
+            INotificationService notif)
         {
             _db = db;
             _userService = userService;
             _emailService = emailService;
             _logger = logger;
+            _notif = notif;
         }
 
         public async Task SendResetLinkAsync(string email, string originUrl)
@@ -105,7 +109,99 @@ namespace SkillSwap_Platform.Services.PasswordReset
                     throw new Exception("Password update failed.");
 
                 await _db.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = user.UserId,
+                    Title = "Password Changed",
+                    Message = "You successfully changed your account password",
+                    Url = null,
+                });
+
                 await trx.CommitAsync();
+
+                var htmlBody = @"
+                    <!DOCTYPE html>
+                    <html lang=""en"">
+                    <head>
+                      <meta charset=""UTF-8"">
+                      <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                    </head>
+                    <body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+                      <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+                        <tr>
+                          <td align=""center"" style=""padding:20px;"">
+                            <!-- Main Card Container -->
+                            <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+                              
+                              <!-- Header (glassy green bar + SkillSwap text) -->
+                              <tr>
+                                <td style=""border-top:4px solid rgba(0, 168, 143, 0.8);padding:20px 20px 10px;"">
+                                  <h1 style=""margin:0;font-size:24px;color:#00A88F;font-family:Arial,sans-serif;"">
+                                    SkillSwap
+                                  </h1>
+                                </td>
+                              </tr>
+                    
+                              <!-- Body -->
+                              <tr>
+                                <td style=""padding:20px;color:#333333;line-height:1.5;"">
+                                  <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">
+                                    Your SkillSwap Password Has Changed
+                                  </h2>
+                                  <p style=""margin:0 0 10px;"">
+                                    Dear <strong>{userName}</strong>,
+                                  </p>
+                                  <p style=""margin:0 0 15px;"">
+                                    We wanted to let you know that your SkillSwap password was successfully changed on
+                                    <strong>{DateTime.UtcNow:MMMM d, yyyy 'at' h:mm tt} UTC</strong>.
+                                  </p>
+                                  <p style=""margin:0 0 15px;"">
+                                    If you did not request this change, please
+                                    <p style=""color:#00A88F;text-decoration:none;font-weight:bold;"">
+                                      contact our support team
+                                    </p>
+                                    immediately.
+                                  </p>
+                                </td>
+                              </tr>
+                    
+                              <!-- Divider -->
+                              <tr>
+                                <td style=""padding:0 20px;"">
+                                  <hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;"">
+                                </td>
+                              </tr>
+                    
+                              <!-- Footer Links (SkillSwap green) -->
+                              <!-- Legal / Trademark Text -->
+                              <tr>
+                                <td style=""background-color:#00A88F;padding:10px 20px;color:#e0f7f1;font-size:11px;line-height:1.4;text-align:center;"">
+                                  <p style=""margin:5px 0;"">
+                                    SkillSwap and the SkillSwap logo are trademarks of SkillSwap Inc. All other trademarks are the property of their respective owners.
+                                  </p>
+                                  <p style=""margin:5px 0;"">
+                                    Registered Office: by SkillSwap.
+                                  </p>
+                                </td>
+                              </tr>
+                    
+                            </table>
+                            <!-- End Main Card Container -->
+                          </td>
+                        </tr>
+                      </table>
+                    </body>
+                    </html>";
+
+                await _emailService.SendEmailAsync(
+                    to: user.Email,
+                    subject: "Your SkillSwap password has changed",
+                    body    : htmlBody,
+                    isBodyHtml: true
+                );
+
                 return (true, null);
             }
             catch (Exception ex)

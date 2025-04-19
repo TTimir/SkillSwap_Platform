@@ -8,6 +8,7 @@ using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.MessagesVM;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.Email;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -19,14 +20,16 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<MessagingController> _logger;
         private readonly ISensitiveWordService _sensitiveWordService;
-
+        private readonly IEmailService _emailService;
         public MessagingController(SkillSwapDbContext context,
                                          ILogger<MessagingController> logger,
-                                         ISensitiveWordService sensitiveWordService)
+                                         ISensitiveWordService sensitiveWordService,
+                                         IEmailService emailService)
         {
             _context = context;
             _logger = logger;
             _sensitiveWordService = sensitiveWordService;
+            _emailService = emailService;
         }
 
 
@@ -533,6 +536,37 @@ namespace SkillSwap_Platform.Controllers
 
                     _context.TblMessages.Add(message);
                     await _context.SaveChangesAsync();
+
+                    // → AFTER you persist the message, fire the email
+                    var receiver = await _context.TblUsers
+                                       .Where(u => u.UserId == receiverUserId)
+                                       .Select(u => new { u.Email, u.UserName })
+                                       .SingleAsync();
+
+                    var conversationUrl = Url.Action(
+                        "Conversation",
+                        "Messaging",
+                        new { otherUserId = GetUserId() },
+                        Request.Scheme,
+                        Request.Host.ToString()
+                    );
+
+                    string htmlBody = $@"
+                        <p>Hi {receiver.UserName},</p>
+                        <p>You have a new message from <strong>{User.Identity.Name}</strong>:</p>
+                        <blockquote>{System.Net.WebUtility.HtmlEncode(content)}</blockquote>
+                        <p>
+                          <a href=""{conversationUrl}"">View full conversation</a>
+                        </p>
+                        <p>— SkillSwap Team</p>
+                    ";
+
+                    await _emailService.SendEmailAsync(
+                        to: receiver.Email,
+                        subject: $"New message from {User.Identity.Name}",
+                        body: htmlBody,
+                        isBodyHtml: true
+                    );
 
                     // Process uploaded attachments.
                     if (attachments != null && attachments.Any())

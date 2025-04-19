@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.NotificationTrack;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -17,13 +18,14 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<UserOfferManageController> _logger;
         private readonly IWebHostEnvironment _env;
         private readonly IFileService _fileService;
-
-        public UserOfferManageController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IWebHostEnvironment env, IFileService fileService)
+        private readonly INotificationService _notif;
+        public UserOfferManageController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IWebHostEnvironment env, IFileService fileService, INotificationService notif)
         {
             _context = context;
             _logger = logger;
             _env = env;
             _fileService = fileService;
+            _notif = notif;
         }
 
         #region Create Offer
@@ -232,6 +234,16 @@ namespace SkillSwap_Platform.Controllers
                         offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
                         await _context.SaveChangesAsync();
                     }
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Offer Created",
+                        Message = "You successfully created and published your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
 
@@ -485,6 +497,16 @@ namespace SkillSwap_Platform.Controllers
                     }
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Offer Updated",
+                        Message = "You successfully updated your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
 
@@ -572,6 +594,16 @@ namespace SkillSwap_Platform.Controllers
                     offer.IsActive = false;
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Offer Deletd",
+                        Message = "You successfully deleted and removed your offer.",
+                        Url = Url.Action("DeletedOffers", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
                     TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
@@ -676,6 +708,16 @@ namespace SkillSwap_Platform.Controllers
                     offer.IsActive = true; // Optionally, mark as active.
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Offer Restored",
+                        Message = "You successfully restored your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync(); 
                     TempData["SuccessMessage"] = "Offer has been successfully restored.";

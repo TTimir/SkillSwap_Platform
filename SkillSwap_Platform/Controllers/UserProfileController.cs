@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+using SkillSwap_Platform.Services.NotificationTrack;
 using System.Linq;
 using System.Security.Claims;
 
@@ -16,11 +17,13 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserProfileController> _logger;
+        private readonly INotificationService _notif;
 
-        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger)
+        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
+            _notif = notif;
         }
 
         #region Public Profile
@@ -626,6 +629,15 @@ namespace SkillSwap_Platform.Controllers
                         user.OfferedSkillAreas = model.Skills.OfferedSkillSummary;
                         user.DesiredSkillAreas = model.Skills.WillingSkillSummary;
                         await _context.SaveChangesAsync();
+
+                        // log notification:
+                        await _notif.AddAsync(new TblNotification
+                        {
+                            UserId = GetUserId(),
+                            Title = "Profile updated",
+                            Message = "You successfully updated your profile.",
+                            Url = Url.Action("Index", "UserProfile"),
+                        });
 
                         // Synchronize the IsOffering flag on each TblUserSkill.
                         await UpdateUserOfferSkillFlagsAsync(userId, user.OfferedSkillAreas);

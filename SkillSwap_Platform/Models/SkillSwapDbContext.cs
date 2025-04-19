@@ -47,6 +47,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblMessageAttachment> TblMessageAttachments { get; set; }
 
+    public virtual DbSet<TblNotification> TblNotifications { get; set; }
+
     public virtual DbSet<TblOffer> TblOffers { get; set; }
 
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
@@ -78,7 +80,6 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
     public DbSet<ReviewAggregate> ReviewAggregates { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=TIMIRBHINGRADIY;Database=SkillSwapDb;Trusted_Connection=True;Encrypt=false;");
@@ -469,6 +470,17 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.MessageId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblMessageAttachments_Message");
+        });
+
+        modelBuilder.Entity<TblNotification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId).HasName("PK_Notifications");
+
+            entity.ToTable("tblNotifications");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Url).HasMaxLength(500);
         });
 
         modelBuilder.Entity<TblOffer>(entity =>

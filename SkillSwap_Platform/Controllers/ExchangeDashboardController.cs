@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.CodeAnalysis.Text;
+using SkillSwap_Platform.Services.NotificationTrack;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -13,11 +14,13 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<ExchangeDashboardController> _logger;
+        private readonly INotificationService _notif;
 
-        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger)
+        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif)
         {
             _context = context;
             _logger = logger;
+            _notif = notif;
         }
 
         // GET: /ExchangeDashboard/
@@ -598,6 +601,15 @@ namespace SkillSwap_Platform.Controllers
             _context.TblExchangeHistories.Add(historyRecord);
             await _context.SaveChangesAsync();
 
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetCurrentUserId(),
+                Title = "Exchange Marked as Comepleted",
+                Message = "You successfully completed your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
+
             TempData["SuccessMessage"] = "Exchange marked as completed.";
 
             // Redirect to the review page for that exchange.
@@ -721,6 +733,15 @@ namespace SkillSwap_Platform.Controllers
                 Response.Cookies.Delete("ReviewerName");
                 Response.Cookies.Delete("ReviewerEmail");
             }
+
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetCurrentUserId(),
+                Title = "Exchange Review",
+                Message = "You successfully reviwed your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
 
             TempData["SuccessMessage"] = "Thank you for your review!";
             // Optionally redirect to a page that shows the exchange history or back to the dashboard.

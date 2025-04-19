@@ -4,6 +4,7 @@ using SkillSwap_Platform.Models;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Services.NotificationTrack;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -12,12 +13,14 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<ExchangeInPersonController> _logger;
         private readonly IWebHostEnvironment _env;
+        private readonly INotificationService _notif;
 
-        public ExchangeInPersonController(SkillSwapDbContext context, ILogger<ExchangeInPersonController> logger, IWebHostEnvironment env)
+        public ExchangeInPersonController(SkillSwapDbContext context, ILogger<ExchangeInPersonController> logger, IWebHostEnvironment env, INotificationService notif)
         {
             _context = context;
             _logger = logger;
             _env = env;
+            _notif = notif;
         }
 
         #region Schedule Meeting
@@ -146,6 +149,15 @@ namespace SkillSwap_Platform.Controllers
                 _context.TblExchangeHistories.Add(schedulingHistory);
                 await _context.SaveChangesAsync();
 
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "In-Person Meeting Scheduled",
+                    Message = "Meeting for your in-person meet scheduled.",
+                    Url = Url.Action("Conversation", "Messaging"),
+                });
+
                 TempData["SuccessMessage"] = "In-person meeting scheduled successfully. A notification has been sent to the other party.";
                 return RedirectToAction("Conversation", "Messaging", new { exchangeId = model.ExchangeId });
             }
@@ -263,6 +275,15 @@ namespace SkillSwap_Platform.Controllers
                 }
                 await _context.SaveChangesAsync();
 
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "In-Person Meeting Verified",
+                    Message = "Meeting for your in-person meet is varified.",
+                    Url = Url.Action("Conversation", "Messaging"),
+                });
+
                 return Json(new
                 {
                     success = true,
@@ -373,6 +394,15 @@ namespace SkillSwap_Platform.Controllers
             _context.TblExchangeHistories.Add(historyRecord);
             await _context.SaveChangesAsync();
 
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetUserId(),
+                Title = "In-Person Meeting Proof",
+                Message = "Meeting for your in-person meet start Proof Submitted.",
+                Url = Url.Action("Conversation", "Messaging"),
+            });
+
             TempData["SuccessMessage"] = "Your meeting end proof has been uploaded successfully.";
             return RedirectToAction("Conversation", "Messaging");
         }
@@ -452,6 +482,15 @@ namespace SkillSwap_Platform.Controllers
                 _context.TblExchangeHistories.Add(historyRecord);
 
                 await _context.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "In-Person Meeting Proof",
+                    Message = "Meeting for your in-person meet end Proof Submitted.",
+                    Url = Url.Action("Conversation", "Messaging"),
+                });
 
                 TempData["SuccessMessage"] = "Your end meeting details have been submitted successfully.";
                 return RedirectToAction("Conversation", "Messaging", new { exchangeId = model.ExchangeId });

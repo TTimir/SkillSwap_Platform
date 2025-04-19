@@ -1,6 +1,10 @@
-﻿using Hangfire;
+﻿using AspNet.Security.OAuth.Apple;
+using AspNet.Security.OAuth.GitHub;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Controllers;
@@ -10,10 +14,12 @@ using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.Meeting;
+using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.Services.PDF;
 using SkillSwap_Platform.Services.Repository;
 using System.Diagnostics;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +59,7 @@ builder.Services.AddScoped<UserProfilesFilter>();
 builder.Services.AddScoped<ExchangeMeetingService>();
 builder.Services.AddHostedService<ContractExpirationService>();
 builder.Services.AddHostedService<MeetingTimeoutHostedService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IPasswordHasher<TblUser>, PasswordHasher<TblUser>>();
 builder.Services
@@ -81,27 +88,39 @@ builder.Services.AddSession(options =>
 //        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
 //        options.ExpireTimeSpan = TimeSpan.FromDays(7);
 //    });
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = "SkillSwapAuth";
-    options.DefaultSignInScheme = "SkillSwapAuth";
-    options.DefaultChallengeScheme = "SkillSwapAuth";
-})
-.AddCookie("SkillSwapAuth", options =>
-{
-    options.LoginPath = "/Home/Login";
-    options.AccessDeniedPath = "/Home/AccessDenied";
-    options.Cookie.Name = "SkillSwapAuth";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    options.Events.OnRedirectToLogin = context =>
+builder.Services
+    .AddAuthentication(options =>
     {
-        // Log the redirect URL for debugging.
-        Console.WriteLine($"Redirecting to login from {context.Request.Path}");
-        context.Response.Redirect(context.RedirectUri);
-        return Task.CompletedTask;
-    };
-});
-
+        options.DefaultAuthenticateScheme = "SkillSwapAuth";
+        options.DefaultSignInScheme = "SkillSwapAuth";
+        options.DefaultChallengeScheme = "SkillSwapAuth";
+    })
+    .AddCookie("SkillSwapAuth", options =>
+    {
+        options.LoginPath = "/Home/Login";
+        options.AccessDeniedPath = "/Home/AccessDenied";
+        options.Cookie.Name = "SkillSwapAuth";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.Events.OnRedirectToLogin = context =>
+        {
+            // Log the redirect URL for debugging.
+            Console.WriteLine($"Redirecting to login from {context.Request.Path}");
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+    })
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.SignInScheme = "ExternalScheme";
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        options.Events.OnRemoteFailure = ctx =>
+        {
+            ctx.Response.Redirect("/Home/Login?error=" + Uri.EscapeDataString(ctx.Failure.Message));
+            ctx.HandleResponse();
+            return Task.CompletedTask;
+        };
+    });
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled

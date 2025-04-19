@@ -16,6 +16,7 @@ using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 using System.Diagnostics.Contracts;
 using SkillSwap_Platform.HelperClass.Extensions;
 using SkillSwap_Platform.HelperClass;
+using SkillSwap_Platform.Services.NotificationTrack;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -34,6 +35,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly IContractHandlerService _contractHandler;
         private readonly IViewRenderService _viewRenderService;
         private readonly IPdfGenerator _pdfGenerator;
+        private readonly INotificationService _notif;
 
         public ContractController(
             IContractPreparationService contractPreparation,
@@ -41,7 +43,8 @@ namespace SkillSwap_Platform.Controllers
             SkillSwapDbContext context,
             ILogger<ContractController> logger,
             IViewRenderService viewRenderService,
-            IPdfGenerator pdfGenerator)
+            IPdfGenerator pdfGenerator,
+            INotificationService notif)
         {
             _contractPreparation = contractPreparation;
             _contractHandler = contractHandler;
@@ -49,6 +52,7 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
             _viewRenderService = viewRenderService;
             _pdfGenerator = pdfGenerator;
+            _notif = notif;
         }
 
         #region Create Contract
@@ -121,6 +125,15 @@ namespace SkillSwap_Platform.Controllers
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
                 }
             }
+
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetUserId(),
+                Title = "Aggreement Created",
+                Message = "You successfully cretaed and send the aggreement of your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
 
             model.Mode = MODE_CREATE;
             model.ActionContext = ACTION_CREATEONLY;
@@ -425,6 +438,16 @@ namespace SkillSwap_Platform.Controllers
                 // Save relative path to database
                 newContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
                 await _context.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "Aggreement Modified",
+                    Message = "You successfully modified and send back the aggreement of your exchange.",
+                    Url = Url.Action("Index", "ExchangeDashboard"),
+                });
+
                 await transaction.CommitAsync();
 
                 TempData["SuccessMessage"] = "The Agreement/ Contract modified and sent back successfully.";
@@ -825,6 +848,15 @@ namespace SkillSwap_Platform.Controllers
                     _context.TblContracts.Add(newFinalContract);
                     await _context.SaveChangesAsync();
 
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Aggreement Signed",
+                        Message = "You successfully signed the aggreement of your exchange.",
+                        Url = Url.Action("Index", "ExchangeDashboard"),
+                    });
+
                     TempData["SuccessMessage"] = "You have signed the greement/ contract. A new version has been created.";
                     int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
@@ -855,6 +887,15 @@ namespace SkillSwap_Platform.Controllers
             contract.Status = "Declined";
             //contract.DeclinedDate = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetUserId(),
+                Title = "Aggreement Declined",
+                Message = "You successfully declined the aggreement of your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
 
             TempData["SuccessMessage"] = "You declined the agreement/ contract.";
             return RedirectToAction("Conversation", "Messaging", new { otherUserId = contract.SenderUserId });

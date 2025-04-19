@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.HelperClass;
+using SkillSwap_Platform.Services.NotificationTrack;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -14,12 +15,13 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _dbContext;
         private readonly ILogger<ResourceSharingController> _logger;
         private readonly string _uploadFolder;
-
-        public ResourceSharingController(SkillSwapDbContext dbContext, ILogger<ResourceSharingController> logger)
+        private readonly INotificationService _notif;
+        public ResourceSharingController(SkillSwapDbContext dbContext, ILogger<ResourceSharingController> logger, INotificationService notif)
         {
             _dbContext = dbContext;
             _logger = logger;
             _uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "resources");
+            _notif = notif;
         }
 
         /// <summary>
@@ -267,6 +269,15 @@ namespace SkillSwap_Platform.Controllers
                 // Add and save the new message.
                 _dbContext.TblMessages.Add(notificationMessage);
                 await _dbContext.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetCurrentUserId(),
+                    Title = "New Resource Shared",
+                    Message = $"A new resource was shared for “{offerTitle}.”",
+                    Url = Url.Action("List", "ResourceSharing"),
+                });
 
                 TempData["SuccessMessage"] = "Resource shared successfully.";
 
