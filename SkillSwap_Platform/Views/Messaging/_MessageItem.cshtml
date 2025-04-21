@@ -280,9 +280,15 @@
                             }
                             else if (exchange.ExchangeId > 0 && bothVerified)
                             {
-                                <p class="text-success">
-                                    Meeting verified on @Model.InPersonMeeting.InpersonMeetingVerifiedDate?.ToLocalTime().ToString("g")
-                                </p>
+                                // find the latest meeting for this exchange
+                                var latest = Model.InPersonMeeting;
+
+                                if (latest?.InpersonMeetingVerifiedDate != null)
+                                {
+                                    <p class="text-success">
+                                        Meeting verified on @latest.InpersonMeetingVerifiedDate.Value.ToLocalTime().ToString("g")
+                                    </p>
+                                }
                             }
                         }
 
@@ -334,6 +340,7 @@
                                         else
                                         {
                                             <p>You have already verified your OTP. Please share your OTP with <strong>@Model.SenderName</strong> if needed.</p>
+                                            <p>Your Meeting OTP: <strong id="otpValue"></strong></p>
                                         }
                                     }
                                 </div>
@@ -642,6 +649,7 @@
                                         else
                                         {
                                             <p>You have already verified your OTP. Please share your OTP with <strong>@Model.SenderName</strong> if needed.</p>
+                                            <p>Your Meeting OTP: <strong id="otpValue"></strong></p>
                                         }
                                     }
                                 </div>

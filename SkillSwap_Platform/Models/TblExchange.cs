@@ -47,14 +47,6 @@ public partial class TblExchange
 
     public bool IsInpersonMeetingVerified { get; set; }
 
-    public string? InpersonMeetingOtp { get; set; }
-
-    public bool IsInpersonMeetingVerifiedByOfferOwner { get; set; }
-
-    public bool IsInpersonMeetingVerifiedByOtherParty { get; set; }
-
-    public bool IsMeetingEnded { get; set; }
-
     public bool IsCompleted { get; set; }
 
     public DateTime? CompletionDate { get; set; }
@@ -62,6 +54,12 @@ public partial class TblExchange
     public DateTime? RequestDate { get; set; }
 
     public DateTime? ResponseDate { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOfferOwner { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOtherParty { get; set; }
+
+    public bool IsMeetingEnded { get; set; }
 
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 

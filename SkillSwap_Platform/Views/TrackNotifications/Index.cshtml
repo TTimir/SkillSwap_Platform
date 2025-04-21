@@ -1,0 +1,152 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.NotificationVM.NotificationPagedVm
+@using Humanizer
+
+@{
+    ViewData["Title"] = "My Activity";
+    ViewData["SubTitle"] = "Monitor your swaps, messages, and milestones in one clear view.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="row align-items-center justify-content-between pb40">
+    <div class="col-xl-4">
+        <div class="dashboard_title_area">
+            <h2>@ViewData["Title"]</h2>
+            <p class="text">@ViewData["SubTitle"]</p>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="dashboard_search_meta">
+            <div class="search_area">
+                <form id="searchForm" method="get" action="@Url.Action("Index", "TrackNotifications")" class="search_area">
+                    <input type="text" name="search" class="form-control bdrs4" placeholder="Search Activity" value="@Model.SearchTerm" />
+                    <input type="submit" id="searchSubmit" style="display:none;" />
+                    <label for="searchSubmit" style="cursor:pointer;">
+                        <span class="far fa-magnifying-glass"></span>
+                    </label>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                @if (!Model.Items.Any())
+                {
+                    <p>You have no notifications.</p>
+                }
+                else
+                {
+                    <table class="table-style3 table at-savesearch">
+                        <thead class="t-head">
+                            <tr>
+                                <th scope="col">Activity</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Timeline</th>
+                            </tr>
+                        </thead>
+                        <tbody class="t-body">
+                            @foreach (var n in Model.Items)
+                            {
+                                <tr>
+                                    <th class="ps-0" scope="row">
+                                        <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                            <div class="d-lg-flex align-items-lg-center">
+                                                <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                    <img class="rounded-circle mx-auto" src="@Url.Content(n.IconUrl)" alt="">
+                                                </div>
+                                                <div class="details ml15 ml0-md mb15-md">
+                                                    <h5 class="title mb-2">@n.Title</h5>
+                                                    <p class="mb-0 fz14 list-inline-item mb5-sm">
+                                                        @n.Message
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <td class="vam">
+                                        <h5 class="mb-0">
+                                            @if (n.IsRecent)
+                                            {
+                                                <span class="badge bg-primary">New</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Old</span>
+
+                                            }
+                                        </h5>
+                                    </td>
+                                    <td>
+                                        <h5 class="mb-0">
+                                            @n.CreatedAt.ToLocalTime().Humanize(false, DateTime.UtcNow)
+                                        </h5>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1, search = Model.SearchTerm })">
+                                        <span class="fas fa-angle-left"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                if (i == Model.CurrentPage)
+                                {
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, search = Model.SearchTerm  })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 , search = Model.SearchTerm })">
+                                        <span class="fas fa-angle-right"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                    <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                </li>
+                            }
+                        </ul>
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            Page @Model.CurrentPage of @Model.TotalPages
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

@@ -58,7 +58,7 @@ namespace SkillSwap_Platform.ViewComponents
                     return x;
                 }).ToList();
 
-                return View(vm);
+                return View("~/Views/Shared/Components/ActionNotification/Default.cshtml", vm);
             }
             catch (Exception ex)
             {

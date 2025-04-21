@@ -72,6 +72,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserReport> TblUserReports { get; set; }
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
+
+    public virtual DbSet<TblUserWishlist> TblUserWishlists { get; set; }
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
 
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
@@ -199,9 +201,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ExchangeMode)
                 .HasMaxLength(20)
                 .HasDefaultValue("Online");
-            entity.Property(e => e.InpersonMeetingOtp)
-                .HasMaxLength(100)
-                .HasColumnName("InpersonMeetingOTP");
             entity.Property(e => e.LastStatusChangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -307,6 +306,8 @@ public partial class SkillSwapDbContext : DbContext
         modelBuilder.Entity<TblInPersonMeeting>(entity =>
         {
             entity.HasKey(e => e.InPersonMeetingId).HasName("PK__TblInPer__32D8C5478EC8E95C");
+
+            entity.HasIndex(e => new { e.ExchangeId, e.CreatedDate }, "IX_TblInPersonMeetings_ExchangeId_CreatedDate").IsDescending(false, true);
 
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getutcdate())")
@@ -813,6 +814,28 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblUserSkills_Users");
+        });
+
+        modelBuilder.Entity<TblUserWishlist>(entity =>
+        {
+            entity.HasKey(e => e.WishlistId).HasName("PK__tblUserW__233189EBCD07F2BE");
+
+            entity.ToTable("tblUserWishlist");
+
+            entity.HasIndex(e => new { e.UserId, e.OfferId }, "UQ_Wishlist_User_Offer").IsUnique();
+
+            entity.Property(e => e.AddedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblUserWishlists)
+                .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Wishlist_Offer");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblUserWishlists)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Wishlist_User");
         });
 
         modelBuilder.Entity<TblWorkingTime>(entity =>

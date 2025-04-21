@@ -48,7 +48,7 @@
                         <tr>
                             <th scope="col">Exchange ID</th>
                             <th scope="col">Exchange Date</th>
-                            <th scope="col">Amount</th>
+                            <th scope="col">Token Cost</th>
                             <th scope="col">Status</th>
                             <th scope="col">Contract Pdf</th>
                         </tr>
@@ -58,7 +58,7 @@
                             <th scope="row">
                                 <div>@("#")@Model.Exchange.ExchangeId <span class="ms-3">@Model.Offer.Title</span></div>
                             </th>
-                            <td class="vam">@Model.Exchange.LastStatusChangeDate</td>
+                            <td class="vam">@Model.Exchange.LastStatusChangeDate.ToString("dd MMMM, yyyy hh:mm tt")</td>
                             <td class="vam">@Model.Contract.TokenOffer</td>
                             <td class="vam">
                                 <span class="@(Model.Exchange.Status == "Finalized"

@@ -320,7 +320,9 @@ namespace SkillSwap_Platform.Controllers
                     if (msg.MessageType == "InPersonMeetNotification")
                     {
                         meeting = await _context.TblInPersonMeetings
-                                   .FirstOrDefaultAsync(m => m.ExchangeId == msg.ExchangeId);
+                            .Where(m => m.ExchangeId == msg.ExchangeId)
+                            .OrderByDescending(m => m.CreatedDate)
+                            .FirstOrDefaultAsync();
                     }
 
                     // Lookup the usernames based on the exchange record, if available
@@ -362,7 +364,7 @@ namespace SkillSwap_Platform.Controllers
                         Exchange = exchangeEntity,
                         InPersonMeeting = meeting,
                         ExchangeOfferOwnerName = exchangeOfferOwnerName,
-        ExchangeOtherUserName = exchangeOtherUserName
+                        ExchangeOtherUserName = exchangeOtherUserName
                     });
                 }
 

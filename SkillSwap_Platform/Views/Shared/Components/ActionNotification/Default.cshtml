@@ -11,7 +11,7 @@
         {
             foreach (var n in Model)
             {
-                <div class="notif_list d-flex align-items-center bdrb1 pb15 mb10">
+                <div class="notif_list d-flex align-items-center pb15 mb10">
                     <img src="@Url.Content(n.IconUrl)" alt="action">
                     <div class="details ml10">
                         <p class="text mb-0">@n.Title</p>
@@ -20,10 +20,10 @@
                     </div>
                 </div>
             }
-            <div class="d-grid mt-2">
-                <a asp-controller="Notifications" asp-action="Index"
-                   class="ud-btn btn-thm w-100">
-                    View All Notifications<i class="fal fa-arrow-right-long ms-1"></i>
+            <hr style="background-color:grey; height: 1px;" />
+            <div class="text-center mb10 d-grid">
+                <a class="w-100" href="@Url.Action("Index", "TrackNotifications")">
+                    View All Messages <i class="fal fa-arrow-right-long" style="transform: rotate(-45deg)"></i>
                 </a>
             </div>
         }

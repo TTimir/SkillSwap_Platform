@@ -16,5 +16,7 @@ namespace SkillSwap_Platform.Services
             IEnumerable<(string fileName, string filePath, string contentType)>? attachments
         );
         Task MarkMessageAsReadAsync(int messageId);
+
+
     }
 }

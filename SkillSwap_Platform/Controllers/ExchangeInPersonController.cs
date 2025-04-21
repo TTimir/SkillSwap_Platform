@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Services.NotificationTrack;
+using Google.Apis.Calendar.v3.Data;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -57,39 +58,24 @@ namespace SkillSwap_Platform.Controllers
             }
             try
             {
-                // (Optional) Ensure the current user is a participant.
-                int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                // Ensure the current user is a participant.
+                int currentUserId = GetUserId();
 
-                var inpersonMeeting = await _context.TblInPersonMeetings
-                     .FirstOrDefaultAsync(m => m.ExchangeId == model.ExchangeId);
-                // If no meeting record exists, create one.
-                if (inpersonMeeting == null)
+                // INSERT a fresh record:
+                var newMeeting = new TblInPersonMeeting
                 {
-                    inpersonMeeting = new TblInPersonMeeting
-                    {
-                        ExchangeId = model.ExchangeId,
-                        CreatedDate = DateTime.UtcNow
-                    };
-                    _context.TblInPersonMeetings.Add(inpersonMeeting);
-                }
-
-                // Update the meeting details from the submitted view model.
-                inpersonMeeting.CreatedByUserId = currentUserId;
-                inpersonMeeting.MeetingScheduledDateTime = model.ScheduledDateTime;
-                inpersonMeeting.MeetingLocation = model.Location;
-                inpersonMeeting.MeetingNotes = model.Notes;
-                inpersonMeeting.InpersonMeetingDurationMinutes = model.MeetingDurationMinutes;
-
-                // Generate OTPs if not already set.
-                if (string.IsNullOrWhiteSpace(inpersonMeeting.InpersonMeetingOtpOfferOwner))
-                {
-                    inpersonMeeting.InpersonMeetingOtpOfferOwner = GenerateOtp();
-                }
-                if (string.IsNullOrWhiteSpace(inpersonMeeting.InpersonMeetingOtpOtherParty))
-                {
-                    inpersonMeeting.InpersonMeetingOtpOtherParty = GenerateOtp();
-                }
-
+                    ExchangeId = model.ExchangeId,
+                    CreatedByUserId = currentUserId,
+                    CreatedDate = DateTime.UtcNow,
+                    MeetingScheduledDateTime = model.ScheduledDateTime,
+                    MeetingLocation = model.Location,
+                    MeetingNotes = model.Notes,
+                    InpersonMeetingDurationMinutes = model.MeetingDurationMinutes,
+                    // generate two new OTPs:
+                    InpersonMeetingOtpOfferOwner = GenerateOtp(),
+                    InpersonMeetingOtpOtherParty = GenerateOtp()
+                };
+                _context.TblInPersonMeetings.Add(newMeeting);
                 await _context.SaveChangesAsync();
 
                 // Load the related exchange record (to retrieve participant IDs)
@@ -99,22 +85,16 @@ namespace SkillSwap_Platform.Controllers
 
                 // Update the exchange record with meeting mode and OTP info.
                 exchange.IsInPersonExchange = true;
-                exchange.IsInOnlineExchange = false; // adjust as needed
-                // Set the OTP field from the current user's role.
-                if (currentUserId == exchange.OfferOwnerId)
-                {
-                    exchange.InpersonMeetingOtp = inpersonMeeting.InpersonMeetingOtpOfferOwner;
-                }
-                else
-                {
-                    exchange.InpersonMeetingOtp = inpersonMeeting.InpersonMeetingOtpOtherParty;
-                }
+                exchange.IsInOnlineExchange = false;
+                exchange.IsInpersonMeetingVerifiedByOfferOwner = false;
+                exchange.IsInpersonMeetingVerifiedByOtherParty = false;
+                exchange.IsMeetingEnded = false; 
                 await _context.SaveChangesAsync();
 
                 // Decide which OTP the current user should share.
                 string otpToShare = currentUserId == exchange.OfferOwnerId
-                    ? inpersonMeeting.InpersonMeetingOtpOfferOwner
-                    : inpersonMeeting.InpersonMeetingOtpOtherParty;
+                    ? newMeeting.InpersonMeetingOtpOfferOwner
+                    : newMeeting.InpersonMeetingOtpOtherParty;
 
                 // Create a system-generated notification message (the OTP itself is hidden).
                 var systemMessage = new TblMessage
@@ -183,7 +163,11 @@ namespace SkillSwap_Platform.Controllers
                 int currentUserId = GetUserId();
 
                 // Retrieve the in-person meeting record for this exchange.
-                var meetingRecord = await _context.TblInPersonMeetings.FirstOrDefaultAsync(m => m.ExchangeId == exchangeId);
+                var meetingRecord = await _context.TblInPersonMeetings
+                    .Where(m => m.ExchangeId == exchangeId)
+                    .OrderByDescending(m => m.CreatedDate)
+                    .FirstOrDefaultAsync();
+
                 if (meetingRecord == null)
                 {
                     return Json(new { success = false, error = "In-person meeting record not found." });
@@ -207,6 +191,19 @@ namespace SkillSwap_Platform.Controllers
                 {
                     return Json(new { success = true, fullyVerified = meetingRecord.IsInpersonMeetingVerified, message = "You have already verified your OTP; waiting for the other party." });
                 }
+
+                // figure out which OTP is “mine” and which is “theirs”
+                bool amOwner = currentUserId == (await _context.TblExchanges.FindAsync(exchangeId))!.OfferOwnerId;
+                var myOtp = amOwner ? meetingRecord.InpersonMeetingOtpOfferOwner : meetingRecord.InpersonMeetingOtpOtherParty;
+                var theirOtp = amOwner ? meetingRecord.InpersonMeetingOtpOtherParty : meetingRecord.InpersonMeetingOtpOfferOwner;
+
+                // explicit check for “own” OTP
+                if (otp == myOtp)
+                    return Json(new
+                    {
+                        success = false,
+                        error = "That code is your own OTP. Please enter the OTP the other party shared with you."
+                    });
 
                 // Validate the OTP based on the current user's role.
                 if (currentUserId == exchange.OfferOwnerId)
@@ -263,10 +260,6 @@ namespace SkillSwap_Platform.Controllers
                     exchange.IsInpersonMeetingVerifiedByOfferOwner = meetingRecord.IsInpersonMeetingVerifiedByOfferOwner;
                     exchange.IsInpersonMeetingVerifiedByOtherParty = meetingRecord.IsInpersonMeetingVerifiedByOtherParty;
                     exchange.IsInpersonMeetingVerified = true;
-                    // Optionally, if you want to store the OTP that was used (or a combined value), update InpersonMeetingOTP.
-                    exchange.InpersonMeetingOtp = currentUserId == exchange.OfferOwnerId
-                        ? meetingRecord.InpersonMeetingOtpOtherParty
-                        : meetingRecord.InpersonMeetingOtpOfferOwner;
                 }
                 else
                 {
@@ -308,7 +301,11 @@ namespace SkillSwap_Platform.Controllers
             {
                 int currentUserId = GetUserId();
 
-                var meetingRecord = await _context.TblInPersonMeetings.FirstOrDefaultAsync(m => m.ExchangeId == exchangeId);
+                var meetingRecord = await _context.TblInPersonMeetings
+                    .Where(m => m.ExchangeId == exchangeId)
+                    .OrderByDescending(m => m.CreatedDate)
+                    .FirstOrDefaultAsync();
+
                 if (meetingRecord == null)
                 {
                     return Json(new { success = false, error = "In-person meeting record not found." });

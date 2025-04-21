@@ -17,5 +17,7 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public int OfferOwnerId { get; set; }
         public string ExchangeOfferOwnerName { get; set; }
         public string ExchangeOtherUserName { get; set; }
+
+        public List<TblInPersonMeeting> InPersonMeetings { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferFilterVM
+@using System.Security.Claims
+@inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
 
 @{
     ViewData["Title"] = "Offer List";
@@ -350,9 +352,32 @@
                                             {
                                                 <div class="item">
                                                     <img class="w-100" src="@image" alt="@offer.Title" />
-                                                    <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })" class="listing-fav fz12">
-                                                        <span class="far fa-heart"></span>
-                                                    </a>
+                                                    @{
+                                                        // get current user ID
+                                                        var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                        int userId = 0;
+                                                        if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                                        var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                                        bool isSaved = userId > 0
+                                                                && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                                        var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                                        var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                                    }
+                                                    <form asp-controller="UserWishlist"
+                                                          asp-action="@(isSaved ? "Remove" : "Add")"
+                                                          method="post"
+                                                          class="position-absolute"
+                                                          style="top:8px; right:8px;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                                        <button type="submit"
+                                                                class="border-0 listing-fav fz12"
+                                                                data-bs-toggle="tooltip"
+                                                                title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                            <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             }
                                         </div>
@@ -497,6 +522,51 @@
             });
             // Optionally, submit the form after clearing
             form.submit();
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+          // grab the token from the hidden input that @Html.AntiForgeryToken() emitted
+          var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+          document.querySelectorAll(".wishlist-toggle").forEach(function(anchor){
+            anchor.addEventListener("click", async function(e){
+              e.preventDefault();
+              var offerId     = anchor.dataset.offerId;
+              var inWishlist  = anchor.title.startsWith("Remove");
+              var url         = inWishlist
+                                ? anchor.dataset.removeUrl
+                                : anchor.dataset.addUrl;
+              try {
+                let res = await fetch(url, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": token
+                  },
+                  body: JSON.stringify({ offerId: parseInt(offerId) })
+                });
+                if (!res.ok) throw new Error("Network error");
+                // flip it
+                var span = anchor.querySelector("span");
+                if (inWishlist) {
+                  // was in wishlist → now removed
+                  span.classList.replace("fas","far");
+                  span.classList.remove("text-danger");
+                  anchor.title = "Add to wishlist";
+                } else {
+                  // was not → now added
+                  span.classList.replace("far","fas");
+                  span.classList.add("text-danger");
+                  anchor.title = "Remove from wishlist";
+                }
+              }
+              catch(err){
+                console.error(err);
+                alert("Could not update your wishlist. Please try again.");
+              }
+            });
+          });
         });
     </script>
 }

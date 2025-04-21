@@ -134,6 +134,8 @@ public partial class TblUser
 
     public virtual ICollection<TblUserSkill> TblUserSkills { get; set; } = new List<TblUserSkill>();
 
+    public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
+
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
 
     public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();

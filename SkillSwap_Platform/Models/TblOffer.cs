@@ -69,5 +69,7 @@ public partial class TblOffer
 
     public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 
+    public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
+
     public virtual TblUser User { get; set; } = null!;
 }

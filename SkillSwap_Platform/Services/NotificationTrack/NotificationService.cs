@@ -40,5 +40,6 @@ namespace SkillSwap_Platform.Services.NotificationTrack
             unread.ForEach(n => n.IsRead = true);
             await _db.SaveChangesAsync();
         }
+
     }
 }
