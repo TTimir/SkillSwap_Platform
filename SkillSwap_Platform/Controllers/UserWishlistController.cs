@@ -52,7 +52,10 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 await _wishlist.AddToWishlistAsync(GetCurrentUserId(), offerId);
-                return RedirectToAction("PublicOfferList", "UserOfferDetails");
+                return RedirectToAction(
+                    actionName: "OfferDetails",
+                    controllerName: "UserOfferDetails",
+                    routeValues: new { offerId });
             }
             catch
             {
@@ -67,7 +70,10 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 await _wishlist.RemoveFromWishlistAsync(GetCurrentUserId(), offerId);
-                return RedirectToAction("Index");
+                return RedirectToAction(
+                    actionName: "OfferDetails",
+                    controllerName: "UserOfferDetails",
+                    routeValues: new { offerId });
             }
             catch
             {

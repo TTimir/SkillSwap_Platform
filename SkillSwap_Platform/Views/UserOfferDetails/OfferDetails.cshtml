@@ -1,5 +1,8 @@
-﻿@{
-    ViewData["Title"] = "OfferDetails";
+﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+
+@{
+    ViewData["Title"] = "Swap Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var reviews = ((IEnumerable<SkillSwap_Platform.Models.TblReview>)Model.Reviews) ?? new List<SkillSwap_Platform.Models.TblReview>();
@@ -25,6 +28,14 @@
 
     var reviewList = reviews.ToList();
     int reviewCount = reviewList.Count;
+
+    var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    int userId = 0;
+    if (int.TryParse(userIdString, out var tmp)) userId = tmp;
+
+    // check if already in wishlist
+    bool isSaved = userId > 0
+        && await WishlistService.ExistsAsync(userId, Model.OfferId);
 }
 
 <!-- Breadcumb Sections -->
@@ -47,8 +58,21 @@
                         <div class="h6 mb-0">Share</div>
                     </div>
                     <div class="share-save-widget d-flex align-items-center ml15">
-                        <span class="icon flaticon-like dark-color fz12 mr10"></span>
-                        <div class="h6 mb-0">Save</div>
+                        <form asp-controller="UserWishlist"
+                              asp-action="@(isSaved ? "Remove" : "Add")"
+                              method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="offerId" value="@Model.OfferId" />
+
+                            <button type="submit"
+                                    class="border-0 bg-transparent listing-fav fz12"
+                                    data-bs-toggle="tooltip"
+                                    title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                <span class="icon dark-color fz12 mr10 @(isSaved
+                                    ? "fas fa-heart text-danger"
+                                    : "far fa-heart")"></span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -60,7 +84,7 @@
 <div id="shareOverlay" class="share-overlay">
     <div class="share-modal">
         <button id="closeShare" class="close-btn">&times;</button>
-        <h3>Share This Offer</h3>
+        <h3>Share This Swap</h3>
         <div class="share-content">
             <input type="text" id="shareLink" readonly value="https://yourofferlink.com" />
             <button id="copyShare" class="ud-btn btn-thm">Copy</button>
@@ -194,12 +218,8 @@
                         // List of default images.
                         var defaultImages = new List<string>
                     {
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                     };
 
                         // Check if the model has any portfolio images.
@@ -289,10 +309,10 @@
                             </div>
                         </div>
                         <hr class="opacity-100 mb60">
-                        <h4>Compare Offers</h4>
+                        <h4>Compare Swaps</h4>
                         @if (Model.CompareOffers == null)
                         {
-                            <p class="text-muted">No comparison offers available at the moment.</p>
+                            <p class="text-muted">No comparison swaps available at the moment.</p>
                         }
                         else
                         {
@@ -321,7 +341,7 @@
                                                 </div>
                                                 <span class="h4">@Model.TokenCost Token </span><br>
                                                 <span class="h4">@Model.ShortTitle</span><br>
-                                                <span class="text">Current Offer Description</span>
+                                                <span class="text">Current Swap Description</span>
                                             </th>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
@@ -720,7 +740,7 @@
                                             </div>
                                             <div class="d-grid">
                                                 <a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId})" class="ud-btn btn-thm">
-                                                    Message about this Offer <i class="fal fa-arrow-right-long"></i>
+                                                    Message about this Swap <i class="fal fa-arrow-right-long"></i>
                                                 </a>
                                             </div>
                                         </div>
@@ -906,12 +926,8 @@
                                     // Fallback to default images when no valid images are found
                                     var relateddefaultImages = new List<string>
                         {
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                         };
 
                                     int index = related.OfferId % relateddefaultImages.Count;

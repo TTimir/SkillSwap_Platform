@@ -3,7 +3,7 @@
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
 
 @{
-    ViewData["Title"] = "Offer List";
+    ViewData["Title"] = "Swaps List";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -388,12 +388,8 @@
                                     // List of default images.
                                     var defaultImages = new List<string>
                                     {
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                     };
 
                                     // Use a deterministic approach:

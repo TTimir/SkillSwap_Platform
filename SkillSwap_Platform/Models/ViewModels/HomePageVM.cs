@@ -19,6 +19,9 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<OfferCardVM> TrendingOffers { get; set; }
         public List<FreelancerCardVM> HighestRatedFreelancers { get; set; }
         public List<CategoryOffers> TrendingOffersByCategory { get; set; } = new List<CategoryOffers>();
+        public int TotalSkills { get; set; }
+        public List<CategoryCardVm> PopularCategories { get; set; } = new();
+
     }
 
     public class CategoryOffers
@@ -41,5 +44,14 @@ namespace SkillSwap_Platform.Models.ViewModels
         public double? JobSuccess { get; set; }
         public double? Recommendation { get; set; }
         public List<string> OfferedSkillAreas { get; set; } = new List<string>();
+    }
+
+    public class CategoryCardVm
+    {
+        public string Name { get; set; }          // e.g. "Design & Creative"
+        public string Slug { get; set; }          // e.g. "design-creative"
+        public string IconClass { get; set; }     // e.g. "flaticon-web-design-1"
+        public int SkillCount { get; set; }       // aggregate count
+        public string Description { get; set; }   // for mobile slider subtitle
     }
 }

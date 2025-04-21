@@ -45,6 +45,25 @@ public class HomeController : Controller
                 ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
                 : null;
 
+            // 1) Group your offers by Category, count them:
+            var cats = await _dbcontext.TblOffers
+                .GroupBy(o => o.Category)
+                .Select(g => new CategoryCardVm
+                {
+                    Name = g.Key,
+                    Slug = g.Key.Replace(" ", "-").ToLowerInvariant(),
+                    IconClass = PickIconClass(g.Key),       // helper to choose the right <span> icon
+                    SkillCount = g.Count(),
+                    Description = $"{g.Count()} skills available"
+                })
+                .ToListAsync();
+
+            // count total skills
+            int totalSkills = await _dbcontext.TblSkills
+                .Select(s => s.SkillName!.Trim().ToLower())  // normalize if needed
+                .Distinct()
+                .CountAsync();
+
             var trendingOffersQuery = _dbcontext.TblOffers
                 .Include(o => o.User)
                 .Where(o => o.IsActive);
@@ -146,7 +165,9 @@ public class HomeController : Controller
             {
                 TrendingOffers = trendingOfferVMs,
                 HighestRatedFreelancers = highestRatedFreelancersVM,
-                TrendingOffersByCategory = new List<CategoryOffers>()
+                TrendingOffersByCategory = new List<CategoryOffers>(),
+                PopularCategories = cats,
+                TotalSkills = totalSkills
             };
 
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
@@ -737,5 +758,23 @@ public class HomeController : Controller
             throw;
         }
     }
+
+    private static string PickIconClass(string category)
+    {
+        // map known categories to icon classes
+        return category switch
+        {
+            "Programming & Tech" => "flaticon-developer",
+            "Graphics & Design" => "flaticon-web-design-1",
+            "Digital Marketing" => "flaticon-digital-marketing",
+            "Writing & Translation" => "flaticon-translator",
+            "Music & Audio" => "flaticon-microphone",
+            "Video & Animation" => "flaticon-video-file",
+            "Lifestyle" => "flaticon-ruler",
+            "Business" => "flaticon-goal",
+            _ => "flaticon-design"
+        };
+    }
+
     #endregion
 }

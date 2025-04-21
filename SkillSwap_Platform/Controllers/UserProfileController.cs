@@ -9,6 +9,9 @@ using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 using SkillSwap_Platform.Services.NotificationTrack;
 using System.Linq;
 using System.Security.Claims;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -682,8 +685,23 @@ namespace SkillSwap_Platform.Controllers
                     {
                         throw new Exception(errorMsg);
                     }
-                    string fileUrl = await UploadFileAsync(personal.ProfileImageFile, "profile");
-                    user.ProfileImageUrl = fileUrl;
+
+                    // Prepare folders & filename
+                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profile");
+                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                    string uniqueFileName = Guid.NewGuid() + Path.GetExtension(personal.ProfileImageFile.FileName);
+                    string savePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+
+                    using (var inStream = personal.ProfileImageFile.OpenReadStream())
+                    using (var image = Image.Load(inStream))
+                    {
+                        image.Mutate(x => x.Resize(330, 300));
+                        // You can tweak quality here if you like:
+                        var encoder = new JpegEncoder { Quality = 85 };
+                        await image.SaveAsync(savePath, encoder);
+                    }
+                    user.ProfileImageUrl = $"/uploads/profile/{uniqueFileName}";
                 }
             }
         }

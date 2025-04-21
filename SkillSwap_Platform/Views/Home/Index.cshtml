@@ -5,44 +5,44 @@
 <style>
     /* Make the row a flex container so its children (columns) are equal height */
     .row.equal-height {
-        display: flex;
-        flex-wrap: wrap;
+    display: flex;
+    flex-wrap: wrap;
     }
 
-        /* Make each column a flex container */
-        .row.equal-height > [class*="col-"] {
-            display: flex;
-            flex-direction: column;
-        }
+    /* Make each column a flex container */
+    .row.equal-height > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+    }
     /* Ensure the card fills the available space */
     .listing-style1 {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        /* Optional: set a min-height if needed */
-        min-height: 450px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* Optional: set a min-height if needed */
+    min-height: 450px;
     }
 
     /* Prevent the image area from stretching */
     .list-thumb {
-        flex: 0 0 auto;
+    flex: 0 0 auto;
     }
 
     /* Let the text content grow equally */
     .list-content {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
     }
 
-        /* Optional: Limit the title text to two lines with ellipsis */
-        .list-content .list-title {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
+    /* Optional: Limit the title text to two lines with ellipsis */
+    .list-content .list-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    }
 </style>
 <!-- Home Banner Style V1 -->
 <section class="hero-home14 pt60 pb60 overflow-hidden">
@@ -182,173 +182,46 @@
         <div class="row align-items-center wow fadeInUp" data-wow-delay="300ms">
             <div class="col-lg-9">
                 <div class="main-title2">
-                    <h2 class="title">Browse talent by category</h2>
-                    <p class="paragraph">Get some Inspirations from 1800+ skills</p>
+                    <h2 class="title">Browse swaps by category</h2>
+                    <p class="paragraph">Get some Inspirations from @Model.TotalSkills.ToString("N0") skills</p>
                 </div>
             </div>
             <div class="col-lg-3">
                 <div class="text-start text-lg-end mb-4 mb-lg-2">
-                    <a class="ud-btn2" href="page-service-single.html">All Categories<i class="fal fa-arrow-right-long"></i></a>
+                    <a class="ud-btn2" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")">All Categories<i class="fal fa-arrow-right-long"></i></a>
                 </div>
             </div>
         </div>
         <div class="row d-none d-lg-flex wow fadeInUp">
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-developer"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Development & IT</h5>
+            @foreach (var cat in Model.PopularCategories)
+            {
+                <div class="col-sm-6 col-xl-3">
+                    <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
+                        <div class="icon"><span class="@cat.IconClass"></span></div>
+                        <div class="details mt20">
+                            <p class="text mb5">@cat.SkillCount.ToString("N0") skills</p>
+                            <h5 class="title">@cat.Name</h5>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-web-design-1"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Design & Creative</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-digital-marketing"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Digital Marketing</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-translator"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Writing & Translation</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-microphone"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Music & Audio</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-video-file"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Video & Animation</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-ruler"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Engineering & Architecture</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="iconbox-style1 at-home14-v1 default-box-shadow1 overflow-hidden">
-                    <div class="icon"><span class="flaticon-goal"></span></div>
-                    <div class="details mt20">
-                        <p class="text mb5">1.853 skills</p>
-                        <h5 class="title">Finance & Accounting</h5>
-                    </div>
-                </div>
-            </div>
+            }
         </div>
         <div class="row d-block d-lg-none">
             <div class="col-lg-12">
                 <div class="slider-outer-dib navi_pagi_top_right slider-5-grid owl-carousel owl-theme wow fadeInUp">
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-developer"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Development & IT</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
+                    @foreach (var cat in Model.PopularCategories)
+                    {
+                        <div class="item">
+                            <div class="iconbox-style1 bdr1">
+                                <div class="icon"><span class="@cat.IconClass"></span></div>
+                                <div class="details mt20">
+                                    <p class="text mb5">@cat.SkillCount.ToString("N0") skills</p>
+                                    <h4 class="title">@cat.Name</h4>
+                                    <p class="mb-0">@cat.Description</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-web-design-1"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Design & Creative</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-digital-marketing"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Digital Marketing</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-translator"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Writing & Translation</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-microphone"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Music & Audio</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-video-file"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Video & Animation</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-ruler"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Engineering & Architecture</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="iconbox-style1 bdr1">
-                            <div class="icon"><span class="flaticon-goal"></span></div>
-                            <div class="details mt20">
-                                <p class="text mb5">1.853 skills</p>
-                                <h4 class="title">Finance & Accounting</h4>
-                                <p class="mb-0">Software Engineer, Web / Mobile Developer & More</p>
-                            </div>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
@@ -413,13 +286,13 @@
         <div class="row align-items-center wow fadeInUp">
             <div class="col-lg-9">
                 <div class="main-title">
-                    <h2 class="title">Trending Offers</h2>
+                    <h2 class="title">Trending Swaps</h2>
                     <p class="paragraph">Most viewed and all-time top-selling services</p>
                 </div>
             </div>
             <div class="col-lg-3">
                 <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">View All Offers<i class="fal fa-arrow-right-long"></i></a>
+                    <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">View All Swaps<i class="fal fa-arrow-right-long"></i></a>
                 </div>
             </div>
             <div class="col-xl-9">
@@ -549,7 +422,7 @@
                                         else
                                         {
                                             <div class="col-12">
-                                                <p>No offers found for @category.CategoryName.</p>
+                                                <p>No swaps found for @category.CategoryName.</p>
                                             </div>
                                         }
                                     </div><!-- /.row.equal-height -->
@@ -560,7 +433,7 @@
                         }
                         else
                         {
-                            <p>No trending offers available.</p>
+                            <p>No trending swaps available.</p>
                         }
                     </div>
                 </div>
@@ -617,7 +490,7 @@
             <div class="col-lg-9">
                 <div class="main-title">
                     <h2 class="title">Highest Rated Profile</h2>
-                    <p class="paragraph">Most viewed and all-time top offers</p>
+                    <p class="paragraph">Most viewed and all-time top swaps</p>
                 </div>
             </div>
             <div class="col-lg-3">
@@ -737,7 +610,7 @@
                             <li><i class="far fa-check"></i>Unmatched quality of remote, hybrid, and flexible jobs</li>
                         </ul>
                     </div>
-                    <a href="page-freelancer-v1.html" class="ud-btn btn-white">Find Talent<i class="fal fa-arrow-right-long"></i></a>
+                    <a href="@Url.ActionLink("PublicProfileList","UserProfileList")" class="ud-btn btn-white">Find Talent<i class="fal fa-arrow-right-long"></i></a>
                 </div>
             </div>
         </div>

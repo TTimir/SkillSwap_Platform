@@ -1,8 +1,8 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferRestoreListVM
 
 @{
-    ViewData["Title"] = "Restore Offer";
-    ViewData["SubTitle"] = "Need a second chance? You can bring back your offer within 15 days.";
+    ViewData["Title"] = "Restore Swap";
+    ViewData["SubTitle"] = "Need a second chance? You can bring back your swap within 15 days.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -14,12 +14,12 @@
 </div>
 <div class="col-lg-3">
     <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">
-        Back to Offers <i class="fal fa-arrow-right-long"></i>
+        Back to Swaps <i class="fal fa-arrow-right-long"></i>
     </a>
 </div>
 </div>
 <div class="alert alert-warning">
-    <strong>Warning:</strong> The offers below have been deleted. You can restore any offer within 15 days of deletion.
+    <strong>Warning:</strong> The swaps below have been deleted. You can restore any swap within 15 days of deletion.
 </div>
 @if (TempData["SuccessMessage"] != null)
 {
@@ -85,23 +85,19 @@
                                                     <div class="list-thumb flex-shrink-0 bdrs4 mb10-lg">
                                                         @if (!string.IsNullOrEmpty(offer.ThumbnailUrl))
                                                         {
-                                                            <img src="@offer.ThumbnailUrl" class="img-fluid rounded-start" alt="Offer Thumbnail">
+                                                            <img src="@offer.ThumbnailUrl" class="img-fluid rounded-start" alt="Swap Thumbnail">
                                                         }
                                                         else
                                                         {
                                                             // If no thumbnail is available, use a default image based on the offer ID.
                                                             var defaultImages = new List<string>
                                                             {
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                                             };
                                                             int index = offer.OfferId % defaultImages.Count;
                                                             var selectedImage = defaultImages[index];
-                                                            <img src="@selectedImage" class="img-fluid rounded-start" alt="Default Offer Image">
+                                                            <img src="@selectedImage" class="img-fluid rounded-start" alt="Default Swap Image">
                                                         }
                                                     </div>
                                                     <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">

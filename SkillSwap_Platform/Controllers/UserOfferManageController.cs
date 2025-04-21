@@ -111,7 +111,6 @@ namespace SkillSwap_Platform.Controllers
                         new SelectListItem { Value = "Programming & Tech", Text = "Programming & Tech" },
                         new SelectListItem { Value = "Business", Text = "Business" },
                         new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
-                        new SelectListItem { Value = "Trending", Text = "Trending" }
                     },
                     DeviceOptions = deviceOptions,
                     CollaborationOptions = collaborationMethod,

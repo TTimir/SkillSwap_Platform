@@ -89,7 +89,7 @@
                                 <!-- Responsive Menu -->
                                 <ul id="respMenu" class="ace-responsive-menu" data-menu-style="horizontal">
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Offers</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swaps</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Talents</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="#"><span class="title">How It Works</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="#"><span class="title">About Us</span></a></li>
@@ -216,28 +216,10 @@
 
 
         <div class="body_content">
-            <section class="categories_list_section overflow-hidden">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <div class="listings_category_nav_list_menu">
-                                <ul class="mb0 d-flex ps-0">
-                                    <li><a class="active" href="#">All Categories</a></li>
-                                    <li><a href="#">Graphics & Design</a></li>
-                                    <li><a href="#">Digital Marketing</a></li>
-                                    <li><a href="#">Writing & Translation</a></li>
-                                    <li><a href="#">Video & Animation</a></li>
-                                    <li><a href="#">Music & Audio</a></li>
-                                    <li><a href="#">Programming & Tech</a></li>
-                                    <li><a href="#">Business</a></li>
-                                    <li><a href="#">Lifestyle</a></li>
-                                    <li><a href="#">Trending</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <form id="filterForm" method="get" action="@Url.Action("PublicOfferList","UserOfferDetails")">
+                <input type="hidden" name="category" id="categoryInput" value="@Model.Category" />
+                @await Component.InvokeAsync("CategoryMenu")
+            </form>
             @RenderBody()
             <!-- Our Footer -->
             <section class="footer-style1 at-home2 pb-0 pt60">

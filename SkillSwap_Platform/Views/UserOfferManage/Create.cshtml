@@ -78,7 +78,7 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="mb20">
-                                <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Offer Title <span class="text-danger">*</span></label>
+                                <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Swap Title <span class="text-danger">*</span></label>
                                 <input asp-for="Title" type="text" class="form-control" placeholder="i will">
                                 <span asp-validation-for="Title" class="text-danger"></span>
                             </div>
@@ -170,7 +170,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
-                                <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Offer Category <span class="text-danger">*</span></label>
+                                <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Swap Category <span class="text-danger">*</span></label>
                                 <div class="bootselect-multiselect">
                                     <select asp-for="Category" asp-items="Model.CategoryOptions" data-live-search="true" class="selectpicker">
                                         <option value="">Select Category</option>
@@ -215,7 +215,7 @@
                         <div class="col-md-12">
                             <div class="mb10">
                                 <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work <span class="text-danger">*</span></label>
-                                <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this offer"></textarea>
+                                <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this swap"></textarea>
                                 <span asp-validation-for="ScopeOfWork" class="text-danger"></span>
                             </div>
                         </div>

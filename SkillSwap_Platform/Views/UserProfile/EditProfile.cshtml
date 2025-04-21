@@ -145,7 +145,7 @@
                         <div class="col-sm-6">
                             <div class="mb20">
                                 <label asp-for="PersonalDetails.UserName" class="heading-color ff-heading fw500 mb10">UserName <span class="text-danger">*</span></label>
-                                <input asp-for="PersonalDetails.UserName" type="text" class="form-control" readonly disabled>
+                                <input asp-for="PersonalDetails.UserName" type="text" class="form-control" readonly>
                                 <span asp-validation-for="PersonalDetails.UserName" class="text-danger"></span>
                             </div>
                         </div>
@@ -748,8 +748,32 @@
                                     }
                                     var reader = new FileReader();
                                     reader.onload = function (e) {
-                                        img.src = e.target.result;
+                                      var tempImg = new Image();
+                                      tempImg.onload = function () {
+                                        // 2. dimension check
+                                        if (tempImg.width < 330 || tempImg.height < 300) {
+                                          alert('Image must be at least 330 × 300 pixels.');
+                                          event.target.value = '';
+                                          label.text("Upload Images");
+                                          img.src = defaultSrc;
+                                          return;
+                                        }
+
+                                        // 3. draw resized preview
+                                        var canvas = document.createElement('canvas');
+                                        canvas.width  = 330;
+                                        canvas.height = 300;
+                                        var ctx = canvas.getContext('2d');
+
+                                        // if you want to preserve aspect, you could center it:
+                                        // ctx.drawImage(tempImg, dx, dy, dw, dh);
+                                        // but here we just stretch:
+                                        ctx.drawImage(tempImg, 0, 0, 330, 300);
+
+                                        img.src = canvas.toDataURL();
                                         label.text(file.name);
+                                      };
+                                      tempImg.src = e.target.result;
                                     };
                                     reader.readAsDataURL(file);
                                 } else {
