@@ -18,6 +18,7 @@ using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.Services.PDF;
 using SkillSwap_Platform.Services.Repository;
+using SkillSwap_Platform.Services.ReviewReply;
 using SkillSwap_Platform.Services.Wishlist;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -63,6 +64,7 @@ builder.Services.AddHostedService<MeetingTimeoutHostedService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IPasswordHasher<TblUser>, PasswordHasher<TblUser>>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services
     .AddTransient<IEmailService, SmtpEmailService>();
 builder.Services

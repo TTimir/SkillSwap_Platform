@@ -7,6 +7,8 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         // Main user info
         public TblUser User { get; set; }
 
+        public string Category { get; set; } = "";
+
         // Related collections
         public IEnumerable<TblEducation> Educations { get; set; }
         public IEnumerable<TblExperience> Experiences { get; set; }

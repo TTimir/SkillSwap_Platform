@@ -48,6 +48,8 @@ namespace SkillSwap_Platform.Controllers
                 var reviews = await _context.TblReviews
                     .Where(r => r.OfferId == offerId)
                     .Include(r => r.Reviewer)
+                    .Include(r => r.TblReviewReplies)
+                        .ThenInclude(rep => rep.ReplierUser)
                     .OrderByDescending(r => r.CreatedDate)
                     .ToListAsync();
 

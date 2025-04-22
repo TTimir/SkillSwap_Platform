@@ -59,6 +59,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblReview> TblReviews { get; set; }
 
+    public virtual DbSet<TblReviewReply> TblReviewReplies { get; set; }
+
     public virtual DbSet<TblRole> TblRoles { get; set; }
 
     public virtual DbSet<TblSkill> TblSkills { get; set; }
@@ -578,6 +580,7 @@ public partial class SkillSwapDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.FlaggedDate).HasColumnType("datetime");
             entity.Property(e => e.RevieweeId).HasColumnName("RevieweeID");
             entity.Property(e => e.ReviewerEmail).HasMaxLength(255);
             entity.Property(e => e.ReviewerId).HasColumnName("ReviewerID");
@@ -607,6 +610,27 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblReview_User");
+        });
+
+        modelBuilder.Entity<TblReviewReply>(entity =>
+        {
+            entity.HasKey(e => e.ReplyId);
+
+            entity.ToTable("tblReviewReply");
+
+            entity.Property(e => e.Comments).HasMaxLength(1000);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.FlaggedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.ReplierUser).WithMany(p => p.TblReviewReplies)
+                .HasForeignKey(d => d.ReplierUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblReviewReply_ReplierUser");
+
+            entity.HasOne(d => d.Review).WithMany(p => p.TblReviewReplies)
+                .HasForeignKey(d => d.ReviewId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblReviewReply_Review");
         });
 
         modelBuilder.Entity<TblRole>(entity =>

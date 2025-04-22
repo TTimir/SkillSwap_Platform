@@ -114,6 +114,8 @@ public partial class TblUser
 
     public virtual ICollection<TblPasswordResetToken> TblPasswordResetTokens { get; set; } = new List<TblPasswordResetToken>();
 
+    public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
+
     public virtual ICollection<TblReview> TblReviewReviewees { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblReview> TblReviewReviewers { get; set; } = new List<TblReview>();

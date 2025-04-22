@@ -456,9 +456,11 @@ namespace SkillSwap_Platform.Controllers
                     // Check for duplicate offer: if an offer is attached, ensure no message from this sender
                     // to the receiver already has it.
                     int? usedOfferId = null;
-                    if (int.TryParse(Request.Form["offerId"], out int parsedOfferId))
+                    if (string.IsNullOrEmpty(content))
                     {
-                        usedOfferId = parsedOfferId;
+                        var offerIdValue = Request.Form["offerId"].FirstOrDefault();
+                        if (int.TryParse(offerIdValue, out var parsed) && parsed > 0)
+                            usedOfferId = parsed;
                     }
 
                     // 1. Check in TblContracts if a contract already exists for this conversation.

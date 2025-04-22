@@ -1,5 +1,6 @@
 ﻿@using System.Security.Claims
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Swap Details";
@@ -577,7 +578,7 @@
                                                             !string.IsNullOrEmpty(review.Reviewer?.ProfileImageUrl)
                                                             ? review.Reviewer.ProfileImageUrl
                                                             : "~/template_assets/images/No_Profile_img.png"
-                                                        )" class="mr-3" alt="Reviewer Photo" style="max-width:100%; width: 7%;" />
+                                                        )" class="mr-3" alt="Reviewer Photo" style="max-width:100%; width: 7%; border-radius: 100%" />
                                                         <div class="ml20">
                                                             <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
                                                             <div><span class="fz14">@review.CreatedDate.ToString("dd MMM yyyy")</span></div>
@@ -600,6 +601,42 @@
                                                         <a href="#" class="vote" data-vote="helpful"><i class="fas fa-thumbs-up"></i>Helpful <span class="vote-count helpful-count">( <span>@review.HelpfulCount</span> )</span></a>
                                                         <a href="#" class="vote" data-vote="not_helpful"><i class="fas fa-thumbs-down"></i>Not helpful <span class="vote-count not-helpful-count">( <span>@review.NotHelpfulCount</span> )</span></a>
                                                     </div>
+                                                    @if (review.TblReviewReplies?.Any() == true)
+                                                    {
+                                                        <div class="replies ps-4 mb-3 mt20">
+                                                            @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
+                                                            {
+                                                                var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
+                                                                .FindFirst(ClaimTypes.NameIdentifier).Value);
+                                                                <div class="reply-item mb-2">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <strong>@reply.ReplierUser.UserName</strong>
+                                                                        <small class="text-muted ms-2 me-5">
+                                                                            @reply.CreatedDate.ToString("MMM d, yyyy")
+                                                                        </small>
+                                                                        @if (!reply.IsFlagged && reply.ReplierUserId != currentUserId)
+                                                                        {
+                                                                            <form asp-action="FlagReply" asp-controller="UserReview" method="post" class="m-0 p-0">
+                                                                                <input type="hidden" name="replyId" value="@reply.ReplyId" />
+                                                                                <button type="submit"
+                                                                                        title="Flag this reply"
+                                                                                        class="btn btn-link p-0 text-muted">
+                                                                                    <span class="flaticon-flag"></span>
+                                                                                </button>
+                                                                            </form>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <span class="text-danger" title="Reply flagged">
+                                                                                <span class="flaticon-flag"></span>
+                                                                            </span>
+                                                                        }
+                                                                    </div>
+                                                                    <p class="mb-1">@reply.Comments</p>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
                                                 </div>
                                             }
                                         </div>
@@ -1139,6 +1176,7 @@
             display: flex;
             flex-direction: column;
         }
+
     .share-overlay {
         position: fixed;
         top: 0;
@@ -1212,7 +1250,7 @@
 
         .review_cansel_btns a.vote:hover {
             /* This hover color will be applied only if no custom color override is set,
-                       but our script will override these values as needed */
+                                       but our script will override these values as needed */
             color: #007bff;
         }
 

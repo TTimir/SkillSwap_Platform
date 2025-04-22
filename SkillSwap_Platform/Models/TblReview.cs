@@ -33,6 +33,12 @@ public partial class TblReview
 
     public int NotHelpfulCount { get; set; }
 
+    public bool IsFlagged { get; set; }
+
+    public DateTime? FlaggedDate { get; set; }
+
+    public int? FlaggedByUserId { get; set; }
+
     public virtual TblExchange Exchange { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;
@@ -40,6 +46,8 @@ public partial class TblReview
     public virtual TblUser Reviewee { get; set; } = null!;
 
     public virtual TblUser Reviewer { get; set; } = null!;
+
+    public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
 
     public virtual TblUser User { get; set; } = null!;
 }
