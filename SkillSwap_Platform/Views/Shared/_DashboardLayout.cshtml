@@ -196,7 +196,7 @@
                         <a href="@Url.ActionLink("Conversation","Messaging")" class="items-center @(currentController == "Messaging" && currentAction == "Conversation" ? "-is-active" : "")"><i class="flaticon-chat mr15"></i>Message</a>
                     </div>
                     <div class="sidebar_list_item ">
-                        <a href="page-dashboard-reviews.html" class="items-center"><i class="flaticon-review-1 mr15"></i>Reviews</a>
+                        <a href="@Url.ActionLink("MyOffers","UserReview")" class="items-center @(currentController == "UserReview" && currentAction == "MyOffers" ? "-is-active" : "")"><i class="flaticon-review-1 mr15"></i>Reviews</a>
                     </div>
                     <div class="sidebar_list_item">
                         <a href="page-dashboard-invoice.html" class="items-center"><i class="flaticon-receipt mr15"></i>Invoice</a>

@@ -238,7 +238,7 @@ namespace SkillSwap_Platform.Controllers
                     await _notif.AddAsync(new TblNotification
                     {
                         UserId = GetUserId(),
-                        Title = "Offer Created",
+                        Title = "Swap Created",
                         Message = "You successfully created and published your offer.",
                         Url = Url.Action("OfferList", "UserOfferManage"),
                     });
@@ -501,7 +501,7 @@ namespace SkillSwap_Platform.Controllers
                     await _notif.AddAsync(new TblNotification
                     {
                         UserId = GetUserId(),
-                        Title = "Offer Updated",
+                        Title = "Swap Updated",
                         Message = "You successfully updated your offer.",
                         Url = Url.Action("OfferList", "UserOfferManage"),
                     });
@@ -598,7 +598,7 @@ namespace SkillSwap_Platform.Controllers
                     await _notif.AddAsync(new TblNotification
                     {
                         UserId = GetUserId(),
-                        Title = "Offer Deletd",
+                        Title = "Swap Deleted",
                         Message = "You successfully deleted and removed your offer.",
                         Url = Url.Action("DeletedOffers", "UserOfferManage"),
                     });
@@ -712,7 +712,7 @@ namespace SkillSwap_Platform.Controllers
                     await _notif.AddAsync(new TblNotification
                     {
                         UserId = GetUserId(),
-                        Title = "Offer Restored",
+                        Title = "Swap Restored",
                         Message = "You successfully restored your offer.",
                         Url = Url.Action("OfferList", "UserOfferManage"),
                     });

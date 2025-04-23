@@ -626,7 +626,7 @@ namespace SkillSwap_Platform.Controllers
                     await UpdateExperienceAsync(model.ExperienceEntries, userId);
                     await UpdateCertificatesAsync(model.CertificateEntries, userId);
 
-                    await _context.SaveChangesAsync();
+                    var changes = await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     // Now update the user’s OfferedSkillAreas in TblUsers and sync the TblUserSkills flags.
@@ -637,14 +637,23 @@ namespace SkillSwap_Platform.Controllers
                         user.DesiredSkillAreas = model.Skills.WillingSkillSummary;
                         await _context.SaveChangesAsync();
 
-                        // log notification:
-                        await _notif.AddAsync(new TblNotification
+                        // If nothing changed, let the user know; otherwise a success message.
+                        if (changes == 0)
                         {
-                            UserId = GetUserId(),
-                            Title = "Profile updated",
-                            Message = "You successfully updated your profile.",
-                            Url = Url.Action("Index", "UserProfile"),
-                        });
+                            TempData["SuccessMessage"] = "Looks like nothing changed, your profile is already up to date.";
+                        }
+                        else
+                        {
+                            // log notification only if there was something to save
+                            await _notif.AddAsync(new TblNotification
+                            {
+                                UserId = userId,
+                                Title = "Profile updated",
+                                Message = "You successfully updated your profile.",
+                                Url = Url.Action("Index", "UserProfile")
+                            });
+                            TempData["SuccessMessage"] = "Profile updated successfully.";
+                        }
 
                         // Synchronize the IsOffering flag on each TblUserSkill.
                         await UpdateUserOfferSkillFlagsAsync(userId, user.OfferedSkillAreas);

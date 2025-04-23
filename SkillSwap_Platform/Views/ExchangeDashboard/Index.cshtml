@@ -83,13 +83,13 @@
                                                         </a>
                                                     </h5>
                                                     <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
-                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToString("dd MMMM, yyyy")</p>
                                                     <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </th>
-                                    <td style="padding:0;">
+                                    <td>
                                         <h5 class="@(item.Status == "Finalized"
                                                     ? "pending-style style1"
                                                     : item.Status == "Completed"
@@ -100,7 +100,7 @@
                                             @item.Status
                                         </h5>
                                     </td>
-                                    <td style="padding:0;">
+                                    <td>
                                         <div class="d-flex">
                                             @if (item.LastStatusChangedByName != null)
                                             {
@@ -114,7 +114,7 @@
                                             }
                                         </div>
                                     </td>
-                                    <td class="vam" style="padding:0;">
+                                    <td class="vam">
                                         @if (!string.IsNullOrEmpty(item.ExchangeMode) &&
                                        item.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
                                         {
