@@ -22,7 +22,7 @@
 
         // Lists
         public IEnumerable<ServiceSummary> MostViewedServices { get; set; }
-        public IEnumerable<PurchaseSummary> RecentPurchases { get; set; }
+        public IEnumerable<ExchangeSummary> RecentPurchases { get; set; }
         public IEnumerable<ActivityItem> RecentActivity { get; set; }
     }
 
@@ -37,13 +37,13 @@
         public string PortfolioJson { get; set; } = "[]";
     }
 
-    public class PurchaseSummary
+    public class ExchangeSummary
     {
-        public string BuyerName { get; set; }
+        public string OtherUser { get; set; }
         public string ServiceTitle { get; set; }
         public DateTime InitiatedDate { get; set; }
         public decimal Amount { get; set; }
-        public string BuyerAvatarUrl { get; set; }
+        public string OtherUserAvatarUrl { get; set; }
     }
 
     public class ActivityItem

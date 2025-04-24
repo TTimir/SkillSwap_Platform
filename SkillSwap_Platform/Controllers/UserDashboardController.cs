@@ -116,13 +116,13 @@ namespace SkillSwap_Platform.Controllers
                 var recentExchanges = raw
                     .OrderByDescending(x => x.Initiated)
                     .Take(3)
-                    .Select(x => new PurchaseSummary
+                    .Select(x => new ExchangeSummary
                     {
-                        BuyerName = x.Buyer?.UserName ?? "Unknown user",
+                        OtherUser = x.Buyer?.UserName ?? "Unknown user",
                         ServiceTitle = x.Offer.Title,
                         InitiatedDate = x.Initiated,
                         Amount = x.Offer.TokenCost,
-                        BuyerAvatarUrl = !string.IsNullOrWhiteSpace(x.Buyer?.ProfileImageUrl)
+                        OtherUserAvatarUrl = !string.IsNullOrWhiteSpace(x.Buyer?.ProfileImageUrl)
                                              ? x.Buyer.ProfileImageUrl
                                              : "/images/avatar-default.png"
                     })

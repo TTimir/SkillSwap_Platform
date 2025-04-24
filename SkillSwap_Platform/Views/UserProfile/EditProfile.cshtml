@@ -152,7 +152,18 @@
                         <div class="col-sm-6">
                             <div class="mb20">
                                 <label asp-for="PersonalDetails.Email" class="heading-color ff-heading fw500 mb10">Email Address <span class="text-danger">*</span></label>
-                                <input asp-for="PersonalDetails.Email" type="email" class="form-control" placeholder="i will">
+                                <div class="d-flex align-items-center">
+                                    <input asp-for="PersonalDetails.Email"
+                                           type="email"
+                                           class="form-control flex-grow-1"
+                                           placeholder="you@example.com" />
+
+                                    <a asp-action="ConfirmEmailChange"
+                                       asp-controller="UserProfile"
+                                       class="ud-btn btn-thm ms-2 d-flex align-items-center" style="padding:11px 22px;" data-bs-toggle="tooltip" data-bs-placement="right" title="Change Email Address">
+                                        <i class="fal fa-envelope-open-text" style="transform:rotate(0deg); margin-left:0;"></i>
+                                    </a>
+                                </div>
                                 <span asp-validation-for="PersonalDetails.Email" class="text-danger"></span>
                             </div>
                         </div>

@@ -125,6 +125,32 @@
             }
 </style>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <!-- Begin Form -->
 <form asp-action="Create" method="post" id="contractForm">
     @Html.AntiForgeryToken()
@@ -217,6 +243,10 @@
 <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+          var tokenInput = document.getElementById("visibleTokenOffer");
+    var errorSpan  = document.getElementById("tokenOfferError");
+    var currentBalance = parseFloat(tokenInput.dataset.currentBalance);
+
         // ----------------------------
         // Modal Helper Functions
         // ----------------------------
@@ -351,6 +381,37 @@
             });
         }
 
+        function validateTokenOffer(errors) {
+          var val = parseFloat(tokenInput.value);
+            if (isNaN(val) || val < 0) {
+              var msg = "Please enter a non-negative token amount.";
+              errorSpan.textContent = msg;
+              errors.push(msg);
+              return false;
+            }
+            if (val > currentBalance) {
+              var msg = "Insufficient balance. You have only " + currentBalance.toFixed(2) + " tokens.";
+              errorSpan.textContent = msg;
+              errors.push(msg);
+              return false;
+            }
+          errorSpan.textContent = "";
+          return true;
+        }
+
+        tokenInput.addEventListener("blur", function () {
+            const localErrors = [];
+            const valid = validateTokenOffer(localErrors);
+            if (!valid) {
+              // show inline error
+              errorSpan.style.display = "inline";
+              // (optionally) you could also immediately pop up your modal:
+              // showErrorModal(localErrors);
+            } else {
+              errorSpan.style.display = "none";
+            }
+        });
+
         // ----------------------------
         // Confirm & Send Validation (on form submission)
         // ----------------------------
@@ -358,6 +419,8 @@
         if (form) {
             form.addEventListener("submit", function (e) {
             var errors = [];
+
+            validateTokenOffer(errors);
 
             // Validate sender name.
             var senderNameInput = document.getElementById("senderNameInput");

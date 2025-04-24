@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -30,6 +33,28 @@
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+    <style>
+        .token-balance {
+            display: flex;
+            align-items: center;
+            background-color: #FBF8EF;
+            /* border: 1px solid #5BBB7B; */
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+            .token-balance img {
+                margin-right: 4px;
+            }
+            /* Hover state */
+            .token-balance:hover {
+                background-color: #004E41;
+                border-color: #004E41;
+                color: #fff;
+                cursor: url('/template_assets/images/SSDToken.png') 16 16, auto;
+            }
+    </style>
 </head>
 <body>
     <div class="wrapper ovh">
@@ -116,6 +141,20 @@
                                         </li>
                                         <li class="d-none d-sm-block">
                                             <a class="text-center mr5 text-thm2 dropdown-toggle fz20" href="@Url.ActionLink("Index","UserWishlist")"><span class="flaticon-like"></span></a>
+                                        </li>
+                                        @{
+                                            decimal balance = 0m;
+                                            if (User?.Identity?.IsAuthenticated == true)
+                                            {
+                                                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                                                balance = await TokenService.GetBalanceAsync(userId);
+                                            }
+                                        }
+                                        <li class="d-none d-sm-block token-balance">
+                                            <img src="~/template_assets/images/SSDToken.png"
+                                                 alt="Tokens"
+                                                 width="32" height="32"/>
+                                            <span>@balance.ToString("0.00")</span>
                                         </li>
                                         <li class="user_setting">
                                             <div class="dropdown">

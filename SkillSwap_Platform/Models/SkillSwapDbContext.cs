@@ -67,6 +67,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblSupportTicket> TblSupportTickets { get; set; }
 
+    public virtual DbSet<TblTokenTransaction> TblTokenTransactions { get; set; }
+
     public virtual DbSet<TblUser> TblUsers { get; set; }
 
     public virtual DbSet<TblUserCertificate> TblUserCertificates { get; set; }
@@ -217,6 +219,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.StatusChangeReason).HasMaxLength(500);
             entity.Property(e => e.ThisMeetingLink).HasColumnName("thisMeetingLink");
             entity.Property(e => e.TokensPaid).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Contract).WithMany(p => p.TblExchanges)
+                .HasForeignKey(d => d.ContractId)
+                .HasConstraintName("FK_TblExchanges_TblContracts");
 
             entity.HasOne(d => d.LastStatusChangedByNavigation).WithMany(p => p.TblExchanges)
                 .HasForeignKey(d => d.LastStatusChangedBy)
@@ -685,6 +691,30 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblSupportTickets_Users");
         });
 
+        modelBuilder.Entity<TblTokenTransaction>(entity =>
+        {
+            entity.HasKey(e => e.TransactionId).HasName("PK__TblToken__55433A6B698057C6");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 6)");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(200);
+            entity.Property(e => e.TxType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblTokenTransactions)
+                .HasForeignKey(d => d.ExchangeId)
+                .HasConstraintName("FK_TokTrans_Exchange");
+
+            entity.HasOne(d => d.FromUser).WithMany(p => p.TblTokenTransactionFromUsers)
+                .HasForeignKey(d => d.FromUserId)
+                .HasConstraintName("FK_TokTrans_FromUser");
+
+            entity.HasOne(d => d.ToUser).WithMany(p => p.TblTokenTransactionToUsers)
+                .HasForeignKey(d => d.ToUserId)
+                .HasConstraintName("FK_TokTrans_ToUser");
+        });
+
         modelBuilder.Entity<TblUser>(entity =>
         {
             entity.HasKey(e => e.UserId);
@@ -692,6 +722,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblUsers");
 
             entity.HasIndex(e => e.Email, "IX_tblUsers_Email").IsUnique();
+
+            entity.HasIndex(e => e.IsEscrowAccount, "IX_tblUsers_IsEscrowAccount")
+                .IsUnique()
+                .HasFilter("([IsEscrowAccount]=(1))");
 
             entity.HasIndex(e => e.UserName, "IX_tblUsers_UserName").IsUnique();
 
@@ -709,7 +743,13 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CurrentLocation).HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Designation).HasMaxLength(50);
+            entity.Property(e => e.DigitalTokenBalance).HasColumnType("decimal(18, 8)");
             entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.EmailChangeExpires).HasColumnType("datetime");
+            entity.Property(e => e.EmailChangeOtp)
+                .HasMaxLength(6)
+                .IsUnicode(false)
+                .IsFixedLength();
             entity.Property(e => e.FailedOtpAttempts).HasDefaultValue(0);
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -720,6 +760,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.LockoutEndTime).HasColumnType("datetime");
             entity.Property(e => e.ModifiedDate).HasColumnType("datetime");
             entity.Property(e => e.PasswordHash).HasMaxLength(200);
+            entity.Property(e => e.PendingEmail).HasMaxLength(256);
             entity.Property(e => e.PersonalWebsite).HasMaxLength(200);
             entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
             entity.Property(e => e.Role)

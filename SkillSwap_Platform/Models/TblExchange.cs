@@ -61,6 +61,18 @@ public partial class TblExchange
 
     public bool IsMeetingEnded { get; set; }
 
+    public bool TokensSettled { get; set; }
+
+    public int? ContractId { get; set; }
+
+    public bool TokensHeld { get; set; }
+
+    public DateTime? TokenHoldDate { get; set; }
+
+    public DateTime? TokenReleaseDate { get; set; }
+
+    public virtual TblContract? Contract { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;
@@ -82,4 +94,6 @@ public partial class TblExchange
     public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
+
+    public virtual ICollection<TblTokenTransaction> TblTokenTransactions { get; set; } = new List<TblTokenTransaction>();
 }

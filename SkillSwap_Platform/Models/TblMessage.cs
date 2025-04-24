@@ -39,6 +39,7 @@ public partial class TblMessage
 
     [NotMapped]
     public OfferDisplayVM OfferPreview { get; set; }
+
     public virtual TblOffer? Offer { get; set; }
 
     public virtual TblUser ReceiverUser { get; set; } = null!;

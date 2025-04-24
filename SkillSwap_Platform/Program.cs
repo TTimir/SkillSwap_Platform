@@ -12,6 +12,7 @@ using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.Contracts;
+using SkillSwap_Platform.Services.DigitalToken;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.Meeting;
 using SkillSwap_Platform.Services.NotificationTrack;
@@ -65,6 +66,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IPasswordHasher<TblUser>, PasswordHasher<TblUser>>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IDigitalTokenService, DigitalTokenService>();
 builder.Services
     .AddTransient<IEmailService, SmtpEmailService>();
 builder.Services

@@ -576,6 +576,9 @@ public class HomeController : Controller
                 return View("Setup2FA");
             }
 
+            tempUser.EmailConfirmed = true;
+            string password = HttpContext.Session.GetString("TempUser_Password");
+
             // Verify OTP.
             //if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
             //{
@@ -592,10 +595,10 @@ public class HomeController : Controller
                 Email = tempUser.Email,
                 ContactNo = tempUser.ContactNo,
                 TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
-                IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
+                IsOnboardingCompleted = false, // 🚀 Ensuring user lands on onboarding
+                EmailConfirmed = true
             };
 
-            string password = HttpContext.Session.GetString("TempUser_Password");
             var result = await _userService.RegisterUserAsync(newUser, password);
             if (!result)
             {

@@ -80,6 +80,14 @@ public partial class TblUser
 
     public bool IsOnboardingCompleted { get; set; }
 
+    public bool EmailConfirmed { get; set; }
+
+    public string? PendingEmail { get; set; }
+
+    public string? EmailChangeOtp { get; set; }
+
+    public DateTime? EmailChangeExpires { get; set; }
+
     public decimal? AverageRating { get; set; }
 
     public int? ReviewCount { get; set; }
@@ -89,6 +97,10 @@ public partial class TblUser
     public double? RecommendedPercentage { get; set; }
 
     public string SecurityStamp { get; set; } = null!;
+
+    public decimal DigitalTokenBalance { get; set; }
+
+    public bool IsEscrowAccount { get; set; }
 
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
@@ -123,6 +135,10 @@ public partial class TblUser
     public virtual ICollection<TblReview> TblReviewUsers { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
+
+    public virtual ICollection<TblTokenTransaction> TblTokenTransactionFromUsers { get; set; } = new List<TblTokenTransaction>();
+
+    public virtual ICollection<TblTokenTransaction> TblTokenTransactionToUsers { get; set; } = new List<TblTokenTransaction>();
 
     public virtual ICollection<TblUserCertificate> TblUserCertificateApprovedByAdmins { get; set; } = new List<TblUserCertificate>();
 

@@ -103,6 +103,8 @@ public partial class TblContract
 
     public DateTime? ResponseDate { get; set; }
 
+    public bool IsContractSigned { get; set; }
+
     public virtual TblMessage Message { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;
@@ -110,4 +112,6 @@ public partial class TblContract
     public virtual TblUser ReceiverUser { get; set; } = null!;
 
     public virtual TblUser SenderUser { get; set; } = null!;
+
+    public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 }

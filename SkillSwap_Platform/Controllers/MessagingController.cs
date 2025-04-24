@@ -456,15 +456,31 @@ namespace SkillSwap_Platform.Controllers
                     // Check for duplicate offer: if an offer is attached, ensure no message from this sender
                     // to the receiver already has it.
                     int? usedOfferId = null;
-                    if (string.IsNullOrEmpty(content))
+                    if (int.TryParse((Request.Form["offerId"].FirstOrDefault() ?? "").Trim(), out var parsedOfferId) && parsedOfferId > 0)
+                        usedOfferId = parsedOfferId;
+
+                    // Figure out messageType
+                    string messageType = "";
+                    if (usedOfferId.HasValue
+                        && string.IsNullOrWhiteSpace(content)
+                        && (attachments == null || !attachments.Any()))
                     {
-                        var offerIdValue = Request.Form["offerId"].FirstOrDefault();
-                        if (int.TryParse(offerIdValue, out var parsed) && parsed > 0)
-                            usedOfferId = parsed;
+                        messageType = "OfferInvite";
+                    }
+                    else if (string.IsNullOrEmpty(content) && attachments?.Any() == true)
+                    {
+                        // image vs. file
+                        messageType = (attachments.Count == 1 && attachments.First().ContentType.StartsWith("image/"))
+                                      ? "Image"
+                                      : "File";
+                    }
+                    else
+                    {
+                        messageType = "Normal";
                     }
 
-                    // 1. Check in TblContracts if a contract already exists for this conversation.
-                    if (usedOfferId.HasValue)
+                    // ONLY for real offer invites do we enforce “no duplicate contract”
+                    if (messageType == "OfferInvite")
                     {
                         var existingContract = await _context.TblContracts
                             .Where(c =>
@@ -499,27 +515,6 @@ namespace SkillSwap_Platform.Controllers
                                 string errorMsg = "A contract for this conversation is already pending review.";
                                 return Json(new { success = false, error = errorMsg });
                             }
-                        }
-                    }
-
-                    // Normalize the text content from the form.
-                    content = content?.Trim() ?? string.Empty;
-
-                    // Determine the message type:
-                    string messageType = "Normal";
-
-                    // If no text is provided, but there is an attachment:
-                    if (string.IsNullOrEmpty(content) && attachments != null && attachments.Any())
-                    {
-                        // If there is only one attachment and its MIME type starts with "image/", mark it as an Image.
-                        if (attachments.Count == 1 && attachments.First().ContentType.ToLower().StartsWith("image/"))
-                        {
-                            messageType = "Image";
-                        }
-                        else
-                        {
-                            // Otherwise, treat it as a generic File (if multiple attachments or non-image type)
-                            messageType = "File";
                         }
                     }
 
@@ -674,6 +669,7 @@ namespace SkillSwap_Platform.Controllers
                             {
                                 OfferId = tblOffer.OfferId,
                                 Title = tblOffer.Title,
+                                TokenCost = (int)tblOffer.TokenCost,
                                 ShortTitle = tblOffer.Title,
                                 TimeCommitmentDays = tblOffer.TimeCommitmentDays,
                                 Category = tblOffer.Category,
@@ -717,6 +713,7 @@ namespace SkillSwap_Platform.Controllers
                             IsFlagged = message.IsFlagged,
                             IsApproved = message.IsApproved,
                             OfferDetails = offerDisplay,
+                            MessageType = messageType,
                         };
 
                         return PartialView("_MessageItem", messageVm);

@@ -1,0 +1,197 @@
+﻿@{
+    ViewData["Title"] = "Token Transactions";
+    ViewData["SubTitle"] = "See every token you send, receive, or spent all in one place";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Net Received</div>
+                <div class="title">@Model.NetTokensReceived.ToString("0.00")</div>
+                <div class="text fz14"><span class="text-thm">@Model.FutureReceivedCount.ToString("0.00")</span> To be received</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Spent</div>
+                <div class="title">@Model.TokensSpent.ToString("0.00")</div>
+                <div class="text fz14"><span class="text-thm">@Model.TokensSpent.ToString("0.00")</span> Already sent</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-withdraw"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Held in Escrow</div>
+                <div class="title">@Model.TotalHeld.ToString("0.00")</div>
+                <div class="text fz14"><span class="text-thm">@Model.TotalHeld.ToString("0.00")</span> Pending release</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Available for Spent</div>
+                <div class="title">@Model.AvailableForWithdrawal.ToString("0.00")</div>
+                <div class="text fz14"><span class="text-thm">@Model.AvailableForWithdrawal.ToString("0.00")</span> Ready to use</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review-1"></i></div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                <table class="table-style3 table at-savesearch">
+                    <thead class="t-head">
+                        <tr>
+                            <th scope="col">Transaction Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">To Exchange Partner</th>
+                            <th scope="col">Token Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody class="t-body">
+                        @foreach (var tx in Model.Transactions)
+                        {
+                            var badgeClass = tx.Type switch
+                            {
+                                "Topup" => "style5",
+                                "Hold" => "style4",
+                                "Release" => "style5",
+                                "Spend" => "style4",
+                                _ => "style4"
+                            };
+                            <tr class="@(tx.Highlight ? "active" : "")">
+                                <th scope="row">@tx.Date.ToString("MMMM d, yyyy")</th>
+                                <td class="vam"><span class="pending-style @badgeClass">@tx.Type</span></td>
+                                <td class="vam">@tx.Detail</td>
+                                <td class="vam">
+                                    <a href="@Url.Action(
+                                        "PublicProfileByUsername",
+                                        "UserProfile",
+                                        new { username = tx.CounterpartyName })">
+                                        <i>@("@")@tx.CounterpartyName</i>
+                                    </a>
+                                </td>
+                                <td class="vam">
+                                    <img src="~/template_assets/images/SSDToken.png"
+                                         alt="Tokens"
+                                         width="32" height="32" />@tx.Amount.ToString("0.00")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @{
+                    int totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+                    int currentPage = Model.CurrentPage;
+                    // show up to 5 page links, centered on current
+                    int startPage = Math.Max(1, currentPage - 2);
+                    int endPage = Math.Min(totalPages, currentPage + 2);
+                }
+                @if (totalPages > 1)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            <!-- Prev -->
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                @if (currentPage > 1)
+                                {
+                                    <a class="page-link" href="@Url.Action("DigitalTokenStatements", new { page = currentPage - 1 })">
+                                        <span class="fas fa-angle-left"></span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                }
+                            </li>
+
+                            <!-- First page & leading ellipsis -->
+                            @if (startPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("DigitalTokenStatements", new { page = 1 })">1</a>
+                                </li>
+                                @if (startPage > 2)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                }
+                            }
+
+                            <!-- Page numbers -->
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                if (i == currentPage)
+                                {
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("DigitalTokenStatements", new { page = i })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            <!-- Trailing ellipsis & last page -->
+                            @if (endPage < totalPages)
+                            {
+                                @if (endPage < totalPages - 1)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("DigitalTokenStatements", new { page = totalPages })">@totalPages</a>
+                                </li>
+                            }
+
+                            <!-- Next -->
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                @if (currentPage < totalPages)
+                                {
+                                    <a class="page-link" href="@Url.Action("DigitalTokenStatements", new { page = currentPage + 1 })">
+                                        <span class="fas fa-angle-right"></span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                }
+                            </li>
+                        </ul>
+
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            Page @currentPage of @totalPages
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

@@ -1,4 +1,7 @@
-﻿@{
+﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
+
+@{
     // grab once at the top of your file
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
@@ -38,6 +41,32 @@
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+    @{
+        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png"); 
+    }
+    <style>
+        .token-balance {
+            display: flex;
+            align-items: center;
+            background-color: #FBF8EF;
+            /* border: 1px solid #5BBB7B; */
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+            .token-balance img {
+                margin-right: 4px;
+            }
+
+            /* Hover state */
+            .token-balance:hover {
+                background-color: #004E41;
+                border-color: #004E41;
+                color: #fff;
+                cursor: url('@cursorUrl') 16 16;
+            }
+    </style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -80,11 +109,26 @@
                                 </li>
                                 <li class="d-none d-sm-block">
                                     <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                        <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })</a>
+                                        <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                    </a>
                                     @await Component.InvokeAsync("MessageNotification")
                                 </li>
                                 <li class="d-none d-sm-block">
                                     <a class="text-center mr5 text-thm2 dropdown-toggle fz20" href="@Url.ActionLink("Index","UserWishlist")"><span class="flaticon-like"></span></a>
+                                </li>
+                                @{
+                                    decimal balance = 0m;
+                                    if (User?.Identity?.IsAuthenticated == true)
+                                    {
+                                        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                                        balance = await TokenService.GetBalanceAsync(userId);
+                                    }
+                                }
+                                <li class="d-none d-sm-block token-balance">
+                                    <img src="~/template_assets/images/SSDToken.png"
+                                         alt="Tokens"
+                                         width="32" height="32" />
+                                    <span>@balance.ToString("0.00")</span>
                                 </li>
                                 <li class="user_setting">
                                     <div class="dropdown">
@@ -205,7 +249,7 @@
                         <a href="page-dashboard-payouts.html" class="items-center"><i class="flaticon-dollar mr15"></i>Payouts</a>
                     </div>
                     <div class="sidebar_list_item">
-                        <a href="page-dashboard-statement.html" class="items-center"><i class="flaticon-web mr15"></i>Statements</a>
+                        <a href="@Url.ActionLink("DigitalTokenStatements","UserDigitalToken")" class="items-center @(currentController == "UserDigitalToken" && currentAction == "DigitalTokenStatements" ? "-is-active" : "")"><i class="flaticon-web mr15"></i>Token Transactions</a>
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Swaps and Manage</p>
                     <div class="sidebar_list_item ">

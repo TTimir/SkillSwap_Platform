@@ -160,7 +160,10 @@
             days, with an agreed digital token payment of
             @if (isSender && editableMode)
             {
-                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", id = "visibleTokenOffer", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;" })
+                @Html.TextBoxFor(m => m.TokenOffer, "{0:F2}", new { @class = "inline-input", id = "visibleTokenOffer", placeholder = "Token Amount", type = "number", step = "any", style = "font-size:14px;", data_current_balance = Model.CurrentUserTokenBalance })
+                <span id="tokenOfferError"
+                      style="color:red; display:none; margin-left:8px; font-size:0.9em;">
+                </span>
             }
             else
             {

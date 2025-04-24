@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.CodeAnalysis.Text;
 using SkillSwap_Platform.Services.NotificationTrack;
+using SkillSwap_Platform.Services.DigitalToken;
+using Newtonsoft.Json;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -15,12 +17,13 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<ExchangeDashboardController> _logger;
         private readonly INotificationService _notif;
-
-        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif)
+        private readonly IDigitalTokenService _tokenService;
+        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif, IDigitalTokenService tokenService)
         {
             _context = context;
             _logger = logger;
             _notif = notif;
+            _tokenService = tokenService;
         }
 
         // GET: /ExchangeDashboard/
@@ -97,15 +100,11 @@ namespace SkillSwap_Platform.Controllers
                     bool canLaunch = recentCount < meetingLaunchThreshold;
 
                     // Assuming your TblOffer has a property "PortfolioUrls" (a JSON or comma‐separated list)
-                    string offerImageUrl = "/template_assets/images/default-offer.png"; // fallback
+                    string? offerImageUrl = null;
                     if (exchange.Offer != null && !string.IsNullOrEmpty(exchange.Offer.Portfolio))
                     {
-                        // Deserialize and pick the first URL, or adapt based on your data format
-                        var portfolioUrls = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(exchange.Offer.Portfolio);
-                        if (portfolioUrls != null && portfolioUrls.Any())
-                        {
-                            offerImageUrl = portfolioUrls.First();
-                        }
+                        var urls = JsonConvert.DeserializeObject<List<string>>(exchange.Offer.Portfolio);
+                        offerImageUrl = urls?.FirstOrDefault();
                     }
 
                     var contract = await _context.TblContracts
@@ -166,7 +165,7 @@ namespace SkillSwap_Platform.Controllers
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
                         InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
                     };
-
+                    dashboardItem.OfferImageUrl = offerImageUrl;
                     dashboardItems.Add(dashboardItem);
                 }
 
@@ -571,14 +570,42 @@ namespace SkillSwap_Platform.Controllers
                 return NotFound("Exchange not found.");
             }
 
-            // Check that there is a completed online meeting (if required).
-            var completedOnlineMeeting = await _context.TblMeetings
+            if (exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+            {
+                // Check that there is a completed online meeting (if required).
+                var completedOnlineMeeting = await _context.TblMeetings
                 .Where(m => m.ExchangeId == exchangeId && m.Status == "Completed")
                 .FirstOrDefaultAsync();
-            if (completedOnlineMeeting == null)
+                if (completedOnlineMeeting == null)
+                {
+                    TempData["ErrorMessage"] = "You must complete an online meeting before marking the exchange as complete.";
+                    return RedirectToAction("Index", "ExchangeDashboard");
+                }
+            }
+            else if (exchange.ExchangeMode.Contains("in-person", StringComparison.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "You must complete an online meeting before marking the exchange as complete.";
-                return RedirectToAction("Index", "ExchangeDashboard");
+                // 1) OTP verification:
+                var inPerson = await _context.TblInPersonMeetings
+                    .Where(m => m.ExchangeId == exchangeId)
+                    .OrderByDescending(m => m.CreatedDate)
+                    .FirstOrDefaultAsync();
+                var proof = await _context.TblInpersonMeetingProofs
+                    .FirstOrDefaultAsync(p => p.ExchangeId == exchangeId);
+
+                if (inPerson == null
+                    || !inPerson.IsInpersonMeetingVerifiedByOfferOwner
+                    || !inPerson.IsInpersonMeetingVerifiedByOtherParty)
+                {
+                    TempData["ErrorMessage"] = "Both parties must verify the in-person meeting via OTP before completing.";
+                    return RedirectToAction("Index");
+                }
+
+                // 2) End-meeting proof:
+                if (proof == null || proof.EndProofDateTime == null || string.IsNullOrWhiteSpace(proof.EndProofImageUrl))
+                {
+                    TempData["ErrorMessage"] = "You must submit end-meeting proof before marking the exchange as complete.";
+                    return RedirectToAction("Index");
+                }
             }
 
             // Mark exchange as completed.
@@ -595,11 +622,14 @@ namespace SkillSwap_Platform.Controllers
                 OfferId = exchange.OfferId,
                 ChangeDate = DateTime.UtcNow,
                 ChangedStatus = "Exchange Completed",
-                Reason = "Exchange marked as completed by the user after successful online meeting and feedback.",
+                Reason = "Exchange marked as completed successfully.",
                 ChangedBy = userId
             };
             _context.TblExchangeHistories.Add(historyRecord);
             await _context.SaveChangesAsync();
+
+            if (exchange != null)
+                await _tokenService.ReleaseTokensAsync(exchange.ExchangeId);
 
             // log notification:
             await _notif.AddAsync(new TblNotification

@@ -65,15 +65,20 @@
                                         <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
                                             <div class="d-lg-flex align-items-lg-center">
                                                 <div class="thumb w60 position-relative rounded-circle mb15-md">
-                                                    @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
-                                                    @if (!string.IsNullOrEmpty(item.OfferImageUrl))
-                                                    {
-                                                        <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
+                                                    @{
+                                                        var defaults = new[]
+                                                        {
+                                            Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                            Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                            };
+                                                        // use ExchangeId so it’s always the same for a given offer
+                                                        int idx = item.Exchange.ExchangeId % defaults.Length;
+                                                        var fallback = defaults[idx];
+                                                        var imgSrc = !string.IsNullOrEmpty(item.OfferImageUrl)
+                                                        ? Url.Content(item.OfferImageUrl)
+                                                        : fallback;
                                                     }
-                                                    else
-                                                    {
-                                                        <span>N/A</span>
-                                                    }
+                                                    <img src="@imgSrc" alt="Offer Thumbnail" class="mx-auto" style="max-width:120%" />
                                                 </div>
                                                 <div class="details ml15 ml0-md mb15-md">
                                                     <small class="text-muted">@item.Category</small>
@@ -143,7 +148,7 @@
                                                     <button type="submit" class="ud-btn btn-thm2 me-4"
                                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="Mark this exchange as completed">
-                                                        Mark as Done <i class="fal fa-check"></i>
+                                                        Mark Exchange as Done <i class="fal fa-check"></i>
                                                     </button>
                                                 </form>
                                             }
@@ -169,13 +174,15 @@
                                                 }
                                             }
                                         }
-                                        else
+                                        else if (!string.IsNullOrEmpty(item.ExchangeMode) &&
+                                        item.ExchangeMode.Equals("in-person", StringComparison.OrdinalIgnoreCase))
                                         {
                                             // For in-person mode, display a different button.
                                             <a href="@Url.Action("ScheduleInPerson", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm me-4"
                                                data-bs-toggle="tooltip" data-bs-placement="top" title="Schedule In-Person Meet">
                                                 In-Person Meet <i class="fal fa-arrow-right-long"></i>
                                             </a>
+
                                             @if (!string.IsNullOrWhiteSpace(item.ExchangeMode) &&
                                            item.ExchangeMode.ToLower().Contains("in-person") &&
                                            !item.IsMeetingEnded &&
@@ -199,6 +206,15 @@
                                                     </a>
                                                 }
                                             }
+                                            <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                <button type="submit" class="ud-btn btn-thm2 me-4"
+                                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                                        title="Mark this exchange as completed">
+                                                    Mark Exchange as Done <i class="fal fa-check"></i>
+                                                </button>
+                                            </form>
                                         }
                                     </td>
                                 </tr>

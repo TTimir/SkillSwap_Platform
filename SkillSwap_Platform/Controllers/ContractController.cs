@@ -17,6 +17,8 @@ using System.Diagnostics.Contracts;
 using SkillSwap_Platform.HelperClass.Extensions;
 using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Services.NotificationTrack;
+using SkillSwap_Platform.Services.DigitalToken;
+using Microsoft.CodeAnalysis.Text;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -36,6 +38,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly IViewRenderService _viewRenderService;
         private readonly IPdfGenerator _pdfGenerator;
         private readonly INotificationService _notif;
+        private readonly IDigitalTokenService _tokenService;
 
         public ContractController(
             IContractPreparationService contractPreparation,
@@ -44,7 +47,8 @@ namespace SkillSwap_Platform.Controllers
             ILogger<ContractController> logger,
             IViewRenderService viewRenderService,
             IPdfGenerator pdfGenerator,
-            INotificationService notif)
+            INotificationService notif,
+            IDigitalTokenService tokenService)
         {
             _contractPreparation = contractPreparation;
             _contractHandler = contractHandler;
@@ -53,6 +57,7 @@ namespace SkillSwap_Platform.Controllers
             _viewRenderService = viewRenderService;
             _pdfGenerator = pdfGenerator;
             _notif = notif;
+            _tokenService = tokenService;
         }
 
         #region Create Contract
@@ -64,6 +69,9 @@ namespace SkillSwap_Platform.Controllers
             {
                 int userId = GetUserId();
                 var viewModel = await _contractPreparation.PrepareViewModelAsync(messageId, userId, revealReceiverDetails: false);
+
+                viewModel.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
 
                 // Set server-controlled properties so they appear in the hidden fields.
                 viewModel.Mode = MODE_CREATE;
@@ -89,6 +97,12 @@ namespace SkillSwap_Platform.Controllers
             ModelState.Remove(nameof(model.ReceiverSignature));
             ModelState.Remove(nameof(model.ContractUniqueId));
             ModelState.Remove(nameof(model.LearningDays));
+
+            if (!await _tokenService.HasSufficientBalanceAsync(GetUserId(), model.TokenOffer ?? 0m))
+            {
+                ModelState.AddModelError(nameof(model.TokenOffer),
+                     $"You only have {model.CurrentUserTokenBalance:F2} tokens—insufficient to offer {model.TokenOffer:F2}.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -218,8 +232,9 @@ namespace SkillSwap_Platform.Controllers
                 TempData["ErrorMessage"] = "This is the final version of the agreement/ contract. No further modifications are allowed.";
                 return RedirectToAction("Review", new { contractId });
             }
-
             var vm = await PrepareViewModelForEdit(contract, ACTION_MODIFYONLY);
+            vm.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
             vm.Mode = MODE_EDIT;
             vm.ActionContext = ACTION_MODIFYONLY;
 
@@ -234,6 +249,7 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 ModelState.Remove("FlowDescription");
+                ModelState.Remove("AdditionalTerms");
 
                 var originalContract = await _context.TblContracts
                     .FirstOrDefaultAsync(c => c.ContractId == contractId);
@@ -299,6 +315,19 @@ namespace SkillSwap_Platform.Controllers
                     var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
                     vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
+                }
+
+                // Determine who actually pays: the opener is always the one who offered the tokens.
+                int payerId = isReceiver
+                    ? originalContract.SenderUserId
+                    : originalContract.ReceiverUserId;
+
+                if (!await _tokenService.HasSufficientBalanceAsync(payerId, tokenOffer))
+                {
+                    ModelState.AddModelError(
+                        nameof(tokenOffer),
+                        $"User @{payerId} only has {await _tokenService.GetBalanceAsync(payerId):F2} tokens—insufficient to offer {tokenOffer:F2}."
+                    );
                 }
 
                 if (!ModelState.IsValid)
@@ -578,7 +607,8 @@ namespace SkillSwap_Platform.Controllers
                     Mode = MODE_SIGN,
                     ActionContext = contract.ParentContractId == null ? ACTION_CREATEONLY : ACTION_MODIFYONLY
                 };
-
+                viewModel.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
                 return View("PreviewContract", viewModel);
             }
             catch (Exception ex)
@@ -734,7 +764,11 @@ namespace SkillSwap_Platform.Controllers
                     }
 
                     newFinalContract.Status = "Accepted";
+                    newFinalContract.IsContractSigned = true; 
                     newFinalContract.FinalizedDate = DateTime.Now;
+
+                    _context.TblContracts.Add(newFinalContract);
+                    await _context.SaveChangesAsync();
 
                     // This code would go after the final contract has been created and saved.
                     if (newFinalContract.Status == "Accepted")
@@ -744,6 +778,7 @@ namespace SkillSwap_Platform.Controllers
                         // Create an exchange record.
                         var exchange = new TblExchange
                         {
+                            ContractId            = newFinalContract.ContractId, 
                             OfferId = newFinalContract.OfferId,
                             // Determine the requester based on your business rules; for example:
                             OfferOwnerId = newFinalContract.ReceiverUserId,
@@ -766,6 +801,20 @@ namespace SkillSwap_Platform.Controllers
 
                         _context.TblExchanges.Add(exchange);
                         await _context.SaveChangesAsync();
+
+                        if (exchange != null)
+                            await _tokenService.HoldTokensAsync(exchange.ExchangeId);
+
+                        var openerId = isReceiver
+                            ? originalContract.SenderUserId
+                            : originalContract.ReceiverUserId;
+
+                        if (!await _tokenService.HasSufficientBalanceAsync(openerId, newFinalContract.TokenOffer ?? 0m))
+                        {
+                            ModelState.AddModelError("",
+                              $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
+                            return View("PreviewContract", new { contractId });
+                        }
 
                         if (!string.IsNullOrWhiteSpace(newFinalContract.SenderSkill))
                         {
@@ -845,7 +894,6 @@ namespace SkillSwap_Platform.Controllers
                     await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
                     newFinalContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
-                    _context.TblContracts.Add(newFinalContract);
                     await _context.SaveChangesAsync();
 
                     // log notification:
@@ -853,11 +901,11 @@ namespace SkillSwap_Platform.Controllers
                     {
                         UserId = GetUserId(),
                         Title = "Aggreement Signed",
-                        Message = "You successfully signed the aggreement of your exchange.",
+                        Message = "You’ve signed the contract and your tokens have been transferred.",
                         Url = Url.Action("Index", "ExchangeDashboard"),
                     });
 
-                    TempData["SuccessMessage"] = "You have signed the greement/ contract. A new version has been created.";
+                    TempData["SuccessMessage"] = "Agreement signed successfully and tokens have been deducted.";
                     int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
                 }

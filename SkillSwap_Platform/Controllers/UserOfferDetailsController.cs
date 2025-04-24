@@ -565,6 +565,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     Offers = offerCards,
                     CategoryOptions = await _context.TblOffers
+                        .Where(o => !string.IsNullOrWhiteSpace(o.Category))
                         .Select(o => o.Category)
                         .Distinct()
                     .OrderBy(c => c)
@@ -577,6 +578,7 @@ namespace SkillSwap_Platform.Controllers
 
                     // Populate language options from your global language table
                     LanguageOptions = await _context.TblLanguages
+                        .Where(l => !string.IsNullOrWhiteSpace(l.Language))
                         .Select(l => l.Language)  // Assuming 'Language' is the property
                         .Distinct()
                         .OrderBy(lang => lang)
@@ -585,6 +587,7 @@ namespace SkillSwap_Platform.Controllers
 
                     // Populate location options (for example, from users' countries)
                     LocationOptions = await _context.TblUsers
+                        .Where(u => !string.IsNullOrWhiteSpace(u.Country))
                         .Select(u => u.Country)
                         .Distinct()
                         .OrderBy(c => c)

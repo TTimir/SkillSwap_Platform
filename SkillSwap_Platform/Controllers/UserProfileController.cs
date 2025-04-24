@@ -12,6 +12,8 @@ using System.Security.Claims;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SkillSwap_Platform.Services.Email;
+using NuGet.Protocol.Plugins;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -21,12 +23,13 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserProfileController> _logger;
         private readonly INotificationService _notif;
-
-        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif)
+        private readonly IEmailService _emailService;
+        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
             _notif = notif;
+            _emailService = emailService;
         }
 
         #region Public Profile
@@ -544,6 +547,130 @@ namespace SkillSwap_Platform.Controllers
             }
             model.Skills.AllSkills = skillsList;
             return View(model);
+        }
+
+        #endregion
+
+        #region Email Change Verify
+        [Authorize]
+        [HttpGet]
+        public IActionResult ConfirmEmailChange()
+        {
+            ViewBag.ShowOtpStep = (TempData["ShowOtpStep"] as bool?) ?? false;
+            ViewBag.NewEmail = TempData["NewEmail"] as string ?? "";
+            ViewBag.InfoMessage = TempData["InfoMessage"] as string;
+            ViewBag.ErrorMessage = TempData["ErrorMessage"] as string;
+            return View();
+        }
+
+        // POST: /UserProfile/ConfirmEmailChange
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmEmailChange(string otp)
+        {
+            int userId = GetUserId();
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user == null) return NotFound();
+            
+            otp = otp?.Trim();
+            var pendingEmail = user.PendingEmail;
+
+            // check code & expiry
+            if (user.EmailChangeOtp == otp && user.EmailChangeExpires > DateTime.UtcNow)
+            {
+                // commit the pending address
+                user.Email = user.PendingEmail;
+                user.PendingEmail = null;
+                user.EmailChangeOtp = null;
+                user.EmailChangeExpires = null;
+                user.EmailConfirmed = true;
+
+                await _context.SaveChangesAsync();
+
+                var confirmBody = $@"
+                    <p>Hi {user.FirstName},</p>
+                    <p>Your SkillSwap account email has now been successfully updated to <strong>{pendingEmail}</strong>.</p>
+                    <p>If you did not make this change, please contact our support immediately.</p>
+                    <p>Thanks for being with us!</p>
+                    <p><strong>The SkillSwap Team</strong></p>
+                   ";
+                await _emailService.SendEmailAsync(
+                    pendingEmail,
+                    "Your SkillSwap Email Has Been Updated",
+                    confirmBody,
+                    isBodyHtml: true
+                );
+                TempData["SuccessMessage"] = "Your email address has been updated!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["ErrorMessage"] = "Invalid or expired code.";
+            return View();
+        }
+
+        // Controllers/UserProfileController.cs
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendEmailChangeCode(string newEmail)
+        {
+            var userId = GetUserId();
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "That is already your email.";
+                TempData["ShowOtpStep"] = false;
+                return RedirectToAction(nameof(ConfirmEmailChange));
+            }
+
+            bool emailTaken = await _context.TblUsers
+                .AnyAsync(u => u.UserId != userId
+                   && u.Email.ToLower() == newEmail.Trim().ToLower());
+            if (emailTaken)
+            {
+                TempData["ErrorMessage"] = "That email address is already in use.";
+                TempData["ShowOtpStep"] = false;
+                return RedirectToAction(nameof(ConfirmEmailChange));
+            }
+
+            // generate & store
+            var otp = new Random().Next(100000, 999999).ToString("D6");
+            user.PendingEmail = newEmail;
+            user.EmailChangeOtp = otp;
+            user.EmailChangeExpires = DateTime.UtcNow.AddMinutes(10);
+            await _context.SaveChangesAsync();
+
+            string htmlBody = $@"
+                <div style=""font-family:Arial, sans-serif; line-height:1.5; color:#333;"">
+                  <p>Hi {user.FirstName},</p>
+                  <p>We received a request to change your SkillSwap account email to this address. To complete the update, please use the code below:</p>
+                  <h2 style=""background:#f4f4f4; display:inline-block; padding:10px 20px; border-radius:4px;"">{otp}</h2>
+                  <p><small>This code expires in 10 minutes.</small></p>
+                  <p>If you did not request this change, simply ignore this message — no further action is needed.</p>
+                  <hr style=""border:none; border-top:1px solid #e0e0e0; margin:20px 0;"" />
+                  <p>Thanks for using SkillSwap!</p>
+                  <p><strong>The SkillSwap Team</strong></p>
+                </div>
+                ";
+
+            // send to the **new** address
+            await _emailService.SendEmailAsync(
+                newEmail,
+                "Please Confirm Your New SkillSwap Email Address",
+                body: htmlBody,
+                isBodyHtml: true
+            );
+
+            TempData["InfoMessage"] = "A code has been sent to " + newEmail;
+            TempData["ShowOtpStep"] = true;
+            TempData["NewEmail"] = newEmail;
+
+            TempData["InfoMessage"] = "We’ve sent a code to your new email. Please enter it below.";
+            return RedirectToAction(nameof(ConfirmEmailChange));
         }
 
         #endregion
