@@ -17,6 +17,8 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<MiningLog> MiningLogs { get; set; }
+
     public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
 
     public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
@@ -46,6 +48,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblMessage> TblMessages { get; set; }
 
     public virtual DbSet<TblMessageAttachment> TblMessageAttachments { get; set; }
+
+    public virtual DbSet<TblNewsletterSubscriber> TblNewsletterSubscribers { get; set; }
 
     public virtual DbSet<TblNotification> TblNotifications { get; set; }
 
@@ -82,7 +86,11 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblWorkingTime> TblWorkingTimes { get; set; }
 
+    public virtual DbSet<TokenEmissionSetting> TokenEmissionSettings { get; set; }
+
     public virtual DbSet<UserGoogleToken> UserGoogleTokens { get; set; }
+
+    public virtual DbSet<UserMiningProgress> UserMiningProgresses { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
     public DbSet<ReviewAggregate> ReviewAggregates { get; set; }
@@ -92,6 +100,19 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<MiningLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__MiningLo__3214EC079A9B841C");
+
+            entity.ToTable("MiningLog");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 4)");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MiningLogs)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_MiningLog_User");
+        });
+
         modelBuilder.Entity<PrivacySensitiveWord>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__PrivacyS__3214EC0759BCBFB6");
@@ -479,6 +500,16 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.MessageId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblMessageAttachments_Message");
+        });
+
+        modelBuilder.Entity<TblNewsletterSubscriber>(entity =>
+        {
+            entity.HasKey(e => e.NewsletterSubscriberId).HasName("PK__tblNewsl__73915D707F301EE9");
+
+            entity.ToTable("tblNewsletterSubscriber");
+
+            entity.Property(e => e.Email).HasMaxLength(320);
+            entity.Property(e => e.SubscribedAtUtc).HasDefaultValueSql("(sysutcdatetime())");
         });
 
         modelBuilder.Entity<TblNotification>(entity =>
@@ -919,6 +950,15 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblWorkingTime_Users");
         });
 
+        modelBuilder.Entity<TokenEmissionSetting>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TokenEmi__3214EC071CA14F88");
+
+            entity.Property(e => e.DailyCap).HasColumnType("decimal(18, 4)");
+            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
+            entity.Property(e => e.TotalPool).HasColumnType("decimal(18, 4)");
+        });
+
         modelBuilder.Entity<UserGoogleToken>(entity =>
         {
             entity.HasKey(e => e.UserGoogleTokenId).HasName("PK__UserGoog__09CB07C16A6A0688");
@@ -926,6 +966,21 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.AccessToken).HasMaxLength(500);
             entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
             entity.Property(e => e.RefreshToken).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<UserMiningProgress>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+
+            entity.ToTable("UserMiningProgress");
+
+            entity.Property(e => e.UserId).ValueGeneratedNever();
+            entity.Property(e => e.EmittedToday).HasColumnType("decimal(18, 4)");
+            entity.Property(e => e.IsMiningAllowed).HasDefaultValue(true);
+
+            entity.HasOne(d => d.User).WithOne(p => p.UserMiningProgress)
+                .HasForeignKey<UserMiningProgress>(d => d.UserId)
+                .HasConstraintName("FK_UserMiningProgress_User");
         });
 
         modelBuilder.Entity<UserSensitiveWord>(entity =>
@@ -987,6 +1042,7 @@ public partial class SkillSwapDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
+
 
         OnModelCreatingPartial(modelBuilder);
     }

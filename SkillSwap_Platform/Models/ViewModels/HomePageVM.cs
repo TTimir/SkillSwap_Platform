@@ -22,6 +22,29 @@ namespace SkillSwap_Platform.Models.ViewModels
         public int TotalSkills { get; set; }
         public List<CategoryCardVm> PopularCategories { get; set; } = new();
 
+
+        public string TalentsDisplayValue { get; set; } = "";
+        public string TalentsSuffix { get; set; } = "";
+        public string TalentsLabel { get; set; } = "";
+
+
+        public string ExchangeDisplayValue { get; set; } = "";
+        public string ExchangeSuffix { get; set; } = "";
+        public string ExchangeLabel { get; set; } = "";
+
+        public double GlobalAverageRating { get; set; }
+        public int AverageRating { get; set; }
+        public int SwapSatisfactionPercent { get; set; }
+        public int EarlyAdopterCount { get; set; }
+
+        public List<string> TopSkills { get; set; } = new();
+        public List<string> TrendingSkills { get; set; } = new();
+        public List<string> TopCountrySkills { get; set; } = new();
+        public List<string> ProjectCatalog { get; set; } = new();
+
+        public string UserCountryIso { get; set; }      // e.g. "US"
+        public string UserCountryName { get; set; }     // e.g. "United States"
+
     }
 
     public class CategoryOffers

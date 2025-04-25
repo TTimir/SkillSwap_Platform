@@ -102,6 +102,8 @@ public partial class TblUser
 
     public bool IsEscrowAccount { get; set; }
 
+    public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
+
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();
@@ -155,6 +157,8 @@ public partial class TblUser
     public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
 
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
+
+    public virtual UserMiningProgress? UserMiningProgress { get; set; }
 
     public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();
 

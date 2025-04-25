@@ -1,0 +1,46 @@
+﻿.token-balance {
+    display: flex;
+    align-items: center;
+    background-color: #FBF8EF;
+    /* border: 1px solid #5BBB7B; */
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+    .token-balance img {
+        margin-right: 4px;
+    }
+    /* Hover state */
+    .token-balance:hover {
+        background-color: #004E41;
+        border-color: #004E41;
+        color: #fff;
+        cursor: url('/template_assets/images/SSDToken.png') 16 16, auto;
+    }
+
+.mining-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #ccc;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    transition: background .3s;
+}
+
+    .mining-dot.active {
+        background: #5BBB7B;
+        animation: pulse 2s infinite;
+    }
+
+@keyframes pulse {
+    0%,100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+}

@@ -15,11 +15,13 @@ using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.DigitalToken;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.Meeting;
+using SkillSwap_Platform.Services.Newsletter;
 using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.Services.PDF;
 using SkillSwap_Platform.Services.Repository;
 using SkillSwap_Platform.Services.ReviewReply;
+using SkillSwap_Platform.Services.TokenMining;
 using SkillSwap_Platform.Services.Wishlist;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -66,11 +68,13 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IPasswordHasher<TblUser>, PasswordHasher<TblUser>>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<INewsletterService, NewsletterService>();
 builder.Services.AddScoped<IDigitalTokenService, DigitalTokenService>();
 builder.Services
     .AddTransient<IEmailService, SmtpEmailService>();
 builder.Services
        .AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddHostedService<MiningHostedService>();
 
 builder.Services.AddControllersWithViews(options =>
 {

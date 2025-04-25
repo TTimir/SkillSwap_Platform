@@ -19,6 +19,10 @@ using SkillSwap_Platform.Services.PasswordReset;
 using SkillSwap_Platform.HelperClass.Extensions;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
+using SkillSwap_Platform.Services.Newsletter;
+using System.Net;
+using System.Globalization;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -28,14 +32,91 @@ public class HomeController : Controller
     private readonly IPasswordResetService _passwordReset;
     private readonly SkillSwapDbContext _dbcontext;
     private readonly IEmailService _emailService;
-
-    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset)
+    private readonly INewsletterService _newsletter;
+    private readonly IConfiguration _config;
+    private readonly int _satisfactionThreshold;
+    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
         _passwordReset = passwordReset;
         _emailService = emailService;
+        _newsletter = newsletter;
+        _config = config;
+        _satisfactionThreshold = config.GetValue<int>("TrustMetrics:SatisfactionThreshold", 4);
     }
+
+    // This runs on every request for views that share the layout
+    public override void OnActionExecuting(ActionExecutingContext ctx)
+    {
+        // Grab distinct categories
+        var cats = _dbcontext.TblOffers
+            .Select(o => o.Category)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+        ViewData["FooterCategories"] = cats;
+        base.OnActionExecuting(ctx);
+    }
+
+    #region Subscribe Newsletter
+    // GET /Footer/UnsubscribeNewsletter?email=foo@bar.com
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> UnsubscribeNewsletter(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)
+         || !new EmailAddressAttribute().IsValid(email))
+        {
+            ViewBag.Message = "🔴 That address doesn’t look valid.";
+            return View("UnsubscribeNewsletter");
+        }
+
+        //await _newsletter.UnsubscribeAsync(email);
+        ViewBag.Message = $"✅ {email} has been removed from our mailing list.";
+        return View("UnsubscribeNewsletter");
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubscribeNewsletter(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !new EmailAddressAttribute().IsValid(email))
+        {
+            TempData["NewsletterError"] = "🔴 Please enter a valid email.";
+        }
+        else
+        {
+            await _newsletter.SubscribeAsync(email);
+
+            var unsubscribeUrl = Url.Action(
+                "UnsubscribeNewsletter",
+                "Home",
+                new { email = WebUtility.UrlEncode(email) },
+                protocol: Request.Scheme);
+
+            var subject = "Thanks for subscribing to SkillSwap!";
+            var htmlBody = $@"
+                <p>Hi there,</p>
+                <p>🎉 Thank you for subscribing to the SkillSwap newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
+                <hr/>
+                <p>If you ever wish to unsubscribe, just click the link at the bottom of any newsletter.
+                    <a href=""{unsubscribeUrl}"">unsubscribe</a> at any time.
+                </p>
+                <p>Welcome aboard!<br/>— The SkillSwap Team</p>
+            ";
+
+            await _emailService.SendEmailAsync(
+                to: email,
+                subject: subject,
+                body: htmlBody,
+                isBodyHtml: true
+            );
+            TempData["NewsletterSuccess"] = "✅ Thanks for subscribing!";
+        }
+        // refresh the same page
+        return Redirect(Request.Headers["Referer"].ToString());
+    }
+    #endregion
 
     public async Task<IActionResult> Index()
     {
@@ -44,6 +125,69 @@ public class HomeController : Controller
             int? currentUserId = User.Identity.IsAuthenticated
                 ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
                 : null;
+
+            double globalAvgRating = 0;
+            if (await _dbcontext.TblReviews.AnyAsync())
+            {
+                globalAvgRating = await _dbcontext.TblReviews
+                    .AverageAsync(r => (double)r.Rating);
+            }
+
+            var totalReviews = await _dbcontext.TblReviews.CountAsync();
+
+            // 2) Reviews at or above threshold
+            var happyReviews = await _dbcontext.TblReviews
+                .Where(r => r.Rating >= _satisfactionThreshold)
+                .CountAsync();
+
+            int satisfactionPct = totalReviews == 0
+                ? 100 // or 0, however you prefer to handle no data
+                : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+            int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+            decimal bonusPct = _config.GetValue<decimal>("TrustMetrics:FreelancerBonusPercent") / 100m;
+            int displayCount = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+
+            int actualTalents = await _dbcontext.TblUsers
+            .Where(u => u.IsActive && u.IsVerified)
+            .CountAsync();
+
+            // 2) read bonus percentage from appsettings.json
+            decimal bonusPercent = _config
+                .GetValue<decimal>("TrustMetrics:TalentsBonusPercent")
+                / 100m;
+
+            // 3) compute displayed number
+            int displayTalents = actualTalents
+                + (int)Math.Ceiling(actualTalents * bonusPercent);
+
+            (string fDisp, string fSfx) = FormatNumber(displayTalents);
+
+            // 5) pick your label
+            string fLabel = displayTalents switch
+            {
+                < 100 => "Be one of the first 100!", // Lead the way, join
+                < 500 => $"Join {fDisp}{fSfx}+ trailblazers!",
+                < 1000 => $"Over {fDisp}{fSfx}+ innovators!",
+                _ => "Active Talents"
+            };
+
+            int actualExchanges = await _dbcontext.TblExchanges
+                .Where(x => x.Status == "Completed")
+                .CountAsync();
+
+            int displayExchanges = actualExchanges
+                + (int)Math.Ceiling(actualExchanges * bonusPercent);
+
+            (string eDisp, string eSfx) = FormatNumber(displayExchanges);
+
+            string eLabel = displayExchanges switch
+            {
+                < 50 => "swaps making waves!",
+                < 200 => $"{eDisp}{eSfx}+ swaps done already!",
+                < 500 => $"{eDisp}{eSfx}+ swaps shaping our network!",
+                _ => "Swaps Completed"
+            };
 
             // 1) Group your offers by Category, count them:
             var cats = await _dbcontext.TblOffers
@@ -161,14 +305,70 @@ public class HomeController : Controller
                     .ToList(),
             }).ToList();
 
+            // 4) Top skills in the visitor’s country
+            var acceptLang = HttpContext.Request.Headers["Accept-Language"].ToString();
+            string lang = acceptLang.Split(',').FirstOrDefault() ?? "";
+
+            RegionInfo region;
+            try
+            {
+                // 2) Create a CultureInfo ("en-US") then RegionInfo("US")
+                var ci = new CultureInfo(lang);
+                region = new RegionInfo(ci.Name);
+            }
+            catch
+            {
+                // fallback if it wasn’t a well-formed culture
+                region = RegionInfo.CurrentRegion;
+            }
+
+            // Now you have both:
+            string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
+            string countryName = region.EnglishName;             // e.g. "India"
+
             var vm = new HomePageVM
             {
                 TrendingOffers = trendingOfferVMs,
                 HighestRatedFreelancers = highestRatedFreelancersVM,
                 TrendingOffersByCategory = new List<CategoryOffers>(),
                 PopularCategories = cats,
-                TotalSkills = totalSkills
+                TotalSkills = totalSkills,
+                TalentsDisplayValue = fDisp,
+                TalentsSuffix = fSfx,
+                TalentsLabel = fLabel,
+                ExchangeDisplayValue = eDisp,
+                ExchangeSuffix = eSfx,
+                ExchangeLabel = eLabel,
+                GlobalAverageRating = Math.Round(globalAvgRating, 1),
+                SwapSatisfactionPercent = satisfactionPct,
+                EarlyAdopterCount = displayCount,
+                UserCountryIso = countryIso,
+                UserCountryName = countryName,
             };
+
+            // 1) TOP SKILLS overall (by # of offers)
+            var topSkills = await _dbcontext.TblUserSkills
+                .Where(us => us.IsOffering)
+                .GroupBy(us => us.Skill.SkillName)
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(20)
+                .ToListAsync();
+            vm.TopSkills = topSkills.Select(x => x.Name).ToList();
+
+            // 2) TRENDING SKILLS (last 7-day spike)
+            var weekAgo = DateTime.UtcNow.AddDays(-7);
+            var trending = await _dbcontext.TblUserSkills
+                .Where(us => us.IsOffering)
+                .GroupBy(us => us.Skill.SkillName)
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(20)
+                .ToListAsync();
+            vm.TrendingSkills = trending.Select(x => x.Name).ToList();
+
+            // 4) PROJECT CATALOG — e.g. distinct portfolio tags, or reuse topSkills:
+            vm.ProjectCatalog = vm.TopSkills.Take(20).ToList();
 
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
             ViewBag.ErrorMessage = TempData.ContainsKey("ErrorMessage") ? TempData["ErrorMessage"] : null;
@@ -606,6 +806,16 @@ public class HomeController : Controller
                 return View("Setup2FA");
             }
 
+            // seed mining progress for this brand-new user
+            _dbcontext.UserMiningProgresses.Add(new UserMiningProgress
+            {
+                UserId = newUser.UserId,
+                LastEmittedUtc = DateTime.UtcNow,
+                EmittedToday = 0m,
+                IsMiningAllowed = true
+            });
+            await _dbcontext.SaveChangesAsync();
+
             // preserve TempUserId for onboardin
             HttpContext.Session.SetInt32("TempUserId", newUser.UserId);
 
@@ -721,6 +931,13 @@ public class HomeController : Controller
     #endregion
 
     #region Helper Methods
+    private static (string disp, string suffix) FormatNumber(int n)
+    {
+        if (n >= 1_000_000) return ((n / 1_000_000.0).ToString("0.#"), "M");
+        if (n >= 1_000) return ((n / 1_000.0).ToString("0.#"), "K");
+        return (n.ToString(), "");
+    }
+
     private async Task SignInUserAsync(TblUser user, bool isPersistent)
     {
         try
@@ -746,6 +963,19 @@ public class HomeController : Controller
             };
 
             await HttpContext.SignInAsync("SkillSwapAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
+
+            // ensure mining progress exists on every login
+            if (!await _dbcontext.UserMiningProgresses.AnyAsync(p => p.UserId == user.UserId))
+            {
+                _dbcontext.UserMiningProgresses.Add(new UserMiningProgress
+                {
+                    UserId = user.UserId,
+                    LastEmittedUtc = DateTime.UtcNow,
+                    EmittedToday = 0m,
+                    IsMiningAllowed = true
+                });
+                await _dbcontext.SaveChangesAsync();
+            }
 
             // Set a secure authentication cookie.
             //Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
