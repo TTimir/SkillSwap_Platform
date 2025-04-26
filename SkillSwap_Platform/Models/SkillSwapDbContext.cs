@@ -1034,6 +1034,35 @@ public partial class SkillSwapDbContext : DbContext
         //modelBuilder.Entity<TblUserRole>().HasNoKey();
 
         modelBuilder.Entity<TblUser>()
+           .HasQueryFilter(u => !u.IsEscrowAccount);
+
+        modelBuilder.Entity<TblUser>().HasData(new TblUser
+        {
+            UserId = 1,                           // reserved ID
+            UserName = "escrow",
+            Email = "escrow@skillswap.local",
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            FirstName = "System",
+            LastName = "Escrow",
+            ContactNo = String.Empty,
+            IsHeld = false,
+            IsActive = true,
+            IsVerified = true,
+            IsOnboardingCompleted = true,
+            DigitalTokenBalance = 0m,
+            IsEscrowAccount = true,
+            CreatedDate = DateTime.UtcNow,
+            Role = "Escrow",
+
+            // salt = Base64(UTF8("escrowSalt"))
+            Salt = "ZXNjcm93U2FsdA==",
+
+            // PBKDF2-HMACSHA256("EscrowDoesNotLogin!234", escrowSalt, 10k, 32 bytes) → Base64
+            PasswordHash = "p6EMvlDfoMSTjnowsR481C74fuR1z7dlycNFSYSCW/U="
+        });
+
+        modelBuilder.Entity<TblUser>()
        .HasIndex(u => u.UserName)
        .IsUnique();
 

@@ -5,46 +5,74 @@
 }
 
 <style>
-    /* Make the row a flex container so its children (columns) are equal height */
+    /* 1) make our “equal-height” row a flex container */
     .row.equal-height {
         display: flex;
         flex-wrap: wrap;
     }
-
-        /* Make each column a flex container */
+        /* 2) ensure each column in that row is also a flex container */
         .row.equal-height > [class*="col-"] {
+            display: flex;
+        }
+            /* 3) force the card itself to grow/fill its column */
+            .row.equal-height > [class*="col-"] .listing-style1 {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+        /* 4) clamp all thumbnail imgs to the same height and crop */
+        .row.equal-height .list-thumb img {
+            height: 180px; /* adjust as you like */
+            object-fit: cover;
+            width: 100%;
+        }
+        /* 5) make the textual content flex-grow so footers sit at the bottom */
+        .row.equal-height .list-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
-    /* Ensure the card fills the available space */
-    .listing-style1 {
-        flex: 1;
+            /* 6) push the “budget” (or any bottom meta) to the bottom */
+            .row.equal-height .list-content .budget {
+                margin-top: auto;
+            }
+
+    /* only rows with .swap-grid become flex containers */
+    .swap-grid {
         display: flex;
-        flex-direction: column;
-        /* Optional: set a min-height if needed */
-        min-height: 450px;
+        flex-wrap: wrap;
     }
-
-    /* Prevent the image area from stretching */
-    .list-thumb {
-        flex: 0 0 auto;
-    }
-
-    /* Let the text content grow equally */
-    .list-content {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-    }
-
-        /* Optional: Limit the title text to two lines with ellipsis */
-        .list-content .list-title {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+        /* make each column in .swap-grid a flex container */
+        .swap-grid > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
         }
+
+            /* make the “.item” fill its column */
+            .swap-grid > [class*="col-"] .item {
+                display: flex;
+                flex-direction: column;
+                flex: 1; /* ← stretch to fill the column */
+            }
+
+                /* then make the card inside .item also stretch */
+                .swap-grid > [class*="col-"] .item .listing-style1 {
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                }
+
+        /* finally—push your bottom meta (budget/etc.) down */
+        .swap-grid .list-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .swap-grid .budget {
+            margin-top: auto;
+        }
+
 </style>
 <!-- Home Banner Style V1 -->
 <section class="hero-home14 pt60 pb60 overflow-hidden">
@@ -130,7 +158,7 @@
                                         <li><span>+</span></li>
                                     </ul>
                                     <p class="text mb-0">
-                                        @Model.TalentsLabel
+                                        Active Swappers
                                     </p>
                                 </div>
                             </div>
@@ -147,7 +175,7 @@
                                             <li><span>@Model.ExchangeSuffix</span></li>
                                         }
                                     </ul>
-                                    <p class="text mb-0">@Model.ExchangeLabel</p>
+                                    <p class="text mb-0">Swaps Completed</p>
                                 </div>
                             </div>
                             <img class="wow fadeInRight" src="/template_assets/images/about/about-15.png" alt="">
@@ -169,14 +197,14 @@
         @if (User?.Identity?.IsAuthenticated == true)
         {
             <a href="@Url.Action("Index", "UserDashboard")"
-               class="ud-btn btn-thm bdrs30">
+               class="ud-btn btn-thm">
                 Go to Your Dashboard
             </a>
         }
         else
         {
             <a href="@Url.Action("Register", "Home")"
-               class="ud-btn btn-thm bdrs30">
+               class="ud-btn btn-thm">
                 Sign Up Free
             </a>
         }
@@ -280,7 +308,7 @@
                     <div class="icon before-none"><span class="flaticon-cv"></span></div>
                     <div class="details">
                         <h4 class="title mt10 mb-3">Post a Swap Request</h4>
-                        <p class="text">Tell us what you need give it a title, a few  <br class="d-none d-xxl-block"> bullet points, and your deadline.</p>
+                        <p class="text">Tell us what you need give it a title, a few <br class="d-none d-xxl-block"> bullet points, and your deadline.</p>
                     </div>
                 </div>
             </div>
@@ -534,7 +562,7 @@
                 </div>
             </div>
         </div>
-        <div class="row wow fadeInUp equal-height" data-wow-delay="300ms">
+        <div class="row wow fadeInUp swap-grid" data-wow-delay="300ms">
             @if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
             {
                 foreach (var freelancer in Model.HighestRatedFreelancers)
@@ -811,8 +839,9 @@
                             <div class="nav nav-tabs mb50" id="nav-tab2" role="tablist">
                                 <button class="nav-link active fw600" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Top skills</button>
                                 <button class="nav-link fw600" id="nav-item2-tab" data-bs-toggle="tab" data-bs-target="#nav-item2" type="button" role="tab" aria-controls="nav-item2" aria-selected="false">Trending skills</button>
-                                <button class="nav-link fw600" id="nav-item3-tab" data-bs-toggle="tab" data-bs-target="#nav-item3" type="button" role="tab" aria-controls="nav-item3" aria-selected="false">Top skills in @Model.UserCountryName</button>
-                                <button class="nav-link fw600" id="nav-item4-tab" data-bs-toggle="tab" data-bs-target="#nav-item4" type="button" role="tab" aria-controls="nav-item4" aria-selected="false">Project Catalog</button>
+                                @* <button class="nav-link fw600" id="nav-item3-tab" data-bs-toggle="tab" data-bs-target="#nav-item3" type="button" role="tab" aria-controls="nav-item3" aria-selected="false">Top skills in @Model.UserCountryName</button> *@
+                                <button class="nav-link fw600" id="nav-item3-tab" data-bs-toggle="tab" data-bs-target="#nav-item3" type="button" role="tab" aria-controls="nav-item3" aria-selected="false">Good Swaps to Do</button>
+                                <button class="nav-link fw600" id="nav-item4-tab" data-bs-toggle="tab" data-bs-target="#nav-item4" type="button" role="tab" aria-controls="nav-item4" aria-selected="false">Swaps Catalog</button>
                             </div>
                         </nav>
                         @{
@@ -820,17 +849,28 @@
 
                             // helper to split any IEnumerable<string> into columns of up to 5 items
                             Func<IEnumerable<string>, List<List<string>>> chunkify = skills =>
-                            (skills ?? Enumerable.Empty<string>())
-                            .Select((s, i) => new { s, i })
-                            .GroupBy(x => x.i / chunkSize)
-                            .Select(g => g.Select(x => x.s).ToList())
-                            .ToList();
+                                (skills ?? Enumerable.Empty<string>())
+                                .Select((s, i) => new { s, i })
+                                .GroupBy(x => x.i / chunkSize)
+                                .Select(g => g.Select(x => x.s).ToList())
+                                .ToList();
+
+                            @functions {
+                                Func<IEnumerable<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>,
+                                List<List<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>>> chunkifyOffers = offers =>
+                                (offers ?? Enumerable.Empty<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>())
+                                .Select((o, i) => new { o, i })
+                                .GroupBy(x => x.i / 5)
+                                .Select(g => g.Select(x => x.o).ToList())
+                                .ToList();
+                            }
 
                             // now build columns for each tab’s data
                             var topSkillCols = chunkify(Model.TopSkills);
                             var trendingSkillCols = chunkify(Model.TrendingSkills);
                             var countrySkillCols = chunkify(Model.TopCountrySkills);
                             var catalogCols = chunkify(Model.ProjectCatalog);
+                            var goodSwapCols = chunkifyOffers(Model.GoodSwaps);
                         }
                         <div class="tab-content" id="nav-tabContent">
                             <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
@@ -875,7 +915,7 @@
                                     }
                                 </div>
                             </div>
-                            <div class="tab-pane fade" id="nav-item3" role="tabpanel" aria-labelledby="nav-item3-tab">
+                            @* <div class="tab-pane fade" id="nav-item3" role="tabpanel" aria-labelledby="nav-item3-tab">
                                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
                                     @foreach (var col in countrySkillCols)
                                     {
@@ -888,6 +928,27 @@
                                                            asp-action="PublicOfferList"
                                                            asp-route-keyword="@skill">
                                                             @skill
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
+                            </div> *@
+                            <div class="tab-pane fade" id="nav-item3" role="tabpanel" aria-labelledby="nav-item3-tab">
+                                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+                                    @foreach (var col in goodSwapCols)
+                                    {
+                                        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                                            <ul class="list-unstyled">
+                                                @foreach (var swap in col)
+                                                {
+                                                    <li class="mb10">
+                                                        <a asp-controller="UserOfferDetails"
+                                                           asp-action="OfferDetails"
+                                                           asp-route-offerId="@swap.OfferId">
+                                                            @swap.ShortTitle
                                                         </a>
                                                     </li>
                                                 }

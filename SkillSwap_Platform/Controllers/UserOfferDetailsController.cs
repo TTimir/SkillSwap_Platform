@@ -370,25 +370,24 @@ namespace SkillSwap_Platform.Controllers
                     .Where(o => o.IsActive && !o.IsDeleted);
 
                 if (currentUserId.HasValue)
-                {
                     offersQuery = offersQuery.Where(o => o.UserId != currentUserId.Value);
-                }
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(category))
                     offersQuery = offersQuery.Where(o => o.Category == category);
 
                 if (skillId.HasValue)
-                    offersQuery = offersQuery.Where(o => o.SkillIdOfferOwner.Contains(skillId.ToString())); // String match on skill list
+                {
+                    var token = $",{skillId.Value},";
+                    offersQuery = offersQuery.Where(o =>
+                        ("," + o.SkillIdOfferOwner + ",").Contains(token));
+                }
 
                 if (maxTimeCommitment.HasValue)
                     offersQuery = offersQuery.Where(o => o.TimeCommitmentDays <= maxTimeCommitment);
 
                 if (!string.IsNullOrEmpty(skillLevel))
                     offersQuery = offersQuery.Where(o => o.RequiredSkillLevel == skillLevel);
-
-                if (!string.IsNullOrEmpty(designTool))
-                    offersQuery = offersQuery.Where(o => o.Tools.Contains(designTool));
 
                 if (!string.IsNullOrEmpty(freelanceType))
                     offersQuery = offersQuery.Where(o => o.FreelanceType == freelanceType);
@@ -397,14 +396,42 @@ namespace SkillSwap_Platform.Controllers
                     offersQuery = offersQuery.Where(o => o.CollaborationMethod == interactionMode);
 
                 if (!string.IsNullOrEmpty(designTool))
-                    offersQuery = offersQuery.Where(o => o.Tools != null && o.Tools.Contains(designTool));
+                    offersQuery = offersQuery.Where(o =>
+                        !string.IsNullOrEmpty(o.Tools) &&
+                        o.Tools.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                               .Select(t => t.Trim())
+                               .Contains(designTool));
+
+                var skillNameIdPairs = await _context.TblSkills
+                    .Select(s => new { s.SkillId, s.SkillName })
+                    .ToListAsync();
 
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
                     // Remove spaces and convert the search term to lower-case.
                     var terms = keyword.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                   .Select(t => t.ToLower())
-                   .ToList();
+                        .Select(t => t.Trim().ToLowerInvariant())
+                        .ToList();
+
+                    var matchingSkillIds = skillNameIdPairs
+        .Where(x => terms.Contains(x.SkillName.ToLowerInvariant()))
+        .Select(x => x.SkillId)
+        .ToList();
+
+                    // 3) If any, filter by the *first* matching ID via LIKE
+                    if (matchingSkillIds.Any())
+                    {
+                        var firstId = matchingSkillIds[0];
+                        // pattern "%,42,%" to match ",42," anywhere in your CSV
+                        var pattern = "%," + firstId + ",%";
+
+                        offersQuery = offersQuery.Where(o =>
+                            EF.Functions.Like(
+                                "," + o.SkillIdOfferOwner + ",",
+                                pattern
+                            )
+                        );
+                    }
 
                     foreach (var t in terms)
                     {
@@ -485,7 +512,6 @@ namespace SkillSwap_Platform.Controllers
                 if (string.IsNullOrEmpty(sortOption))
                 {
                     sortOption = "newArrivals";
-                    _logger.LogDebug("No sortOption provided, defaulting to: {SortOption}", sortOption);
                 }
 
                 // Apply sorting based on sortOption value

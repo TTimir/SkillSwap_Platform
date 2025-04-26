@@ -13,6 +13,11 @@
         Task ReleaseTokensAsync(int exchangeId);
 
         /// <summary>
+        /// Called when the exchange actually declines: releases the held tokens from escrow to the original user.
+        /// </summary>
+        Task RefundTokensAsync(int exchangeId);
+
+        /// <summary>
         /// Returns the current token‐balance for the given user.
         /// </summary>
         Task<decimal> GetBalanceAsync(int userId);

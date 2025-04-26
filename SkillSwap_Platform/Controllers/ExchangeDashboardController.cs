@@ -561,6 +561,7 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> MarkExchangeCompleted(int exchangeId)
         {
@@ -644,6 +645,61 @@ namespace SkillSwap_Platform.Controllers
 
             // Redirect to the review page for that exchange.
             return RedirectToAction("ReviewExchange", new { exchangeId = exchange.ExchangeId });
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> CancelExchange(int exchangeId)
+        {
+            try
+            {
+                // 1) Verify the exchange exists and is not already completed/declined
+                var exchange = await _context.TblExchanges
+                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+
+                if (exchange == null)
+                    return NotFound("Exchange not found.");
+
+                if (exchange.IsCompleted || exchange.Status == "Cancelled")
+                {
+                    TempData["ErrorMessage"] = "This exchange cannot be cancelled.";
+                    return RedirectToAction("Index");
+                }
+
+                // 2) Refund the held tokens
+                await _tokenService.RefundTokensAsync(exchangeId);
+
+                // 3) Record an exchange‐history entry
+                var userId = GetCurrentUserId();
+                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                {
+                    ExchangeId = exchangeId,
+                    OfferId = exchange.OfferId,
+                    ChangeDate = DateTime.UtcNow,
+                    ChangedStatus = "Cancelled",
+                    Reason = "Exchange was cancelled and tokens refunded.",
+                    ChangedBy = userId
+                });
+                await _context.SaveChangesAsync();
+
+                // 4) Notify the user(s)
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = userId,
+                    Title = "Exchange Cancelled",
+                    Message = $"You cancelled exchange #{exchangeId}. Your tokens have been refunded.",
+                    Url = Url.Action("Index")
+                });
+
+                TempData["SuccessMessage"] = "Exchange successfully cancelled. Your tokens have been refunded.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling exchange {ExchangeId}", exchangeId);
+                TempData["ErrorMessage"] = "An error occurred while cancelling the exchange.";
+                return RedirectToAction("Index");
+            }
         }
 
         [HttpGet]

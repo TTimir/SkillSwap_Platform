@@ -20,7 +20,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
         private readonly ILogger<DigitalTokenService> _logger;
         private readonly INotificationService _notif;
         private readonly IEmailService _email;
-
+        private const int EscrowUserId = 1;
         public DigitalTokenService(
             SkillSwapDbContext db,
             ILogger<DigitalTokenService> logger,
@@ -226,6 +226,68 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
         }
 
+        public async Task RefundTokensAsync(int exchangeId)
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
+            {
+                // 1) Find the original “hold” transaction
+                var holdTx = await _db.TblTokenTransactions
+                    .FirstOrDefaultAsync(t =>
+                        t.ExchangeId == exchangeId &&
+                        t.TxType == "Hold" &&
+                        !t.IsReleased);
+
+                if (holdTx == null)
+                    throw new InvalidOperationException("No outstanding hold transaction found.");
+
+                var cost = holdTx.Amount;
+                var buyer = await _db.TblUsers.FindAsync(holdTx.FromUserId)
+                             ?? throw new KeyNotFoundException("Buyer not found.");
+                var escrow = await GetEscrowUserAsync();
+
+                // 2) Reverse ledger: debit escrow, credit buyer
+                escrow.DigitalTokenBalance -= cost;
+                buyer.DigitalTokenBalance += cost;
+
+                _db.TblUsers.Update(escrow);
+                _db.TblUsers.Update(buyer);
+
+                // 3) Mark the hold transaction “released” so it won’t be re‐used
+                holdTx.IsReleased = true;
+                _db.TblTokenTransactions.Update(holdTx);
+
+                // 4) append a “Refund” transaction row
+                _db.TblTokenTransactions.Add(new TblTokenTransaction
+                {
+                    ExchangeId = exchangeId,
+                    FromUserId = escrow.UserId,
+                    ToUserId = buyer.UserId,
+                    Amount = cost,
+                    TxType = "Refund",
+                    Description = $"Refund for cancelled exchange #{exchangeId}",
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // 5) Update the exchange record
+                var exchange = await _db.TblExchanges.FindAsync(exchangeId)
+                               ?? throw new KeyNotFoundException("Exchange not found.");
+                exchange.Status = "Cancelled";
+                exchange.IsCompleted = false;
+                exchange.TokensHeld = false;
+                exchange.TokensSettled = false;
+                _db.TblExchanges.Update(exchange);
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Error refunding tokens for exchange {ExchangeId}", exchangeId);
+                throw;
+            }
+        }
         public async Task<decimal> GetBalanceAsync(int userId)
         {
             var user = await _db.TblUsers
@@ -256,65 +318,16 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         private async Task<TblUser> GetEscrowUserAsync()
         {
-            // 1) Try to find an existing escrow account
             var escrow = await _db.TblUsers
-                                 .SingleOrDefaultAsync(u => u.IsEscrowAccount);
-            if (escrow != null)
-            {
-                return escrow;
-            }
+                                  .AsTracking()
+                                  .SingleOrDefaultAsync(u
+                                      => u.UserId == EscrowUserId
+                                      && u.IsEscrowAccount);
 
-            // 2) If none exists, build one *with every required field*
             if (escrow == null)
-            {
-                // none exists, so create one on the fly:
-                escrow = new TblUser
-                {
-                    // identity fields
-                    UserName = "escrow",
-                    Email = "escrow@skillswap.local",
-                    EmailConfirmed = true,
-                    SecurityStamp = Guid.NewGuid().ToString(),
-
-                    // your custom columns
-                    FirstName = "System",
-                    LastName = "Escrow",
-                    ContactNo = string.Empty,
-                    IsHeld = false,
-                    IsActive = true,
-                    IsVerified = true,
-                    Role = "Escrow",   // if you have a flat Role column
-                    IsOnboardingCompleted = true,
-                    DigitalTokenBalance = 0m,
-                    IsEscrowAccount = true,
-
-                    // audit
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                // 3) Generate a random “password” (never used for login)
-                var randomPassword = Guid.NewGuid().ToString("N");
-
-                // 4) Generate a 128-bit salt
-                byte[] saltBytes = RandomNumberGenerator.GetBytes(16);
-                escrow.Salt = Convert.ToBase64String(saltBytes);
-
-                // 5) Derive a 256-bit subkey (PBKDF2 with HMACSHA256, 10k iterations)
-                byte[] hashBytes = KeyDerivation.Pbkdf2(
-                    password: randomPassword,
-                    salt: saltBytes,
-                    prf: KeyDerivationPrf.HMACSHA256,
-                    iterationCount: 10_000,
-                    numBytesRequested: 32
-                );
-                escrow.PasswordHash = Convert.ToBase64String(hashBytes);
-
-                // 6) Save and commit
-                _db.TblUsers.Add(escrow);
-                await _db.SaveChangesAsync();
-            }
+                throw new InvalidOperationException(
+                    $"Escrow account (UserId={EscrowUserId}) is missing!");
             return escrow;
         }
-
     }
 }

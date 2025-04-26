@@ -6,42 +6,43 @@
 }
 
 <style>
+    /* 1) equal-height row = flex container */
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+        /* 2) each col becomes flex column */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+
+    /* 3) card fills its col */
     .offer-card {
         display: flex;
         flex-direction: column;
+        flex: 1 1 auto;
     }
 
+        /* 4) content area grows, footer pushed down */
         .offer-card .list-content {
-            flex-grow: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
 
-        .offer-card .list-title {
-            min-height: 48px; /* Ensure consistent spacing for title */
-            line-height: 1.3;
+        .offer-card .fl-meta {
+            margin-top: auto;
+        }
+
+        /* 5) optional: clamp title to 2 lines */
+        .offer-card h5.title {
+            min-height: 2.6em;
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-        }
-
-        .offer-card .budget {
-            text-align: right;
-        }
-
-    /* Make the row a flex container so its children (columns) are equal height */
-    .row.equal-height {
-        display: flex;
-        flex-wrap: wrap;
-    }
-
-        /* Make each column a flex container */
-        .row.equal-height > [class*="col-"] {
-            display: flex;
-            flex-direction: column;
         }
 </style>
 
@@ -179,8 +180,8 @@
                                 <hr class="opacity-100 mt20 mb15">
                                 <div class="fl-meta d-flex align-items-center justify-content-between">
                                     <a class="meta fw500 text-start">Location<br><span class="fz14 fw400">@profile.City, @profile.Country</span></a>
-                                    <a class="meta fw500 text-start">Recomm.<br><span class="fz14 fw400">@(profile.Recommendation?.ToString("N1") ?? "0.0")</span></a>
-                                    <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@(profile.JobSuccessRate?.ToString("P0") ?? "0%")</span></a>
+                                    <a class="meta fw500 text-start">Recomm.<br><span class="fz14 fw400">@("%")@(profile.Recommendation?.ToString("N1") ?? "0%")</span></a>
+                                    <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@(profile.JobSuccessRate?.ToString("N1") ?? "0%")</span></a>
                                 </div>
                                 <div class="d-grid mt15">
                                     <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90" target="_blank">View Profile<i class="fal fa-arrow-right-long"></i></a>

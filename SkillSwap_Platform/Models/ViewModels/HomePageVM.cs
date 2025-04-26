@@ -21,16 +21,15 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<CategoryOffers> TrendingOffersByCategory { get; set; } = new List<CategoryOffers>();
         public int TotalSkills { get; set; }
         public List<CategoryCardVm> PopularCategories { get; set; } = new();
+        public List<HowItWorksVM> HowItWorksValues { get; set; } = new();
 
 
         public string TalentsDisplayValue { get; set; } = "";
         public string TalentsSuffix { get; set; } = "";
-        public string TalentsLabel { get; set; } = "";
 
 
         public string ExchangeDisplayValue { get; set; } = "";
         public string ExchangeSuffix { get; set; } = "";
-        public string ExchangeLabel { get; set; } = "";
 
         public double GlobalAverageRating { get; set; }
         public int AverageRating { get; set; }
@@ -41,6 +40,8 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<string> TrendingSkills { get; set; } = new();
         public List<string> TopCountrySkills { get; set; } = new();
         public List<string> ProjectCatalog { get; set; } = new();
+        public List<OfferCardVM> GoodSwaps { get; set; } = new();
+
 
         public string UserCountryIso { get; set; }      // e.g. "US"
         public string UserCountryName { get; set; }     // e.g. "United States"
@@ -76,5 +77,24 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string IconClass { get; set; }     // e.g. "flaticon-web-design-1"
         public int SkillCount { get; set; }       // aggregate count
         public string Description { get; set; }   // for mobile slider subtitle
+    }
+
+    public class HowItWorksVM
+    {
+        public string Category { get; set; } = "howitworks";
+        public string TalentsDisplayValue { get; set; } = "0";
+        public string TalentsSuffix { get; set; } = "";
+        public int SwapSatisfactionPercent { get; set; }
+        public string ExchangeDisplayValue { get; set; } = "0";
+        public string ExchangeSuffix { get; set; } = "";
+        public int GlobalSuccessRate { get; set; }
+        public string SwapsCompletedValue { get; set; } = "0";
+        public string SwapsCompletedSuffix { get; set; } = "";
+
+        // Swap Success Rate (adjusted)
+        public int AdjustedSuccessRate { get; set; }
+
+        public List<FreelancerCardVM> CommunitySpotlight { get; set; } = new();
+
     }
 }

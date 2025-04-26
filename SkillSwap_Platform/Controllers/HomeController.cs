@@ -163,15 +163,6 @@ public class HomeController : Controller
 
             (string fDisp, string fSfx) = FormatNumber(displayTalents);
 
-            // 5) pick your label
-            string fLabel = displayTalents switch
-            {
-                < 100 => "Be one of the first 100!", // Lead the way, join
-                < 500 => $"Join {fDisp}{fSfx}+ trailblazers!",
-                < 1000 => $"Over {fDisp}{fSfx}+ innovators!",
-                _ => "Active Talents"
-            };
-
             int actualExchanges = await _dbcontext.TblExchanges
                 .Where(x => x.Status == "Completed")
                 .CountAsync();
@@ -180,14 +171,6 @@ public class HomeController : Controller
                 + (int)Math.Ceiling(actualExchanges * bonusPercent);
 
             (string eDisp, string eSfx) = FormatNumber(displayExchanges);
-
-            string eLabel = displayExchanges switch
-            {
-                < 50 => "swaps making waves!",
-                < 200 => $"{eDisp}{eSfx}+ swaps done already!",
-                < 500 => $"{eDisp}{eSfx}+ swaps shaping our network!",
-                _ => "Swaps Completed"
-            };
 
             // 1) Group your offers by Category, count them:
             var cats = await _dbcontext.TblOffers
@@ -305,26 +288,26 @@ public class HomeController : Controller
                     .ToList(),
             }).ToList();
 
-            // 4) Top skills in the visitor’s country
-            var acceptLang = HttpContext.Request.Headers["Accept-Language"].ToString();
-            string lang = acceptLang.Split(',').FirstOrDefault() ?? "";
+            //// 4) Top skills in the visitor’s country
+            //var acceptLang = HttpContext.Request.Headers["Accept-Language"].ToString();
+            //string lang = acceptLang.Split(',').FirstOrDefault() ?? "";
 
-            RegionInfo region;
-            try
-            {
-                // 2) Create a CultureInfo ("en-US") then RegionInfo("US")
-                var ci = new CultureInfo(lang);
-                region = new RegionInfo(ci.Name);
-            }
-            catch
-            {
-                // fallback if it wasn’t a well-formed culture
-                region = RegionInfo.CurrentRegion;
-            }
+            //RegionInfo region;
+            //try
+            //{
+            //    // 2) Create a CultureInfo ("en-US") then RegionInfo("US")
+            //    var ci = new CultureInfo(lang);
+            //    region = new RegionInfo(ci.Name);
+            //}
+            //catch
+            //{
+            //    // fallback if it wasn’t a well-formed culture
+            //    region = RegionInfo.CurrentRegion;
+            //}
 
-            // Now you have both:
-            string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
-            string countryName = region.EnglishName;             // e.g. "India"
+            //// Now you have both:
+            //string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
+            //string countryName = region.EnglishName;             // e.g. "India"
 
             var vm = new HomePageVM
             {
@@ -335,15 +318,13 @@ public class HomeController : Controller
                 TotalSkills = totalSkills,
                 TalentsDisplayValue = fDisp,
                 TalentsSuffix = fSfx,
-                TalentsLabel = fLabel,
                 ExchangeDisplayValue = eDisp,
                 ExchangeSuffix = eSfx,
-                ExchangeLabel = eLabel,
                 GlobalAverageRating = Math.Round(globalAvgRating, 1),
                 SwapSatisfactionPercent = satisfactionPct,
                 EarlyAdopterCount = displayCount,
-                UserCountryIso = countryIso,
-                UserCountryName = countryName,
+                //UserCountryIso = countryIso,
+                //UserCountryName = countryName,
             };
 
             // 1) TOP SKILLS overall (by # of offers)
@@ -370,6 +351,21 @@ public class HomeController : Controller
             // 4) PROJECT CATALOG — e.g. distinct portfolio tags, or reuse topSkills:
             vm.ProjectCatalog = vm.TopSkills.Take(20).ToList();
 
+            var goodSwaps = await _dbcontext.TblOffers
+                .Where(o => o.IsActive && !o.IsDeleted && (!currentUserId.HasValue || o.UserId != currentUserId.Value))
+                .OrderByDescending(o => o.JobSuccessRate)
+                .ThenByDescending(o => o.TokenCost)
+                .Take(10)
+                .Select(o => new OfferCardVM
+                {
+                    OfferId = o.OfferId,
+                    ShortTitle = o.Title!.Length > 35
+                                          ? o.Title.Substring(0, 35) + "…"
+                                          : o.Title,
+                })
+                .ToListAsync();
+            vm.GoodSwaps = goodSwaps;
+
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
             ViewBag.ErrorMessage = TempData.ContainsKey("ErrorMessage") ? TempData["ErrorMessage"] : null;
 
@@ -381,6 +377,120 @@ public class HomeController : Controller
             return RedirectToAction("EP500", "EP");
         }
 
+    }
+
+    public async Task<IActionResult> HowItWorks()
+    {
+        // 1) Active Swappers
+        int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+        decimal talentsBonus = _config.GetValue<decimal>("TrustMetrics:TalentsBonusPercent") / 100m;
+        int displayTalents = actualUsers + (int)Math.Ceiling(actualUsers * talentsBonus);
+        var (tDisp, tSfx) = FormatNumber(displayTalents);
+
+        // 2) Member Satisfaction (% positive reviews)
+        int totalReviews = await _dbcontext.TblReviews.CountAsync();
+        int happyReviews = await _dbcontext.TblReviews
+            .CountAsync(r => r.Rating >= _satisfactionThreshold);
+        int satisfactionPct = totalReviews == 0
+            ? 100
+            : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+        // 3) Swaps Completed
+        //int completedExchanges = await _dbcontext.TblExchanges
+        //    .CountAsync(e => e.Status == "Completed");
+        //decimal exchangeBonus = _config.GetValue<decimal>("TrustMetrics:FreelancerBonusPercent") / 100m;
+        //int displayExchanges = completedExchanges
+        //    + (int)Math.Ceiling(completedExchanges * exchangeBonus);
+        //var (eDisp, eSfx) = FormatNumber(displayExchanges);
+
+        // 4) Swap Success Rate (global % of completed / total)
+        //int totalExchanges = await _dbcontext.TblExchanges.CountAsync();
+        //int globalSuccess = totalExchanges == 0
+        //    ? 100
+        //    : (int)Math.Round(completedExchanges * 100m / totalExchanges);
+
+        // read the 35% bonus
+        int bonusPct = _config.GetValue<int>("TrustMetrics:TalentsBonusPercent");
+
+        // 1) raw completed swaps
+        int completedSwaps = await _dbcontext.TblExchanges
+            .CountAsync(e => e.Status == "Completed");
+
+        // apply bonus
+        int bonusSwaps = (int)Math.Ceiling(completedSwaps * (bonusPct / 100m));
+        int displaySwaps = completedSwaps + bonusSwaps;
+
+        // format with K/M suffix
+        var (swapDisp, swapSfx) = FormatNumber(displaySwaps);
+
+        // 2) raw success rate
+        int totalSwaps = await _dbcontext.TblExchanges.CountAsync();
+        int rawSuccessPct = totalSwaps == 0
+            ? 100
+            : (int)Math.Round(completedSwaps * 100m / totalSwaps);
+
+        // apply that same bonus percent to the rate
+        int adjustedSuccess = rawSuccessPct
+            + (int)Math.Ceiling(rawSuccessPct * (bonusPct / 100m));
+
+        var vm = new HowItWorksVM
+        {
+            TalentsDisplayValue = tDisp,
+            TalentsSuffix = tSfx,
+            SwapSatisfactionPercent = satisfactionPct,
+            //ExchangeDisplayValue = eDisp,
+            //ExchangeSuffix = eSfx,
+            //GlobalSuccessRate = globalSuccess,
+            SwapsCompletedValue = swapDisp,
+            SwapsCompletedSuffix = swapSfx,
+
+            AdjustedSuccessRate = adjustedSuccess,
+        };
+
+        // Now load your spotlight members (top 5 for example)
+        var topUsers = await _dbcontext.TblUsers
+            .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
+            .Include(u => u.TblReviewReviewees)
+            .Where(u => u.IsVerified && u.IsActive)
+            .OrderByDescending(u => u.JobSuccessRate)
+            .ThenByDescending(u => u.ReviewCount)
+            .Take(6)
+            .ToListAsync();
+
+        // Map to FreelancerCardVM
+        vm.CommunitySpotlight = topUsers.Select(u => new FreelancerCardVM
+        {
+            UserId = u.UserId,
+            Name = u.UserName,
+            Designation = u.Designation,
+            ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
+                              ? "/template_assets/images/No_Profile_img.png"
+                              : u.ProfileImageUrl,
+            Location = u.Country,
+            Rating = (double)(u.AverageRating ?? 0m),
+            ReviewCount = u.ReviewCount ?? 0,
+            JobSuccess = u.JobSuccessRate ?? 0,
+            Recommendation = u.RecommendedPercentage ?? 0,
+            OfferedSkillAreas = u.TblUserSkills
+                .Where(us => us.IsOffering)
+                .OrderByDescending(us => us.ProficiencyLevel)
+                .Take(3)
+                .Select(us => us.Skill.SkillName)
+                .ToList()
+        }).ToList();
+
+
+        return View(vm);
+    }
+
+    public async Task<IActionResult> About()
+    {
+        return View(new HomePageVM());
+    }
+
+    public async Task<IActionResult> Contact()
+    {
+        return View(new HomePageVM());
     }
 
     #region External Login

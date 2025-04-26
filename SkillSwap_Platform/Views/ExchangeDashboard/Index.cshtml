@@ -55,6 +55,7 @@
                                 <th scope="col">Status</th>
                                 <th scope="col">Last Changed By</th>
                                 <th scope="col">Meeting</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="t-body">
@@ -142,15 +143,6 @@
                                                         <i class="fal fa-exclamation-triangle"></i> Online Meeting Limit Reached
                                                     </span>
                                                 }
-                                                <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                    <button type="submit" class="ud-btn btn-thm2 me-4"
-                                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="Mark this exchange as completed">
-                                                        Mark Exchange as Done <i class="fal fa-check"></i>
-                                                    </button>
-                                                </form>
                                             }
                                             else
                                             {
@@ -206,15 +198,30 @@
                                                     </a>
                                                 }
                                             }
-                                            <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                <button type="submit" class="ud-btn btn-thm2 me-4"
-                                                        data-bs-toggle="tooltip" data-bs-placement="top"
-                                                        title="Mark this exchange as completed">
-                                                    Mark Exchange as Done <i class="fal fa-check"></i>
-                                                </button>
-                                            </form>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if ((item.ExchangeMode?.Equals("online", StringComparison.OrdinalIgnoreCase) == true && item.IsOnlineMeetingCompleted)
+                                       || (item.ExchangeMode?.Equals("in-person", StringComparison.OrdinalIgnoreCase) == true && item.IsMeetingEnded))
+                                        {
+                                            <div class="d-flex flex-column flex-md-row">
+                                                <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                    <button type="submit" class="ud-btn btn-thm2 me-4"
+                                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            title="Mark this exchange as completed">
+                                                        Mark Exchange as Done <i class="fal fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="CancelExchange" asp-controller="ExchangeDashboard" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                    <button type="submit" class="ud-btn btn-danger" title="Cancel this exchange">
+                                                        Cancel Exchange <i class="fal fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         }
                                     </td>
                                 </tr>
