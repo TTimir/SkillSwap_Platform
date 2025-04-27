@@ -23,6 +23,7 @@ using System.ComponentModel.DataAnnotations;
 using SkillSwap_Platform.Services.Newsletter;
 using System.Net;
 using System.Globalization;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -485,12 +486,236 @@ public class HomeController : Controller
 
     public async Task<IActionResult> About()
     {
-        return View(new HomePageVM());
+        // 1) Active Swappers + bonus
+        int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+        decimal bonusPct = _config.GetValue<decimal>("TrustMetrics:TalentsBonusPercent") / 100m;
+        int displayTalentsRaw = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+        var (tDisp, tSfx) = FormatNumber(displayTalentsRaw);
+
+        // 2) Satisfaction %
+        int totalReviews = await _dbcontext.TblReviews.CountAsync();
+        int happyReviews = await _dbcontext.TblReviews.CountAsync(r => r.Rating >= _config.GetValue<int>("TrustMetrics:SatisfactionThreshold"));
+        int satisfactionPct = totalReviews == 0
+            ? 100
+            : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+        // 3) Completed swaps + bonus
+        int completedSwaps = await _dbcontext.TblExchanges.CountAsync(e => e.Status == "Completed");
+        int bonusSwaps = (int)Math.Ceiling(completedSwaps * bonusPct);
+        int displaySwaps = completedSwaps + bonusSwaps;
+        var (swapDisp, swapSfx) = FormatNumber(displaySwaps);
+
+        // 4) Adjusted success rate
+        int totalSwaps = await _dbcontext.TblExchanges.CountAsync();
+        int rawSuccessPct = totalSwaps == 0
+            ? 100
+            : (int)Math.Round(completedSwaps * 100m / totalSwaps);
+        int adjustedSuccess = rawSuccessPct + (int)Math.Ceiling(rawSuccessPct * bonusPct);
+
+        int displayCount = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+
+        // 1. Pull down only the Experience strings:
+        var experienceStrings = await _dbcontext.TblUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Experience))
+            .Select(u => u.Experience)
+            .ToListAsync();
+
+        // 2. Parse & compute average in C#:
+        var regex = new Regex(@"(\d+(\.\d+)?)");
+        var numericExps = experienceStrings
+            .Select(s =>
+            {
+                // Find the first numeric match (e.g. "1.6")
+                var m = regex.Match(s);
+                if (m.Success &&
+                    double.TryParse(m.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var yrs))
+                {
+                    return yrs;
+                }
+                return 0d;
+            })
+            .Where(v => v > 0)
+            .ToList();
+
+        // 3. Compute the average (or zero if no valid entries)
+        var avgExp = numericExps.Any()
+            ? numericExps.Average()
+            : 0d;
+
+        // 4. Round or format as desired before sending to the view-model
+        var roundedAvg = Math.Round(avgExp, 1);  // e.g. 1.6
+
+        // 1) Pull the top 4 verified, active users ordered by success → reviews
+        var top4 = await _dbcontext.TblUsers
+            .Where(u => u.IsVerified && u.IsActive)
+            .Select(u => new
+            {
+                u.UserId,
+                u.UserName,
+                u.Designation,
+                ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
+                                    ? "/template_assets/images/No_Profile_img.png"
+                                    : u.ProfileImageUrl,
+                u.Country,
+                // compute review metrics inline
+                ReviewCount = _dbcontext.TblReviews.Count(r => r.UserId == u.UserId),
+                AvgRating = _dbcontext.TblReviews
+                                  .Where(r => r.UserId == u.UserId)
+                                  .Select(r => (double?)r.Rating)
+                                  .Average() ?? 0,
+                RecPct = _dbcontext.TblReviews
+                                  .Where(r => r.UserId == u.UserId && r.Rating >= 4)
+                                  .Count() * 100.0
+                              / Math.Max(1, _dbcontext.TblReviews.Count(r => r.UserId == u.UserId)),
+                // compute success %
+                TotalEx = _dbcontext.TblExchanges
+                                .Count(e => e.OfferOwnerId == u.UserId || e.OtherUserId == u.UserId),
+                CompletedEx = _dbcontext.TblExchanges
+                                .Count(e => (e.OfferOwnerId == u.UserId || e.OtherUserId == u.UserId)
+                                            && e.Status == "Completed"),
+                // take up to 3 offered skills
+                TopSkills = _dbcontext.TblUserSkills
+                                .Where(us => us.UserId == u.UserId && us.IsOffering)
+                                .OrderByDescending(us => us.ProficiencyLevel)
+                                .Take(3)
+                                .Select(us => us.Skill.SkillName)
+                                .ToList()
+            })
+            .ToListAsync();
+
+        // 2) project into your view‐model
+        var spotlight = top4
+            .Select(x => new FreelancerCardVM
+            {
+                UserId = x.UserId,
+                Name = x.UserName,
+                Designation = x.Designation,
+                ProfileImage = x.ProfileImage,
+                Location = x.Country,
+                Rating = x.AvgRating,
+                ReviewCount = x.ReviewCount,
+                Recommendation = x.RecPct,
+                JobSuccess = x.TotalEx > 0
+                                     ? x.CompletedEx * 100.0 / x.TotalEx
+                                     : 0,
+                OfferedSkillAreas = x.TopSkills
+            })
+            .OrderByDescending(u => u.Rating)         // optional: sort the final 4 how you like
+            .ThenByDescending(u => u.Recommendation)
+            .ToList();
+
+        // base count:
+        int baseCount = spotlight.Count;
+
+        // apply it:
+        int boostedCount = baseCount + (int)Math.Ceiling(baseCount * bonusPct);
+
+        // format with your existing helper:
+        var (vfDisp, vfSuffix) = FormatNumber(boostedCount);
+
+        var vm = new AboutUsVM
+        {
+            TalentsDisplayValue = tDisp,
+            TalentsSuffix = tSfx,
+            SwapSatisfactionPercent = satisfactionPct,
+            SwapsCompletedValue = swapDisp,
+            SwapsCompletedSuffix = swapSfx,
+            AdjustedSuccessRate = adjustedSuccess,
+            EarlyAdopterCount = displayCount,
+            AverageExperience = avgExp,
+            CommunitySpotlight = spotlight,
+            VerifiedCountDisplay = vfDisp,
+            VerifiedCountSuffix = vfSuffix
+        };
+
+        return View(vm);
     }
 
-    public async Task<IActionResult> Contact()
+    [HttpGet]
+    public IActionResult Contact()
+        => View(new ContactFormVM());
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Contact(ContactFormVM form)
     {
-        return View(new HomePageVM());
+        if (form.Attachment != null)
+        {
+            // max size 1 MB
+            const long MAX_BYTES = 2 * 1024 * 1024;
+            if (form.Attachment.Length > MAX_BYTES)
+            {
+                ModelState.AddModelError(nameof(form.Attachment),
+                    "Attachment must be 1 MB or smaller.");
+            }
+
+            // allowed extensions
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            var ext = Path.GetExtension(form.Attachment.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(ext) || !allowed.Contains(ext))
+            {
+                ModelState.AddModelError(nameof(form.Attachment),
+                    "Allowed file types: .jpg, .png, .pdf");
+            }
+        }
+
+        if (!ModelState.IsValid)
+            return View(form);
+
+        // 1) Save to DB
+        var msg = new TblUserSupportRequest
+        {
+            Name = form.Name,
+            Email = form.Email,
+            Phone = form.Phone,
+            Subject = form.Subject,
+            Category = form.Category,
+            Message = form.Message,
+            IsResolved = false,
+            HasSupportContacted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        _dbcontext.TblUserSupportRequests.Add(msg);
+        await _dbcontext.SaveChangesAsync();
+
+        if (form.Attachment != null && form.Attachment.Length > 0)
+        {
+            using var ms = new MemoryStream();
+            await form.Attachment.CopyToAsync(ms);
+
+            msg.AttachmentData = ms.ToArray();
+            msg.AttachmentFilename = form.Attachment.FileName;
+            msg.AttachmentContentType = form.Attachment.ContentType;
+
+            // Update the record
+            _dbcontext.TblUserSupportRequests.Update(msg);
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        // 2) Send confirmation to user
+        var userBody = $@"
+            <p>Hi {form.Name},</p>
+
+            <p>Thanks for reaching out to SkillSwap! We’ve received your message about “<b>{form.Subject}</b>” in the {form.Category} category:</p>
+
+            <blockquote style=""border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;"">
+                {form.Message}
+            </blockquote>
+
+            <p>One of our team members will review your request and be in touch within 24 hours. We appreciate you being part of our community and look forward to helping you swap skills with confidence.</p>
+
+            <p>Warm regards,<br/>
+            The SkillSwap Team</p>";
+
+
+        await _emailService.SendEmailAsync(
+            to: form.Email,
+            subject: "We’ve received your support request",
+            body: userBody,
+            isBodyHtml: true
+        );
+
+        TempData["ContactSuccess"] = "Thank you! Your message has been sent.";
+        return RedirectToAction(nameof(Contact));
     }
 
     #region External Login

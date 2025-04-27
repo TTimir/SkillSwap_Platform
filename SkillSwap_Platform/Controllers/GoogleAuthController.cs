@@ -31,9 +31,10 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
-                var clientId = _configuration["Google:ClientId"];
+                var clientId = _configuration["Authentication:Google:ClientId"];
                 var redirectUri = Url.Action("OAuth2Callback", "GoogleAuth", null, Request.Scheme);
                 var state = $"{exchangeId}|{otherUserId}";
+
                 var authorizationUrl =
                     "https://accounts.google.com/o/oauth2/v2/auth" +
                     $"?response_type=code" +
@@ -86,8 +87,8 @@ namespace SkillSwap_Platform.Controllers
 
             try
             {
-                var clientId = _configuration["Google:ClientId"];
-                var clientSecret = _configuration["Google:ClientSecret"];
+                var clientId = _configuration["Authentication:Google:ClientId"];
+                var clientSecret = _configuration["Authentication:Google:ClientSecret"];
                 var redirectUri = Url.Action("OAuth2Callback", "GoogleAuth", null, Request.Scheme);
 
                 var tokenRequestUrl = "https://oauth2.googleapis.com/token";

@@ -22,6 +22,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public int TotalSkills { get; set; }
         public List<CategoryCardVm> PopularCategories { get; set; } = new();
         public List<HowItWorksVM> HowItWorksValues { get; set; } = new();
+        public List<HowItWorksVM> AboutUsValues { get; set; } = new();
 
 
         public string TalentsDisplayValue { get; set; } = "";
@@ -96,5 +97,26 @@ namespace SkillSwap_Platform.Models.ViewModels
 
         public List<FreelancerCardVM> CommunitySpotlight { get; set; } = new();
 
+    }
+
+    public class AboutUsVM
+    {
+        public string Category { get; set; } = "aboutus";
+        public string TalentsDisplayValue { get; set; }
+        public string TalentsSuffix { get; set; }
+        public int SwapSatisfactionPercent { get; set; }
+
+        public string SwapsCompletedValue { get; set; }
+        public string SwapsCompletedSuffix { get; set; }
+        public int AdjustedSuccessRate { get; set; }
+
+        public string VerifiedCountDisplay { get; set; }
+        public string VerifiedCountSuffix { get; set; }
+        // spotlight cards, if you want those too
+        public List<FreelancerCardVM> CommunitySpotlight { get; set; }
+        = new List<FreelancerCardVM>();
+
+        public int EarlyAdopterCount { get; set; }
+        public double AverageExperience { get; set; }
     }
 }

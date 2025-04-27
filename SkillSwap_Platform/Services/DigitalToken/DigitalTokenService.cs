@@ -33,9 +33,9 @@ namespace SkillSwap_Platform.Services.DigitalToken
             _email = email;
         }
 
-        public async Task HoldTokensAsync(int exchangeId)
+        public async Task HoldTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
@@ -85,8 +85,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 ex.TokenHoldDate = DateTime.UtcNow;
                 _db.TblExchanges.Update(ex);
 
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -128,18 +128,15 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error holding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Called when the exchange actually completes: releases the held tokens from escrow to the seller.
-        /// </summary>
-        public async Task ReleaseTokensAsync(int exchangeId)
+        public async Task ReleaseTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
@@ -163,6 +160,11 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
                 // debit escrow, credit seller
                 var escrow = await GetEscrowUserAsync();
+
+                if (escrow.DigitalTokenBalance < cost)
+                    throw new InvalidOperationException(
+                        $"Escrow balance {escrow.DigitalTokenBalance} is insufficient to release {cost} tokens.");
+
                 escrow.DigitalTokenBalance -= cost;
                 _db.TblUsers.Update(escrow);
 
@@ -179,8 +181,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 ex.TokenReleaseDate = DateTime.UtcNow;
                 _db.TblExchanges.Update(ex);
 
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -220,15 +222,15 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error releasing tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
         }
 
-        public async Task RefundTokensAsync(int exchangeId)
+        public async Task RefundTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 // 1) Find the original “hold” transaction
@@ -245,6 +247,10 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 var buyer = await _db.TblUsers.FindAsync(holdTx.FromUserId)
                              ?? throw new KeyNotFoundException("Buyer not found.");
                 var escrow = await GetEscrowUserAsync();
+
+                if (escrow.DigitalTokenBalance < cost)
+                    throw new InvalidOperationException(
+                        $"Escrow balance {escrow.DigitalTokenBalance} is insufficient to release {cost} tokens.");
 
                 // 2) Reverse ledger: debit escrow, credit buyer
                 escrow.DigitalTokenBalance -= cost;
@@ -278,12 +284,12 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 exchange.TokensSettled = false;
                 _db.TblExchanges.Update(exchange);
 
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Error refunding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -319,10 +325,10 @@ namespace SkillSwap_Platform.Services.DigitalToken
         private async Task<TblUser> GetEscrowUserAsync()
         {
             var escrow = await _db.TblUsers
-                                  .AsTracking()
-                                  .SingleOrDefaultAsync(u
-                                      => u.UserId == EscrowUserId
-                                      && u.IsEscrowAccount);
+                         .IgnoreQueryFilters()
+                         .SingleOrDefaultAsync(u =>
+                             u.UserId == EscrowUserId &&
+                             u.IsEscrowAccount);
 
             if (escrow == null)
                 throw new InvalidOperationException(

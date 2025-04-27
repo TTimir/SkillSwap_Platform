@@ -81,6 +81,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
+    public virtual DbSet<TblUserSupportRequest> TblUserSupportRequests { get; set; }
+
     public virtual DbSet<TblUserWishlist> TblUserWishlists { get; set; }
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
 
@@ -912,6 +914,27 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblUserSkills_Users");
         });
 
+        modelBuilder.Entity<TblUserSupportRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_SupportRequests");
+
+            entity.ToTable("tblUserSupportRequests");
+
+            entity.Property(e => e.AttachmentContentType).HasMaxLength(100);
+            entity.Property(e => e.AttachmentFilename).HasMaxLength(255);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.ContactedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.ProcessedAt).HasColumnType("datetime");
+            entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
+            entity.Property(e => e.Subject).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<TblUserWishlist>(entity =>
         {
             entity.HasKey(e => e.WishlistId).HasName("PK__tblUserW__233189EBCD07F2BE");
@@ -1034,44 +1057,17 @@ public partial class SkillSwapDbContext : DbContext
         //modelBuilder.Entity<TblUserRole>().HasNoKey();
 
         modelBuilder.Entity<TblUser>()
-           .HasQueryFilter(u => !u.IsEscrowAccount);
-
-        modelBuilder.Entity<TblUser>().HasData(new TblUser
-        {
-            UserId = 1,                           // reserved ID
-            UserName = "escrow",
-            Email = "escrow@skillswap.local",
-            EmailConfirmed = true,
-            SecurityStamp = Guid.NewGuid().ToString(),
-            FirstName = "System",
-            LastName = "Escrow",
-            ContactNo = String.Empty,
-            IsHeld = false,
-            IsActive = true,
-            IsVerified = true,
-            IsOnboardingCompleted = true,
-            DigitalTokenBalance = 0m,
-            IsEscrowAccount = true,
-            CreatedDate = DateTime.UtcNow,
-            Role = "Escrow",
-
-            // salt = Base64(UTF8("escrowSalt"))
-            Salt = "ZXNjcm93U2FsdA==",
-
-            // PBKDF2-HMACSHA256("EscrowDoesNotLogin!234", escrowSalt, 10k, 32 bytes) → Base64
-            PasswordHash = "p6EMvlDfoMSTjnowsR481C74fuR1z7dlycNFSYSCW/U="
-        });
-
-        modelBuilder.Entity<TblUser>()
-       .HasIndex(u => u.UserName)
-       .IsUnique();
+            .HasIndex(u => u.UserName)
+            .IsUnique();
 
         modelBuilder.Entity<TblUser>()
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
+        modelBuilder.Entity<TblUser>()
+           .HasQueryFilter(u => !u.IsEscrowAccount);
 
+        modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 
         OnModelCreatingPartial(modelBuilder);
     }

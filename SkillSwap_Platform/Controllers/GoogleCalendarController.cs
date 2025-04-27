@@ -470,8 +470,8 @@ namespace SkillSwap_Platform.Controllers
         {
             try
             {
-                var clientId = _configuration["Google:ClientId"];
-                var clientSecret = _configuration["Google:ClientSecret"];
+                var clientId = _configuration["Authentication:Google:ClientId"];
+                var clientSecret = _configuration["Authentication:Google:ClientSecret"];
                 var tokenRequestUrl = "https://oauth2.googleapis.com/token";
                 var requestBody = new FormUrlEncodedContent(new[]
                 {

@@ -5,17 +5,17 @@
         /// <summary>
         /// Called immediately after both parties sign.  Debits buyer and holds tokens in escrow.
         /// </summary>
-        Task HoldTokensAsync(int exchangeId);
+        Task HoldTokensAsync(int exchangeId, CancellationToken ct = default);
 
         /// <summary>
         /// Called when the exchange actually completes: releases the held tokens from escrow to the seller.
         /// </summary>
-        Task ReleaseTokensAsync(int exchangeId);
+        Task ReleaseTokensAsync(int exchangeId, CancellationToken ct = default);
 
         /// <summary>
         /// Called when the exchange actually declines: releases the held tokens from escrow to the original user.
         /// </summary>
-        Task RefundTokensAsync(int exchangeId);
+        Task RefundTokensAsync(int exchangeId, CancellationToken ct = default);
 
         /// <summary>
         /// Returns the current token‐balance for the given user.

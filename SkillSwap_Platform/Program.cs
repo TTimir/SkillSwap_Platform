@@ -75,6 +75,7 @@ builder.Services
 builder.Services
        .AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddHostedService<MiningHostedService>();
+builder.Services.AddHostedService<SeedDataService>();
 
 builder.Services.AddControllersWithViews(options =>
 {

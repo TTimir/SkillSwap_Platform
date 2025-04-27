@@ -374,7 +374,11 @@ namespace SkillSwap_Platform.Controllers
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(category))
-                    offersQuery = offersQuery.Where(o => o.Category == category);
+                {
+                    var decoded = category.Replace("-", " ").Trim().ToLower();
+                    offersQuery = offersQuery.Where(o =>
+                        o.Category.Trim().ToLower() == decoded);
+                }
 
                 if (skillId.HasValue)
                 {
