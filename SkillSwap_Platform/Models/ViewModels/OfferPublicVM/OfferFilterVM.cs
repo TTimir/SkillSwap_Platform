@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 
 namespace SkillSwap_Platform.Models.ViewModels.OfferFilterVM
 {

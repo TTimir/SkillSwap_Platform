@@ -83,10 +83,18 @@
                                 <label asp-for="Location" class="heading-color ff-heading fw500 mb10">Meeting Location</label>
                                 <div class="input-group">
                                     <input asp-for="Location" type="text" class="form-control" placeholder="Enter meeting location" />
-                                    <span class="input-group-text" id="getLocationIcon" title="Get Current Location" style="cursor: pointer;background-color:none">
+                                    @* <span class="input-group-text" id="getLocationIcon" title="Get Current Location" style="cursor: pointer;background-color:none">
                                         <i class="fas fa-map-marker-alt"></i>
-                                    </span>
+                                    </span> *@
+                                    <button type="button"
+                                            id="getLocationIcon"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="tooltip" data-bs-placement="right"
+                                            title="Use my current location">
+                                        <i class="fas fa-location-arrow"></i>
+                                    </button>
                                 </div>
+                                <div id="locationError" class="mt-1 text-danger"></div>
                                 <span asp-validation-for="Location" class="text-danger"></span>
                             </div>
                         </div>
@@ -110,8 +118,14 @@
 </div>
 </div>
 
+<style>
+    #locationError {
+        font-size: 0.875rem;
+        color: #dc3545; /* bootstrap’s “danger” */
+    }
+</style>
 @section DynamicScript {
-    <script>
+    @* <script>
         document.getElementById('getLocationIcon').addEventListener('click', function () {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
@@ -141,6 +155,72 @@
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
+        });
+    </script> *@
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const btn          = document.getElementById("getLocationIcon");
+          const icon         = btn.querySelector("i");
+          const locInput     = document.querySelector('input[name="Location"]');
+          const errorDiv     = document.getElementById("locationError");
+
+          btn.addEventListener("click", () => {
+            // clear old errors
+            errorDiv.textContent = "";
+
+            if (!navigator.geolocation) {
+              errorDiv.textContent = "Geolocation isn’t supported by your browser.";
+              return;
+            }
+
+            // show spinner & disable
+            btn.disabled = true;
+            icon.classList.add("fa-spin");
+
+            navigator.geolocation.getCurrentPosition(
+              async pos => {
+                try {
+                  const { latitude, longitude } = pos.coords;
+                  // reverse-geocode via OpenStreetMap Nominatim
+                  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+                  const res = await fetch(url);
+                  if (!res.ok) throw new Error("Network response was not OK");
+                  const data = await res.json();
+
+                  if (data.display_name) {
+                    locInput.value = data.display_name;
+                  } else {
+                    errorDiv.textContent = "Couldn’t resolve your address from the location data.";
+                  }
+                } catch (err) {
+                  errorDiv.textContent = "Error fetching address: " + err.message;
+                } finally {
+                  icon.classList.remove("fa-spin");
+                  btn.disabled = false;
+                }
+              },
+              err => {
+                // user denied, timeout, etc.
+                switch (err.code) {
+                  case err.PERMISSION_DENIED:
+                    errorDiv.textContent = "Permission denied for location.";
+                    break;
+                  case err.POSITION_UNAVAILABLE:
+                    errorDiv.textContent = "Position unavailable right now.";
+                    break;
+                  case err.TIMEOUT:
+                    errorDiv.textContent = "Request timed out.";
+                    break;
+                  default:
+                    errorDiv.textContent = "Error getting location.";
+                }
+                icon.classList.remove("fa-spin");
+                btn.disabled = false;
+              },
+              { timeout: 10_000 }
+            );
+          });
         });
     </script>
 }

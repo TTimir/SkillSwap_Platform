@@ -70,6 +70,8 @@
         @using (Html.BeginForm("Create", "UserOfferManage", FormMethod.Post, new { enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
+            <input asp-for="Latitude" type="hidden" />
+            <input asp-for="Longitude" type="hidden" />
             <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
                 <div class="bdrb1 pb15 mb25">
                     <h5 class="list-title">Basic Information</h5>
@@ -212,6 +214,30 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-sm-6" id="manualAddress">
+                            <div class="mb20">
+                                <label asp-for="Address">Swap Location <span class="text-danger">*</span> (if you’d rather type than share GPS)</label>
+                                <div class="input-group">
+                                    <input asp-for="Address"
+                                           class="form-control"
+                                           placeholder="123 Main St, City…"
+                                           autocomplete="off" />
+
+                                    <button type="button"
+                                            id="btnFetchLocation"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="tooltip" data-bs-placement="right"
+                                            title="Use my current location">
+                                        <i class="fas fa-location-arrow"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    This will be used when showing <i>' nearby '</i> offers.
+                                </small>
+                                <div id="addressError" class="mt-1 text-danger"></div>
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+                        </div>
                         <div class="col-md-12">
                             <div class="mb10">
                                 <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work <span class="text-danger">*</span></label>
@@ -252,6 +278,14 @@
         }
     </div>
 </div>
+
+<style>
+    #addressError {
+        font-size: 0.875rem;
+        color: #dc3545; /* bootstrap danger red */
+    }
+</style>
+
 @section DynamicScript {
     <script>
         $(document).ready(function () {
@@ -413,6 +447,75 @@
             $("form").on("submit", function () {
                 $("#uploadImages")[0].files = dt.files;
             });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const btn        = document.getElementById("btnFetchLocation");
+          const addrInput  = document.querySelector('[name="Address"]');
+          const latField   = document.querySelector('[name="Latitude"]');
+          const lngField   = document.querySelector('[name="Longitude"]');
+          const icon       = btn.querySelector("i");
+          const errorDiv   = document.getElementById("addressError");
+
+          btn.addEventListener("click", () => {
+            // clear any previous error
+            errorDiv.textContent = "";
+
+            if (!navigator.geolocation) {
+              errorDiv.textContent = "Geolocation isn’t supported by your browser.";
+              return;
+            }
+
+            // show spinner & disable button
+            btn.disabled = true;
+            icon.classList.add("fa-spin");
+
+            navigator.geolocation.getCurrentPosition(
+            async pos => {
+              const { latitude, longitude } = pos.coords;
+              latField.value = latitude;
+              lngField.value = longitude;
+
+              // 1️⃣ fetch plain text address
+              try {
+                const resp = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                );
+                const data = await resp.json();
+                addrInput.value = data.display_name || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+              } catch (e) {
+                // fallback to coords if reverse-geocode fails
+                addrInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+                errorDiv.textContent = "Couldn’t look up your street address, saved coords instead.";
+              }
+
+              icon.classList.remove("fa-spin");
+              btn.disabled = false;
+            },
+              err => {
+                let msg;
+                switch (err.code) {
+                  case err.PERMISSION_DENIED:
+                    msg = "Permission to access location was denied.";
+                    break;
+                  case err.POSITION_UNAVAILABLE:
+                    msg = "Unable to determine your location.";
+                    break;
+                  case err.TIMEOUT:
+                    msg = "Getting your location timed out.";
+                    break;
+                  default:
+                    msg = "An unknown error occurred.";
+                }
+                // show inline error
+                errorDiv.textContent = msg;
+                icon.classList.remove("fa-spin");
+                btn.disabled = false;
+              },
+              { timeout: 10000 }
+            );
+          });
         });
     </script>
 }

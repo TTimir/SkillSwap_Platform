@@ -335,6 +335,17 @@
                 </div>
             </div>
         </form>
+
+        @if (User.Identity.IsAuthenticated)
+        {
+            <section class="mb-5">
+                <h3>Offers Near You</h3>
+                <div id="nearbyOffers">
+                    <p>Hang tight, finding swaps near you…</p>
+                </div>
+            </section>
+        }
+
         <div class="row equal-height">
             @if (Model.Offers != null && Model.Offers.Any())
             {
@@ -398,9 +409,32 @@
 
                                     <div class="list-thumb">
                                         <img class="w-100" src="@selectedImage" alt="@offer.Title" />
-                                        <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })" class="listing-fav fz12">
-                                            <span class="far fa-heart"></span>
-                                        </a>
+                                        @{
+                                            // get current user ID
+                                            var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                            int userId = 0;
+                                            if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                            var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                            bool isSaved = userId > 0
+                                            && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                            var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                            var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                        }
+                                        <form asp-controller="UserWishlist"
+                                              asp-action="@(isSaved ? "Remove" : "Add")"
+                                              method="post"
+                                              class="position-absolute"
+                                              style="top:8px; right:8px;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                            <button type="submit"
+                                                    class="border-0 listing-fav fz12"
+                                                    data-bs-toggle="tooltip"
+                                                    title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                            </button>
+                                        </form>
                                     </div>
                                 }
                             </div>
@@ -421,7 +455,7 @@
                                         <span class="fz14">@offer.UserName</span>
                                     </a>
                                     <div class="budget">
-                                        <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@offer.Country</span></p>
+                                        <p class="mb-0 body-color">Time Commit<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
                                     </div>
                                 </div>
                             </div>
@@ -564,5 +598,31 @@
             });
           });
         });
+    </script>
+    <script>
+        (function(){
+          // only if we have a #nearbyOffers container
+          var container = document.getElementById("nearbyOffers");
+          if (!container) return;
+
+          if (!navigator.geolocation) {
+            container.innerHTML = "<p>Your browser doesn’t support location.</p>";
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            fetch(`@Url.Action("NearbyOffers", "UserOfferDetails")?lat=${lat}&lng=${lng}`)
+              .then(r => r.text())
+              .then(html => container.innerHTML = html)
+              .catch(err => {
+                console.error(err);
+                container.innerHTML = "<p>Couldn’t load nearby offers.</p>";
+              });
+          }, err => {
+            console.warn(err);
+            container.innerHTML = "<p>Cannot retrieve your location.</p>";
+          });
+        })();
     </script>
 }

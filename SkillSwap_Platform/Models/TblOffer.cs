@@ -59,6 +59,12 @@ public partial class TblOffer
 
     public int Views { get; set; }
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public string? Address { get; set; }
+
     public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();

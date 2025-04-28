@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Services;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -18,6 +20,7 @@ namespace SkillSwap_Platform.Controllers
     [AllowAnonymous]
     public class UserOfferDetailsController : Controller
     {
+        private const string RecentCookie = "RecentlyViewedOffers"; 
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserOfferManageController> _logger;
 
@@ -339,6 +342,38 @@ namespace SkillSwap_Platform.Controllers
                     RelatedOffers = relatedOffers
                 };
 
+                // at the bottom of OfferDetails, before `return View(model);`
+                const string sessionsKey = "RecentOfferSummaries";
+
+                // pull whatever is already there (or start fresh)
+                var recents = HttpContext.Session
+                    .GetObjectFromJson<List<OfferCardVM>>(sessionsKey)
+                    ?? new List<OfferCardVM>();
+
+                // build a tiny summary of *this* offer
+                var summary = new OfferCardVM
+                {
+                    OfferId = model.OfferId,
+                    ShortTitle = model.ShortTitle,
+                    UserName = model.UserDetails.FirstOrDefault()?.Username ?? model.UserDetails[0].Username,
+                    UserProfileImage = model.UserDetails.FirstOrDefault()?.ProfileImage,
+                    PortfolioImages = model.PortfolioUrls,
+                    AverageRating = model.UserRating,
+                    ReviewCount = model.ReviewCount,
+                    TimeCommitmentDays = model.TimeCommitmentDays
+                };
+
+                // remove any old entry for the same offer, insert at front, cap at 8
+                recents.RemoveAll(o => o.OfferId == summary.OfferId);
+                recents.Insert(0, summary);
+                if (recents.Count > 8) recents = recents.Take(8).ToList();
+
+                if (recents.Count > 8)
+                    recents = recents.Take(8).ToList();
+
+                // ← **ADD THIS**: save it back into session
+                HttpContext.Session.SetObjectAsJson(sessionsKey, recents);
+
                 return View(model);
             }
             catch (Exception ex)
@@ -658,6 +693,90 @@ namespace SkillSwap_Platform.Controllers
             }
         }
         #endregion
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> NearbyOffers(double lat, double lng, int max = 8)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // 1) pull all candidate offers into memory (so EF only emits a simple SELECT)
+            var candidates = await _context.TblOffers
+                .Where(o => o.IsActive
+                         && !o.IsDeleted
+                         && o.UserId != userId
+                         && o.Latitude.HasValue
+                         && o.Longitude.HasValue)
+                .ToListAsync();
+
+            // 2) Haversine distance
+            static double ToRad(double v) => v * Math.PI / 180;
+            static double Distance(double la1, double lo1, double la2, double lo2)
+            {
+                var R = 6371.0;
+                var dLat = ToRad(la2 - la1);
+                var dLon = ToRad(lo2 - lo1);
+                la1 = ToRad(la1);
+                la2 = ToRad(la2);
+                var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                      + Math.Cos(la1) * Math.Cos(la2)
+                      * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+                return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            }
+
+            // 3) pick the nearest N offers in memory
+            var nearest = candidates
+                .Select(o => new { Offer = o, Dist = Distance(lat, lng, o.Latitude.Value, o.Longitude.Value) })
+                .OrderBy(x => x.Dist)
+                .Take(max)
+                .Select(x => x.Offer)
+                .ToList();
+
+            // 4) now pull **just** the review rows we need (simple SELECT)
+            var nearestIds = nearest.Select(o => o.OfferId).ToList();
+            var rawRatings = await _context.TblReviews
+                .Where(r => nearestIds.Contains(r.OfferId))
+                .Select(r => new { r.OfferId, r.Rating })
+                .ToListAsync();
+
+            // 5) group & average **in memory** (no more EF)
+            var reviewAgg = rawRatings
+                .GroupBy(x => x.OfferId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new {
+                        Count = g.Count(),
+                        Avg = g.Average(x => x.Rating)
+                    }
+                );
+
+            // 6) map to your card‐viewmodel
+            var cards = nearest.Select(o =>
+            {
+                var imgs = string.IsNullOrWhiteSpace(o.Portfolio)
+                    ? new List<string>()
+                    : JsonConvert.DeserializeObject<List<string>>(o.Portfolio);
+
+                reviewAgg.TryGetValue(o.OfferId, out var agg);
+
+                return new OfferCardVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    ShortTitle = o.Title.Length > 35 ? o.Title[..35] + "…" : o.Title,
+                    Category = o.Category,
+                    TokenCost = (int)o.TokenCost,
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+                    PortfolioImages = imgs,
+                    AverageRating = agg?.Avg ?? 0,
+                    ReviewCount = agg?.Count ?? 0,
+                    UserName = o.User.UserName,
+                    UserProfileImage = o.User.ProfileImageUrl
+                };
+            }).ToList();
+
+            return PartialView("_NearbyOfferCards", cards);
+        }
 
         #region Helper Class
         private string GenerateShortTitle(string title)

@@ -16,9 +16,6 @@ namespace SkillSwap_Platform.Models.ViewModels
         [Required] 
         public string Message { get; set; }
 
-        [DataType(DataType.Upload)]
-        [FileExtensions(Extensions = "jpg,jpeg,png,pdf",
-            ErrorMessage = "Allowed file types: .jpg, .jpeg, .png, .pdf")]
         public IFormFile? Attachment { get; set; }
 
         // These three get populated by the controller

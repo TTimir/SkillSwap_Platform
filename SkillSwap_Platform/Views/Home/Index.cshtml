@@ -1,4 +1,7 @@
 ﻿@using System.Linq
+@using System.Security.Claims
+@inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+@model SkillSwap_Platform.Models.ViewModels.HomePageVM
 
 @{
     ViewData["Title"] = "Home Page";
@@ -187,6 +190,26 @@
     </div>
     </div>
 </section>
+
+@if (User != null
+  && Model.RecentlyViewedOffers != null
+  && Model.RecentlyViewedOffers.Any())
+{
+    <section class="pt-0 pb100">
+        <div class="container">
+            <div class="row align-items-center wow fadeInUp">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">Recently Viewed Swaps</h2>
+                        <p class="paragraph">Jump back into something you were checking out.</p>
+                    </div>
+                </div>
+            </div>
+
+            @await Component.InvokeAsync("RecentOffers", new { offers = Model.RecentlyViewedOffers })
+        </div>
+    </section>
+}
 
 <section class="early-adopters pb60 pt0 text-center">
     <div class="container">
@@ -415,10 +438,32 @@
                                                                     {
                                                                         <div class="item">
                                                                             <img class="w-100" src="@image" alt="@offer.Title" />
-                                                                            <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })"
-                                                                               class="listing-fav fz12">
-                                                                                <span class="far fa-heart"></span>
-                                                                            </a>
+                                                                            @{
+                                                                                // get current user ID
+                                                                                var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                                                int userId = 0;
+                                                                                if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                                                                var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                                                                bool isSaved = userId > 0
+                                                                                && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                                                                var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                                                                var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                                                            }
+                                                                            <form asp-controller="UserWishlist"
+                                                                                  asp-action="@(isSaved ? "Remove" : "Add")"
+                                                                                  method="post"
+                                                                                  class="position-absolute"
+                                                                                  style="top:8px; right:8px;">
+                                                                                @Html.AntiForgeryToken()
+                                                                                <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                                                                <button type="submit"
+                                                                                        class="border-0 listing-fav fz12"
+                                                                                        data-bs-toggle="tooltip"
+                                                                                        title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                                                    <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                                                                </button>
+                                                                            </form>
                                                                         </div>
                                                                     }
                                                                 </div>
@@ -431,10 +476,32 @@
                                                                 <img class="w-100"
                                                                      src="~/template_assets/images/listings/No_Offer_img_1.png"
                                                                      alt="@offer.Title" />
-                                                                <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })"
-                                                                   class="listing-fav fz12">
-                                                                    <span class="far fa-heart"></span>
-                                                                </a>
+                                                                @{
+                                                                    // get current user ID
+                                                                    var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                                    int userId = 0;
+                                                                    if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                                                    var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                                                    bool isSaved = userId > 0
+                                                                    && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                                                    var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                                                    var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                                                }
+                                                                <form asp-controller="UserWishlist"
+                                                                      asp-action="@(isSaved ? "Remove" : "Add")"
+                                                                      method="post"
+                                                                      class="position-absolute"
+                                                                      style="top:8px; right:8px;">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                                                    <button type="submit"
+                                                                            class="border-0 listing-fav fz12"
+                                                                            data-bs-toggle="tooltip"
+                                                                            title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                                        <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                                                    </button>
+                                                                </form>
                                                             </div>
                                                         }
 
@@ -611,11 +678,11 @@
                                         </a>
                                         <a class="meta fw500 text-start">
                                             Recomm.<br>
-                                            <span class="fz14 fw400"> @("%")@freelancer.Recommendation.ToString("0.##")</span>
+                                            <span class="fz14 fw400"> @("%")@freelancer.Recommendation</span>
                                         </a>
                                         <a class="meta fw500 text-start">
                                             Exchange Success<br>
-                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess.ToString("0.##")</span>
+                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess</span>
                                         </a>
                                     </div>
                                     <div class="d-grid mt15">
@@ -632,7 +699,7 @@
             else
             {
                 <div class="item">
-                    <p>No freelancers available.</p>
+                    <p>No Swappers available.</p>
                 </div>
             }
         </div>
@@ -867,16 +934,16 @@
 
                             // helper to split any IEnumerable<string> into columns of up to 5 items
                             Func<IEnumerable<string>, List<List<string>>> chunkify = skills =>
-                                (skills ?? Enumerable.Empty<string>())
-                                .Select((s, i) => new { s, i })
-                                .GroupBy(x => x.i / chunkSize)
-                                .Select(g => g.Select(x => x.s).ToList())
-                                .ToList();
+                            (skills ?? Enumerable.Empty<string>())
+                            .Select((s, i) => new { s, i })
+                            .GroupBy(x => x.i / chunkSize)
+                            .Select(g => g.Select(x => x.s).ToList())
+                            .ToList();
 
                             @functions {
-                                Func<IEnumerable<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>,
-                                List<List<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>>> chunkifyOffers = offers =>
-                                (offers ?? Enumerable.Empty<SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferCardVM>())
+                                Func<IEnumerable<SkillSwap_Platform.Models.ViewModels.OfferPublicVM.OfferCardVM>,
+                                List<List<SkillSwap_Platform.Models.ViewModels.OfferPublicVM.OfferCardVM>>> chunkifyOffers = offers =>
+                                (offers ?? Enumerable.Empty<SkillSwap_Platform.Models.ViewModels.OfferPublicVM.OfferCardVM>())
                                 .Select((o, i) => new { o, i })
                                 .GroupBy(x => x.i / 5)
                                 .Select(g => g.Select(x => x.o).ToList())

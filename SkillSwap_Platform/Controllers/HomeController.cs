@@ -24,11 +24,13 @@ using SkillSwap_Platform.Services.Newsletter;
 using System.Net;
 using System.Globalization;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 
 namespace SkillSwap_Platform.Controllers;
 
 public class HomeController : Controller
 {
+    private const string _recentCookie = "RecentlyViewedOffers";
     private readonly IUserServices _userService;
     private readonly IPasswordResetService _passwordReset;
     private readonly SkillSwapDbContext _dbcontext;
@@ -367,6 +369,28 @@ public class HomeController : Controller
                 .ToListAsync();
             vm.GoodSwaps = goodSwaps;
 
+            const string sessionsKey = "RecentOfferSummaries";
+            List<int> recentIds;
+            if (Request.Cookies.TryGetValue(sessionsKey, out var json))
+            {
+                try
+                {
+                    recentIds = JsonConvert.DeserializeObject<List<int>>(json) ?? new List<int>();
+                }
+                catch
+                {
+                    recentIds = new List<int>();
+                }
+            }
+            else
+            {
+                recentIds = new List<int>();
+            }
+
+            vm.RecentlyViewedOffers = HttpContext.Session
+                .GetObjectFromJson<List<OfferCardVM>>(sessionsKey)
+                ?? new List<OfferCardVM>();
+
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
             ViewBag.ErrorMessage = TempData.ContainsKey("ErrorMessage") ? TempData["ErrorMessage"] : null;
 
@@ -638,31 +662,28 @@ public class HomeController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Contact(ContactFormVM form)
     {
-        if (form.Attachment != null)
+        if (form.Attachment != null && form.Attachment.Length > 0)
         {
-            // max size 1 MB
-            const long MAX_BYTES = 2 * 1024 * 1024;
-            if (form.Attachment.Length > MAX_BYTES)
-            {
-                ModelState.AddModelError(nameof(form.Attachment),
-                    "Attachment must be 1 MB or smaller.");
-            }
-
-            // allowed extensions
+            const long MAX_BYTES = 2 * 1024 * 1024;           // 2 MB
             var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
             var ext = Path.GetExtension(form.Attachment.FileName)?.ToLowerInvariant();
+
+            if (form.Attachment.Length > MAX_BYTES)
+                ModelState.AddModelError(
+                    nameof(form.Attachment),
+                    "Max file size is 2 MB.");
+
             if (string.IsNullOrEmpty(ext) || !allowed.Contains(ext))
-            {
-                ModelState.AddModelError(nameof(form.Attachment),
+                ModelState.AddModelError(
+                    nameof(form.Attachment),
                     "Allowed file types: .jpg, .png, .pdf");
-            }
         }
 
         if (!ModelState.IsValid)
             return View(form);
 
         // 1) Save to DB
-        var msg = new TblUserSupportRequest
+        var msg = new TblUserContactRequest
         {
             Name = form.Name,
             Email = form.Email,
@@ -674,7 +695,7 @@ public class HomeController : Controller
             HasSupportContacted = false,
             CreatedAt = DateTime.UtcNow
         };
-        _dbcontext.TblUserSupportRequests.Add(msg);
+        _dbcontext.TblUserContactRequests.Add(msg);
         await _dbcontext.SaveChangesAsync();
 
         if (form.Attachment != null && form.Attachment.Length > 0)
@@ -687,7 +708,7 @@ public class HomeController : Controller
             msg.AttachmentContentType = form.Attachment.ContentType;
 
             // Update the record
-            _dbcontext.TblUserSupportRequests.Update(msg);
+            _dbcontext.TblUserContactRequests.Update(msg);
             await _dbcontext.SaveChangesAsync();
         }
 

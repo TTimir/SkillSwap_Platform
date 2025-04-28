@@ -1,4 +1,5 @@
 ﻿using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 
 namespace SkillSwap_Platform.Models.ViewModels
 {
@@ -23,6 +24,8 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<CategoryCardVm> PopularCategories { get; set; } = new();
         public List<HowItWorksVM> HowItWorksValues { get; set; } = new();
         public List<HowItWorksVM> AboutUsValues { get; set; } = new();
+
+        public List<OfferCardVM> RecentlyViewedOffers { get; set; } = new();
 
 
         public string TalentsDisplayValue { get; set; } = "";

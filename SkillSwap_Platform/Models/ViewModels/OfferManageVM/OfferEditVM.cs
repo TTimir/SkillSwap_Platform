@@ -65,6 +65,27 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         [Display(Name = "Intrested in")]
         public string SelectedWillingSkill { get; set; }
 
+
+        [Display(Name = "Latitude")]
+        public double? Latitude { get; set; }
+
+        [Display(Name = "Longitude")]
+        public double? Longitude { get; set; }
+        [Display(Name = "Address")]
+        public string? Address { get; set; }
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(Address)
+             && (!Latitude.HasValue || !Longitude.HasValue))
+            {
+                yield return new ValidationResult(
+                    "You must either enter a manual address or fetch your GPS coordinates.",
+                    new[] { nameof(Address), nameof(Latitude), nameof(Longitude) }
+                );
+            }
+        }
+
+
         // Collections for dropdowns
         [BindNever] 
         public List<SelectListItem> UserSkills { get; set; }

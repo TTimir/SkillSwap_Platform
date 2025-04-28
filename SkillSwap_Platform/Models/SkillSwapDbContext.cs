@@ -77,11 +77,11 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblUserCertificate> TblUserCertificates { get; set; }
 
+    public virtual DbSet<TblUserContactRequest> TblUserContactRequests { get; set; }
+
     public virtual DbSet<TblUserReport> TblUserReports { get; set; }
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
-
-    public virtual DbSet<TblUserSupportRequest> TblUserSupportRequests { get; set; }
 
     public virtual DbSet<TblUserWishlist> TblUserWishlists { get; set; }
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
@@ -532,6 +532,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblOffers");
 
             entity.Property(e => e.OfferId).HasColumnName("OfferID");
+            entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.AssistanceRounds).HasDefaultValue(1);
             entity.Property(e => e.CollaborationMethod).HasMaxLength(50);
             entity.Property(e => e.CreatedDate)
@@ -861,6 +862,27 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblUserCertificates_Users");
         });
 
+        modelBuilder.Entity<TblUserContactRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_SupportRequests");
+
+            entity.ToTable("tblUserContactRequests");
+
+            entity.Property(e => e.AttachmentContentType).HasMaxLength(100);
+            entity.Property(e => e.AttachmentFilename).HasMaxLength(255);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.ContactedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.ProcessedAt).HasColumnType("datetime");
+            entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
+            entity.Property(e => e.Subject).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<TblUserReport>(entity =>
         {
             entity.HasKey(e => e.ReportId);
@@ -912,27 +934,6 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblUserSkills_Users");
-        });
-
-        modelBuilder.Entity<TblUserSupportRequest>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_SupportRequests");
-
-            entity.ToTable("tblUserSupportRequests");
-
-            entity.Property(e => e.AttachmentContentType).HasMaxLength(100);
-            entity.Property(e => e.AttachmentFilename).HasMaxLength(255);
-            entity.Property(e => e.Category).HasMaxLength(100);
-            entity.Property(e => e.ContactedAt).HasColumnType("datetime");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getutcdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Email).HasMaxLength(200);
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.Phone).HasMaxLength(50);
-            entity.Property(e => e.ProcessedAt).HasColumnType("datetime");
-            entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
-            entity.Property(e => e.Subject).HasMaxLength(200);
         });
 
         modelBuilder.Entity<TblUserWishlist>(entity =>
