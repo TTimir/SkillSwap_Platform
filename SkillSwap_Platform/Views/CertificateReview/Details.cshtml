@@ -1,0 +1,117 @@
+﻿@model SkillSwap_Platform.Services.AdminControls.Certificate.CertificateDetailDto
+@{
+    ViewData["Title"] = "Review Certificate";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                <div class="navtab-style1">
+                    <nav>
+                        <div class="nav nav-tabs mb20" id="nav-tab2" role="tablist">
+                            <button class="nav-link active fw500 ps-0" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Certificate Details</button>
+                        </div>
+                    </nav>
+                    <div class="tab-content" id="nav-tabContent">
+                        <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                            <div class="col-md-12">
+                                <div class="bdrb1 pb20">
+                                    <div class="mbp_first position-relative d-sm-flex align-items-center justify-content-start mb30-sm mt30">
+                                        <img src="@Url.Content(Model.CertificateFilePath)"
+                                             class="img-fluid rounded border mb-3"
+                                             alt="Certificate for @Model.UserName"
+                                             style="max-height:600px; object-fit:contain;">
+                                    </div>
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-sm">
+                                            <h6 class="mb-1">Submitted by: @Model.UserName <i>(@Model.LoginName)</i></h6>
+                                            <small class="text-muted">Submitted On: @Model.SubmittedDate:g</small><br />
+                                            <small class="text-muted">From: @Model.CertificateFrom</small><br />
+                                            <small class="text-muted">
+                                                Completion Date: @(Model.CompleteDate?.ToString("d") ?? "—")
+                                            </small><br />
+                                            <small class="text-muted">
+                                                Verification ID: @Model.VerificationId
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <!-- Approve Form -->
+                                        <form asp-action="Approve" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.CertificateId" />
+                                            <button type="submit" class="ud-btn btn-thm mb25 me-4">Approve</button>
+                                        </form>
+
+                                        <!-- Reject Toggle -->
+                                        <button type="button" class="btn"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#rejectForm">
+                                            Reject
+                                        </button>
+                                    </div>
+
+                                    <!-- Reject Form (collapsed) -->
+                                    <div id="rejectForm" class="collapse mt-3">
+                                        <form asp-action="Reject" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.CertificateId" />
+                                            <div class="mb-3">
+                                                <label for="reason" class="form-label">Reason for rejection</label>
+                                                <textarea name="reason" cols="30" id="reason" rows="4"
+                                                          placeholder="Why are you rejecting this?"
+                                                          required></textarea>
+                                            </div>
+                                            <button type="submit" class="ud-btn btn-light-gray mb20">
+                                                Confirm Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+

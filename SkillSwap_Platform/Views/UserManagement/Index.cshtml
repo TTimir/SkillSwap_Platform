@@ -1,0 +1,221 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.UserManagement.UserManagementDto>
+
+@{
+    ViewData["Title"] = "Held Users";
+    ViewData["SubTitle"] = "View and release held accounts";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Index","UserManagement")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Held Users</a>
+                        <a href="@Url.ActionLink("Manage","UserManagement")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">All Active Users</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">User ID</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Held Reason</th>
+                                        <th scope="col">Held Time</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var u in Model.Items)
+                                    {
+                                        <tr>
+                                            <th scope="row">
+                                                <div class="freelancer-style1 box-shadow-none row m-0 p-0 align-items-lg-end">
+                                                    <div class="d-lg-flex px-0">
+                                                        <div class="details mb15-md-md">
+                                                            <h5 class="title mb10">@u.UserId</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            <td class="vam">
+                                                <a asp-action="HoldHistory"
+                                                   asp-controller="UserManagement"
+                                                   asp-route-userId="@u.UserId"
+                                                   class="fz15 fw400 text-decoration-none">
+                                                    @u.FirstName @u.LastName
+                                                    <i class="fst-italic">(@u.UserName)</i>
+                                                </a>
+                                            </td>
+                                            <td class="vam"><span class="fz14 fw400">@u.Email</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@u.HeldReason</span></td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <u>@(u.HeldAt?.ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</u> <i>'Untill'</i> <u>@(u.HeldUntil?.ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</u>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <!-- Release button -->
+                                                <button class="ud-btn btn-light-thm"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#releaseForm-@u.UserId"
+                                                        aria-expanded="false"
+                                                        aria-controls="releaseForm-@u.UserId"
+                                                        style="border:0;">
+                                                    Release
+                                                </button>
+
+                                                <!-- Inline collapse panel -->
+                                                <div id="releaseForm-@u.UserId" class="collapse mt-2">
+                                                    <div class="card card-body p-3">
+                                                        <form asp-action="Release" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@u.UserId" />
+
+                                                            <div class="mb-2 form-style1">
+                                                                <label for="reason-@u.UserId" class="form-label">
+                                                                    Reason for release
+                                                                </label>
+                                                                <textarea id="reason-@u.UserId"
+                                                                          name="reason"
+                                                                          rows="2"
+                                                                          placeholder="Why are you releasing this hold?"
+                                                                          required></textarea>
+                                                            </div>
+
+                                                            <button type="submit" class="ud-btn btn-light-thm" style="border:0;">
+                                                                Confirm Release
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Index"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+@section DynamicAdminScript {
+    <script>
+        $(function(){
+          // When you click the Release button:
+          $('[id^="releaseBtn-"]').on('click', function(e){
+            e.stopPropagation();                           // don’t let the document handler immediately close it
+            var id = this.id.split('-')[1];
+            $(this).hide();                                // hide the button
+            $('#releaseForm-'+id).collapse('show');        // open the form
+          });
+
+          // When a panel finishes hiding, show its button again:
+          $('[id^="releaseForm-"]').on('hidden.bs.collapse', function(){
+            var id = this.id.split('-')[1];
+            $('#releaseBtn-'+id).show();
+          });
+
+          // If you click anywhere outside any open panel/button, hide it:
+          $(document).on('click', function(e){
+            var $t = $(e.target);
+            $('[id^="releaseForm-"].show').each(function(){
+              var id = this.id.split('-')[1];
+              if (
+                !$t.closest('#releaseForm-'+id).length &&
+                !$t.closest('#releaseBtn-'+id).length
+              ) {
+                $('#releaseForm-'+id).collapse('hide');
+              }
+            });
+          });
+        });
+    </script>
+}

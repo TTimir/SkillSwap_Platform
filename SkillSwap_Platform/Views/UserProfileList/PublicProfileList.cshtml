@@ -1,7 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.FreelancersVM.UserProfileListVM
 
 @{
-    ViewData["Title"] = "Talent List";
+    ViewData["Title"] = "Skill Swappers";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -54,7 +54,7 @@
                 <div class="breadcumb-style1">
                     <div class="breadcumb-list">
                         <a href="@Url.Action("Index", "Home")">Home</a>
-                        <a href="#!talents">@ViewData["Title"]</a>
+                        <a href="#!swappers">@ViewData["Title"]</a>
                     </div>
                 </div>
             </div>
@@ -68,8 +68,8 @@
             <div class="row wow fadeInUp">
                 <div class="col-xl-7">
                     <div class="position-relative">
-                        <h2 class="text-white">Design & Creative</h2>
-                        <p class="text mb30 text-white">Give your visitor a smooth online experience with a solid UX design</p>
+                        <h2 class="text-white">Connect & Swap Skills</h2>
+                        <p class="text mb30 text-white">Share your expertise and learn new skills from swappers everywhere.</p>
                         <div class="advance-search-tab bgc-white p10 bdrs4" style="border-radius:18px;">
                             <form method="get" action="@Url.Action("PublicProfileList", "UserProfileList")" class="form-search position-relative">
                                 <div class="row">

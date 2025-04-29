@@ -19,6 +19,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
 
+    public virtual DbSet<OtpAttempt> OtpAttempts { get; set; }
+
     public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
 
     public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
@@ -55,6 +57,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOffer> TblOffers { get; set; }
 
+    public virtual DbSet<TblOfferFlag> TblOfferFlags { get; set; }
+
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
 
     public virtual DbSet<TblPasswordResetToken> TblPasswordResetTokens { get; set; }
@@ -78,6 +82,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblUserCertificate> TblUserCertificates { get; set; }
 
     public virtual DbSet<TblUserContactRequest> TblUserContactRequests { get; set; }
+
+    public virtual DbSet<TblUserHoldHistory> TblUserHoldHistories { get; set; }
 
     public virtual DbSet<TblUserReport> TblUserReports { get; set; }
 
@@ -113,6 +119,23 @@ public partial class SkillSwapDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.MiningLogs)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_MiningLog_User");
+        });
+
+        modelBuilder.Entity<OtpAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__OtpAttem__3214EC077F718846");
+
+            entity.HasIndex(e => e.AttemptedAt, "IX_OtpAttempts_AttemptedAt");
+
+            entity.HasIndex(e => e.UserId, "IX_OtpAttempts_UserId");
+
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.Property(e => e.Method).HasMaxLength(20);
+            entity.Property(e => e.UserName).HasMaxLength(256);
+
+            entity.HasOne(d => d.User).WithMany(p => p.OtpAttempts)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_OtpAttempts_Users");
         });
 
         modelBuilder.Entity<PrivacySensitiveWord>(entity =>
@@ -565,6 +588,27 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblOffers_Users");
         });
 
+        modelBuilder.Entity<TblOfferFlag>(entity =>
+        {
+            entity.HasKey(e => e.OfferFlagId);
+
+            entity.ToTable("TblOfferFlag");
+
+            entity.HasIndex(e => e.OfferId, "IX_TblOfferFlag_OfferId");
+
+            entity.Property(e => e.FlaggedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Reason).HasMaxLength(500);
+
+            entity.HasOne(d => d.FlaggedByUser).WithMany(p => p.TblOfferFlags)
+                .HasForeignKey(d => d.FlaggedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TblOfferFlag_Users");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferFlags)
+                .HasForeignKey(d => d.OfferId)
+                .HasConstraintName("FK_TblOfferFlag_TblOffer");
+        });
+
         modelBuilder.Entity<TblOfferPortfolio>(entity =>
         {
             entity.HasKey(e => e.PortfolioId).HasName("PK__tblOffer__6D3A139D4A53F9F0");
@@ -786,6 +830,8 @@ public partial class SkillSwapDbContext : DbContext
                 .IsFixedLength();
             entity.Property(e => e.FailedOtpAttempts).HasDefaultValue(0);
             entity.Property(e => e.FirstName).HasMaxLength(100);
+            entity.Property(e => e.HeldAt).HasColumnType("datetime");
+            entity.Property(e => e.HeldUntil).HasColumnType("datetime");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Languages).HasMaxLength(200);
             entity.Property(e => e.LastActive).HasColumnType("datetime");
@@ -797,6 +843,8 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.PendingEmail).HasMaxLength(256);
             entity.Property(e => e.PersonalWebsite).HasMaxLength(200);
             entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
+            entity.Property(e => e.ReleaseReason).HasMaxLength(500);
+            entity.Property(e => e.ReleasedAt).HasColumnType("datetime");
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .HasDefaultValue("User");
@@ -881,6 +929,23 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ProcessedAt).HasColumnType("datetime");
             entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
             entity.Property(e => e.Subject).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<TblUserHoldHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tblUserH__3214EC07EEDA74EE");
+
+            entity.ToTable("tblUserHoldHistories");
+
+            entity.HasIndex(e => e.UserId, "IX_tblUserHoldHistories_UserId");
+
+            entity.HasOne(d => d.ReleasedByAdminNavigation).WithMany(p => p.TblUserHoldHistoryReleasedByAdminNavigations)
+                .HasForeignKey(d => d.ReleasedByAdmin)
+                .HasConstraintName("FK_tblUserHoldHistories_ReleasedByAdmin");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblUserHoldHistoryUsers)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_UserHoldHistories_Users");
         });
 
         modelBuilder.Entity<TblUserReport>(entity =>

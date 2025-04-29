@@ -1,6 +1,6 @@
 ﻿
 @{
-    ViewData["Title"] = "Inactive Swaps";
+    ViewData["Title"] = "Inactive Swap Offers";
     ViewData["SubTitle"] = "These deals are paused, reactivate them anytime.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
@@ -13,7 +13,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Swap<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Swap Offer<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -49,10 +49,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Swaps</a>
-                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Swaps</a>
-                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Swaps</a>
-                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Swaps</a>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Swap Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Swap Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Swap Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Swap Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">

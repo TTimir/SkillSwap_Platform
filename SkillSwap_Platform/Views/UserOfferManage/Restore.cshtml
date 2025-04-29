@@ -1,7 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferRestoreListVM
 
 @{
-    ViewData["Title"] = "Restore Swap";
+    ViewData["Title"] = "Restore Swap Offers";
     ViewData["SubTitle"] = "Need a second chance? You can bring back your swap within 15 days.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
@@ -14,7 +14,7 @@
 </div>
 <div class="col-lg-3">
     <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">
-        Back to Swaps <i class="fal fa-arrow-right-long"></i>
+        Back to Swap Offers <i class="fal fa-arrow-right-long"></i>
     </a>
 </div>
 </div>
@@ -53,11 +53,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <button class="nav-link active fw500 ps-0" id="nav-item1-tab" data-bs-toggle="tab" data-bs-target="#nav-item1" type="button" role="tab" aria-controls="nav-item1" aria-selected="true">Active Services</button>
-                        <button class="nav-link fw500" id="nav-item2-tab" data-bs-toggle="tab" data-bs-target="#nav-item2" type="button" role="tab" aria-controls="nav-item2" aria-selected="false">Pending Services</button>
-                        <button class="nav-link fw500" id="nav-item3-tab" data-bs-toggle="tab" data-bs-target="#nav-item3" type="button" role="tab" aria-controls="nav-item3" aria-selected="false">Ongoing Services</button>
-                        <button class="nav-link fw500" id="nav-item4-tab" data-bs-toggle="tab" data-bs-target="#nav-item4" type="button" role="tab" aria-controls="nav-item4" aria-selected="false">Completed Services</button>
-                        <button class="nav-link fw500" id="nav-item5-tab" data-bs-toggle="tab" data-bs-target="#nav-item5" type="button" role="tab" aria-controls="nav-item5" aria-selected="false">Canceled Services</button>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">All Swap Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Swap Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item3-tab" type="button" aria-selected="false">InActive Swap Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Swap Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Net;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
@@ -25,6 +26,9 @@ using System.Net;
 using System.Globalization;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
+using SkillSwap_Platform.Controllers.AdminDashboard;
+using SkillSwap_Platform.Services.AdminControls.UserManagement;
+using Microsoft.Extensions.Primitives;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -38,7 +42,10 @@ public class HomeController : Controller
     private readonly INewsletterService _newsletter;
     private readonly IConfiguration _config;
     private readonly int _satisfactionThreshold;
-    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config)
+    private readonly ILogger<HomeController> _logger;
+    private readonly IUserManagmentService _usv;
+
+    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config, ILogger<HomeController> logger, IUserManagmentService usv)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
@@ -47,11 +54,29 @@ public class HomeController : Controller
         _newsletter = newsletter;
         _config = config;
         _satisfactionThreshold = config.GetValue<int>("TrustMetrics:SatisfactionThreshold", 4);
+        _logger = logger;
+        _usv = usv;
     }
 
     // This runs on every request for views that share the layout
     public override void OnActionExecuting(ActionExecutingContext ctx)
     {
+        if (User.Identity.IsAuthenticated)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var isHeld = _dbcontext.TblUsers
+                          .Where(u => u.UserId == userId)
+                          .Select(u => u.IsHeld)
+                          .FirstOrDefault();
+            if (isHeld)
+            {
+                // force sign-out
+                HttpContext.SignOutAsync("SkillSwapAuth");
+                TempData["ErrorMessage"] = "Your account has been held. Please contact support.";
+                ctx.Result = RedirectToAction("Login", "Home");
+            }
+        }
+
         // Grab distinct categories
         var cats = _dbcontext.TblOffers
             .Select(o => o.Category)
@@ -120,6 +145,8 @@ public class HomeController : Controller
         return Redirect(Request.Headers["Referer"].ToString());
     }
     #endregion
+
+    #region Menu Pages
 
     public async Task<IActionResult> Index()
     {
@@ -739,6 +766,8 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Contact));
     }
 
+    #endregion
+
     #region External Login
 
     [AllowAnonymous, HttpGet]
@@ -782,6 +811,23 @@ public class HomeController : Controller
                 IsActive = true
             };
             await _userService.RegisterUserAsync(user, Guid.NewGuid().ToString("N"));
+        }
+
+        if (user.IsHeld)
+        {
+            TempData["ErrorMessage"] = "🚫 Your account has been held by an administrator. Please contact support.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        // If their hold has expired, auto-release them now
+        if (user.IsHeld && user.HeldUntil.HasValue && user.HeldUntil <= DateTime.UtcNow)
+        {
+            await _usv.ReleaseUserAsync(
+                user.UserId,
+                reason: "Auto-released on login",
+                adminId: null);
+            // Refresh the user object
+            user = await _userService.GetUserByIdAsync(user.UserId);
         }
 
         // sign in locally
@@ -910,6 +956,25 @@ public class HomeController : Controller
                 return View(model);
             }
 
+
+            // If their hold has expired, auto-release them now
+            if (user.IsHeld && user.HeldUntil.HasValue && user.HeldUntil <= DateTime.UtcNow)
+            {
+                await _usv.ReleaseUserAsync(
+                    user.UserId,
+                    reason: "Auto-released on login",
+                    adminId: null);
+                // Refresh the user object
+                user = await _userService.GetUserByIdAsync(user.UserId);
+            }
+
+            if (user.IsHeld)
+            {
+                // you could also read LockoutEndTime if you want to show how long
+                TempData["ErrorMessage"] = "🚫 Your account has been held by an administrator. Please contact support.";
+                return View(model);
+            }
+
             // Check if the user is locked out.
             if (user.FailedOtpAttempts >= 5 && user.LockoutEndTime.HasValue && user.LockoutEndTime > DateTime.UtcNow)
             {
@@ -973,12 +1038,21 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
-        // generate & email OTP
-        var emailOtp = new Random().Next(100000, 999999).ToString();
-        HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
-        HttpContext.Session.SetString("LoginEmailOtp_Expires", DateTimeOffset.UtcNow.AddMinutes(5).ToString());
+        // Check if we already have an OTP and it’s still valid
+        var existing = HttpContext.Session.GetString("LoginEmailOtp");
+        var expiresString = HttpContext.Session.GetString("LoginEmailOtp_Expires");
+        var needsNewOtp = string.IsNullOrEmpty(existing)
+                      || !DateTimeOffset.TryParse(expiresString, out var exp)
+                      || DateTimeOffset.UtcNow >= exp;
 
-        var htmlBody = $@"
+        if (needsNewOtp)
+        {
+            // generate & email OTP
+            var emailOtp = new Random().Next(100000, 999999).ToString();
+            HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
+            HttpContext.Session.SetString("LoginEmailOtp_Expires", DateTimeOffset.UtcNow.AddMinutes(5).ToString());
+
+            var htmlBody = $@"
                   <p>Hi {loginUser.UserName},</p>
                   <p>Here’s your one‑time login code: <strong>{emailOtp}</strong></p>
                   <p>
@@ -991,12 +1065,13 @@ public class HomeController : Controller
                   </p>
                 ";
 
-        await _emailService.SendEmailAsync(
-            loginUser.Email,
-            "Your SkillSwap login code",
-            htmlBody,
-            isBodyHtml: true    // or however your service flags an HTML payload
-        );
+            await _emailService.SendEmailAsync(
+                loginUser.Email,
+                "Your SkillSwap login code",
+                htmlBody,
+                isBodyHtml: true    // or however your service flags an HTML payload
+            );
+        }
 
         ViewBag.ReturnUrl = returnUrl;
         return View(loginUser);
@@ -1014,24 +1089,106 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
+        // Pull a fresh copy from the database so we can update their counters
+        var user = await _dbcontext.TblUsers.FindAsync(loginUser.UserId);
+        if (user == null)
+        {
+            _logger.LogError("LoginOtp: user {UserId} not found in System", loginUser.UserId);
+            TempData["ErrorMessage"] = "An unexpected error occurred. Please try again.";
+            return RedirectToAction("Login");
+        }
+
+        // 1) Gather context
+        string ip;
+        // 1a) First check for X-Forwarded-For (may be a comma-separated list; take the first)
+        if (HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var fwd)
+            && !StringValues.IsNullOrEmpty(fwd))
+        {
+            ip = fwd.ToString().Split(',')[0].Trim();
+        }
+        else if (HttpContext.Connection.RemoteIpAddress != null)
+        {
+            var addr = HttpContext.Connection.RemoteIpAddress!;
+            // if it’s any loopback (127.0.0.1 or ::1), normalize to IPv4 127.0.0.1
+            if (IPAddress.IsLoopback(addr))
+            {
+                ip = IPAddress.Loopback.ToString();  // "127.0.0.1"
+            }
+            else
+            {
+                // for IPv6-mapped IPv4, or real IPv6, this will map back to IPv4 where possible
+                ip = addr.MapToIPv4().ToString();
+            }
+        }
+        else
+        {
+            ip = "unknown";
+        }
+
+        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
+        var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
+        bool isEmailOk = emailOtp != null && emailOtp == otp;
+        var method = isTotpOk ? "TOTP" : "Email";
+
+        // 2) Log the attempt immediately (fail by default)
+        var attempt = new OtpAttempt
+        {
+            UserId = user.UserId,
+            UserName = user.UserName,
+            AttemptedAt = DateTime.UtcNow,
+            WasSuccessful = false,
+            Method = method,
+            IpAddress = ip
+        };
+        _dbcontext.OtpAttempts.Add(attempt);
+        await _dbcontext.SaveChangesAsync();
+
         try
         {
-            var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
-            bool isTotp = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
-            bool isEmailOk = emailOtp != null && emailOtp == otp;
-
-            if (!isTotp && !isEmailOk)
+            if (!isTotpOk && !isEmailOk)
             {
-                TempData["ErrorMessage"] = "❌ Invalid code. Try your app or check your email.";
-                return RedirectToAction("LoginOtp", new { returnUrl });
+                // 1) Increment the failure count
+                user.FailedOtpAttempts++;
+
+                // 2) If they've now reached 5 failures, lock them out for 15 minutes
+                if (user.FailedOtpAttempts >= 5)
+                {
+                    user.LockoutEndTime = DateTime.UtcNow.AddMinutes(15);
+
+                    // Notify by email
+                    var lockSubject = "Your SkillSwap Login Temporarily Locked";
+                    var lockBody = $@"
+                        <p>Hi {user.FirstName},</p>
+                        <p>Due to multiple unsuccessful login attempts, your account is locked for 15 minutes from now.</p>
+                        <p>Please wait until <strong>{user.LockoutEndTime:dd MMM yyyy HH:mm} UTC</strong> before trying again.</p>
+                        <p>If this wasn’t you, contact us at <a href=""mailto:support@skillswap.com"">support@skillswap.com</a>.</p>
+                        <p>— The SkillSwap Team</p>";
+                    await _emailService.SendEmailAsync(user.Email, lockSubject, lockBody, isBodyHtml: true);
+                }
+
+                // 3) Persist the incremented count (and lockout if set)
+                await _dbcontext.SaveChangesAsync();
+
+                // 5) Show the appropriate message
+                if (user.FailedOtpAttempts >= 5)
+                {
+                    TempData["ErrorMessage"] = "🚫 Too many failed attempts. Your account is locked for 15 minutes.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "❌ Invalid code. Please try again.";
+                }
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "❌ Your code has expired. Please request a new one.");
+
+                ViewBag.ReturnUrl = returnUrl;
+                return View(loginUser);
             }
 
-            //// Verify the OTP.
-            //if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
-            //{
-            //    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
-            //    return RedirectToAction("LoginOtp", new { returnUrl });
-            //}
+            attempt.WasSuccessful = true;
+            await _dbcontext.SaveChangesAsync();
 
             var expires = DateTimeOffset.Parse(HttpContext.Session.GetString("LoginEmailOtp_Expires"));
             if (DateTimeOffset.UtcNow > expires)
@@ -1040,8 +1197,20 @@ public class HomeController : Controller
                 return RedirectToAction(nameof(LoginOtp));
             }
 
-            // clear it so it can't be replayed
+            // ✔️ Good OTP: reset failure count & lockout, persist once
+            user.FailedOtpAttempts = 0;
+            user.LockoutEndTime = null;
+            await _dbcontext.SaveChangesAsync();
+
             HttpContext.Session.Remove("LoginEmailOtp");
+            HttpContext.Session.Remove("LoginEmailOtp_Expires");
+
+            // clear it so it can't be replayed
+            if (user.FailedOtpAttempts >= 5)
+            {
+                HttpContext.Session.Remove("LoginEmailOtp");
+                HttpContext.Session.Remove("LoginEmailOtp_Expires");
+            }
 
             // OTP is valid, sign in the user
             await SignInUserAsync(loginUser, false);
@@ -1366,4 +1535,14 @@ public class HomeController : Controller
     }
 
     #endregion
+
+    [AllowAnonymous]
+    [HttpGet("Home/AccessDenied")]
+    public IActionResult AccessDenied(string returnUrl)
+    {
+        // You can pass the returnUrl into the view if you want to show it.
+        ViewBag.ReturnUrl = returnUrl;
+        return View();
+    }
+
 }

@@ -34,6 +34,22 @@ public partial class TblUser
 
     public bool IsHeld { get; set; }
 
+    public DateTime? HeldAt { get; set; }
+
+    public string? HeldReason { get; set; }
+
+    public string? HeldCategory { get; set; }
+
+    public DateTime? HeldUntil { get; set; }
+
+    public string? ReleaseReason { get; set; }
+
+    public DateTime? ReleasedAt { get; set; }
+
+    public int? ReleasedByAdmin { get; set; }
+
+    public int TotalHolds { get; set; }
+
     public string? Description { get; set; }
 
     public string? Education { get; set; }
@@ -104,6 +120,8 @@ public partial class TblUser
 
     public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
 
+    public virtual ICollection<OtpAttempt> OtpAttempts { get; set; } = new List<OtpAttempt>();
+
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();
@@ -123,6 +141,8 @@ public partial class TblUser
     public virtual ICollection<TblMessage> TblMessageReceiverUsers { get; set; } = new List<TblMessage>();
 
     public virtual ICollection<TblMessage> TblMessageSenderUsers { get; set; } = new List<TblMessage>();
+
+    public virtual ICollection<TblOfferFlag> TblOfferFlags { get; set; } = new List<TblOfferFlag>();
 
     public virtual ICollection<TblOffer> TblOffers { get; set; } = new List<TblOffer>();
 
@@ -145,6 +165,10 @@ public partial class TblUser
     public virtual ICollection<TblUserCertificate> TblUserCertificateApprovedByAdmins { get; set; } = new List<TblUserCertificate>();
 
     public virtual ICollection<TblUserCertificate> TblUserCertificateUsers { get; set; } = new List<TblUserCertificate>();
+
+    public virtual ICollection<TblUserHoldHistory> TblUserHoldHistoryReleasedByAdminNavigations { get; set; } = new List<TblUserHoldHistory>();
+
+    public virtual ICollection<TblUserHoldHistory> TblUserHoldHistoryUsers { get; set; } = new List<TblUserHoldHistory>();
 
     public virtual ICollection<TblUserReport> TblUserReportReportedUsers { get; set; } = new List<TblUserReport>();
 

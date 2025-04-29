@@ -1,0 +1,162 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<OtpAttempt>
+
+@{
+    ViewData["Title"] = $"OTP Logs for {ViewBag.UserName}";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Index","OtpLogs")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">All Attempt Failed Users</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">When</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">Method</th>
+                                        <th scope="col">IP Address</th>
+                                        <th scope="col">Success?</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        var log = Model.Items[i];
+                                        var sr = (Model.Page - 1) * Model.PageSize + i + 1;
+                                        <tr>
+                                            <td class="vam">@sr</td>
+                                            <td class="vam"><span class="fz15 fw400">@log.AttemptedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></td>
+                                            <td class="vam">
+                                                @log.UserName (ID @log.UserId)
+                                            </td>
+                                            <td class="vam"><span class="fz14 fw400">@log.Method</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@log.IpAddress</span></td>
+                                            <td class="vam">
+                                                @if (log.WasSuccessful)
+                                                {
+                                                    <span class="badge bg-success">✔</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">✖</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (Model.TotalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                                            @if (Model.Page > 1)
+                                            {
+                                                <a class="page-link"
+                                                   asp-action="Manage"
+                                                   asp-route-page="@(Model.Page - 1)"
+                                                   asp-route-pageSize="@Model.PageSize">
+                                                    <span class="fas fa-angle-left"></span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                            }
+                                        </li>
+
+                                        <!-- Page numbers -->
+                                        @for (int p = 1; p <= Model.TotalPages; p++)
+                                        {
+                                            <li class="page-item @(p == Model.Page ? "active" : "")">
+                                                @if (p == Model.Page)
+                                                {
+                                                    <span class="page-link">@p</span>
+                                                }
+                                                else
+                                                {
+                                                    <a class="page-link"
+                                                       asp-action="Manage"
+                                                       asp-route-page="@p"
+                                                       asp-route-pageSize="@Model.PageSize">@p</a>
+                                                }
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                                            @if (Model.Page < Model.TotalPages)
+                                            {
+                                                <a class="page-link"
+                                                   asp-action="Manage"
+                                                   asp-route-page="@(Model.Page + 1)"
+                                                   asp-route-pageSize="@Model.PageSize">
+                                                    <span class="fas fa-angle-right"></span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                            }
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @Model.Page of @Model.TotalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

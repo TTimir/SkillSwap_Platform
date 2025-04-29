@@ -11,6 +11,9 @@ using SkillSwap_Platform.Controllers;
 using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.AdminControls;
+using SkillSwap_Platform.Services.AdminControls.Certificate;
+using SkillSwap_Platform.Services.AdminControls.UserManagement;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.DigitalToken;
 using SkillSwap_Platform.Services.Email;
@@ -76,6 +79,13 @@ builder.Services
        .AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
+
+
+// Admin Services
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+builder.Services.AddScoped<ICertificateReviewService, CertificateReviewService>();
+builder.Services.AddScoped<IUserManagmentService, UserManagmentService>();
+builder.Services.AddHostedService<ExpiredHoldCleanupService>();
 
 builder.Services.AddControllersWithViews(options =>
 {
@@ -159,6 +169,8 @@ app.UseSession();
 app.UseAuthentication();  // 🔴 Must be before Authorization
 app.UseAuthorization();
 app.UseMiddleware<UpdateLastActiveMiddleware>();
+
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
