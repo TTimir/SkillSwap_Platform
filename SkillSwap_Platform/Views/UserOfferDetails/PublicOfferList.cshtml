@@ -338,7 +338,7 @@
 
         @if (User.Identity.IsAuthenticated)
         {
-            <section class="mb-5">
+            <section class="mb-1">
                 <h3>Offers Near You</h3>
                 <div id="nearbyOffers">
                     <p>Hang tight, finding swaps near you…</p>
@@ -455,7 +455,7 @@
                                         <span class="fz14">@offer.UserName</span>
                                     </a>
                                     <div class="budget">
-                                        <p class="mb-0 body-color">Time Commit<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
+                                        <p class="mb-0 body-color">Time<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
                                     </div>
                                 </div>
                             </div>

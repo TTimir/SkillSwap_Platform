@@ -453,9 +453,9 @@ namespace SkillSwap_Platform.Controllers
                         .ToList();
 
                     var matchingSkillIds = skillNameIdPairs
-        .Where(x => terms.Contains(x.SkillName.ToLowerInvariant()))
-        .Select(x => x.SkillId)
-        .ToList();
+                        .Where(x => terms.Contains(x.SkillName.ToLowerInvariant()))
+                        .Select(x => x.SkillId)
+                        .ToList();
 
                     // 3) If any, filter by the *first* matching ID via LIKE
                     if (matchingSkillIds.Any())
@@ -700,8 +700,10 @@ namespace SkillSwap_Platform.Controllers
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            // 1) pull all candidate offers into memory (so EF only emits a simple SELECT)
+            // 1) pull only active, non‐deleted offers that aren't yours
+            //    and that have valid offer‐level coords
             var candidates = await _context.TblOffers
+                .Include(o => o.User)
                 .Where(o => o.IsActive
                          && !o.IsDeleted
                          && o.UserId != userId
@@ -709,67 +711,61 @@ namespace SkillSwap_Platform.Controllers
                          && o.Longitude.HasValue)
                 .ToListAsync();
 
-            // 2) Haversine distance
+            // 2) compute Haversine in‐memory
             static double ToRad(double v) => v * Math.PI / 180;
             static double Distance(double la1, double lo1, double la2, double lo2)
             {
                 var R = 6371.0;
                 var dLat = ToRad(la2 - la1);
                 var dLon = ToRad(lo2 - lo1);
-                la1 = ToRad(la1);
-                la2 = ToRad(la2);
+                la1 = ToRad(la1); la2 = ToRad(la2);
                 var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
                       + Math.Cos(la1) * Math.Cos(la2)
                       * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
                 return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             }
 
-            // 3) pick the nearest N offers in memory
             var nearest = candidates
-                .Select(o => new { Offer = o, Dist = Distance(lat, lng, o.Latitude.Value, o.Longitude.Value) })
+                .Select(o => new {
+                    Offer = o,
+                    Dist = Distance(lat, lng, o.Latitude.Value, o.Longitude.Value)
+                })
                 .OrderBy(x => x.Dist)
                 .Take(max)
                 .Select(x => x.Offer)
                 .ToList();
 
-            // 4) now pull **just** the review rows we need (simple SELECT)
-            var nearestIds = nearest.Select(o => o.OfferId).ToList();
-            var rawRatings = await _context.TblReviews
-                .Where(r => nearestIds.Contains(r.OfferId))
-                .Select(r => new { r.OfferId, r.Rating })
+            // 3) pull one GROUP BY over the entire review set
+            var allAgg = await _context.TblReviews
+                .GroupBy(r => r.OfferId)
+                .Select(g => new {
+                    OfferId = g.Key,
+                    ReviewCount = g.Count(),
+                    AvgRating = g.Average(r => (double)r.Rating)
+                })
                 .ToListAsync();
 
-            // 5) group & average **in memory** (no more EF)
-            var reviewAgg = rawRatings
-                .GroupBy(x => x.OfferId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new {
-                        Count = g.Count(),
-                        Avg = g.Average(x => x.Rating)
-                    }
-                );
+            var aggDict = allAgg.ToDictionary(a => a.OfferId);
 
-            // 6) map to your card‐viewmodel
+            // 4) project to your OfferCardVM
             var cards = nearest.Select(o =>
             {
+                aggDict.TryGetValue(o.OfferId, out var a);
                 var imgs = string.IsNullOrWhiteSpace(o.Portfolio)
-                    ? new List<string>()
-                    : JsonConvert.DeserializeObject<List<string>>(o.Portfolio);
-
-                reviewAgg.TryGetValue(o.OfferId, out var agg);
+                           ? new List<string>()
+                           : JsonConvert.DeserializeObject<List<string>>(o.Portfolio);
 
                 return new OfferCardVM
                 {
                     OfferId = o.OfferId,
                     Title = o.Title,
-                    ShortTitle = o.Title.Length > 35 ? o.Title[..35] + "…" : o.Title,
+                    ShortTitle = o.Title.Length > 35 ? o.Title.Substring(0, 35) + "…" : o.Title,
                     Category = o.Category,
                     TokenCost = (int)o.TokenCost,
                     TimeCommitmentDays = o.TimeCommitmentDays,
                     PortfolioImages = imgs,
-                    AverageRating = agg?.Avg ?? 0,
-                    ReviewCount = agg?.Count ?? 0,
+                    AverageRating = a?.AvgRating ?? 0,
+                    ReviewCount = a?.ReviewCount ?? 0,
                     UserName = o.User.UserName,
                     UserProfileImage = o.User.ProfileImageUrl
                 };
