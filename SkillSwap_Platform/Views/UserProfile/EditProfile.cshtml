@@ -67,7 +67,7 @@
 </div>
 </div>
 <div class="alert alert-warning">
-    <strong>Warning:</strong> All data will be saved at once when you click the corresponding save button.
+    <strong>Please note:</strong> Clicking Save anywhere on this page will save and persist all of your changes at once.
 </div>
 @if (TempData["SuccessMessage"] != null)
 {
@@ -145,14 +145,25 @@
                         <div class="col-sm-6">
                             <div class="mb20">
                                 <label asp-for="PersonalDetails.UserName" class="heading-color ff-heading fw500 mb10">UserName <span class="text-danger">*</span></label>
-                                <input asp-for="PersonalDetails.UserName" type="text" class="form-control" readonly disabled>
+                                <input asp-for="PersonalDetails.UserName" type="text" class="form-control" readonly>
                                 <span asp-validation-for="PersonalDetails.UserName" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="mb20">
                                 <label asp-for="PersonalDetails.Email" class="heading-color ff-heading fw500 mb10">Email Address <span class="text-danger">*</span></label>
-                                <input asp-for="PersonalDetails.Email" type="email" class="form-control" placeholder="i will">
+                                <div class="d-flex align-items-center">
+                                    <input asp-for="PersonalDetails.Email"
+                                           type="email"
+                                           class="form-control flex-grow-1"
+                                           placeholder="you@example.com" />
+
+                                    <a asp-action="ConfirmEmailChange"
+                                       asp-controller="UserProfile"
+                                       class="ud-btn btn-thm ms-2 d-flex align-items-center" style="padding:11px 22px;" data-bs-toggle="tooltip" data-bs-placement="right" title="Change Email Address">
+                                        <i class="fal fa-envelope-open-text" style="transform:rotate(0deg); margin-left:0;"></i>
+                                    </a>
+                                </div>
                                 <span asp-validation-for="PersonalDetails.Email" class="text-danger"></span>
                             </div>
                         </div>
@@ -658,7 +669,7 @@
                 </div>
             </div>
         }
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+       @*  <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="bdrb1 pb15 mb25">
                 <h5 class="list-title">Change password</h5>
             </div>
@@ -721,7 +732,7 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </div> *@
     </div>
 </div>
 @section DynamicScript {
@@ -748,8 +759,32 @@
                                     }
                                     var reader = new FileReader();
                                     reader.onload = function (e) {
-                                        img.src = e.target.result;
+                                      var tempImg = new Image();
+                                      tempImg.onload = function () {
+                                        // 2. dimension check
+                                        if (tempImg.width < 330 || tempImg.height < 300) {
+                                          alert('Image must be at least 330 × 300 pixels.');
+                                          event.target.value = '';
+                                          label.text("Upload Images");
+                                          img.src = defaultSrc;
+                                          return;
+                                        }
+
+                                        // 3. draw resized preview
+                                        var canvas = document.createElement('canvas');
+                                        canvas.width  = 330;
+                                        canvas.height = 300;
+                                        var ctx = canvas.getContext('2d');
+
+                                        // if you want to preserve aspect, you could center it:
+                                        // ctx.drawImage(tempImg, dx, dy, dw, dh);
+                                        // but here we just stretch:
+                                        ctx.drawImage(tempImg, 0, 0, 330, 300);
+
+                                        img.src = canvas.toDataURL();
                                         label.text(file.name);
+                                      };
+                                      tempImg.src = e.target.result;
                                     };
                                     reader.readAsDataURL(file);
                                 } else {

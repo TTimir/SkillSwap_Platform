@@ -57,15 +57,27 @@ public partial class TblOffer
 
     public double? RecommendedPercentage { get; set; }
 
+    public int Views { get; set; }
+
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public string? Address { get; set; }
+
     public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 
     public virtual ICollection<TblMessage> TblMessages { get; set; } = new List<TblMessage>();
 
+    public virtual ICollection<TblOfferFlag> TblOfferFlags { get; set; } = new List<TblOfferFlag>();
+
     public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();
 
     public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
+
+    public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
 
     public virtual TblUser User { get; set; } = null!;
 }

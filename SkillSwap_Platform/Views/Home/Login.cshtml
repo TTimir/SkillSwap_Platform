@@ -609,7 +609,7 @@
                             <div class="col-lg-6 m-auto wow fadeInUp" data-wow-delay="300ms">
                                 <div class="main-title text-center">
                                     <h2 class="title">Log In</h2>
-                                    <p class="paragraph">Give your visitor a smooth online experience with a solid UX design</p>
+                                    <p class="paragraph">Welcome back, unlock new possibilities with every click.</p>
                                 </div>
                             </div>
                         </div>
@@ -663,18 +663,19 @@
                                             <input asp-for="RememberMe" type="checkbox" checked="checked">
                                             <span class="checkmark"></span>
                                         </label>
-                                        <a class="fz14 ff-heading" href="#">Lost your password?</a>
+                                        <a class="fz14 ff-heading" href="@Url.ActionLink("ForgotPassword","Home")">Lost your password?</a>
                                     </div>
 
                                     <div class="d-grid mb20">
                                         <button class="ud-btn btn-thm" type="submit">Log In <i class="fal fa-arrow-right-long"></i></button>
                                     </div>
-                                    <div class="hr_content mb20"><hr><span class="hr_top_text">OR</span></div>
-                                    <div class="d-md-flex justify-content-between">
-                                        <button class="ud-btn btn-fb fz14 fw400 mb-2 mb-md-0" type="button"><i class="fab fa-facebook-f pr10"></i> Continue Facebook</button>
-                                        <button class="ud-btn btn-google fz14 fw400 mb-2 mb-md-0" type="button"><i class="fab fa-google"></i> Continue Google</button>
-                                        <button class="ud-btn btn-apple fz14 fw400" type="button"><i class="fab fa-apple"></i> Continue Apple</button>
-                                    </div>
+                                    @* <div class="hr_content mb20"><hr><span class="hr_top_text">OR</span></div>
+                                    <div class="d-md-flex justify-content-center">
+                                        <a asp-controller="Home" asp-action="ExternalLogin" asp-route-provider="Facebook" class="ud-btn btn-fb fz14 fw400 mb-2 mb-md-0"><i class="fab fa-facebook-f pr10"></i> Continue Facebook</a>
+                                        <a asp-controller="Home" asp-action="ExternalLogin" asp-route-provider="Google" class="ud-btn btn-google fz14 fw400 mb-2 mb-md-0"><i class="fab fa-google"></i> Continue Google</a>
+                                        <a asp-controller="Home" asp-action="ExternalLogin" asp-route-provider="Apple" class="ud-btn btn-apple fz14 fw400"><i class="fab fa-apple"></i> Continue Apple</a>
+                                        <a asp-controller="Home" asp-action="ExternalLogin" asp-route-provider="GitHub" class="ud-btn btn-apple fz14 fw400"><i class="fab fa-gitHub"></i> Continue GitHub</a>
+                                    </div> *@
                                 </div>
                             </div>
                         </div>

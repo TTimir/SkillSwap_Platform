@@ -1,0 +1,148 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.Certificate.CertificateReviewDto>
+
+@{
+    ViewData["Title"] = "Rejected";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Index","CertificateReview")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Pending (Action) Certificates</a>
+                        <a href="@Url.ActionLink("Approved","CertificateReview")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Approved Certificates</a>
+                        <a href="@Url.ActionLink("Rejected","CertificateReview")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="false">Rejected Certificates</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">Certificate</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">Submitted</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var cert in Model.Items)
+                                    {
+                                        <tr>
+                                            <th scope="row">
+                                                <div class="freelancer-style1 box-shadow-none row m-0 p-0 align-items-lg-end">
+                                                    <div class="d-lg-flex px-0">
+                                                        <div class="details mb15-md-md">
+                                                            <h5 class="title mb10">@cert.CertificateName</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            <td class="vam"><span class="fz15 fw400">@cert.UserName <i>(@cert.LoginName)</i></span></td>
+                                            <td class="vam"><span class="fz14 fw400">@cert.SubmittedDate.ToString("dd MMMM, yyyy hh:mm tt")</span></td>
+                                            <td class="vam">
+                                                <span class="badge bg-@(
+            cert.Status == "Pending"  ? "secondary" :
+            cert.Status == "Approved" ? "success" : "danger")">
+                                                    @cert.Status
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex">
+                                                    <a asp-action="Details" asp-route-id="@cert.CertificateId" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Review"><span class="flaticon-review-1"></span></a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Rejected"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Rejected"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Rejected"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

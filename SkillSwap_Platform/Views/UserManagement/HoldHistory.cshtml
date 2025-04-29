@@ -1,0 +1,167 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.UserManagement.HoldHistoryEntryDto>
+
+@{
+    ViewData["Title"] = ViewBag.UserName != null
+       ? $"Hold History for {ViewBag.UserName}"
+       : "All User Hold History";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">
+            @if (ViewBag.UserName != null)
+            {
+                <text>All hold/release timeline for this user, most recent first.</text>
+            }
+            else
+            {
+                <text>All hold/release timeline across all users, most recent first.</text>
+            }
+        </p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Manage","UserManagement")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">All Active Users</a>
+                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">History of Hold/ Release</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">Held At (UTC)</th>
+                                        <th scope="col">Category</th>
+                                        <th scope="col">Hold Reason</th>
+                                        <th scope="col">Held Until</th>
+                                        <th scope="col">Released At (UTC)</th>
+                                        <th scope="col">Release Reason</th>
+                                        <th scope="col">By Admin (Held / Release)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var entry in Model.Items)
+                                    {
+                                        <tr>
+                                            <th scope="row">
+                                                <div class="freelancer-style1 box-shadow-none row m-0 p-0 align-items-lg-end">
+                                                    <div class="d-lg-flex px-0">
+                                                        <div class="details mb15-md-md">
+                                                            <h5 class="title mb10">@entry.Id</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            <td class="vam"><span class="fz15 fw400">@entry.UserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@entry.HeldAt.ToString("dd MMM yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@entry.HeldCategory</span></td>
+                                            <td class="vam">
+                                                <span class="d-inline-block text-truncate" style="max-width:230px;">
+                                                    @entry.HeldReason
+                                                </span>
+                                            </td>
+                                            <td class="vam">
+                                                @(entry.HeldUntil?.ToString("dd MMM yyyy HH:mm tt") ?? "—")
+                                            </td class="vam">
+                                            <td class="vam">
+                                                @(entry.ReleaseAt?.ToString("dd MMM yyyy HH:mm tt") ?? "—")
+                                            </td>
+                                            <td class="vam">
+                                                <span class="d-inline-block text-truncate" style="max-width:200px;">
+                                                    @entry.ReleaseReason
+                                                </span>
+                                            </td>
+                                            <td>@entry.HeldByAdmin / @entry.ReleasedByAdmin</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                 var currentUserId = ViewBag.UserId as int?;
+                                 var page       = Model.Page;
+                                 var pageSize   = Model.PageSize;
+                                 var totalCount = Model.TotalCount;
+                                 var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <nav aria-label="Hold history pagination">
+                                    <ul class="pagination">
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               href="@Url.Action("HoldHistory", new { page = page - 1, userId = currentUserId })"
+                                               aria-label="Previous">
+                                                &laquo;
+                                            </a>
+                                        </li>
+                            
+                                        @for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            <li class="page-item @(i == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   href="@Url.Action("HoldHistory", new { page = i, userId = currentUserId })">
+                                                    @i
+                                                </a>
+                                            </li>
+                                        }
+                            
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               href="@Url.Action("HoldHistory", new { page = page + 1, userId = currentUserId })"
+                                               aria-label="Next">
+                                                &raquo;
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+

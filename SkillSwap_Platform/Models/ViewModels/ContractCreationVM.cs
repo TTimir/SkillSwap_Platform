@@ -26,6 +26,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         [Required(ErrorMessage = "Token Offer is required.")]
         [Range(0, double.MaxValue, ErrorMessage = "Token Offer must be 0 or a positive number.")]
         public decimal? TokenOffer { get; set; }
+        public decimal CurrentUserTokenBalance { get; set; }
 
         [Required(ErrorMessage = "Please select an offered skill.")]
         public string OfferedSkill { get; set; }

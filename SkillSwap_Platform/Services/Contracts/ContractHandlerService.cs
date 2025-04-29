@@ -61,10 +61,15 @@ namespace SkillSwap_Platform.Services.Contracts
                     return (false, "Sender or Receiver user not found.");
 
                 bool contractExists = await _context.TblContracts.AnyAsync(c =>
-                    c.MessageId == model.MessageId &&
-                    ((c.SenderUserId == model.SenderUserId && c.ReceiverUserId == model.ReceiverUserId) ||
-                     (c.SenderUserId == model.ReceiverUserId && c.ReceiverUserId == model.SenderUserId))
+                    c.MessageId == model.MessageId
+                    && c.OfferId == model.OfferId
+                    && c.Status != "Declined"
+                    && (
+                         (c.SenderUserId == model.SenderUserId && c.ReceiverUserId == model.ReceiverUserId)
+                      || (c.SenderUserId == model.ReceiverUserId && c.ReceiverUserId == model.SenderUserId)
+                    )
                 );
+
                 if (contractExists)
                 {
                     return (false, "A contract has already been sent for this conversation.");

@@ -1,8 +1,8 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.OfferEditVM
 
 @{
-    ViewData["Title"] = "Edit Offer";
-    ViewData["SubTitle"] = "Give your offer a quick update for better impact.";
+    ViewData["Title"] = "Update Swap Offer";
+    ViewData["SubTitle"] = "Give your swap a quick update for better impact.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -14,7 +14,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Back to Offers<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.Action("OfferList", "UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Back to Swap Offers<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -49,6 +49,8 @@
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.OfferId)
+    @Html.HiddenFor(m => m.Latitude)
+    @Html.HiddenFor(m => m.Longitude)
     <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
         <div class="bdrb1 pb15 mb25">
             <h5 class="list-title">Basic Information</h5>
@@ -56,8 +58,8 @@
         <div class="col-xl-8">
             <div class="row">
                 <div class="col-sm-12 mb20">
-                    <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Offer Title</label>
-                    <input asp-for="Title" type="text" class="form-control" placeholder="Enter offer title">
+                    <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Swap Title</label>
+                    <input asp-for="Title" type="text" class="form-control" placeholder="Enter swap title">
                     <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
                 <div class="col-sm-6 mb20">
@@ -135,7 +137,7 @@
                     <span asp-validation-for="SelectedSkillIds" class="text-danger"></span>
                 </div>
                 <div class="col-sm-6 mb20">
-                    <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Offer Category</label>
+                    <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Swap Category</label>
                     <div class="bootselect-multiselect">
                         <select asp-for="Category" asp-items="Model.CategoryOptions" class="selectpicker" data-live-search="true">
                         <option value="">Select Category</option>
@@ -176,10 +178,34 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-sm-6" id="manualAddress">
+                    <div class="mb20">
+                        <label asp-for="Address">Swap Location <span class="text-danger">*</span> (if you’d rather type than share GPS)</label>
+                        <div class="input-group">
+                            <input asp-for="Address"
+                                   class="form-control"
+                                   placeholder="123 Main St, City…"
+                                   autocomplete="off" />
+
+                            <button type="button"
+                                    id="btnFetchLocation"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-toggle="tooltip" data-bs-placement="right"
+                                    title="Use my current location">
+                                <i class="fas fa-location-arrow"></i>
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">
+                            This will be used when showing <i>' nearby '</i> offers.
+                        </small>
+                        <div id="addressError" class="mt-1 text-danger"></div>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                </div>
                 <div class="col-md-12">
                     <div class="mb10">
                         <label asp-for="ScopeOfWork" class="heading-color ff-heading fw500 mb10">Scope Of Work</label>
-                        <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this offer"></textarea>
+                        <textarea asp-for="ScopeOfWork" cols="30" rows="6" placeholder="Describe what is included in this swap"></textarea>
                         <span asp-validation-for="ScopeOfWork" class="text-danger"></span>
                     </div>
                 </div>
@@ -407,6 +433,75 @@
             $("form").on("submit", function () {
                 $("#uploadImages")[0].files = dt.files;
             });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const btn        = document.getElementById("btnFetchLocation");
+          const addrInput  = document.querySelector('[name="Address"]');
+          const latField   = document.querySelector('[name="Latitude"]');
+          const lngField   = document.querySelector('[name="Longitude"]');
+          const icon       = btn.querySelector("i");
+          const errorDiv   = document.getElementById("addressError");
+
+          btn.addEventListener("click", () => {
+            // clear any previous error
+            errorDiv.textContent = "";
+
+            if (!navigator.geolocation) {
+              errorDiv.textContent = "Geolocation isn’t supported by your browser.";
+              return;
+            }
+
+            // show spinner & disable button
+            btn.disabled = true;
+            icon.classList.add("fa-spin");
+
+            navigator.geolocation.getCurrentPosition(
+            async pos => {
+              const { latitude, longitude } = pos.coords;
+              latField.value = latitude;
+              lngField.value = longitude;
+
+              // 1️⃣ fetch plain text address
+              try {
+                const resp = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                );
+                const data = await resp.json();
+                addrInput.value = data.display_name || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+              } catch (e) {
+                // fallback to coords if reverse-geocode fails
+                addrInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+                errorDiv.textContent = "Couldn’t look up your street address, saved coords instead.";
+              }
+
+              icon.classList.remove("fa-spin");
+              btn.disabled = false;
+            },
+              err => {
+                let msg;
+                switch (err.code) {
+                  case err.PERMISSION_DENIED:
+                    msg = "Permission to access location was denied.";
+                    break;
+                  case err.POSITION_UNAVAILABLE:
+                    msg = "Unable to determine your location.";
+                    break;
+                  case err.TIMEOUT:
+                    msg = "Getting your location timed out.";
+                    break;
+                  default:
+                    msg = "An unknown error occurred.";
+                }
+                // show inline error
+                errorDiv.textContent = msg;
+                icon.classList.remove("fa-spin");
+                btn.disabled = false;
+              },
+              { timeout: 10000 }
+            );
+          });
         });
     </script>
 }

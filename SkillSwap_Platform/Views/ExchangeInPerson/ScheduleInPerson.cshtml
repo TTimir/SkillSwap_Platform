@@ -1,0 +1,226 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.MeetingVM.ScheduleInPersonVM
+
+@{
+    ViewData["Title"] = "In-Person Meeting";
+    ViewData["SubTitle"] = "Arrange your face-to-face meeting at a time that suits you best.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <button type="button" id="topShareButton" class="ud-btn btn-dark">
+            Save & Share<i class="fal fa-arrow-right-long"></i>
+        </button>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb25">
+                <h5 class="list-title">Basic Information</h5>
+            </div>
+            <div class="col-xl-8">
+                <form asp-action="ScheduleInPerson" class="form-style1" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ExchangeId" />
+                    <input type="hidden" asp-for="OtherUserId" />
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="ScheduledDateTime" class="heading-color ff-heading fw500 mb10">Schedule Date</label>
+                                <input asp-for="ScheduledDateTime" type="datetime-local" class="form-control" value="@Model.ScheduledDateTime.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")">
+                                <small class="form-text text-muted">
+                                    Note: <i>The Schedule Time is set +1 hour from now by default. Feel free to change the time if needed.</i>
+                                </small>
+                                <span asp-validation-for="ScheduledDateTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="MeetingDurationMinutes" class="heading-color ff-heading fw500 mb10">Meeting Duration (Minutes)</label>
+                                <input asp-for="MeetingDurationMinutes" type="number" class="form-control" min="1" max="480" placeholder="Enter meeting duration in minutes" />
+                                <small class="form-text text-muted">
+                                    Enter the duration in minutes (e.g., 60 for one hour).
+                                </small>
+                                <span asp-validation-for="MeetingDurationMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="Location" class="heading-color ff-heading fw500 mb10">Meeting Location</label>
+                                <div class="input-group">
+                                    <input asp-for="Location" type="text" class="form-control" placeholder="Enter meeting location" />
+                                    @* <span class="input-group-text" id="getLocationIcon" title="Get Current Location" style="cursor: pointer;background-color:none">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </span> *@
+                                    <button type="button"
+                                            id="getLocationIcon"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="tooltip" data-bs-placement="right"
+                                            title="Use my current location">
+                                        <i class="fas fa-location-arrow"></i>
+                                    </button>
+                                </div>
+                                <div id="locationError" class="mt-1 text-danger"></div>
+                                <span asp-validation-for="Location" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Notes" class="heading-color ff-heading fw500 mb10">Notes</label>
+                                <textarea asp-for="Notes" cols="30" rows="6" placeholder="Notes"></textarea>
+                                <span asp-validation-for="Notes" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Schedule Meeting<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+    #locationError {
+        font-size: 0.875rem;
+        color: #dc3545; /* bootstrap’s “danger” */
+    }
+</style>
+@section DynamicScript {
+    @* <script>
+        document.getElementById('getLocationIcon').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // Build the Nominatim reverse geocoding URL.
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
+
+                    // Fetch the address details from Nominatim.
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                // Set the returned address into the input field.
+                                document.querySelector('input[name="Location"]').value = data.display_name;
+                            } else {
+                                alert("Unable to retrieve address from location data.");
+                            }
+                        })
+                        .catch(error => {
+                            alert("Error fetching address: " + error.message);
+                        });
+                }, function (error) {
+                    alert("Unable to fetch location: " + error.message);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
+    </script> *@
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const btn          = document.getElementById("getLocationIcon");
+          const icon         = btn.querySelector("i");
+          const locInput     = document.querySelector('input[name="Location"]');
+          const errorDiv     = document.getElementById("locationError");
+
+          btn.addEventListener("click", () => {
+            // clear old errors
+            errorDiv.textContent = "";
+
+            if (!navigator.geolocation) {
+              errorDiv.textContent = "Geolocation isn’t supported by your browser.";
+              return;
+            }
+
+            // show spinner & disable
+            btn.disabled = true;
+            icon.classList.add("fa-spin");
+
+            navigator.geolocation.getCurrentPosition(
+              async pos => {
+                try {
+                  const { latitude, longitude } = pos.coords;
+                  // reverse-geocode via OpenStreetMap Nominatim
+                  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+                  const res = await fetch(url);
+                  if (!res.ok) throw new Error("Network response was not OK");
+                  const data = await res.json();
+
+                  if (data.display_name) {
+                    locInput.value = data.display_name;
+                  } else {
+                    errorDiv.textContent = "Couldn’t resolve your address from the location data.";
+                  }
+                } catch (err) {
+                  errorDiv.textContent = "Error fetching address: " + err.message;
+                } finally {
+                  icon.classList.remove("fa-spin");
+                  btn.disabled = false;
+                }
+              },
+              err => {
+                // user denied, timeout, etc.
+                switch (err.code) {
+                  case err.PERMISSION_DENIED:
+                    errorDiv.textContent = "Permission denied for location.";
+                    break;
+                  case err.POSITION_UNAVAILABLE:
+                    errorDiv.textContent = "Position unavailable right now.";
+                    break;
+                  case err.TIMEOUT:
+                    errorDiv.textContent = "Request timed out.";
+                    break;
+                  default:
+                    errorDiv.textContent = "Error getting location.";
+                }
+                icon.classList.remove("fa-spin");
+                btn.disabled = false;
+              },
+              { timeout: 10_000 }
+            );
+          });
+        });
+    </script>
+}

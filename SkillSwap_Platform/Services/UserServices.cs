@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using SkillSwap_Platform.HelperClass;
@@ -11,11 +12,13 @@ namespace SkillSwap_Platform.Services
     {
         private readonly SkillSwapDbContext _dbcontext;
         private readonly IMemoryCache _cache; // ✅ Inject Memory Cache
+        private readonly IPasswordHasher<TblUser> _hasher;
 
-        public UserServices(SkillSwapDbContext context, IMemoryCache cache)
+        public UserServices(SkillSwapDbContext context, IMemoryCache cache, IPasswordHasher<TblUser> hasher)
         {
             _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
             _cache = cache;
+            _hasher = hasher;
         }
 
         public async Task<bool> RegisterUserAsync(TblUser user, string password)
@@ -197,6 +200,71 @@ namespace SkillSwap_Platform.Services
 
             return user;
         }
+
+        /// <summary>
+        /// Safely update a user’s password (hash + salt + new security stamp).
+        /// </summary>
+        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+        {
+            try
+            {
+                var user = await _dbcontext.TblUsers.FindAsync(userId);
+                if (user == null) return false;
+
+                // re‑salt & hash
+                user.Salt = PasswordHelper.GenerateSalt();
+                user.PasswordHash = PasswordHelper.HashPassword(newPassword, user.Salt);
+                user.SecurityStamp = Guid.NewGuid().ToString();
+
+                await _dbcontext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // log and swallow so callers get false
+                // assume you injected ILogger<UserServices> _logger
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Creates and persists a one‑time password reset token for the given user.
+        /// </summary>
+        public async Task<TblPasswordResetToken> GeneratePasswordResetTokenAsync(int userId)
+        {
+            // use a cryptographically strong random token
+            var raw = RandomNumberGenerator.GetBytes(64);
+            var tokenString = Convert.ToBase64String(raw);
+
+            var prt = new TblPasswordResetToken
+            {
+                UserId = userId,
+                Token = tokenString,
+                Expiration = DateTime.UtcNow.AddHours(1),
+                IsUsed = false
+            };
+
+            _dbcontext.TblPasswordResetTokens.Add(prt);
+            await _dbcontext.SaveChangesAsync();
+            return prt;
+        }
+
+        /// <summary>
+        /// Validates a reset token, marks it used, and returns the userId if valid.
+        /// </summary>
+        public async Task<int?> ValidateAndConsumePasswordResetTokenAsync(string token)
+        {
+            var prt = await _dbcontext.TblPasswordResetTokens
+                .FirstOrDefaultAsync(t => t.Token == token);
+
+            if (prt == null || prt.IsUsed || prt.Expiration < DateTime.UtcNow)
+                return null;
+
+            prt.IsUsed = true;
+            await _dbcontext.SaveChangesAsync();
+            return prt.UserId;
+        }
+
 
         public async Task<TblUser> GetUserByUserNameOrEmailAsync(string userName, string email)
         {

@@ -31,6 +31,12 @@ public partial class TblMessage
 
     public int? OfferId { get; set; }
 
+    public string MessageType { get; set; } = null!;
+
+    public int? ResourceId { get; set; }
+
+    public int? ExchangeId { get; set; }
+
     [NotMapped]
     public OfferDisplayVM OfferPreview { get; set; }
     public virtual TblOffer? Offer { get; set; }

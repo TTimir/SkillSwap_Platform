@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.NotificationTrack;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -17,13 +18,14 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<UserOfferManageController> _logger;
         private readonly IWebHostEnvironment _env;
         private readonly IFileService _fileService;
-
-        public UserOfferManageController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IWebHostEnvironment env, IFileService fileService)
+        private readonly INotificationService _notif;
+        public UserOfferManageController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IWebHostEnvironment env, IFileService fileService, INotificationService notif)
         {
             _context = context;
             _logger = logger;
             _env = env;
             _fileService = fileService;
+            _notif = notif;
         }
 
         #region Create Offer
@@ -109,7 +111,6 @@ namespace SkillSwap_Platform.Controllers
                         new SelectListItem { Value = "Programming & Tech", Text = "Programming & Tech" },
                         new SelectListItem { Value = "Business", Text = "Business" },
                         new SelectListItem { Value = "Lifestyle", Text = "Lifestyle" },
-                        new SelectListItem { Value = "Trending", Text = "Trending" }
                     },
                     DeviceOptions = deviceOptions,
                     CollaborationOptions = collaborationMethod,
@@ -129,6 +130,15 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OfferCreateVM model)
         {
+            if (string.IsNullOrWhiteSpace(model.Address)
+                 && (!model.Latitude.HasValue || !model.Longitude.HasValue))
+            {
+                ModelState.AddModelError(
+                    nameof(model.Address),
+                    "Please either type in your address or click the location button to fetch your GPS coordinates."
+                );
+            }
+
             ModelState.Remove("UserSkills");
             ModelState.Remove("DeviceOptions");
             ModelState.Remove("CollaborationOptions");
@@ -188,7 +198,10 @@ namespace SkillSwap_Platform.Controllers
                         SkillIdOfferOwner = SkillIds,
                         Device = devices,
                         Tools = model.Tools,
-                        WillingSkill = model.SelectedWillingSkill
+                        WillingSkill = model.SelectedWillingSkill,
+                        Address = model.Address,
+                        Latitude = model.Latitude,
+                        Longitude = model.Longitude,
                     };
 
                     // Convert selected skill IDs into a comma-separated string and store it.
@@ -232,6 +245,16 @@ namespace SkillSwap_Platform.Controllers
                         offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
                         await _context.SaveChangesAsync();
                     }
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Swap Created",
+                        Message = "You successfully created and published your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
 
@@ -322,6 +345,9 @@ namespace SkillSwap_Platform.Controllers
                     DeviceOptions = deviceOptions,
                     CollaborationOptions = collaborationMethod,
                     SelectedWillingSkill = offer.WillingSkill,
+                    Address = offer.Address,
+                    Longitude = offer.Longitude,
+                    Latitude = offer.Latitude
                 };
 
                 PopulateDropdownsForEdit(model, userId);
@@ -340,6 +366,14 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(OfferEditVM model)
         {
+            if (string.IsNullOrWhiteSpace(model.Address)
+                && (!model.Latitude.HasValue || !model.Longitude.HasValue))
+            {
+                ModelState.AddModelError(
+                    nameof(model.Address),
+                    "Please either type in your address or click the location button to fetch your GPS coordinates."
+                );
+            }
             ModelState.Remove("UserSkills");
             ModelState.Remove("UserLanguages");
             ModelState.Remove("CategoryOptions");
@@ -404,6 +438,9 @@ namespace SkillSwap_Platform.Controllers
                     offer.Tools = model.Tools;
                     offer.CollaborationMethod = model.CollaborationMethod;
                     offer.WillingSkill = model.SelectedWillingSkill;
+                    offer.Address = model.Address;
+                    offer.Latitude = model.Latitude;
+                    offer.Longitude = model.Longitude;
 
                     // Store selected skill IDs as comma-separated.
                     if (model.SelectedSkillIds != null && model.SelectedSkillIds.Any())
@@ -485,6 +522,16 @@ namespace SkillSwap_Platform.Controllers
                     }
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Swap Updated",
+                        Message = "You successfully updated your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
 
@@ -572,6 +619,16 @@ namespace SkillSwap_Platform.Controllers
                     offer.IsActive = false;
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Swap Deleted",
+                        Message = "You successfully deleted and removed your offer.",
+                        Url = Url.Action("DeletedOffers", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
                     TempData["SuccessMessage"] = "Offer has been moved to deleted status. You can restore it within 15 days.";
@@ -676,6 +733,16 @@ namespace SkillSwap_Platform.Controllers
                     offer.IsActive = true; // Optionally, mark as active.
 
                     await _context.SaveChangesAsync();
+
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Swap Restored",
+                        Message = "You successfully restored your offer.",
+                        Url = Url.Action("OfferList", "UserOfferManage"),
+                    });
+
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync(); 
                     TempData["SuccessMessage"] = "Offer has been successfully restored.";

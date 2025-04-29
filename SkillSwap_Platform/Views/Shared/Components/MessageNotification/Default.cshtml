@@ -1,0 +1,46 @@
+﻿@model IEnumerable<NotificationItemVm>
+@using Humanizer
+@using SkillSwap_Platform.Models.ViewModels.NotificationVM
+
+<ul class="dropdown-menu p-2" style="min-width:300px;">
+    @if (!Model.Any())
+    {
+        <li class="text-center text-muted">No new messages</li>
+    }
+    else
+    {
+        @foreach (var msg in Model)
+        {
+            var unreadClass = msg.IsRead ? "" : "fw-bold";
+            <li class="mb-2 @unreadClass">
+                <a asp-controller="Messaging"
+                   asp-action="Conversation"
+                   asp-route-otherUserId="@msg.SenderUserId"
+                   class="d-flex align-items-start py-2 text-decoration-none">
+                    <img src="@Url.Content(msg.ProfileImageUrl)"
+                         class="rounded-circle me-2"
+                         width="40"
+                         alt="@msg.SenderName" />
+                    <div class="flex-grow-1">
+                        <div>
+                            @msg.SenderName
+                        </div>
+                        <div class="small text-truncate" style="max-width:200px;">
+                            @msg.PreviewText
+                        </div>
+                        <div class="small text-thm">
+                            @msg.TimeAgo
+                        </div>
+                    </div>
+                </a>
+            </li>
+            <li><hr class="my-1" /></li>
+        }
+        <hr style="background-color:gray; height: 1px;" />
+        <li class="text-center mb10 d-grid">
+            <a class="w-100" href="@Url.Action("Conversation", "Messaging")">
+                View All Messages <i class="fal fa-arrow-right-long" style="transform: rotate(-45deg)"></i>
+            </a>
+        </li>
+    }
+</ul>

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Net;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
@@ -14,20 +15,138 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using Newtonsoft.Json;
-using SkillSwap_Platform.Models.ViewModels.FreelancersVM;
+using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.PasswordReset;
+using SkillSwap_Platform.HelperClass.Extensions;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
+using SkillSwap_Platform.Services.Newsletter;
+using System.Net;
+using System.Globalization;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
+using SkillSwap_Platform.Controllers.AdminDashboard;
+using SkillSwap_Platform.Services.AdminControls.UserManagement;
+using Microsoft.Extensions.Primitives;
 
 namespace SkillSwap_Platform.Controllers;
 
 public class HomeController : Controller
 {
+    private const string _recentCookie = "RecentlyViewedOffers";
     private readonly IUserServices _userService;
+    private readonly IPasswordResetService _passwordReset;
     private readonly SkillSwapDbContext _dbcontext;
+    private readonly IEmailService _emailService;
+    private readonly INewsletterService _newsletter;
+    private readonly IConfiguration _config;
+    private readonly int _satisfactionThreshold;
+    private readonly ILogger<HomeController> _logger;
+    private readonly IUserManagmentService _usv;
 
-    public HomeController(IUserServices userService, SkillSwapDbContext context)
+    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config, ILogger<HomeController> logger, IUserManagmentService usv)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
+        _passwordReset = passwordReset;
+        _emailService = emailService;
+        _newsletter = newsletter;
+        _config = config;
+        _satisfactionThreshold = config.GetValue<int>("TrustMetrics:SatisfactionThreshold", 4);
+        _logger = logger;
+        _usv = usv;
     }
+
+    // This runs on every request for views that share the layout
+    public override void OnActionExecuting(ActionExecutingContext ctx)
+    {
+        if (User.Identity.IsAuthenticated)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var isHeld = _dbcontext.TblUsers
+                          .Where(u => u.UserId == userId)
+                          .Select(u => u.IsHeld)
+                          .FirstOrDefault();
+            if (isHeld)
+            {
+                // force sign-out
+                HttpContext.SignOutAsync("SkillSwapAuth");
+                TempData["ErrorMessage"] = "Your account has been held. Please contact support.";
+                ctx.Result = RedirectToAction("Login", "Home");
+            }
+        }
+
+        // Grab distinct categories
+        var cats = _dbcontext.TblOffers
+            .Select(o => o.Category)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+        ViewData["FooterCategories"] = cats;
+        base.OnActionExecuting(ctx);
+    }
+
+    #region Subscribe Newsletter
+    // GET /Footer/UnsubscribeNewsletter?email=foo@bar.com
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> UnsubscribeNewsletter(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)
+         || !new EmailAddressAttribute().IsValid(email))
+        {
+            ViewBag.Message = "🔴 That address doesn’t look valid.";
+            return View("UnsubscribeNewsletter");
+        }
+
+        //await _newsletter.UnsubscribeAsync(email);
+        ViewBag.Message = $"✅ {email} has been removed from our mailing list.";
+        return View("UnsubscribeNewsletter");
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubscribeNewsletter(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !new EmailAddressAttribute().IsValid(email))
+        {
+            TempData["NewsletterError"] = "🔴 Please enter a valid email.";
+        }
+        else
+        {
+            await _newsletter.SubscribeAsync(email);
+
+            var unsubscribeUrl = Url.Action(
+                "UnsubscribeNewsletter",
+                "Home",
+                new { email = WebUtility.UrlEncode(email) },
+                protocol: Request.Scheme);
+
+            var subject = "Thanks for subscribing to SkillSwap!";
+            var htmlBody = $@"
+                <p>Hi there,</p>
+                <p>🎉 Thank you for subscribing to the SkillSwap newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
+                <hr/>
+                <p>If you ever wish to unsubscribe, just click the link at the bottom of any newsletter.
+                    <a href=""{unsubscribeUrl}"">unsubscribe</a> at any time.
+                </p>
+                <p>Welcome aboard!<br/>— The SkillSwap Team</p>
+            ";
+
+            await _emailService.SendEmailAsync(
+                to: email,
+                subject: subject,
+                body: htmlBody,
+                isBodyHtml: true
+            );
+            TempData["NewsletterSuccess"] = "✅ Thanks for subscribing!";
+        }
+        // refresh the same page
+        return Redirect(Request.Headers["Referer"].ToString());
+    }
+    #endregion
+
+    #region Menu Pages
 
     public async Task<IActionResult> Index()
     {
@@ -36,6 +155,71 @@ public class HomeController : Controller
             int? currentUserId = User.Identity.IsAuthenticated
                 ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
                 : null;
+
+            double globalAvgRating = 0;
+            if (await _dbcontext.TblReviews.AnyAsync())
+            {
+                globalAvgRating = await _dbcontext.TblReviews
+                    .AverageAsync(r => (double)r.Rating);
+            }
+
+            var totalReviews = await _dbcontext.TblReviews.CountAsync();
+
+            // 2) Reviews at or above threshold
+            var happyReviews = await _dbcontext.TblReviews
+                .Where(r => r.Rating >= _satisfactionThreshold)
+                .CountAsync();
+
+            int satisfactionPct = totalReviews == 0
+                ? 100 // or 0, however you prefer to handle no data
+                : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+            int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+            decimal bonusPct = _config.GetValue<decimal>("TrustMetrics:FreelancerBonusPercent") / 100m;
+            int displayCount = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+
+            int actualTalents = await _dbcontext.TblUsers
+            .Where(u => u.IsActive && u.IsVerified)
+            .CountAsync();
+
+            // 2) read bonus percentage from appsettings.json
+            decimal bonusPercent = _config
+                .GetValue<decimal>("TrustMetrics:TalentsBonusPercent")
+                / 100m;
+
+            // 3) compute displayed number
+            int displayTalents = actualTalents
+                + (int)Math.Ceiling(actualTalents * bonusPercent);
+
+            (string fDisp, string fSfx) = FormatNumber(displayTalents);
+
+            int actualExchanges = await _dbcontext.TblExchanges
+                .Where(x => x.Status == "Completed")
+                .CountAsync();
+
+            int displayExchanges = actualExchanges
+                + (int)Math.Ceiling(actualExchanges * bonusPercent);
+
+            (string eDisp, string eSfx) = FormatNumber(displayExchanges);
+
+            // 1) Group your offers by Category, count them:
+            var cats = await _dbcontext.TblOffers
+                .GroupBy(o => o.Category)
+                .Select(g => new CategoryCardVm
+                {
+                    Name = g.Key,
+                    Slug = g.Key.Replace(" ", "-").ToLowerInvariant(),
+                    IconClass = PickIconClass(g.Key),       // helper to choose the right <span> icon
+                    SkillCount = g.Count(),
+                    Description = $"{g.Count()} skills available"
+                })
+                .ToListAsync();
+
+            // count total skills
+            int totalSkills = await _dbcontext.TblSkills
+                .Select(s => s.SkillName!.Trim().ToLower())  // normalize if needed
+                .Distinct()
+                .CountAsync();
 
             var trendingOffersQuery = _dbcontext.TblOffers
                 .Include(o => o.User)
@@ -55,21 +239,52 @@ public class HomeController : Controller
                 .Take(8)
                 .ToListAsync();
 
-            var trendingOfferVMs = trendingOffers.Select(o => new OfferCardVM
+            // fetch all reviews for those offers in one DB hit
+            var tOfferIds = trendingOffers.Select(o => o.OfferId).ToList();
+            // build a comma‑separated list of parameters
+            var idParams = string.Join(", ", tOfferIds);
+
+            // your raw SQL—no CTE, just a plain GROUP BY
+            var sql = $@"
+                        SELECT 
+                            OfferId, 
+                            COUNT(*)           AS Count, 
+                            AVG(CAST(Rating AS float)) AS Avg 
+                          FROM TblReviews 
+                         WHERE OfferId IN ({idParams})
+                         GROUP BY OfferId;
+                    ";
+
+            var aggregates = await _dbcontext
+                .Set<ReviewAggregate>()              // a “keyless” DbSet<ReviewAggregate> you configure in your DbContext
+                .FromSqlRaw(sql)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var tAggregates = aggregates.ToDictionary(x => x.OfferId);
+
+            var trendingOfferVMs = trendingOffers.Select(o =>
             {
-                OfferId = o.OfferId,
-                Title = o.Title,
-                ShortTitle = o.Title?.Length > 35 ? o.Title.Substring(0, 35) + "..." : o.Title,
-                UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
-                     ? "/template_assets/images/No_Profile_img.png"
-                     : o.User.ProfileImageUrl,
-                // Deserialize the portfolio JSON string into a List<string>.
-                PortfolioImages = !string.IsNullOrWhiteSpace(o.Portfolio)
-                 ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
-                 : new List<string>(),
-                Category = o.Category,
-                UserName = o.User?.UserName ?? "Unknown",
-                TimeCommitmentDays = o.TimeCommitmentDays
+                tAggregates.TryGetValue(o.OfferId, out var agg);
+                return new OfferCardVM
+                {
+                    OfferId = o.OfferId,
+                    Title = o.Title,
+                    ShortTitle = o.Title?.Length > 35 ? o.Title[..35] + "..." : o.Title,
+                    UserProfileImage = string.IsNullOrEmpty(o.User?.ProfileImageUrl)
+                                         ? "/template_assets/images/No_Profile_img.png"
+                                         : o.User.ProfileImageUrl,
+                    PortfolioImages = !string.IsNullOrWhiteSpace(o.Portfolio)
+                                        ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
+                                        : new List<string>(),
+                    Category = o.Category,
+                    UserName = o.User?.UserName ?? "Unknown",
+                    TimeCommitmentDays = o.TimeCommitmentDays,
+
+                    // ⭐ NEW
+                    AverageRating = agg?.Avg ?? 0,
+                    ReviewCount = agg?.Count ?? 0
+                };
             }).ToList();
 
             // Query highest rated freelancers (limit to 10)
@@ -91,25 +306,117 @@ public class HomeController : Controller
                     ? "/template_assets/images/No_Profile_img.png"
                     : u.ProfileImageUrl,
                 Location = u.Country,
-                Rating = u.TblReviewReviewees != null && u.TblReviewReviewees.Any()
-                    ? u.TblReviewReviewees.Average(r => r.Rating)
-                    : 0,
-                JobSuccess = u.JobSuccessRate,
+                Rating = (double)(u.AverageRating ?? 0m),
+                ReviewCount = u.ReviewCount ?? 0,
+                JobSuccess = u.JobSuccessRate ?? 0,
+                Recommendation = u.RecommendedPercentage ?? 0,
                 OfferedSkillAreas = u.TblUserSkills
                     .Where(us => us.IsOffering)
                     .OrderByDescending(us => us.ProficiencyLevel)
                     .Take(3)
                     .Select(us => us.Skill.SkillName)
                     .ToList(),
-                Recommendation = u.RecommendedPercentage
             }).ToList();
+
+            //// 4) Top skills in the visitor’s country
+            //var acceptLang = HttpContext.Request.Headers["Accept-Language"].ToString();
+            //string lang = acceptLang.Split(',').FirstOrDefault() ?? "";
+
+            //RegionInfo region;
+            //try
+            //{
+            //    // 2) Create a CultureInfo ("en-US") then RegionInfo("US")
+            //    var ci = new CultureInfo(lang);
+            //    region = new RegionInfo(ci.Name);
+            //}
+            //catch
+            //{
+            //    // fallback if it wasn’t a well-formed culture
+            //    region = RegionInfo.CurrentRegion;
+            //}
+
+            //// Now you have both:
+            //string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
+            //string countryName = region.EnglishName;             // e.g. "India"
 
             var vm = new HomePageVM
             {
                 TrendingOffers = trendingOfferVMs,
                 HighestRatedFreelancers = highestRatedFreelancersVM,
-                TrendingOffersByCategory = new List<CategoryOffers>()
+                TrendingOffersByCategory = new List<CategoryOffers>(),
+                PopularCategories = cats,
+                TotalSkills = totalSkills,
+                TalentsDisplayValue = fDisp,
+                TalentsSuffix = fSfx,
+                ExchangeDisplayValue = eDisp,
+                ExchangeSuffix = eSfx,
+                GlobalAverageRating = Math.Round(globalAvgRating, 1),
+                SwapSatisfactionPercent = satisfactionPct,
+                EarlyAdopterCount = displayCount,
+                //UserCountryIso = countryIso,
+                //UserCountryName = countryName,
             };
+
+            // 1) TOP SKILLS overall (by # of offers)
+            var topSkills = await _dbcontext.TblUserSkills
+                .Where(us => us.IsOffering)
+                .GroupBy(us => us.Skill.SkillName)
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(20)
+                .ToListAsync();
+            vm.TopSkills = topSkills.Select(x => x.Name).ToList();
+
+            // 2) TRENDING SKILLS (last 7-day spike)
+            var weekAgo = DateTime.UtcNow.AddDays(-7);
+            var trending = await _dbcontext.TblUserSkills
+                .Where(us => us.IsOffering)
+                .GroupBy(us => us.Skill.SkillName)
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(20)
+                .ToListAsync();
+            vm.TrendingSkills = trending.Select(x => x.Name).ToList();
+
+            // 4) PROJECT CATALOG — e.g. distinct portfolio tags, or reuse topSkills:
+            vm.ProjectCatalog = vm.TopSkills.Take(20).ToList();
+
+            var goodSwaps = await _dbcontext.TblOffers
+                .Where(o => o.IsActive && !o.IsDeleted && (!currentUserId.HasValue || o.UserId != currentUserId.Value))
+                .OrderByDescending(o => o.JobSuccessRate)
+                .ThenByDescending(o => o.TokenCost)
+                .Take(10)
+                .Select(o => new OfferCardVM
+                {
+                    OfferId = o.OfferId,
+                    ShortTitle = o.Title!.Length > 35
+                                          ? o.Title.Substring(0, 35) + "…"
+                                          : o.Title,
+                })
+                .ToListAsync();
+            vm.GoodSwaps = goodSwaps;
+
+            const string sessionsKey = "RecentOfferSummaries";
+            List<int> recentIds;
+            if (Request.Cookies.TryGetValue(sessionsKey, out var json))
+            {
+                try
+                {
+                    recentIds = JsonConvert.DeserializeObject<List<int>>(json) ?? new List<int>();
+                }
+                catch
+                {
+                    recentIds = new List<int>();
+                }
+            }
+            else
+            {
+                recentIds = new List<int>();
+            }
+
+            vm.RecentlyViewedOffers = HttpContext.Session
+                .GetObjectFromJson<List<OfferCardVM>>(sessionsKey)
+                ?? new List<OfferCardVM>();
 
             ViewBag.SuccessMessage = TempData.ContainsKey("SuccessMessage") ? TempData["SuccessMessage"] : null;
             ViewBag.ErrorMessage = TempData.ContainsKey("ErrorMessage") ? TempData["ErrorMessage"] : null;
@@ -123,6 +430,416 @@ public class HomeController : Controller
         }
 
     }
+
+    public async Task<IActionResult> HowItWorks()
+    {
+        // 1) Active Swappers
+        int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+        decimal talentsBonus = _config.GetValue<decimal>("TrustMetrics:TalentsBonusPercent") / 100m;
+        int displayTalents = actualUsers + (int)Math.Ceiling(actualUsers * talentsBonus);
+        var (tDisp, tSfx) = FormatNumber(displayTalents);
+
+        // 2) Member Satisfaction (% positive reviews)
+        int totalReviews = await _dbcontext.TblReviews.CountAsync();
+        int happyReviews = await _dbcontext.TblReviews
+            .CountAsync(r => r.Rating >= _satisfactionThreshold);
+        int satisfactionPct = totalReviews == 0
+            ? 100
+            : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+        // 3) Swaps Completed
+        //int completedExchanges = await _dbcontext.TblExchanges
+        //    .CountAsync(e => e.Status == "Completed");
+        //decimal exchangeBonus = _config.GetValue<decimal>("TrustMetrics:FreelancerBonusPercent") / 100m;
+        //int displayExchanges = completedExchanges
+        //    + (int)Math.Ceiling(completedExchanges * exchangeBonus);
+        //var (eDisp, eSfx) = FormatNumber(displayExchanges);
+
+        // 4) Swap Success Rate (global % of completed / total)
+        //int totalExchanges = await _dbcontext.TblExchanges.CountAsync();
+        //int globalSuccess = totalExchanges == 0
+        //    ? 100
+        //    : (int)Math.Round(completedExchanges * 100m / totalExchanges);
+
+        // read the 35% bonus
+        int bonusPct = _config.GetValue<int>("TrustMetrics:TalentsBonusPercent");
+
+        // 1) raw completed swaps
+        int completedSwaps = await _dbcontext.TblExchanges
+            .CountAsync(e => e.Status == "Completed");
+
+        // apply bonus
+        int bonusSwaps = (int)Math.Ceiling(completedSwaps * (bonusPct / 100m));
+        int displaySwaps = completedSwaps + bonusSwaps;
+
+        // format with K/M suffix
+        var (swapDisp, swapSfx) = FormatNumber(displaySwaps);
+
+        // 2) raw success rate
+        int totalSwaps = await _dbcontext.TblExchanges.CountAsync();
+        int rawSuccessPct = totalSwaps == 0
+            ? 100
+            : (int)Math.Round(completedSwaps * 100m / totalSwaps);
+
+        // apply that same bonus percent to the rate
+        int adjustedSuccess = rawSuccessPct
+            + (int)Math.Ceiling(rawSuccessPct * (bonusPct / 100m));
+
+        var vm = new HowItWorksVM
+        {
+            TalentsDisplayValue = tDisp,
+            TalentsSuffix = tSfx,
+            SwapSatisfactionPercent = satisfactionPct,
+            //ExchangeDisplayValue = eDisp,
+            //ExchangeSuffix = eSfx,
+            //GlobalSuccessRate = globalSuccess,
+            SwapsCompletedValue = swapDisp,
+            SwapsCompletedSuffix = swapSfx,
+
+            AdjustedSuccessRate = adjustedSuccess,
+        };
+
+        // Now load your spotlight members (top 5 for example)
+        var topUsers = await _dbcontext.TblUsers
+            .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
+            .Include(u => u.TblReviewReviewees)
+            .Where(u => u.IsVerified && u.IsActive)
+            .OrderByDescending(u => u.JobSuccessRate)
+            .ThenByDescending(u => u.ReviewCount)
+            .Take(6)
+            .ToListAsync();
+
+        // Map to FreelancerCardVM
+        vm.CommunitySpotlight = topUsers.Select(u => new FreelancerCardVM
+        {
+            UserId = u.UserId,
+            Name = u.UserName,
+            Designation = u.Designation,
+            ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
+                              ? "/template_assets/images/No_Profile_img.png"
+                              : u.ProfileImageUrl,
+            Location = u.Country,
+            Rating = (double)(u.AverageRating ?? 0m),
+            ReviewCount = u.ReviewCount ?? 0,
+            JobSuccess = u.JobSuccessRate ?? 0,
+            Recommendation = u.RecommendedPercentage ?? 0,
+            OfferedSkillAreas = u.TblUserSkills
+                .Where(us => us.IsOffering)
+                .OrderByDescending(us => us.ProficiencyLevel)
+                .Take(3)
+                .Select(us => us.Skill.SkillName)
+                .ToList()
+        }).ToList();
+
+
+        return View(vm);
+    }
+
+    public async Task<IActionResult> About()
+    {
+        // 1) Active Swappers + bonus
+        int actualUsers = await _dbcontext.TblUsers.CountAsync(u => u.IsActive);
+        decimal bonusPct = _config.GetValue<decimal>("TrustMetrics:TalentsBonusPercent") / 100m;
+        int displayTalentsRaw = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+        var (tDisp, tSfx) = FormatNumber(displayTalentsRaw);
+
+        // 2) Satisfaction %
+        int totalReviews = await _dbcontext.TblReviews.CountAsync();
+        int happyReviews = await _dbcontext.TblReviews.CountAsync(r => r.Rating >= _config.GetValue<int>("TrustMetrics:SatisfactionThreshold"));
+        int satisfactionPct = totalReviews == 0
+            ? 100
+            : (int)Math.Round(happyReviews * 100m / totalReviews);
+
+        // 3) Completed swaps + bonus
+        int completedSwaps = await _dbcontext.TblExchanges.CountAsync(e => e.Status == "Completed");
+        int bonusSwaps = (int)Math.Ceiling(completedSwaps * bonusPct);
+        int displaySwaps = completedSwaps + bonusSwaps;
+        var (swapDisp, swapSfx) = FormatNumber(displaySwaps);
+
+        // 4) Adjusted success rate
+        int totalSwaps = await _dbcontext.TblExchanges.CountAsync();
+        int rawSuccessPct = totalSwaps == 0
+            ? 100
+            : (int)Math.Round(completedSwaps * 100m / totalSwaps);
+        int adjustedSuccess = rawSuccessPct + (int)Math.Ceiling(rawSuccessPct * bonusPct);
+
+        int displayCount = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
+
+        // 1. Pull down only the Experience strings:
+        var experienceStrings = await _dbcontext.TblUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Experience))
+            .Select(u => u.Experience)
+            .ToListAsync();
+
+        // 2. Parse & compute average in C#:
+        var regex = new Regex(@"(\d+(\.\d+)?)");
+        var numericExps = experienceStrings
+            .Select(s =>
+            {
+                // Find the first numeric match (e.g. "1.6")
+                var m = regex.Match(s);
+                if (m.Success &&
+                    double.TryParse(m.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var yrs))
+                {
+                    return yrs;
+                }
+                return 0d;
+            })
+            .Where(v => v > 0)
+            .ToList();
+
+        // 3. Compute the average (or zero if no valid entries)
+        var avgExp = numericExps.Any()
+            ? numericExps.Average()
+            : 0d;
+
+        // 4. Round or format as desired before sending to the view-model
+        var roundedAvg = Math.Round(avgExp, 1);  // e.g. 1.6
+
+        // 1) Pull the top 4 verified, active users ordered by success → reviews
+        var top4 = await _dbcontext.TblUsers
+            .Where(u => u.IsVerified && u.IsActive)
+            .Select(u => new
+            {
+                u.UserId,
+                u.UserName,
+                u.Designation,
+                ProfileImage = string.IsNullOrEmpty(u.ProfileImageUrl)
+                                    ? "/template_assets/images/No_Profile_img.png"
+                                    : u.ProfileImageUrl,
+                u.Country,
+                // compute review metrics inline
+                ReviewCount = _dbcontext.TblReviews.Count(r => r.UserId == u.UserId),
+                AvgRating = _dbcontext.TblReviews
+                                  .Where(r => r.UserId == u.UserId)
+                                  .Select(r => (double?)r.Rating)
+                                  .Average() ?? 0,
+                RecPct = _dbcontext.TblReviews
+                                  .Where(r => r.UserId == u.UserId && r.Rating >= 4)
+                                  .Count() * 100.0
+                              / Math.Max(1, _dbcontext.TblReviews.Count(r => r.UserId == u.UserId)),
+                // compute success %
+                TotalEx = _dbcontext.TblExchanges
+                                .Count(e => e.OfferOwnerId == u.UserId || e.OtherUserId == u.UserId),
+                CompletedEx = _dbcontext.TblExchanges
+                                .Count(e => (e.OfferOwnerId == u.UserId || e.OtherUserId == u.UserId)
+                                            && e.Status == "Completed"),
+                // take up to 3 offered skills
+                TopSkills = _dbcontext.TblUserSkills
+                                .Where(us => us.UserId == u.UserId && us.IsOffering)
+                                .OrderByDescending(us => us.ProficiencyLevel)
+                                .Take(3)
+                                .Select(us => us.Skill.SkillName)
+                                .ToList()
+            })
+            .ToListAsync();
+
+        // 2) project into your view‐model
+        var spotlight = top4
+            .Select(x => new FreelancerCardVM
+            {
+                UserId = x.UserId,
+                Name = x.UserName,
+                Designation = x.Designation,
+                ProfileImage = x.ProfileImage,
+                Location = x.Country,
+                Rating = x.AvgRating,
+                ReviewCount = x.ReviewCount,
+                Recommendation = x.RecPct,
+                JobSuccess = x.TotalEx > 0
+                                     ? x.CompletedEx * 100.0 / x.TotalEx
+                                     : 0,
+                OfferedSkillAreas = x.TopSkills
+            })
+            .OrderByDescending(u => u.Rating)         // optional: sort the final 4 how you like
+            .ThenByDescending(u => u.Recommendation)
+            .ToList();
+
+        // base count:
+        int baseCount = spotlight.Count;
+
+        // apply it:
+        int boostedCount = baseCount + (int)Math.Ceiling(baseCount * bonusPct);
+
+        // format with your existing helper:
+        var (vfDisp, vfSuffix) = FormatNumber(boostedCount);
+
+        var vm = new AboutUsVM
+        {
+            TalentsDisplayValue = tDisp,
+            TalentsSuffix = tSfx,
+            SwapSatisfactionPercent = satisfactionPct,
+            SwapsCompletedValue = swapDisp,
+            SwapsCompletedSuffix = swapSfx,
+            AdjustedSuccessRate = adjustedSuccess,
+            EarlyAdopterCount = displayCount,
+            AverageExperience = avgExp,
+            CommunitySpotlight = spotlight,
+            VerifiedCountDisplay = vfDisp,
+            VerifiedCountSuffix = vfSuffix
+        };
+
+        return View(vm);
+    }
+
+    [HttpGet]
+    public IActionResult Contact()
+        => View(new ContactFormVM());
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Contact(ContactFormVM form)
+    {
+        if (form.Attachment != null && form.Attachment.Length > 0)
+        {
+            const long MAX_BYTES = 2 * 1024 * 1024;           // 2 MB
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            var ext = Path.GetExtension(form.Attachment.FileName)?.ToLowerInvariant();
+
+            if (form.Attachment.Length > MAX_BYTES)
+                ModelState.AddModelError(
+                    nameof(form.Attachment),
+                    "Max file size is 2 MB.");
+
+            if (string.IsNullOrEmpty(ext) || !allowed.Contains(ext))
+                ModelState.AddModelError(
+                    nameof(form.Attachment),
+                    "Allowed file types: .jpg, .png, .pdf");
+        }
+
+        if (!ModelState.IsValid)
+            return View(form);
+
+        // 1) Save to DB
+        var msg = new TblUserContactRequest
+        {
+            Name = form.Name,
+            Email = form.Email,
+            Phone = form.Phone,
+            Subject = form.Subject,
+            Category = form.Category,
+            Message = form.Message,
+            IsResolved = false,
+            HasSupportContacted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        _dbcontext.TblUserContactRequests.Add(msg);
+        await _dbcontext.SaveChangesAsync();
+
+        if (form.Attachment != null && form.Attachment.Length > 0)
+        {
+            using var ms = new MemoryStream();
+            await form.Attachment.CopyToAsync(ms);
+
+            msg.AttachmentData = ms.ToArray();
+            msg.AttachmentFilename = form.Attachment.FileName;
+            msg.AttachmentContentType = form.Attachment.ContentType;
+
+            // Update the record
+            _dbcontext.TblUserContactRequests.Update(msg);
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        // 2) Send confirmation to user
+        var userBody = $@"
+            <p>Hi {form.Name},</p>
+
+            <p>Thanks for reaching out to SkillSwap! We’ve received your message about “<b>{form.Subject}</b>” in the {form.Category} category:</p>
+
+            <blockquote style=""border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;"">
+                {form.Message}
+            </blockquote>
+
+            <p>One of our team members will review your request and be in touch within 24 hours. We appreciate you being part of our community and look forward to helping you swap skills with confidence.</p>
+
+            <p>Warm regards,<br/>
+            The SkillSwap Team</p>";
+
+
+        await _emailService.SendEmailAsync(
+            to: form.Email,
+            subject: "We’ve received your support request",
+            body: userBody,
+            isBodyHtml: true
+        );
+
+        TempData["ContactSuccess"] = "Thank you! Your message has been sent.";
+        return RedirectToAction(nameof(Contact));
+    }
+
+    #endregion
+
+    #region External Login
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult ExternalLogin(string provider, string returnUrl = "/")
+    {
+        if (string.IsNullOrEmpty(provider))
+            return RedirectToAction(nameof(Login));
+
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), new { returnUrl });
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = redirectUrl,
+            Items = { { "scheme", provider } }
+        };
+        return Challenge(props, provider);
+    }
+
+    // handles Google’s callback
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> ExternalLoginCallback(string returnUrl = "/")
+    {
+        // grab the result
+        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        if (!result.Succeeded)
+            return RedirectToAction(nameof(Login));
+
+        // pull the email claim
+        var email = result.Principal.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(email))
+            return RedirectToAction(nameof(Login));
+
+        // lookup or create your user
+        var user = await _userService.GetUserByUserNameOrEmailAsync(null, email);
+        if (user == null)
+        {
+            user = new TblUser
+            {
+                Email = email,
+                UserName = email,
+                IsVerified = true,
+                IsActive = true
+            };
+            await _userService.RegisterUserAsync(user, Guid.NewGuid().ToString("N"));
+        }
+
+        if (user.IsHeld)
+        {
+            TempData["ErrorMessage"] = "🚫 Your account has been held by an administrator. Please contact support.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        // If their hold has expired, auto-release them now
+        if (user.IsHeld && user.HeldUntil.HasValue && user.HeldUntil <= DateTime.UtcNow)
+        {
+            await _usv.ReleaseUserAsync(
+                user.UserId,
+                reason: "Auto-released on login",
+                adminId: null);
+            // Refresh the user object
+            user = await _userService.GetUserByIdAsync(user.UserId);
+        }
+
+        // sign in locally
+        await SignInUserAsync(user, true);
+
+        // clear the external cookie
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return LocalRedirect(returnUrl);
+    }
+
+    #endregion
 
     #region Register
 
@@ -239,6 +956,25 @@ public class HomeController : Controller
                 return View(model);
             }
 
+
+            // If their hold has expired, auto-release them now
+            if (user.IsHeld && user.HeldUntil.HasValue && user.HeldUntil <= DateTime.UtcNow)
+            {
+                await _usv.ReleaseUserAsync(
+                    user.UserId,
+                    reason: "Auto-released on login",
+                    adminId: null);
+                // Refresh the user object
+                user = await _userService.GetUserByIdAsync(user.UserId);
+            }
+
+            if (user.IsHeld)
+            {
+                // you could also read LockoutEndTime if you want to show how long
+                TempData["ErrorMessage"] = "🚫 Your account has been held by an administrator. Please contact support.";
+                return View(model);
+            }
+
             // Check if the user is locked out.
             if (user.FailedOtpAttempts >= 5 && user.LockoutEndTime.HasValue && user.LockoutEndTime > DateTime.UtcNow)
             {
@@ -293,7 +1029,7 @@ public class HomeController : Controller
 
     // GET: /Home/LoginOtp
     [HttpGet]
-    public IActionResult LoginOtp(string returnUrl = null)
+    public async Task<IActionResult> LoginOtp(string returnUrl = null)
     {
         var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
         if (loginUser == null)
@@ -301,6 +1037,42 @@ public class HomeController : Controller
             TempData["ErrorMessage"] = "Session expired. Please log in again.";
             return RedirectToAction("Login");
         }
+
+        // Check if we already have an OTP and it’s still valid
+        var existing = HttpContext.Session.GetString("LoginEmailOtp");
+        var expiresString = HttpContext.Session.GetString("LoginEmailOtp_Expires");
+        var needsNewOtp = string.IsNullOrEmpty(existing)
+                      || !DateTimeOffset.TryParse(expiresString, out var exp)
+                      || DateTimeOffset.UtcNow >= exp;
+
+        if (needsNewOtp)
+        {
+            // generate & email OTP
+            var emailOtp = new Random().Next(100000, 999999).ToString();
+            HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
+            HttpContext.Session.SetString("LoginEmailOtp_Expires", DateTimeOffset.UtcNow.AddMinutes(5).ToString());
+
+            var htmlBody = $@"
+                  <p>Hi {loginUser.UserName},</p>
+                  <p>Here’s your one‑time login code: <strong>{emailOtp}</strong></p>
+                  <p>
+                    Enter this code on the SkillSwap login screen to access your account.<br/>
+                    The code is valid for the next 05 minutes.
+                  </p>
+                  <p>If you didn’t request this code, you can safely ignore this email.</p>
+                  <p>Thanks for being part of SkillSwap!<br/>
+                     The SkillSwap Team
+                  </p>
+                ";
+
+            await _emailService.SendEmailAsync(
+                loginUser.Email,
+                "Your SkillSwap login code",
+                htmlBody,
+                isBodyHtml: true    // or however your service flags an HTML payload
+            );
+        }
+
         ViewBag.ReturnUrl = returnUrl;
         return View(loginUser);
     }
@@ -317,13 +1089,127 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
+        // Pull a fresh copy from the database so we can update their counters
+        var user = await _dbcontext.TblUsers.FindAsync(loginUser.UserId);
+        if (user == null)
+        {
+            _logger.LogError("LoginOtp: user {UserId} not found in System", loginUser.UserId);
+            TempData["ErrorMessage"] = "An unexpected error occurred. Please try again.";
+            return RedirectToAction("Login");
+        }
+
+        // 1) Gather context
+        string ip;
+        // 1a) First check for X-Forwarded-For (may be a comma-separated list; take the first)
+        if (HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var fwd)
+            && !StringValues.IsNullOrEmpty(fwd))
+        {
+            ip = fwd.ToString().Split(',')[0].Trim();
+        }
+        else if (HttpContext.Connection.RemoteIpAddress != null)
+        {
+            var addr = HttpContext.Connection.RemoteIpAddress!;
+            // if it’s any loopback (127.0.0.1 or ::1), normalize to IPv4 127.0.0.1
+            if (IPAddress.IsLoopback(addr))
+            {
+                ip = IPAddress.Loopback.ToString();  // "127.0.0.1"
+            }
+            else
+            {
+                // for IPv6-mapped IPv4, or real IPv6, this will map back to IPv4 where possible
+                ip = addr.MapToIPv4().ToString();
+            }
+        }
+        else
+        {
+            ip = "unknown";
+        }
+
+        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
+        var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
+        bool isEmailOk = emailOtp != null && emailOtp == otp;
+        var method = isTotpOk ? "TOTP" : "Email";
+
+        // 2) Log the attempt immediately (fail by default)
+        var attempt = new OtpAttempt
+        {
+            UserId = user.UserId,
+            UserName = user.UserName,
+            AttemptedAt = DateTime.UtcNow,
+            WasSuccessful = false,
+            Method = method,
+            IpAddress = ip
+        };
+        _dbcontext.OtpAttempts.Add(attempt);
+        await _dbcontext.SaveChangesAsync();
+
         try
         {
-            // Verify the OTP.
-            if (!TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp))
+            if (!isTotpOk && !isEmailOk)
             {
-                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
-                return RedirectToAction("LoginOtp", new { returnUrl });
+                // 1) Increment the failure count
+                user.FailedOtpAttempts++;
+
+                // 2) If they've now reached 5 failures, lock them out for 15 minutes
+                if (user.FailedOtpAttempts >= 5)
+                {
+                    user.LockoutEndTime = DateTime.UtcNow.AddMinutes(15);
+
+                    // Notify by email
+                    var lockSubject = "Your SkillSwap Login Temporarily Locked";
+                    var lockBody = $@"
+                        <p>Hi {user.FirstName},</p>
+                        <p>Due to multiple unsuccessful login attempts, your account is locked for 15 minutes from now.</p>
+                        <p>Please wait until <strong>{user.LockoutEndTime:dd MMM yyyy HH:mm} UTC</strong> before trying again.</p>
+                        <p>If this wasn’t you, contact us at <a href=""mailto:support@skillswap.com"">support@skillswap.com</a>.</p>
+                        <p>— The SkillSwap Team</p>";
+                    await _emailService.SendEmailAsync(user.Email, lockSubject, lockBody, isBodyHtml: true);
+                }
+
+                // 3) Persist the incremented count (and lockout if set)
+                await _dbcontext.SaveChangesAsync();
+
+                // 5) Show the appropriate message
+                if (user.FailedOtpAttempts >= 5)
+                {
+                    TempData["ErrorMessage"] = "🚫 Too many failed attempts. Your account is locked for 15 minutes.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "❌ Invalid code. Please try again.";
+                }
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "❌ Your code has expired. Please request a new one.");
+
+                ViewBag.ReturnUrl = returnUrl;
+                return View(loginUser);
+            }
+
+            attempt.WasSuccessful = true;
+            await _dbcontext.SaveChangesAsync();
+
+            var expires = DateTimeOffset.Parse(HttpContext.Session.GetString("LoginEmailOtp_Expires"));
+            if (DateTimeOffset.UtcNow > expires)
+            {
+                TempData["ErrorMessage"] = "❌ That code has expired. Please request a new one.";
+                return RedirectToAction(nameof(LoginOtp));
+            }
+
+            // ✔️ Good OTP: reset failure count & lockout, persist once
+            user.FailedOtpAttempts = 0;
+            user.LockoutEndTime = null;
+            await _dbcontext.SaveChangesAsync();
+
+            HttpContext.Session.Remove("LoginEmailOtp");
+            HttpContext.Session.Remove("LoginEmailOtp_Expires");
+
+            // clear it so it can't be replayed
+            if (user.FailedOtpAttempts >= 5)
+            {
+                HttpContext.Session.Remove("LoginEmailOtp");
+                HttpContext.Session.Remove("LoginEmailOtp_Expires");
             }
 
             // OTP is valid, sign in the user
@@ -358,6 +1244,29 @@ public class HomeController : Controller
             return RedirectToAction("Register");
         }
 
+        // 1️⃣ Generate email OTP
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        HttpContext.Session.SetString("EmailOtp", emailOtp);
+
+        var htmlBody = $@"
+              <p>Hi {tempUser.UserName},</p>
+              <p>Thanks for joining <strong>SkillSwap</strong>! Here’s your one‑time verification code: <strong>{emailOtp}</strong></p>
+              <p>Enter this code to verify your email and activate your account.<br/>
+                 The code is valid for the next 05 minutes.</p>
+              <p>If you didn’t request this, feel free to ignore this message.</p>
+              <p>Welcome aboard,<br/>The SkillSwap Team</p>
+            ".Trim();
+
+        // 2️⃣ Send it
+        await _emailService.SendEmailAsync(
+            tempUser.Email,
+            subject: "Your SkillSwap verification code",
+            htmlBody,
+            isBodyHtml: true
+            );
+
+        TempData["EmailOtpSent"] = true;
+
         // Generate QR Code URL for TOTP setup.
         string qrCodeUrl = TotpHelper.GenerateQrCodeUrl(tempUser.TotpSecret, tempUser.Email);
         ViewBag.QrCodeUrl = qrCodeUrl;
@@ -371,7 +1280,6 @@ public class HomeController : Controller
         try
         {
             var tempUser = HttpContext.Session.GetObjectFromJson<TblUser>("TempUser");
-            string password = HttpContext.Session.GetString("TempUser_Password");
 
             if (tempUser == null || tempUser.Email != email)
             {
@@ -379,12 +1287,29 @@ public class HomeController : Controller
                 return RedirectToAction("Register");
             }
 
-            // Verify OTP.
-            if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+            // pull the email‐OTP we stored
+            var emailOtp = HttpContext.Session.GetString("EmailOtp");
+
+            // check Google Auth TOTP
+            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp);
+            // check email‐OTP
+            bool isEmailValid = emailOtp != null && emailOtp == otp;
+
+            if (!isTotpValid && !isEmailValid)
             {
-                TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+                TempData["ErrorMessage"] = "❌ Invalid code. Try your authenticator app or the email code.";
                 return View("Setup2FA");
             }
+
+            tempUser.EmailConfirmed = true;
+            string password = HttpContext.Session.GetString("TempUser_Password");
+
+            // Verify OTP.
+            //if (!TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp))
+            //{
+            //    TempData["ErrorMessage"] = "❌ Invalid OTP. Try again.";
+            //    return View("Setup2FA");
+            //}
 
             // Create and register the new user.
             var newUser = new TblUser
@@ -395,7 +1320,8 @@ public class HomeController : Controller
                 Email = tempUser.Email,
                 ContactNo = tempUser.ContactNo,
                 TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
-                IsOnboardingCompleted = false // 🚀 Ensuring user lands on onboarding
+                IsOnboardingCompleted = false, // 🚀 Ensuring user lands on onboarding
+                EmailConfirmed = true
             };
 
             var result = await _userService.RegisterUserAsync(newUser, password);
@@ -404,7 +1330,19 @@ public class HomeController : Controller
                 TempData["ErrorMessage"] = "⚠️ Registration failed. Please try again.";
                 return View("Setup2FA");
             }
-            HttpContext.Session.Clear();
+
+            // seed mining progress for this brand-new user
+            _dbcontext.UserMiningProgresses.Add(new UserMiningProgress
+            {
+                UserId = newUser.UserId,
+                LastEmittedUtc = DateTime.UtcNow,
+                EmittedToday = 0m,
+                IsMiningAllowed = true
+            });
+            await _dbcontext.SaveChangesAsync();
+
+            // preserve TempUserId for onboardin
+            HttpContext.Session.SetInt32("TempUserId", newUser.UserId);
 
             // Remove automatic login
             // await SignInUserAsync(newUser, false);
@@ -444,7 +1382,87 @@ public class HomeController : Controller
     }
     #endregion
 
+    #region PasswordReset
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword() => View();
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !ModelState.IsValidEmail(nameof(email)))
+        {
+            TempData["Error"] = "Please enter a valid email address.";
+            return View();
+        }
+
+        try
+        {
+            var origin = $"{Request.Scheme}://{Request.Host}";
+            await _passwordReset.SendResetLinkAsync(email, origin);
+            TempData["Info"] = "If that email is in our system, you will receive a password reset link shortly.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = "An error occurred. Please try again later.";
+        }
+
+        return RedirectToAction(nameof(ForgotPasswordConfirmation));
+    }
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ForgotPasswordConfirmation() => View();
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ResetPassword(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return RedirectToAction(nameof(ForgotPassword));
+
+        return View(model: token);
+    }
+
+    [HttpPost, AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(string token, string newPassword, string confirmPassword)
+    {
+        if (newPassword != confirmPassword)
+        {
+            ModelState.AddModelError("", "Passwords do not match.");
+            return View(model: token);
+        }
+        if (newPassword.Length < 6)
+        {
+            ModelState.AddModelError("", "Password must be at least 8 characters.");
+            return View(model: token);
+        }
+
+        var (succeeded, error) = await _passwordReset.ResetPasswordAsync(token, newPassword);
+        if (!succeeded)
+        {
+            ModelState.AddModelError("", error!);
+            return View(model: token);
+        }
+
+        return RedirectToAction(nameof(ResetPasswordConfirmation));
+    }
+
+    [HttpGet, AllowAnonymous]
+    public IActionResult ResetPasswordConfirmation() => View();
+
+    #endregion
+
     #region Helper Methods
+    private static (string disp, string suffix) FormatNumber(int n)
+    {
+        if (n >= 1_000_000) return ((n / 1_000_000.0).ToString("0.#"), "M");
+        if (n >= 1_000) return ((n / 1_000.0).ToString("0.#"), "K");
+        return (n.ToString(), "");
+    }
+
     private async Task SignInUserAsync(TblUser user, bool isPersistent)
     {
         try
@@ -471,6 +1489,19 @@ public class HomeController : Controller
 
             await HttpContext.SignInAsync("SkillSwapAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // ensure mining progress exists on every login
+            if (!await _dbcontext.UserMiningProgresses.AnyAsync(p => p.UserId == user.UserId))
+            {
+                _dbcontext.UserMiningProgresses.Add(new UserMiningProgress
+                {
+                    UserId = user.UserId,
+                    LastEmittedUtc = DateTime.UtcNow,
+                    EmittedToday = 0m,
+                    IsMiningAllowed = true
+                });
+                await _dbcontext.SaveChangesAsync();
+            }
+
             // Set a secure authentication cookie.
             //Response.Cookies.Append(".AspNetCore.SkillSwapAuth", "true", new CookieOptions
             //{
@@ -485,5 +1516,33 @@ public class HomeController : Controller
             throw;
         }
     }
+
+    private static string PickIconClass(string category)
+    {
+        // map known categories to icon classes
+        return category switch
+        {
+            "Programming & Tech" => "flaticon-developer",
+            "Graphics & Design" => "flaticon-web-design-1",
+            "Digital Marketing" => "flaticon-digital-marketing",
+            "Writing & Translation" => "flaticon-translator",
+            "Music & Audio" => "flaticon-microphone",
+            "Video & Animation" => "flaticon-video-file",
+            "Lifestyle" => "flaticon-ruler",
+            "Business" => "flaticon-goal",
+            _ => "flaticon-design"
+        };
+    }
+
     #endregion
+
+    [AllowAnonymous]
+    [HttpGet("Home/AccessDenied")]
+    public IActionResult AccessDenied(string returnUrl)
+    {
+        // You can pass the returnUrl into the view if you want to show it.
+        ViewBag.ReturnUrl = returnUrl;
+        return View();
+    }
+
 }

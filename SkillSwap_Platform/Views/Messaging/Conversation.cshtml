@@ -5,6 +5,15 @@
     ViewData["Title"] = "Conversations";
     ViewData["SubTitle"] = "Creating meaningful connections, one message at a time.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    // Retrieve current user ID from claims.
+    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    int currentUserId = 0;
+    if (!string.IsNullOrEmpty(userIdClaim))
+    {
+        int.TryParse(userIdClaim, out currentUserId);
+    }
+    var contractDetails = Model.Messages.FirstOrDefault(m => m.ContractDetails != null)?.ContractDetails;
 }
 
 <div class="col-lg-12">
@@ -110,12 +119,46 @@
                                     <h6 class="name mb-0">@Model.OtherUserName</h6>
                                     <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
                                 </div>
-                                <div>
-                                    <a class="text-decoration-underline fz14 fw500 text-red ff-heading" href="#">Delete Conversation</a>
+                                <div class="dropdown">
+                                    <button class="btn btn-link p-0" type="button" id="conversationOptionsBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Options">
+                                        <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="conversationOptionsBtn">
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Meeting", new { otherUserId = Model.OtherUserId })" title="Start an online meeting">
+                                                <i class="fa fa-video-camera"></i> Online Meeting
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Calendar")" title="Schedule a meeting on your calendar">
+                                                <i class="fa fa-calendar"></i> Calendar Schedule
+                                            </a>
+                                        </li>
+                                        <li>
+                                            @if (contractDetails == null)
+                                            {
+                                                <a class="dropdown-item" href="@Url.Action("Create", "Contract", new { messageId = Model.OtherUserId })" title="Send a contract invitation">
+                                                    <i class="fa fa-file-contract"></i> Contract Exchange
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="dropdown-item text-muted" title="Contract invitation already sent">
+                                                    <i class="fa fa-file-contract"></i> Contract invite sent
+                                                </span>
+                                            }
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="@Url.Action("DeleteConversation", "Messaging", new { otherUserId = Model.OtherUserId })" onclick="return confirm('Are you sure you want to delete this conversation?');">
+                                                <i class="fa fa-trash"></i> Delete Conversation
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="inbox_chatting_box">
                         <ul id="chatContainer" class="chatting_content">
                             @foreach (var msg in Model.Messages)
@@ -142,10 +185,28 @@
                     {
                         var offer = (SkillSwap_Platform.Models.ViewModels.OfferDisplayVM)ViewBag.OfferDetails;
                         <div class="card bg-light-subtle mt-4" id="offerPreviewWindow" style="margin-bottom: 60px;">
-                            <img src="@(offer.PortfolioUrls != null && offer.PortfolioUrls.Any()
-                                            ? Url.Content(offer.PortfolioUrls.First())
-                                            : Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"))"
-                                 class="card-img-top" alt="Offer Thumbnail" style="border-radius:14px;">
+                            @{
+                                // 1) Use the VM’s PortfolioUrls (already a List<string>)
+                                var portfolioImages = offer.PortfolioUrls ?? new List<string>();
+
+                                // 2) Define two fallback images
+                                var defaultImages = new[]
+                                {
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                    };
+
+                                // 3) Pick one fallback deterministically by OfferId
+                                int idx = offer.OfferId % defaultImages.Length;
+                                var fallbackImage = defaultImages[idx];
+
+                                // 4) Final src = first portfolio image or fallback
+                                string imgSrc = portfolioImages.Any()
+                                ? Url.Content(portfolioImages.First())
+                                : fallbackImage;
+                            }
+                            <img src="@imgSrc"
+                                 class="card-img-top" alt="Offer Thumbnail" style="border-radius:14px;max-width:25%">
                             <div class="card-body">
                                 <div class="text-section">
                                     <h5 class="card-title line-clamp2 fw-bold">@offer.Title</h5>
@@ -181,7 +242,7 @@
                                 <input type="hidden" id="replyPreview" name="replyPreview" value="" />
                                 <input type="hidden" id="replyMessageId" name="replyMessageId" value="" />
                                 @* If messaging relates to an offer, include it as a hidden field *@
-                                @if (Model.OfferId.HasValue)
+                                @if (Model.OfferId.HasValue && Model.OfferId > 0)
                                 {
                                     <input type="hidden" name="offerId" value="@Model.OfferId" />
                                 }
@@ -302,10 +363,16 @@
         background-color: #898989;
         border-color: #898989;
     }
+
+    button:disabled,
+    button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.65; /* Optional: to visually indicate disabled state */
+    }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @section DynamicScript {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function(){
             // Reply button handler
@@ -361,6 +428,10 @@
             // Bind form submission once.
             $('#messageForm').off('submit').on('submit', function(e){
                 e.preventDefault();
+                
+                var $submitButton = $(this).find('button[type="submit"]');
+                $submitButton.prop('disabled', true);
+                
                 var formData = new FormData(this);
                 var $form = $(this);
                 $form.find('button[type="submit"]').prop('disabled', true);
@@ -397,7 +468,7 @@
                                 console.error("Error updating URL:", error);
                             }
                         }
-                        $form.find('button[type="submit"]').prop('disabled', false);
+                        $submitButton.prop('disabled', false);
                     },
                     error: function(xhr, status, error){
                         console.error("Error details:", xhr.responseText);
@@ -407,37 +478,68 @@
                 });
             });
 
-            // Load sensitive words from the server (via ViewBag).
-            var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
+            // 1) Load your keywords from the server
+            var privacyKeywords = @Html.Raw(
+              Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
+            );
 
-            // Monitor keyup events on the message input field.
-            $('#messageInput').on('keyup', function() {
-                var text = $(this).val().toLowerCase();
-                // Normalize the input text by removing spaces.
-                var normalizedText = text.replace(/\s+/g, '');
-                var warningTriggered = false;
+            // 2) Declare the timer variable
+            let debounceTimer;
 
-                // Log the normalized text.
-                console.log("Normalized input text:", normalizedText);
+            // 3) Move your existing logic into a function
+            function runSensitiveCheck() {
+              var text = $('#messageInput').val().toLowerCase().replace(/\s+/g, '');
+              var warningTriggered = privacyKeywords.some(function(keyword){
+                return text.indexOf(keyword.toLowerCase().replace(/\s+/g,'')) !== -1;
+              });
 
-                // Check if any normalized keyword exists in the normalized text.
-                privacyKeywords.forEach(function(keyword) {
-                    var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
-                    console.log("Checking for keyword:", normalizedKeyword);
-                    if (normalizedText.indexOf(normalizedKeyword) !== -1) {
-                        warningTriggered = true;
-                    }
-                });
+              if (warningTriggered) {
+                $('#WarningInfo')
+                  .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+                  .fadeIn();
+              } else {
+                $('#WarningInfo').fadeOut();
+              }
+            }
 
-                // Show or hide the warning accordingly.
-                if (warningTriggered) {
-                    $('#WarningInfo')
-                        .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
-                        .fadeIn();
-                } else {
-                    $('#WarningInfo').fadeOut();
-                }
-            });
+            // 4) Debounced handler
+            $('#messageInput').off('keyup')   // unbind old handler if you had one
+                             .on('keyup', function(){
+                               clearTimeout(debounceTimer);
+                               debounceTimer = setTimeout(runSensitiveCheck, 200);
+                             });
+
+            // // Load sensitive words from the server (via ViewBag).
+            // var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
+
+            // // Monitor keyup events on the message input field.
+            // $('#messageInput').on('keyup', function() {
+            //     var text = $(this).val().toLowerCase();
+            //     // Normalize the input text by removing spaces.
+            //     var normalizedText = text.replace(/\s+/g, '');
+            //     var warningTriggered = false;
+
+            //     // Log the normalized text.
+            //     console.log("Normalized input text:", normalizedText);
+
+            //     // Check if any normalized keyword exists in the normalized text.
+            //     privacyKeywords.forEach(function(keyword) {
+            //         var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
+            //         console.log("Checking for keyword:", normalizedKeyword);
+            //         if (normalizedText.indexOf(normalizedKeyword) !== -1) {
+            //             warningTriggered = true;
+            //         }
+            //     });
+
+            //     // Show or hide the warning accordingly.
+            //     if (warningTriggered) {
+            //         $('#WarningInfo')
+            //             .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+            //             .fadeIn();
+            //     } else {
+            //         $('#WarningInfo').fadeOut();
+            //     }
+            // });
 
             // Scroll to original message on reply preview click.
             $(document).on('click', '.go-to-parent', function(){
@@ -470,6 +572,15 @@
                 console.error("Error restoring URL:", error);
             }
 
+                const urlParams = new URLSearchParams(window.location.search);
+        const offerIdParam = urlParams.get("offerId");
+        if (offerIdParam) {
+            // Update the hidden input field for the offer ID
+            $("input[name='offerId']").val(offerIdParam);
+            // Show the offer preview window (assumes an element with id "offerPreviewWindow" exists)
+            $("#offerPreviewWindow").show();
+        }
+
             // When the user clicks "Remove Offer", hide the offer preview,
             // clear the hidden offer field, and update the URL.
             $("#btnRemoveOfferPreview").on("click", function () {
@@ -494,6 +605,252 @@
                     console.error("Error updating URL:", error);
                 }
             });
+        });
+    </script>
+    <script>
+        // Generate (or re-generate) OTPs.
+        $(document).on('click', '#showOtpBtn', function () {
+            var exchangeId = $(this).data('exchange-id');
+            if (!exchangeId) {
+                alert("Exchange not found.");
+                return;
+            }
+
+            // Store the exchange id in the modal (if needed later)
+            $('#otpModal').data('exchange-id', exchangeId);
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            // AJAX call to fetch the OTP generated for the current user
+            $.ajax({
+                url: '@Url.Action("GetMyMeetingOTP", "ExchangeInPerson")',
+                type: 'POST',
+                data: { exchangeId: exchangeId },
+                headers: { 'RequestVerificationToken': token },
+                success: function (data) {
+                    if (data.success) {
+                        // Set the OTP value in the modal
+                        $('#otpValue').text(data.otp);
+                        // Open the modal
+                        $('#otpModal').modal('show');
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred while retrieving your OTP.");
+                }
+            });
+        });
+
+        // Verify the OTP provided.
+        $(document).on('click', '#verifyOtpBtn', function () {
+            var exchangeId = $('#otpModal').data('exchange-id');
+            if (!exchangeId) {
+                alert("Exchange not found.");
+                return;
+            }
+            var otp = $('#enteredOtp').val();
+            if (!otp) {
+                alert("Please enter the OTP.");
+                return;
+            }
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '@Url.Action("VerifyMeetingByOTP", "ExchangeInPerson")',
+                type: 'POST',
+                data: { exchangeId: exchangeId, otp: otp },
+                headers: { 'RequestVerificationToken': token },
+                success: function (data) {
+                    if (data.success) {
+                        alert(data.message);
+                        $('#otpModal').modal('hide');
+                        location.reload(); // reload to update verification status
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred while verifying your OTP.");
+                }
+            });
+        });
+    </script>
+    <script>
+        // References to the HTML elements.
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const capturedProofInput = document.getElementById('CapturedProof');
+        const proofDateTimeInput = document.getElementById('ProofDateTime');
+        const proofLocationInput = document.getElementById('ProofLocation');
+        const proofPreviewContainer = document.getElementById('proofPreviewContainer');
+
+                function initializeCameraAndLocation(videoEl, captureBtnSelector, proofLocationInput, proofDateTimeInput, previewContainer) {
+            // Disable the capture button until camera is ready.
+            $(captureBtnSelector).prop('disabled', true);
+            // Clear any previous preview image.
+            $(previewContainer).empty();
+
+            // Create a promise for camera access.
+            let cameraPromise = new Promise((resolve, reject) => {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function (stream) {
+                            videoEl.srcObject = stream;
+                            videoEl.play();
+                            videoEl.onloadedmetadata = function() {
+                                $(captureBtnSelector).prop('disabled', false);
+                                resolve("Camera OK");
+                            };
+                        })
+                        .catch(function (err) {
+                            $(captureBtnSelector).prop('disabled', true);
+                            reject("Camera");
+                        });
+                } else {
+                    reject("Camera not supported");
+                }
+            });
+
+            // Create a promise for location access.
+            let locationPromise = new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function (position) {
+                            proofLocationInput.value = position.coords.latitude + ", " + position.coords.longitude;
+                            resolve("Location OK");
+                        },
+                        function (error) {
+                            reject("Location");
+                        }
+                    );
+                } else {
+                    reject("Geolocation not supported");
+                }
+            });
+
+            // Set current date and time.
+            proofDateTimeInput.value = new Date().toISOString();
+
+            // Combine the promises and show error messages as needed.
+            Promise.allSettled([cameraPromise, locationPromise]).then(results => {
+                let cameraError = (results[0].status === "rejected");
+                let locationError = (results[1].status === "rejected");
+
+                if (cameraError && locationError) {
+                    alert("Unable to access both the camera and your location. Please check your permissions.");
+                } else if (cameraError) {
+                    alert("Unable to access the camera. Please check your permissions.");
+                } else if (locationError) {
+                    alert("Unable to access your location. Please check your permissions.");
+                }
+            });
+        }
+
+        // Function to schedule automatic opening of the start proof modal and set up reminders.
+        function autoOpenStartProofModal() {
+            // Get the scheduled start time from the hidden input.
+            const startTimeStr = $('#scheduledTimeInput').val();  // e.g., "2025-04-12T14:22:34.123Z"
+            if (!startTimeStr) return;
+
+            const startTime = new Date(startTimeStr);
+            const now = new Date();
+            let delay = startTime.getTime() - now.getTime();
+
+            // If the scheduled time is in the past, open the modal immediately.
+            if (delay < 0) {
+                delay = 0;
+            }
+
+            // Optional: add a grace period (e.g., 1 minute) after the scheduled start time.
+            const gracePeriod = 60000; // 1 minute in milliseconds.
+            delay += gracePeriod;
+
+            // Set the modal to auto-open after the calculated delay.
+            setTimeout(function() {
+                $('#proofModal').modal('show');
+            }, delay);
+
+            // Schedule reminder: we'll use 5 minutes (300000 ms) as the reminder interval.
+            const reminderDelay = 900000; // 15 minutes in milliseconds
+
+            function checkProofStatus() {
+                if (!$('#CapturedProof').val()) {
+                    alert("Reminder: It appears that you haven't captured your proof for the meeting scheduled at " +
+                          startTime.toLocaleTimeString() +
+                          ". Please capture a photo if you haven't already.");
+                }
+            }
+
+            // First reminder: 5 minutes after the scheduled start time (plus grace period).
+            setTimeout(checkProofStatus, delay + reminderDelay);
+            // Subsequent reminders every 5 minutes.
+            setInterval(checkProofStatus, reminderDelay);
+        }
+
+                $(document).ready(function () {
+            // Auto-open the start proof modal based on the scheduled time.
+            autoOpenStartProofModal();
+
+            // When the start proof modal is shown, initialize the camera and location.
+            $('#proofModal').on('shown.bs.modal', function () {
+                initializeCameraAndLocation(
+                    document.getElementById('video'),
+                    '#captureBtn',
+                    document.getElementById('ProofLocation'),
+                    document.getElementById('ProofDateTime'),
+                    '#proofPreviewContainer'
+                );
+            });
+
+            // Capture button event for start proof.
+            $('#captureBtn').on('click', function (event) {
+                if ($(this).prop('disabled')) {
+                    alert("Camera is not ready yet. Please wait.");
+                    event.preventDefault();
+                    return;
+                }
+                const canvasEl = document.getElementById('canvas');
+                const videoEl = document.getElementById('video');
+                canvasEl.width = videoEl.videoWidth;
+                canvasEl.height = videoEl.videoHeight;
+                const context = canvasEl.getContext('2d');
+                context.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+                // Create overlay text with current date and location.
+                const overlayText = `Date: ${new Date().toLocaleString()}\nLocation: ${document.getElementById('ProofLocation').value || 'N/A'}`;
+                context.font = "24px Arial";
+                context.fillStyle = "rgba(0, 0, 0, 0.4)";
+                context.textAlign = "right";
+                const textLines = overlayText.split('\n');
+                const lineHeight = 30;
+                const padding = 10;
+                const textWidth = canvasEl.width * 0.4;
+                const textX = canvasEl.width - padding;
+                const textY = canvasEl.height - padding - (textLines.length - 1) * lineHeight;
+                context.fillRect(textX - textWidth - padding, textY - lineHeight, textWidth + 2 * padding, textLines.length * lineHeight + padding / 2);
+                context.fillStyle = "white";
+                textLines.forEach((line, index) => {
+                    context.fillText(line, textX, textY + index * lineHeight);
+                });
+
+                // Convert canvas to a data URL and update the hidden input and preview.
+                const dataURL = canvasEl.toDataURL("image/png");
+                $('#CapturedProof').val(dataURL);
+                $('#proofPreviewContainer').html(`<img src="${dataURL}" alt="Captured Proof" style="max-width: 100%; margin-top: 10px; border-radius: 4px;" />`);
+
+                alert("Start proof photo captured. Please review and submit your proof.");
+            });
+
+            // Prevent form submission if no proof was captured.
+            $('#proofForm').on('submit', function (e) {
+                if (!$('#CapturedProof').val()) {
+                    e.preventDefault();
+                    alert("It appears that you haven't captured your start proof. Please capture a photo before submitting.");
+                    return false;
+                }
+            });
+
         });
     </script>
     }

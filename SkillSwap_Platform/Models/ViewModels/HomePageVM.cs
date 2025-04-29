@@ -1,4 +1,5 @@
 ﻿using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 
 namespace SkillSwap_Platform.Models.ViewModels
 {
@@ -19,6 +20,36 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<OfferCardVM> TrendingOffers { get; set; }
         public List<FreelancerCardVM> HighestRatedFreelancers { get; set; }
         public List<CategoryOffers> TrendingOffersByCategory { get; set; } = new List<CategoryOffers>();
+        public int TotalSkills { get; set; }
+        public List<CategoryCardVm> PopularCategories { get; set; } = new();
+        public List<HowItWorksVM> HowItWorksValues { get; set; } = new();
+        public List<HowItWorksVM> AboutUsValues { get; set; } = new();
+
+        public List<OfferCardVM> RecentlyViewedOffers { get; set; } = new();
+
+
+        public string TalentsDisplayValue { get; set; } = "";
+        public string TalentsSuffix { get; set; } = "";
+
+
+        public string ExchangeDisplayValue { get; set; } = "";
+        public string ExchangeSuffix { get; set; } = "";
+
+        public double GlobalAverageRating { get; set; }
+        public int AverageRating { get; set; }
+        public int SwapSatisfactionPercent { get; set; }
+        public int EarlyAdopterCount { get; set; }
+
+        public List<string> TopSkills { get; set; } = new();
+        public List<string> TrendingSkills { get; set; } = new();
+        public List<string> TopCountrySkills { get; set; } = new();
+        public List<string> ProjectCatalog { get; set; } = new();
+        public List<OfferCardVM> GoodSwaps { get; set; } = new();
+
+
+        public string UserCountryIso { get; set; }      // e.g. "US"
+        public string UserCountryName { get; set; }     // e.g. "United States"
+
     }
 
     public class CategoryOffers
@@ -36,9 +67,59 @@ namespace SkillSwap_Platform.Models.ViewModels
         public string Designation { get; set; }
         public string ProfileImage { get; set; }
         public string Location { get; set; }
+        public int ReviewCount { get; set; }
         public double Rating { get; set; }
         public double? JobSuccess { get; set; }
         public double? Recommendation { get; set; }
         public List<string> OfferedSkillAreas { get; set; } = new List<string>();
+    }
+
+    public class CategoryCardVm
+    {
+        public string Name { get; set; }          // e.g. "Design & Creative"
+        public string Slug { get; set; }          // e.g. "design-creative"
+        public string IconClass { get; set; }     // e.g. "flaticon-web-design-1"
+        public int SkillCount { get; set; }       // aggregate count
+        public string Description { get; set; }   // for mobile slider subtitle
+    }
+
+    public class HowItWorksVM
+    {
+        public string Category { get; set; } = "howitworks";
+        public string TalentsDisplayValue { get; set; } = "0";
+        public string TalentsSuffix { get; set; } = "";
+        public int SwapSatisfactionPercent { get; set; }
+        public string ExchangeDisplayValue { get; set; } = "0";
+        public string ExchangeSuffix { get; set; } = "";
+        public int GlobalSuccessRate { get; set; }
+        public string SwapsCompletedValue { get; set; } = "0";
+        public string SwapsCompletedSuffix { get; set; } = "";
+
+        // Swap Success Rate (adjusted)
+        public int AdjustedSuccessRate { get; set; }
+
+        public List<FreelancerCardVM> CommunitySpotlight { get; set; } = new();
+
+    }
+
+    public class AboutUsVM
+    {
+        public string Category { get; set; } = "aboutus";
+        public string TalentsDisplayValue { get; set; }
+        public string TalentsSuffix { get; set; }
+        public int SwapSatisfactionPercent { get; set; }
+
+        public string SwapsCompletedValue { get; set; }
+        public string SwapsCompletedSuffix { get; set; }
+        public int AdjustedSuccessRate { get; set; }
+
+        public string VerifiedCountDisplay { get; set; }
+        public string VerifiedCountSuffix { get; set; }
+        // spotlight cards, if you want those too
+        public List<FreelancerCardVM> CommunitySpotlight { get; set; }
+        = new List<FreelancerCardVM>();
+
+        public int EarlyAdopterCount { get; set; }
+        public double AverageExperience { get; set; }
     }
 }

@@ -16,18 +16,29 @@ using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 using System.Diagnostics.Contracts;
 using SkillSwap_Platform.HelperClass.Extensions;
 using SkillSwap_Platform.HelperClass;
+using SkillSwap_Platform.Services.NotificationTrack;
+using SkillSwap_Platform.Services.DigitalToken;
+using Microsoft.CodeAnalysis.Text;
 
 namespace SkillSwap_Platform.Controllers
 {
     [Authorize]
     public class ContractController : Controller
     {
+        private const string MODE_CREATE = "Create";
+        private const string MODE_EDIT = "Edit";
+        private const string MODE_SIGN = "Sign";
+        private const string ACTION_CREATEONLY = "CreateOnly";
+        private const string ACTION_MODIFYONLY = "ModifyOnly";
+
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<ContractController> _logger;
         private readonly IContractPreparationService _contractPreparation;
         private readonly IContractHandlerService _contractHandler;
         private readonly IViewRenderService _viewRenderService;
         private readonly IPdfGenerator _pdfGenerator;
+        private readonly INotificationService _notif;
+        private readonly IDigitalTokenService _tokenService;
 
         public ContractController(
             IContractPreparationService contractPreparation,
@@ -35,7 +46,9 @@ namespace SkillSwap_Platform.Controllers
             SkillSwapDbContext context,
             ILogger<ContractController> logger,
             IViewRenderService viewRenderService,
-            IPdfGenerator pdfGenerator)
+            IPdfGenerator pdfGenerator,
+            INotificationService notif,
+            IDigitalTokenService tokenService)
         {
             _contractPreparation = contractPreparation;
             _contractHandler = contractHandler;
@@ -43,6 +56,8 @@ namespace SkillSwap_Platform.Controllers
             _logger = logger;
             _viewRenderService = viewRenderService;
             _pdfGenerator = pdfGenerator;
+            _notif = notif;
+            _tokenService = tokenService;
         }
 
         #region Create Contract
@@ -55,9 +70,12 @@ namespace SkillSwap_Platform.Controllers
                 int userId = GetUserId();
                 var viewModel = await _contractPreparation.PrepareViewModelAsync(messageId, userId, revealReceiverDetails: false);
 
+                viewModel.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
+
                 // Set server-controlled properties so they appear in the hidden fields.
-                viewModel.Mode = "Create";
-                viewModel.ActionContext = "CreateOnly";
+                viewModel.Mode = MODE_CREATE;
+                viewModel.ActionContext = ACTION_CREATEONLY;
                 viewModel.SenderSignature = viewModel.SenderSignature ?? "";
                 viewModel.SenderPlace = viewModel.SenderPlace ?? "";
                 return View(viewModel);
@@ -79,6 +97,12 @@ namespace SkillSwap_Platform.Controllers
             ModelState.Remove(nameof(model.ReceiverSignature));
             ModelState.Remove(nameof(model.ContractUniqueId));
             ModelState.Remove(nameof(model.LearningDays));
+
+            if (!await _tokenService.HasSufficientBalanceAsync(GetUserId(), model.TokenOffer ?? 0m))
+            {
+                ModelState.AddModelError(nameof(model.TokenOffer),
+                     $"You only have {model.CurrentUserTokenBalance:F2} tokens—insufficient to offer {model.TokenOffer:F2}.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -114,16 +138,20 @@ namespace SkillSwap_Platform.Controllers
                     TempData["ErrorMessage"] = result.ErrorMessage;
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
                 }
-                else
-                {
-                    // Otherwise, display the error on the same page.
-                    ModelState.AddModelError("", result.ErrorMessage);
-                    return View(model);
-                }
             }
-            model.Mode = "Create";
-            model.ActionContext = "CreateOnly";
-            TempData["SuccessMessage"] = "Contract created successfully.";
+
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetUserId(),
+                Title = "Aggreement Created",
+                Message = "You successfully cretaed and send the aggreement of your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
+
+            model.Mode = MODE_CREATE;
+            model.ActionContext = ACTION_CREATEONLY;
+            TempData["SuccessMessage"] = "The Agreement/ Contract created and send successfully.";
             return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
         }
 
@@ -138,9 +166,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 // Remove server-controlled fields from validation.
                 RemoveServerControlledFields();
-
                 model.ContractDate ??= DateTime.Now;
-
                 // Fill missing usernames
                 model.SenderUserName ??= (await _context.TblUsers.FindAsync(model.SenderUserId))?.UserName;
                 model.ReceiverUserName ??= (await _context.TblUsers.FindAsync(model.ReceiverUserId))?.UserName;
@@ -152,7 +178,6 @@ namespace SkillSwap_Platform.Controllers
                     return BadRequest("Invalid contract data.");
                 }
 
-                System.Diagnostics.Debug.WriteLine("FlowDescription: " + model.FlowDescription);
                 // Validate FlowDescription (at least 3 non-empty steps)
                 var flow = model.FlowDescription ?? string.Empty;
                 var steps = flow.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
@@ -204,13 +229,14 @@ namespace SkillSwap_Platform.Controllers
             // If contract is at final version (v3), do not allow further modification.
             if (contract.Version >= 3)
             {
-                TempData["ErrorMessage"] = "This is the final version of the contract. No further modifications are allowed.";
+                TempData["ErrorMessage"] = "This is the final version of the agreement/ contract. No further modifications are allowed.";
                 return RedirectToAction("Review", new { contractId });
             }
-
-            var vm = await PrepareViewModelForEdit(contract, "ModifyOnly");
-            vm.Mode = "Edit";
-            vm.ActionContext = "ModifyOnly";
+            var vm = await PrepareViewModelForEdit(contract, ACTION_MODIFYONLY);
+            vm.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
+            vm.Mode = MODE_EDIT;
+            vm.ActionContext = ACTION_MODIFYONLY;
 
             return View("PreviewContract", vm);
         }
@@ -223,6 +249,7 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 ModelState.Remove("FlowDescription");
+                ModelState.Remove("AdditionalTerms");
 
                 var originalContract = await _context.TblContracts
                     .FirstOrDefaultAsync(c => c.ContractId == contractId);
@@ -240,18 +267,17 @@ namespace SkillSwap_Platform.Controllers
                 // Prevent further modifications if contract is at version 3
                 if (originalContract.Version >= 3)
                 {
-                    TempData["ErrorMessage"] = "This contract is final (v3) and cannot be modified further.";
+                    TempData["ErrorMessage"] = "This agreement/ contract is final (v3) and cannot be modified further.";
                     return RedirectToAction("Review", new { contractId });
                 }
 
-                int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                 if (!partyAgreementAccepted)
                 {
                     ModelState.AddModelError("PartyAgreementAccepted", "You must accept the agreement before submitting.");
 
                     originalContract = await _context.TblContracts.FindAsync(contractId);
-                    var vm = await PrepareViewModelForEdit(originalContract, "Edit");
-                    vm.ActionContext = "ModifyOnly";
+                    var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
+                    vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
                 }
 
@@ -265,8 +291,8 @@ namespace SkillSwap_Platform.Controllers
                 if (string.IsNullOrWhiteSpace(partySignature) || partySignature.Trim() == "[Sign Here]")
                 {
                     ModelState.AddModelError("partySignature", "Please provide your actual signature.");
-                    var vm = await PrepareViewModelForEdit(originalContract, "Edit");
-                    vm.ActionContext = "ModifyOnly";
+                    var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
+                    vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
                 }
 
@@ -274,8 +300,8 @@ namespace SkillSwap_Platform.Controllers
                 if (string.IsNullOrWhiteSpace(partyPlace) || partyPlace.Trim() == "[Place of Sign]")
                 {
                     ModelState.AddModelError("PartyPlace", "Please provide your actual place of signing.");
-                    var vm = await PrepareViewModelForEdit(originalContract, "Edit");
-                    vm.ActionContext = "ModifyOnly";
+                    var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
+                    vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
                 }
 
@@ -286,17 +312,30 @@ namespace SkillSwap_Platform.Controllers
                     acceptanceDate.Date != today)
                 {
                     ModelState.AddModelError("PartyAcceptanceDate", "The acceptance date must be today’s date.");
-                    var vm = await PrepareViewModelForEdit(originalContract, "Edit");
-                    vm.ActionContext = "ModifyOnly";
+                    var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
+                    vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
+                }
+
+                // Determine who actually pays: the opener is always the one who offered the tokens.
+                int payerId = isReceiver
+                    ? originalContract.SenderUserId
+                    : originalContract.ReceiverUserId;
+
+                if (!await _tokenService.HasSufficientBalanceAsync(payerId, tokenOffer))
+                {
+                    ModelState.AddModelError(
+                        nameof(tokenOffer),
+                        $"User @{payerId} only has {await _tokenService.GetBalanceAsync(payerId):F2} tokens—insufficient to offer {tokenOffer:F2}."
+                    );
                 }
 
                 if (!ModelState.IsValid)
                 {
                     LogModelStateDetails();
                     LogModelErrors();
-                    var vm = await PrepareViewModelForEdit(originalContract, "Edit");
-                    vm.ActionContext = "ModifyOnly";
+                    var vm = await PrepareViewModelForEdit(originalContract, ACTION_MODIFYONLY);
+                    vm.ActionContext = ACTION_MODIFYONLY;
                     return View("PreviewContract", vm);
                 }
 
@@ -428,9 +467,20 @@ namespace SkillSwap_Platform.Controllers
                 // Save relative path to database
                 newContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
                 await _context.SaveChangesAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "Aggreement Modified",
+                    Message = "You successfully modified and send back the aggreement of your exchange.",
+                    Url = Url.Action("Index", "ExchangeDashboard"),
+                });
+
                 await transaction.CommitAsync();
 
-                TempData["SuccessMessage"] = "Contract modified and sent back successfully.";
+                TempData["SuccessMessage"] = "The Agreement/ Contract modified and sent back successfully.";
+                int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                 return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
             }
             catch (Exception ex)
@@ -478,6 +528,40 @@ namespace SkillSwap_Platform.Controllers
                         Value = s.SkillId.ToString()
                     }).ToListAsync();
 
+                string offerOwnerSkillName = "N/A";
+                if (offer != null &&
+                    !string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner) &&
+                    offer.SkillIdOfferOwner != "0") // Explicitly check for "0"
+                {
+                    // Split the comma-separated skill IDs.
+                    var skillIdStrings = offer.SkillIdOfferOwner.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var skillNamesList = new List<string>();
+
+                    foreach (var skillIdStr in skillIdStrings)
+                    {
+                        // Skip if the skillIdStr is "0"
+                        if (skillIdStr.Trim() == "0")
+                            continue;
+
+                        if (int.TryParse(skillIdStr.Trim(), out int skillId))
+                        {
+                            var userSkill = await _context.TblUserSkills
+                                .Include(s => s.Skill)
+                                .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
+                                .FirstOrDefaultAsync();
+
+                            if (userSkill != null && !string.IsNullOrWhiteSpace(userSkill.Skill?.SkillName))
+                            {
+                                skillNamesList.Add(userSkill.Skill.SkillName);
+                            }
+                        }
+                    }
+                    if (skillNamesList.Any())
+                    {
+                        offerOwnerSkillName = string.Join(", ", skillNamesList);
+                    }
+                }
+
                 var viewModel = new ContractCreationVM
                 {
                     ContractUniqueId = contract.ContractUniqueId,
@@ -496,6 +580,7 @@ namespace SkillSwap_Platform.Controllers
                     SenderAddress = sender?.Address,
                     ReceiverAddress = receiver?.Address,
                     OfferedSkill = contract.SenderSkill,
+                    OfferOwnerSkill = offerOwnerSkillName,
                     TokenOffer = contract.TokenOffer,
                     Category = contract.Category, // or fetch from offer if needed
                     LearningObjective = contract.LearningObjective,
@@ -519,10 +604,11 @@ namespace SkillSwap_Platform.Controllers
                     SenderOfferedSkills = senderSkills,
                     IsPreview = true,
                     // Set mode to "Sign" so that only receiver acceptance fields become editable
-                    Mode = "Sign",
-                    ActionContext = contract.ParentContractId == null ? "CreateOnly" : "ModifyOnly"
+                    Mode = MODE_SIGN,
+                    ActionContext = contract.ParentContractId == null ? ACTION_CREATEONLY : ACTION_MODIFYONLY
                 };
-
+                viewModel.CurrentUserTokenBalance =
+                    await _tokenService.GetBalanceAsync(userId);
                 return View("PreviewContract", viewModel);
             }
             catch (Exception ex)
@@ -552,7 +638,7 @@ namespace SkillSwap_Platform.Controllers
                 // Block signing if contract is expired or modified beyond allowed versions.
                 if (originalContract.Version > 3 || originalContract.Status == "Expired")
                 {
-                    TempData["ErrorMessage"] = "This contract is expired or has exceeded modifications; signing is no longer possible.";
+                    TempData["ErrorMessage"] = "This agreement/ contract is expired or has exceeded modifications; signing is no longer possible.";
                     int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
                 }
@@ -561,20 +647,20 @@ namespace SkillSwap_Platform.Controllers
                 if (originalContract.Version == 3 && !finalSignConfirmed)
                 {
                     TempData["WarningMessage"] = "You are signing the final version (v3). No further modifications will be possible after signing.";
-                    return RedirectToAction("Review", new { contractId, mode = "Sign" });
+                    return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
                 }
 
                 // Validate signature, place, etc., just like your normal sign logic
                 if (string.IsNullOrWhiteSpace(partySignature) || partySignature.Trim() == "[Sign Here]")
                 {
                     TempData["ErrorMessage"] = "Please provide your actual signature.";
-                    return RedirectToAction("Review", new { contractId = contractId, mode = "Sign" });
+                    return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
                 }
 
                 if (string.IsNullOrWhiteSpace(partyPlace) || partyPlace.Trim() == "[Place of Sign]")
                 {
                     TempData["ErrorMessage"] = "Please provide your place of signing.";
-                    return RedirectToAction("Review", new { contractId = contractId, mode = "Sign" });
+                    return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
                 }
 
                 // Create a new contract version with updated receiver details.
@@ -628,6 +714,22 @@ namespace SkillSwap_Platform.Controllers
                         ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                     };
 
+                    // Determine the signing timestamps for request and response.
+                    if (originalContract.RequestDate == default(DateTime))
+                    {
+                        // This is the first party signing:
+                        newFinalContract.RequestDate = DateTime.UtcNow; // Record first signature.
+                        newFinalContract.ResponseDate = null;           // No response yet.
+                    }
+                    else
+                    {
+                        // A signing has already occurred.
+                        // Copy the first party's signing time.
+                        newFinalContract.RequestDate = originalContract.RequestDate;
+                        // Record the second party's signing time as the response.
+                        newFinalContract.ResponseDate = DateTime.UtcNow;
+                    }
+
                     // Role-based assignment:
                     if (isReceiver)
                     {
@@ -640,6 +742,7 @@ namespace SkillSwap_Platform.Controllers
 
                         newFinalContract.ReceiverAgreementAccepted = true;
                         newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
+                        newFinalContract.AcceptedDate = DateTime.UtcNow;
                         newFinalContract.ReceiverSignature = partySignature.Trim();
                         newFinalContract.ReceiverPlace = partyPlace.Trim();
                         newFinalContract.SignedByReceiver = true;
@@ -661,7 +764,111 @@ namespace SkillSwap_Platform.Controllers
                     }
 
                     newFinalContract.Status = "Accepted";
+                    newFinalContract.IsContractSigned = true; 
                     newFinalContract.FinalizedDate = DateTime.Now;
+
+                    _context.TblContracts.Add(newFinalContract);
+                    await _context.SaveChangesAsync();
+
+                    // This code would go after the final contract has been created and saved.
+                    if (newFinalContract.Status == "Accepted")
+                    {
+                        var digitalTokenExchange = newFinalContract.TokenOffer;
+
+                        // Create an exchange record.
+                        var exchange = new TblExchange
+                        {
+                            ContractId            = newFinalContract.ContractId, 
+                            OfferId = newFinalContract.OfferId,
+                            // Determine the requester based on your business rules; for example:
+                            OfferOwnerId = newFinalContract.ReceiverUserId,
+                            OtherUserId = newFinalContract.SenderUserId,
+                            ExchangeDate = DateTime.Now,
+                            LastStatusChangeDate = DateTime.Now,
+                            Status = "Finalized",
+                            // Set the mode (e.g., "SkillSwap" or another applicable value)
+                            ExchangeMode = newFinalContract.ModeOfLearning,
+                            IsSkillSwap = true,  // or false if applicable
+                            TokensPaid = newFinalContract.TokenOffer ?? 0,
+                            Description = "Exchange finalized after both parties signed the agreement/ contract.",
+                            LastStatusChangedBy = GetUserId(), // assuming current user is the one finalizing
+                            StatusChangeReason = "Final agreement/ contract signature from both parties",
+                            DigitalTokenExchange = digitalTokenExchange,  // update as needed
+                            IsSuccessful = true,
+                            RequestDate = newFinalContract.RequestDate,
+                            ResponseDate = newFinalContract.ResponseDate
+                        };
+
+                        _context.TblExchanges.Add(exchange);
+                        await _context.SaveChangesAsync();
+
+                        if (exchange != null)
+                            await _tokenService.HoldTokensAsync(exchange.ExchangeId);
+
+                        var openerId = isReceiver
+                            ? originalContract.SenderUserId
+                            : originalContract.ReceiverUserId;
+
+                        if (!await _tokenService.HasSufficientBalanceAsync(openerId, newFinalContract.TokenOffer ?? 0m))
+                        {
+                            ModelState.AddModelError("",
+                              $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
+                            return View("PreviewContract", new { contractId });
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(newFinalContract.SenderSkill))
+                        {
+                            var senderSkillIds = newFinalContract.SenderSkill
+                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var id in senderSkillIds)
+                            {
+                                if (int.TryParse(id.Trim(), out int skillId))
+                                {
+                                    var exchangeSkill = new TblExchangeSkill
+                                    {
+                                        ExchangeId = exchange.ExchangeId,
+                                        SkillId = skillId,
+                                        // Optionally distinguish the sender's skill by a role property.
+                                        Role = "Requester"
+                                    };
+                                    _context.TblExchangeSkills.Add(exchangeSkill);
+                                }
+                            }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(newFinalContract.ReceiverSkill))
+                        {
+                            var receiverSkillIds = newFinalContract.ReceiverSkill
+                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var id in receiverSkillIds)
+                            {
+                                if (int.TryParse(id.Trim(), out int skillId))
+                                {
+                                    var exchangeSkill = new TblExchangeSkill
+                                    {
+                                        ExchangeId = exchange.ExchangeId,
+                                        SkillId = skillId,
+                                        Role = "OfferOwner"
+                                    };
+                                    _context.TblExchangeSkills.Add(exchangeSkill);
+                                }
+                            }
+                        }
+
+                        // Create an exchange history record to log this change.
+                        var exchangeHistory = new TblExchangeHistory
+                        {
+                            ExchangeId = exchange.ExchangeId,
+                            OfferId = newFinalContract.OfferId,
+                            ChangedStatus = "Finalized",
+                            ChangedBy = GetUserId(),
+                            ChangeDate = DateTime.Now,
+                            Reason = "The agreement has been finalized and officially signed by both parties."
+                        };
+
+                        _context.TblExchangeHistories.Add(exchangeHistory);
+                        await _context.SaveChangesAsync();
+                    }
 
                     // (Assuming PDF generation is required, generate the PDF and save to disk)
                     var previewModel = await PrepareViewModelForEdit(newFinalContract, "Review");
@@ -687,17 +894,25 @@ namespace SkillSwap_Platform.Controllers
                     await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
                     newFinalContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
-                    _context.TblContracts.Add(newFinalContract);
                     await _context.SaveChangesAsync();
 
-                    TempData["SuccessMessage"] = "You have signed the contract. A new version has been created.";
+                    // log notification:
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetUserId(),
+                        Title = "Aggreement Signed",
+                        Message = "You’ve signed the contract and your tokens have been transferred.",
+                        Url = Url.Action("Index", "ExchangeDashboard"),
+                    });
+
+                    TempData["SuccessMessage"] = "Agreement signed successfully and tokens have been deducted.";
                     int redirectUserId = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
                     return RedirectToAction("Conversation", "Messaging", new { otherUserId = redirectUserId });
                 }
                 else
                 {
                     // It's some other status => maybe we can't sign it again
-                    TempData["ErrorMessage"] = "Cannot sign this contract in its current state.";
+                    TempData["ErrorMessage"] = "Cannot sign this agreement/ contract in its current state.";
                     return RedirectToAction("Review", new { contractId });
                 }
             }
@@ -718,9 +933,19 @@ namespace SkillSwap_Platform.Controllers
             if (contract == null) return NotFound();
 
             contract.Status = "Declined";
+            //contract.DeclinedDate = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "You declined the contract.";
+            // log notification:
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = GetUserId(),
+                Title = "Aggreement Declined",
+                Message = "You successfully declined the aggreement of your exchange.",
+                Url = Url.Action("Index", "ExchangeDashboard"),
+            });
+
+            TempData["SuccessMessage"] = "You declined the agreement/ contract.";
             return RedirectToAction("Conversation", "Messaging", new { otherUserId = contract.SenderUserId });
         }
 
@@ -744,14 +969,34 @@ namespace SkillSwap_Platform.Controllers
                 var offer = await _context.TblOffers.FindAsync(contract.OfferId);
 
                 string offerOwnerSkillName = "N/A";
-                if (offer != null && int.TryParse(offer.SkillIdOfferOwner, out int skillId))
+                if (offer != null && !string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner))
                 {
-                    var receiverSkill = await _context.TblUserSkills
-                        .Include(s => s.Skill)
-                        .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
-                        .FirstOrDefaultAsync();
+                    // Split the comma-separated skill IDs.
+                    var skillIdStrings = offer.SkillIdOfferOwner.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var skillNamesList = new List<string>();
 
-                    offerOwnerSkillName = receiverSkill?.Skill.SkillName ?? "N/A";
+                    // For each skill id string, try parsing it and look up the corresponding skill.
+                    foreach (var skillIdStr in skillIdStrings)
+                    {
+                        if (int.TryParse(skillIdStr.Trim(), out int skillId))
+                        {
+                            var userSkill = await _context.TblUserSkills
+                                .Include(s => s.Skill)
+                                .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
+                                .FirstOrDefaultAsync();
+
+                            if (userSkill != null && !string.IsNullOrWhiteSpace(userSkill.Skill?.SkillName))
+                            {
+                                skillNamesList.Add(userSkill.Skill.SkillName);
+                            }
+                        }
+                    }
+
+                    // If we found any skill names, join them; otherwise, use "N/A".
+                    if (skillNamesList.Any())
+                    {
+                        offerOwnerSkillName = string.Join(", ", skillNamesList);
+                    }
                 }
 
                 var senderSkills = await _context.TblUserSkills
@@ -817,7 +1062,7 @@ namespace SkillSwap_Platform.Controllers
                     SenderOfferedSkills = senderSkills,
                     IsPreview = true,
                     Mode = mode,
-                    ActionContext = contract.ParentContractId == null ? "CreateOnly" : "ModifyOnly"
+                    ActionContext = contract.ParentContractId == null ? ACTION_CREATEONLY : ACTION_MODIFYONLY
                 };
 
                 // If the contract is final (v3), set a flag (or status message) in the view model so that the UI shows only the "Sign" option.
@@ -870,6 +1115,35 @@ namespace SkillSwap_Platform.Controllers
             return File(pdfBytes, "application/pdf", filename);
         }
 
+        public async Task<IActionResult> ViewFinalizedContractPdf(int contractId)
+        {
+            // Retrieve the contract record using contractId
+            var contract = await _context.TblContracts.FirstOrDefaultAsync(c => c.ContractId == contractId);
+            if (contract == null)
+            {
+                _logger.LogWarning("Contract with id {contractId} was not found.", contractId);
+                return NotFound();
+            }
+
+            string relativeFilePath = contract.ContractDocument; // Adjust the property name if necessary.
+            if (string.IsNullOrEmpty(relativeFilePath))
+            {
+                _logger.LogWarning("No finalized contract path found for contract id {contractId}.", contractId);
+                return NotFound("Finalized contract file not found.");
+            }
+            string absoluteFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativeFilePath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(absoluteFilePath))
+            {
+                _logger.LogWarning("File {absoluteFilePath} for contract id {contractId} does not exist.", absoluteFilePath, contractId);
+                return NotFound("File not found.");
+            }
+
+            // Open a stream and return the file with the application/pdf mime type.
+            var fileStream = new FileStream(absoluteFilePath, FileMode.Open, FileAccess.Read);
+            return File(fileStream, "application/pdf");
+        }
+
         public async Task<IActionResult> VersionHistory(int messageId, int offerId)
         {
             var versions = await _context.TblContracts
@@ -891,6 +1165,10 @@ namespace SkillSwap_Platform.Controllers
             throw new Exception("User ID not found in claims.");
         }
 
+        /// <summary>
+        /// Updates the contract unique id by replacing the timestamp portion while preserving the token.
+        /// Expected format: "SkillSwap-CT-<timestamp>-<token>"
+        /// </summary>
         private string UpdateContractUniqueId(string originalUniqueId)
         {
             // Expected format: "SkillSwap-CT-<timestamp>-<token>"
@@ -919,13 +1197,31 @@ namespace SkillSwap_Platform.Controllers
             var offer = await _context.TblOffers.FindAsync(contract.OfferId);
 
             string offerOwnerSkillName = "N/A";
-            if (offer != null && int.TryParse(offer.SkillIdOfferOwner, out int skillId))
+            if (offer != null && !string.IsNullOrWhiteSpace(offer.SkillIdOfferOwner))
             {
-                var receiverSkill = await _context.TblUserSkills
-                    .Include(s => s.Skill)
-                    .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
-                    .FirstOrDefaultAsync();
-                offerOwnerSkillName = receiverSkill?.Skill.SkillName ?? "N/A";
+                // Split the comma-separated IDs.
+                var skillIdStrings = offer.SkillIdOfferOwner.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var skillNamesList = new List<string>();
+
+                // For each skill ID string, try to parse and fetch the corresponding skill.
+                foreach (var skillIdStr in skillIdStrings)
+                {
+                    if (int.TryParse(skillIdStr.Trim(), out int skillId))
+                    {
+                        var userSkill = await _context.TblUserSkills
+                            .Include(s => s.Skill)
+                            .Where(s => s.UserId == contract.ReceiverUserId && s.SkillId == skillId && s.IsOffering)
+                            .FirstOrDefaultAsync();
+                        if (userSkill != null && !string.IsNullOrWhiteSpace(userSkill.Skill?.SkillName))
+                        {
+                            skillNamesList.Add(userSkill.Skill.SkillName);
+                        }
+                    }
+                }
+                if (skillNamesList.Any())
+                {
+                    offerOwnerSkillName = string.Join(", ", skillNamesList);
+                }
             }
 
             var senderSkills = await _context.TblUserSkills
@@ -955,8 +1251,8 @@ namespace SkillSwap_Platform.Controllers
             bool isReceiver = currentUserId == contract.ReceiverUserId;
 
             // In a ModifyOnly context, clear the acceptance for the party that is not modifying.
-            bool hideSenderAcceptance = (mode == "ModifyOnly") && !isSender;
-            bool hideReceiverAcceptance = (mode == "ModifyOnly") && !isReceiver;
+            bool hideSenderAcceptance = (mode == ACTION_MODIFYONLY) && !isSender;
+            bool hideReceiverAcceptance = (mode == ACTION_MODIFYONLY) && !isReceiver;
 
             return new ContractCreationVM
             {
@@ -1047,8 +1343,8 @@ namespace SkillSwap_Platform.Controllers
             var contract = await _context.TblContracts.FindAsync(contractId);
             if (contract == null) return NotFound();
 
-            var vm = await PrepareViewModelForEdit(contract, "Edit");
-            vm.ActionContext = "ModifyOnly";
+            var vm = await PrepareViewModelForEdit(contract, ACTION_MODIFYONLY);
+            vm.ActionContext = ACTION_MODIFYONLY;
 
             // Re-apply user-entered values to avoid resetting them on reload
             vm.FlowDescription = flowDescription;

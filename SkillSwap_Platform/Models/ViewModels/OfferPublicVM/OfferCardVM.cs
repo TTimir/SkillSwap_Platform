@@ -1,4 +1,4 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels.OfferFilterVM
+﻿namespace SkillSwap_Platform.Models.ViewModels.OfferPublicVM
 {
     public class OfferCardVM
     {
@@ -17,5 +17,8 @@
         public string Country { get; set; }
         public string Thumbnail { get; set; }
         public List<string> PortfolioImages { get; set; }
+
+        public double AverageRating { get; set; }
+        public int ReviewCount { get; set; }
     }
 }

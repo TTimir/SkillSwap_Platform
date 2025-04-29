@@ -29,6 +29,8 @@ public partial class TblUserCertificate
 
     public string VerificationId { get; set; } = null!;
 
+    public string? RejectionReason { get; set; }
+
     public virtual TblUser? ApprovedByAdmin { get; set; }
 
     public virtual TblSkill? Skill { get; set; }

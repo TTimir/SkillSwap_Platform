@@ -6,7 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+using SkillSwap_Platform.Services.NotificationTrack;
+using System.Linq;
 using System.Security.Claims;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SkillSwap_Platform.Services.Email;
+using NuGet.Protocol.Plugins;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -15,11 +22,14 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserProfileController> _logger;
-
-        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger)
+        private readonly INotificationService _notif;
+        private readonly IEmailService _emailService;
+        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
+            _notif = notif;
+            _emailService = emailService;
         }
 
         #region Public Profile
@@ -43,6 +53,8 @@ namespace SkillSwap_Platform.Controllers
                     .Include(u => u.TblUserSkills)
                         .ThenInclude(us => us.Skill)
                     .Include(u => u.TblReviewReviewees)
+                        .ThenInclude(r => r.TblReviewReplies)
+                        .ThenInclude(rep => rep.ReplierUser)
                     .FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower());
 
                 if (user == null)
@@ -81,7 +93,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch the most recent completed exchange (job) for the user.
                 var lastCompletedExchange = await _context.TblExchanges
-                    .Where(e => e.RequesterId == user.UserId || e.LastStatusChangedBy == user.UserId)
+                    .Where(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId)
                     .Where(e => e.Status == "Completed")
                     .OrderByDescending(e => e.LastStatusChangeDate)
                     .FirstOrDefaultAsync();
@@ -111,23 +123,70 @@ namespace SkillSwap_Platform.Controllers
                     .Where(s => skillIds.Contains(s.SkillId.ToString()))
                     .ToList();
 
+                var reviewAggregates = await _context.TblReviews
+                    .GroupBy(r => r.OfferId)
+                    .Select(g => new {
+                        OfferId = g.Key,
+                        ReviewCount = g.Count(),
+                        AverageRating = g.Average(r => r.Rating)
+                    })
+                    .ToDictionaryAsync(x => x.OfferId);
+
                 // Map each offer to its view model.
-                var offerVMs = offers.Select(o => new OfferDetailsVM
+                var offerVMs = offers.Select(o =>
                 {
-                    OfferId = o.OfferId,
-                    Title = o.Title,
-                   Designation = user.Designation,
-                    Category = o.Category,
-                    Description = o.Description,
-                    TimeCommitmentDays = o.TimeCommitmentDays,
-                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
-                    SkillName = string.Join(", ",
-                        o.SkillIdOfferOwner
-                         .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                         .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
-                         .Where(name => !string.IsNullOrEmpty(name))
-                    )
+                    // Default values if no reviews are available.
+                    int reviewCount = 0;
+                    double avgRating = 0;
+
+                    // Look for aggregated review data.
+                    if (reviewAggregates.TryGetValue(o.OfferId, out var agg))
+                    {
+                        reviewCount = agg.ReviewCount;
+                        avgRating = agg.AverageRating;
+                    }
+
+                    return new OfferDetailsVM
+                    {
+                        OfferId = o.OfferId,
+                        Title = o.Title,
+                        Designation = user.Designation,
+                        Category = o.Category,
+                        Description = o.Description,
+                        TimeCommitmentDays = o.TimeCommitmentDays,
+                        PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                        SkillName = string.Join(", ", o.SkillIdOfferOwner
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                            .Where(name => !string.IsNullOrEmpty(name))),
+                        AverageRating = avgRating,
+                        ReviewCount = reviewCount
+                    };
                 }).ToList();
+
+                // Retrieve the total exchanges for the user (as offer owner or as the other party)
+                var totalExchanges = await _context.TblExchanges
+                    .CountAsync(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId);
+
+                var exchangesWithResponse = await _context.TblExchanges
+                    .Where(e => e.ResponseDate.HasValue)
+                    .ToListAsync();
+
+                var averageResponseTime = exchangesWithResponse.Any()
+                    ? exchangesWithResponse.Average(e =>
+                        (e.ResponseDate.HasValue && e.RequestDate.HasValue)
+                            ? (e.ResponseDate.Value - e.RequestDate.Value).TotalHours
+                            : 0)
+                    : 0;
+
+                int activeExchangeCount = await _context.TblExchanges
+                    .CountAsync(e => (e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId) &&
+                     e.Status != null &&
+                     e.Status.Trim().ToLower() != "completed");
+
+                // For reviews, use the reviews associated with the user.
+                int totalReviewsUser = user.TblReviewReviewees.Count();
+                double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
                 // Build the public user profile view model.
                 var model = new UserProfileVM
@@ -140,7 +199,13 @@ namespace SkillSwap_Platform.Controllers
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
-                    Offers = offerVMs
+                    Offers = offerVMs,
+                    TotalExchanges = totalExchanges,
+                    AverageResponseTime = averageResponseTime.ToString("F2"),
+                    ActiveExchangeCount = activeExchangeCount,
+                    Reviews = user.TblReviewReviewees,
+                    ReviewCount = totalReviewsUser,
+                    AverageRating = avgRatingUser
                 };
 
                 return View("PublicProfile", model);
@@ -180,6 +245,8 @@ namespace SkillSwap_Platform.Controllers
                     .Include(u => u.TblUserSkills) // ✅ Include user skills
                         .ThenInclude(us => us.Skill) // ✅ Include related skills from TblSkills
                     .Include(u => u.TblReviewReviewees) // ✅ Fetch reviews received by the user
+                        .ThenInclude(r => r.TblReviewReplies)
+                        .ThenInclude(rep => rep.ReplierUser)
                     .FirstOrDefaultAsync(u => u.UserId == userId);
 
                 if (user == null)
@@ -217,9 +284,9 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch the most recent completed exchange (job)
                 var lastCompletedExchange = await _context.TblExchanges
-                    .Where(e => e.RequesterId == userId || e.LastStatusChangedBy == userId) // Job done by the user
-                    .Where(e => e.Status == "Completed") // Only completed transactions
-                    .OrderByDescending(e => e.LastStatusChangeDate) // Get the most recent one
+                    //.Where(e => e.RequesterId == userId || e.LastStatusChangedBy == userId) // Job done by the user
+                    //.Where(e => e.Status == "Completed") // Only completed transactions
+                    //.OrderByDescending(e => e.LastStatusChangeDate) // Get the most recent one
                     .FirstOrDefaultAsync();
 
                 // Calculate days since last completed job
@@ -248,23 +315,70 @@ namespace SkillSwap_Platform.Controllers
                     .Where(s => skillIds.Contains(s.SkillId.ToString()))
                     .ToList();
 
+                var reviewAggregates = await _context.TblReviews
+                   .GroupBy(r => r.OfferId)
+                   .Select(g => new {
+                       OfferId = g.Key,
+                       ReviewCount = g.Count(),
+                       AverageRating = g.Average(r => r.Rating)
+                   })
+                   .ToDictionaryAsync(x => x.OfferId);
 
-                var offerVMs = offers.Select(o => new OfferDetailsVM
+                // Map each offer to its view model.
+                var offerVMs = offers.Select(o =>
                 {
-                    OfferId = o.OfferId,
-                    Title = o.Title,
-                    Designation = user.Designation,
-                    Category = o.Category,
-                    Description = o.Description,
-                    TimeCommitmentDays = o.TimeCommitmentDays,
-                    PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
-                    SkillName = string.Join(", ",
-                                    o.SkillIdOfferOwner
-                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                     .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
-                                     .Where(name => !string.IsNullOrEmpty(name))
-                                )
+                    // Default values if no reviews are available.
+                    int reviewCount = 0;
+                    double avgRating = 0;
+
+                    // Look for aggregated review data.
+                    if (reviewAggregates.TryGetValue(o.OfferId, out var agg))
+                    {
+                        reviewCount = agg.ReviewCount;
+                        avgRating = agg.AverageRating;
+                    }
+
+                    return new OfferDetailsVM
+                    {
+                        OfferId = o.OfferId,
+                        Title = o.Title,
+                        Designation = user.Designation,
+                        Category = o.Category,
+                        Description = o.Description,
+                        TimeCommitmentDays = o.TimeCommitmentDays,
+                        PortfolioImages = o.TblOfferPortfolios.Select(p => p.FileUrl).ToList(),
+                        SkillName = string.Join(", ", o.SkillIdOfferOwner
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(id => skills.FirstOrDefault(s => s.SkillId.ToString() == id)?.SkillName)
+                            .Where(name => !string.IsNullOrEmpty(name))),
+                        AverageRating = avgRating,
+                        ReviewCount = reviewCount
+                    };
                 }).ToList();
+
+                // Retrieve the total exchanges for the user (as offer owner or as the other party)
+                var totalExchanges = await _context.TblExchanges
+                    .CountAsync(e => e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId);
+
+                var exchangesWithResponse = await _context.TblExchanges
+                    .Where(e => e.ResponseDate.HasValue)
+                    .ToListAsync();
+
+                var averageResponseTime = exchangesWithResponse.Any()
+                    ? exchangesWithResponse.Average(e =>
+                        (e.ResponseDate.HasValue && e.RequestDate.HasValue)
+                            ? (e.ResponseDate.Value - e.RequestDate.Value).TotalHours
+                            : 0)
+                    : 0;
+
+                int activeExchangeCount = await _context.TblExchanges
+                    .CountAsync(e => (e.OfferOwnerId == user.UserId || e.OtherUserId == user.UserId) &&
+                     e.Status != null &&
+                     e.Status.Trim().ToLower() != "completed");
+
+                // For reviews, use the reviews associated with the user.
+                int totalReviewsUser = user.TblReviewReviewees.Count();
+                double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
@@ -277,7 +391,13 @@ namespace SkillSwap_Platform.Controllers
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
-                    Offers = offerVMs
+                    Offers = offerVMs,
+                    TotalExchanges = totalExchanges,
+                    AverageResponseTime = averageResponseTime.ToString("F2"),
+                    ActiveExchangeCount = activeExchangeCount,
+                    Reviews = user.TblReviewReviewees,
+                    ReviewCount = totalReviewsUser,
+                    AverageRating = avgRatingUser
                 };
 
                 return View(model);
@@ -431,6 +551,130 @@ namespace SkillSwap_Platform.Controllers
 
         #endregion
 
+        #region Email Change Verify
+        [Authorize]
+        [HttpGet]
+        public IActionResult ConfirmEmailChange()
+        {
+            ViewBag.ShowOtpStep = (TempData["ShowOtpStep"] as bool?) ?? false;
+            ViewBag.NewEmail = TempData["NewEmail"] as string ?? "";
+            ViewBag.InfoMessage = TempData["InfoMessage"] as string;
+            ViewBag.ErrorMessage = TempData["ErrorMessage"] as string;
+            return View();
+        }
+
+        // POST: /UserProfile/ConfirmEmailChange
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmEmailChange(string otp)
+        {
+            int userId = GetUserId();
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user == null) return NotFound();
+            
+            otp = otp?.Trim();
+            var pendingEmail = user.PendingEmail;
+
+            // check code & expiry
+            if (user.EmailChangeOtp == otp && user.EmailChangeExpires > DateTime.UtcNow)
+            {
+                // commit the pending address
+                user.Email = user.PendingEmail;
+                user.PendingEmail = null;
+                user.EmailChangeOtp = null;
+                user.EmailChangeExpires = null;
+                user.EmailConfirmed = true;
+
+                await _context.SaveChangesAsync();
+
+                var confirmBody = $@"
+                    <p>Hi {user.FirstName},</p>
+                    <p>Your SkillSwap account email has now been successfully updated to <strong>{pendingEmail}</strong>.</p>
+                    <p>If you did not make this change, please contact our support immediately.</p>
+                    <p>Thanks for being with us!</p>
+                    <p><strong>The SkillSwap Team</strong></p>
+                   ";
+                await _emailService.SendEmailAsync(
+                    pendingEmail,
+                    "Your SkillSwap Email Has Been Updated",
+                    confirmBody,
+                    isBodyHtml: true
+                );
+                TempData["SuccessMessage"] = "Your email address has been updated!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["ErrorMessage"] = "Invalid or expired code.";
+            return View();
+        }
+
+        // Controllers/UserProfileController.cs
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendEmailChangeCode(string newEmail)
+        {
+            var userId = GetUserId();
+            var user = await _context.TblUsers.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "That is already your email.";
+                TempData["ShowOtpStep"] = false;
+                return RedirectToAction(nameof(ConfirmEmailChange));
+            }
+
+            bool emailTaken = await _context.TblUsers
+                .AnyAsync(u => u.UserId != userId
+                   && u.Email.ToLower() == newEmail.Trim().ToLower());
+            if (emailTaken)
+            {
+                TempData["ErrorMessage"] = "That email address is already in use.";
+                TempData["ShowOtpStep"] = false;
+                return RedirectToAction(nameof(ConfirmEmailChange));
+            }
+
+            // generate & store
+            var otp = new Random().Next(100000, 999999).ToString("D6");
+            user.PendingEmail = newEmail;
+            user.EmailChangeOtp = otp;
+            user.EmailChangeExpires = DateTime.UtcNow.AddMinutes(10);
+            await _context.SaveChangesAsync();
+
+            string htmlBody = $@"
+                <div style=""font-family:Arial, sans-serif; line-height:1.5; color:#333;"">
+                  <p>Hi {user.FirstName},</p>
+                  <p>We received a request to change your SkillSwap account email to this address. To complete the update, please use the code below:</p>
+                  <h2 style=""background:#f4f4f4; display:inline-block; padding:10px 20px; border-radius:4px;"">{otp}</h2>
+                  <p><small>This code expires in 10 minutes.</small></p>
+                  <p>If you did not request this change, simply ignore this message — no further action is needed.</p>
+                  <hr style=""border:none; border-top:1px solid #e0e0e0; margin:20px 0;"" />
+                  <p>Thanks for using SkillSwap!</p>
+                  <p><strong>The SkillSwap Team</strong></p>
+                </div>
+                ";
+
+            // send to the **new** address
+            await _emailService.SendEmailAsync(
+                newEmail,
+                "Please Confirm Your New SkillSwap Email Address",
+                body: htmlBody,
+                isBodyHtml: true
+            );
+
+            TempData["InfoMessage"] = "A code has been sent to " + newEmail;
+            TempData["ShowOtpStep"] = true;
+            TempData["NewEmail"] = newEmail;
+
+            TempData["InfoMessage"] = "We’ve sent a code to your new email. Please enter it below.";
+            return RedirectToAction(nameof(ConfirmEmailChange));
+        }
+
+        #endregion
+
         #region Update Profile (Transactional)
         // POST: /UserProfile/UpdateProfile
         [HttpPost]
@@ -509,7 +753,7 @@ namespace SkillSwap_Platform.Controllers
                     await UpdateExperienceAsync(model.ExperienceEntries, userId);
                     await UpdateCertificatesAsync(model.CertificateEntries, userId);
 
-                    await _context.SaveChangesAsync();
+                    var changes = await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     // Now update the user’s OfferedSkillAreas in TblUsers and sync the TblUserSkills flags.
@@ -519,6 +763,24 @@ namespace SkillSwap_Platform.Controllers
                         user.OfferedSkillAreas = model.Skills.OfferedSkillSummary;
                         user.DesiredSkillAreas = model.Skills.WillingSkillSummary;
                         await _context.SaveChangesAsync();
+
+                        // If nothing changed, let the user know; otherwise a success message.
+                        if (changes == 0)
+                        {
+                            TempData["SuccessMessage"] = "Looks like nothing changed, your profile is already up to date.";
+                        }
+                        else
+                        {
+                            // log notification only if there was something to save
+                            await _notif.AddAsync(new TblNotification
+                            {
+                                UserId = userId,
+                                Title = "Profile updated",
+                                Message = "You successfully updated your profile.",
+                                Url = Url.Action("Index", "UserProfile")
+                            });
+                            TempData["SuccessMessage"] = "Profile updated successfully.";
+                        }
 
                         // Synchronize the IsOffering flag on each TblUserSkill.
                         await UpdateUserOfferSkillFlagsAsync(userId, user.OfferedSkillAreas);
@@ -563,8 +825,23 @@ namespace SkillSwap_Platform.Controllers
                     {
                         throw new Exception(errorMsg);
                     }
-                    string fileUrl = await UploadFileAsync(personal.ProfileImageFile, "profile");
-                    user.ProfileImageUrl = fileUrl;
+
+                    // Prepare folders & filename
+                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profile");
+                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                    string uniqueFileName = Guid.NewGuid() + Path.GetExtension(personal.ProfileImageFile.FileName);
+                    string savePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+
+                    using (var inStream = personal.ProfileImageFile.OpenReadStream())
+                    using (var image = Image.Load(inStream))
+                    {
+                        image.Mutate(x => x.Resize(330, 300));
+                        // You can tweak quality here if you like:
+                        var encoder = new JpegEncoder { Quality = 85 };
+                        await image.SaveAsync(savePath, encoder);
+                    }
+                    user.ProfileImageUrl = $"/uploads/profile/{uniqueFileName}";
                 }
             }
         }

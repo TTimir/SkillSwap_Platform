@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
 {
-    public class OfferCreateVM
+    public class OfferCreateVM : IValidatableObject
     {
         [Required(ErrorMessage = "No title in mind?")]
         [Display(Name = "Offer Title")]
@@ -63,6 +63,25 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         [Required(ErrorMessage = "Willing Skill is required.")]
         [Display(Name = "Intrested in")]
         public string SelectedWillingSkill { get; set; }
+
+        [Display(Name = "Latitude")]
+        public double? Latitude { get; set; }
+
+        [Display(Name = "Longitude")]
+        public double? Longitude { get; set; }
+        [Display(Name = "Address")]
+        public string? Address { get; set; }
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(Address)
+             && (!Latitude.HasValue || !Longitude.HasValue))
+            {
+                yield return new ValidationResult(
+                    "You must either enter a manual address or fetch your GPS coordinates.",
+                    new[] { nameof(Address), nameof(Latitude), nameof(Longitude) }
+                );
+            }
+        }
 
         [BindNever] 
         public List<SelectListItem> UserSkills { get; set; } = new List<SelectListItem>();

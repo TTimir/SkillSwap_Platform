@@ -1,0 +1,563 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.AboutUsVM
+
+@{
+    ViewData["Title"] = "About";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="body_content">
+    <!-- About Section Area -->
+    <section class="our-about pb90">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-6 col-md-3">
+                    <div class="position-relative mb30">
+                        <img class="w100" src="~/template_assets/images/about/about-1.jpg" alt="">
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative mb30">
+                        <img class="w100" src="~/template_assets/images/about/about-2.jpg" alt="">
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative mb30">
+                        <img class="w100" src="~/template_assets/images/about/about-3.jpg" alt="">
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative mb30">
+                        <img class="w100" src="~/template_assets/images/about/about-4.jpg" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section Area -->
+    <section class="our-about pb90 pt0">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="main-title">
+                        <h2>Join the World’s Premier <br class="d-none d-lg-block"> SkillSwap Community</h2>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <p class="text mb20">Tap into a global community of trusted professionals, matched to your needs. With secure escrow, 24/7 support, and flexible swap options (one-off or ongoing), SkillSwap delivers high-impact results, every time.</p>
+                    <div class="list-style2">
+                        <ul class="mb25">
+                            <li><i class="far fa-check"></i>Work only with proven SkillSwappers who deliver real impact.</li>
+                            <li><i class="far fa-check"></i>Precision pairing ensures you find the perfect collaborator.</li>
+                            <li><i class="far fa-check"></i>Choose remote, in-person swaps, flexible to your schedule and style.</li>
+                        </ul>
+                    </div>
+                    <a href="@Url.ActionLink("Register","Home")" class="ud-btn btn-thm-border mb25 me-4">Get Started<i class="fal fa-arrow-right-long"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="p-0">
+        <div class="cta-banner3 hover-bgc-color mx-auto maxw1600 pt120 pt60-lg pb90 pb60-lg position-relative overflow-hidden">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-5 wow fadeInRight" data-wow-delay="500ms">
+                        <div class="mb30">
+                            <div class="main-title">
+                                <h2 class="title">All the skills you need, <br class="d-none d-xl-block"> one trusted swap away</h2>
+                            </div>
+                        </div>
+                        <div class="why-chose-list">
+                            <div class="list-one d-flex align-items-start mb30">
+                                <span class="list-icon flex-shrink-0 flaticon-badge"></span>
+                                <div class="list-content flex-grow-1 ml20">
+                                    <h4 class="mb-1">Verified Swappers</h4>
+                                    <p class="text mb-0 fz15">See real work samples, peer reviews and identity checks, so you know you’re swapping with pros.</p>
+                                </div>
+                            </div>
+                            <div class="list-one d-flex align-items-start mb30">
+                                <span class="list-icon flex-shrink-0 flaticon-money"></span>
+                                <div class="list-content flex-grow-1 ml20">
+                                    <h4 class="mb-1">Swap first, pay later</h4>
+                                    <p class="text mb-0 fz15">Agree on your exchange, release tokens only when you’re happy, and it’s 100% free to list.</p>
+                                </div>
+                            </div>
+                            <div class="list-one d-flex align-items-start mb30">
+                                <span class="list-icon flex-shrink-0 flaticon-security"></span>
+                                <div class="list-content flex-grow-1 ml20">
+                                    <h4 class="mb-1">Secure & transparent</h4>
+                                    <p class="text mb-0 fz15"> Your tokens protected in escrow and only move when both parties confirm completion, no surprises, ever.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <img class="cta-banner3-img wow fadeInLeft" src="~/template_assets/images/about/about-5.jpg" alt="" data-wow-delay="300ms">
+        </div>
+    </section>
+
+    <!-- Funfact -->
+    <section class="pb0 pt60">
+        <div class="container maxw1600 bdrb1 pb60">
+            <div class="row">
+                <div class="col-xl-11 mx-auto">
+                    <div class="row justify-content-center" data-wow-delay="300ms">
+                        <div class="col-6 col-md-3">
+                            <div class="funfact_one text-center">
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-center">
+                                        <li><div class="timer">@Model.TalentsDisplayValue</div></li>
+                                        @if (!string.IsNullOrEmpty(Model.TalentsSuffix))
+                                        {
+                                            <li><span>@Model.TalentsSuffix</span></li>
+                                        }
+                                    </ul>
+                                    <p class="text mb-0">Active Swappers</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="funfact_one text-center">
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-center">
+                                        <li><div class="timer">@Model.SwapSatisfactionPercent</div></li>
+                                        <li><span>%</span></li>
+                                    </ul>
+                                    <p class="text mb-0">Positive Review (4+)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="funfact_one text-center">
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-center">
+                                        <li><div class="timer">@Model.SwapsCompletedValue</div></li>
+                                        @if (!string.IsNullOrEmpty(Model.SwapsCompletedSuffix))
+                                        {
+                                            <li><span>@Model.SwapsCompletedSuffix</span></li>
+                                        }
+                                    </ul>
+                                    <p class="text mb-0">Swaps Completed</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="funfact_one text-center">
+                                <div class="details">
+                                    <ul class="ps-0 mb-0 d-flex justify-content-center">
+                                        <li><div class="timer">@Model.AdjustedSuccessRate</div></li>
+                                        <li><span>%</span></li>
+                                    </ul>
+                                    <p class="text mb-0">Swap Success</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Testimonials -->
+    <section class="our-testimonial">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 mx-auto wow fadeInUp" data-wow-delay="300ms">
+                    <div class="main-title text-center">
+                        <h2>Testimonials</h2>
+                        <p class="paragraph">Interdum et malesuada fames ac ante ipsum</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 m-auto wow fadeInUp" data-wow-delay="500ms">
+                    <div class="testimonial-style2">
+                        <div class="tab-content" id="pills-tabContent">
+                            <div class="tab-pane fade" id="pills-1st" role="tabpanel" aria-labelledby="pills-1st-tab">
+                                <div class="testi-content text-center">
+                                    <span class="icon fas fa-quote-left"></span>
+                                    <h4 class="testi-text">"As an early adopter, I posted my first swap in under five minutes, SkillSwap’s launch experience was flawless! "</h4>
+                                    <h6 class="name">Jevin Talaviya</h6>
+                                    <p class="design">Java Developer</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade show active" id="pills-2nd" role="tabpanel" aria-labelledby="pills-2nd-tab">
+                                <div class="testi-content text-center">
+                                    <span class="icon fas fa-quote-left"></span>
+                                    <h4 class="testi-text">"The escrow protection gave me peace of mind from day one—exchanging tokens has never felt safer. "</h4>
+                                    <h6 class="name">Smit Bhuva</h6>
+                                    <p class="design">Finance Manager</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="pills-3rd" role="tabpanel" aria-labelledby="pills-3rd-tab">
+                                <div class="testi-content text-center">
+                                    <span class="icon fas fa-quote-left"></span>
+                                    <h4 class="testi-text">"Within days of posting my swap request, I connected with an SEO expert who transformed my website’s traffic. The process was seamless from browsing profiles to secure token payment, and I’ve already seen a 30% boost in leads! "</h4>
+                                    <h6 class="name">Arjun M</h6>
+                                    <p class="design">Digital Marketer</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="pills-4th" role="tabpanel" aria-labelledby="pills-4th-tab">
+                                <div class="testi-content text-center">
+                                    <span class="icon fas fa-quote-left"></span>
+                                    <h4 class="testi-text">"Managing swaps on the new dashboard is effortless—everything’s right where you need it, even at launch. "</h4>
+                                    <h6 class="name">Vatsal Mangukiya</h6>
+                                    <p class="design">Digital Marketer</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="pills-5th" role="tabpanel" aria-labelledby="pills-5th-tab">
+                                <div class="testi-content text-center">
+                                    <span class="icon fas fa-quote-left"></span>
+                                    <h4 class="testi-text">"Posting and managing my first swap was so easy—huge kudos to SkillSwap for such a smooth launch! "</h4>
+                                    <h6 class="name">Guatam Nakum</h6>
+                                    <p class="design">Data Analytics</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-list position-relative">
+                            <ul class="nav nav-pills justify-content-center" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link ps-0" id="pills-1st-tab" data-bs-toggle="pill" data-bs-target="#pills-1st" type="button" role="tab" aria-controls="pills-1st" aria-selected="true"><img src="~/template_assets/images/testimonials/testi-1.png" alt=""></button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="pills-2nd-tab" data-bs-toggle="pill" data-bs-target="#pills-2nd" type="button" role="tab" aria-controls="pills-2nd" aria-selected="false"><img src="~/template_assets/images/testimonials/testi-2.png" alt=""></button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="pills-3rd-tab" data-bs-toggle="pill" data-bs-target="#pills-3rd" type="button" role="tab" aria-controls="pills-3rd" aria-selected="false"><img src="~/template_assets/images/testimonials/testi-3.png" alt=""></button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="pills-4th-tab" data-bs-toggle="pill" data-bs-target="#pills-4th" type="button" role="tab" aria-controls="pills-4th" aria-selected="false"><img src="~/template_assets/images/testimonials/testi-4.png" alt=""></button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link pe-0" id="pills-5th-tab" data-bs-toggle="pill" data-bs-target="#pills-5th" type="button" role="tab" aria-controls="pills-5th" aria-selected="false"><img src="~/template_assets/images/testimonials/testi-5.png" alt=""></button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us -->
+    <section class="pt0 pb40-md">
+        <div class="cta-banner bgc-thm3 mx-auto maxw1700 pt110 pb80 pb30-md bdrs12 position-relative">
+            <div class="container">
+                <div class="row align-items-start align-items-xl-center">
+                    <div class="col-md-6 col-lg-7 col-xl-6">
+                        <div class="position-relative mb35 mb0-sm wow fadeInRight" data-wow-delay="300ms">
+                            <div class="freelancer-widget d-none d-lg-block">
+                                <h5 class="title mb20"><span class="text-thm">@Model.VerifiedCountDisplay@("+")</span> Verified Freelancer</h5>
+                                @foreach (var user in Model.CommunitySpotlight.Skip(1).Take(4))
+                                {
+                                    <div class="thumb d-flex align-items-center mb20">
+                                        <div class="flex-shrink-0">
+                                            <img class="wa rounded-circle" src="@user.ProfileImage" alt="@user.Name" style="width:52px; height:52px; object-fit:cover;">
+                                        </div>
+                                        <div class="flex-grow-1 ml20">
+                                            <a href="@Url.Action(
+      "PublicProfileByUsername",
+      "UserProfile",
+      new { username = user.Name }
+    )">
+                                                @user.Name
+                                            </a>
+                                            <p class="fz14 mb-0">@user.Designation</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @{
+                                // get the very first spotlighted user
+                                var topUser = Model.CommunitySpotlight?.FirstOrDefault();
+                            }
+                            @if (topUser != null)
+                            {
+                                <div class="freelancer-style1 about-page-style text-center d-none d-lg-block">
+                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle"><img class="rounded-circle mx-auto" src="@topUser.ProfileImage" alt="@topUser.Name" style="max-width:100%;"><span class="online"></span></div>
+                                    <div class="details">
+                                        <a href="@Url.Action(
+      "PublicProfileByUsername",
+      "UserProfile",
+      new { username = topUser.Name }
+    )">
+                                            @topUser.Name
+                                        </a>
+                                        <p class="mb-0">@topUser.Designation</p>
+                                        <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color">@topUser.Rating.ToString("0.0")</span> (@topUser.ReviewCount reviews)</p></div>
+                                        <div class="skill-tags d-flex align-items-center justify-content-center mb20">
+                                            @foreach (var skill in (topUser.OfferedSkillAreas ?? Enumerable.Empty<string>()).Take(3))
+                                            {
+                                                <span class="tag me-1">@skill</span>
+                                            }
+                                        </div>
+                                        <hr class="opacity-100">
+                                        <div class="fl-meta d-flex align-items-center justify-content-between">
+                                            <a class="meta fw500 text-start">Location<br><span class="fz14 fw400">@topUser.Location</span></a>
+                                            <a class="meta fw500 text-start">Recomm.<br><span class="fz14 fw400">@($"{topUser.Recommendation:0}%")</span></a>
+                                            <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">@("%")@topUser.JobSuccess</span></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            <img class="d-block d-lg-none w-100" src="~/template_assets/images/about/verified-freelancer.png" alt="">
+                            <div class="imgbox-about-page position-relative d-none d-xl-block">
+                                <img class="img-1 spin-right" src="~/template_assets/images/about/element-1.png" alt="">
+                                <img class="img-2 bounce-x" src="~/template_assets/images/about/element-2.png" alt="">
+                                <img class="img-3 bounce-y" src="~/template_assets/images/about/element-3.png" alt="">
+                                <img class="img-4 bounce-y" src="~/template_assets/images/about/element-4.png" alt="">
+                                <img class="img-5 spin-right" src="~/template_assets/images/about/element-5.png" alt="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-5 col-xl-5 offset-xl-1">
+                        <div class="about-box-1 pe-4 mt100 mt0-lg mb30-lg wow fadeInLeft" data-wow-delay="300ms">
+                            <h2 class="title mb10">Truested By Best <br>Swappers</h2>
+                            <p class="text mb25 mb30-md">Be among the pioneers building our Skillswap community. Share your expertise, learn new skills, and grow together from day one.</p>
+                            <div class="list-style3 mb40 mb30-md">
+                                <ul>
+                                    <li><i class="far fa-check text-white bgc-review-color2"></i>Verified Profiles & Real Reviews</li>
+                                    <li><i class="far fa-check text-white bgc-review-color2"></i>More Than @Model.AverageExperience.ToString("F1") Years Average Experience</li>
+                                    <li><i class="far fa-check text-white bgc-review-color2"></i>@Model.EarlyAdopterCount@("+") Early Adopters Already Swapping</li>
+                                </ul>
+                            </div>
+                            <a href="@Url.ActionLink("PublicProfileList","UserProfileList")" class="ud-btn btn-thm2">Meet Experts<i class="fal fa-arrow-right-long"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Table Area -->
+   @*  <section class="our-pricing pt-0 pb90">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 m-auto wow fadeInUp">
+                    <div class="main-title text-center">
+                        <h2 class="title">Membership Plans</h2>
+                        <p class="paragraph mt10">Give your visitor a smooth online experience with a solid UX design</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row wow fadeInUp" data-wow-delay="200ms">
+                <div class="col-lg-12">
+                    <div class="pricing_packages_top d-flex align-items-center justify-content-center mb60">
+                        <div class="toggle-btn">
+                            <span class="pricing_save1 dark-color ff-heading">Billed Monthly</span>
+                            <label class="switch">
+                                <input type="checkbox" id="checbox" onclick="check()" />
+                                <span class="pricing_table_switch_slide round"></span>
+                            </label>
+                            <span class="pricing_save2 dark-color ff-heading">Billed Yearly</span>
+                            <span class="pricing_save3">Save 20%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row wow fadeInUp" data-wow-delay="300ms">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="pricing_packages text-center">
+                        <div class="heading mb10">
+                            <h1 class="text2">$29 <small>/ monthly</small></h1>
+                            <h1 class="text1">$39 <small>/ monthly</small></h1>
+                            <h4 class="package_title mt-2">Basic Plan</h4>
+                        </div>
+                        <div class="details">
+                            <p class="text mb30">One time fee for one listing or task highlighted in search results.</p>
+                            <div class="pricing-list mb40">
+                                <ul class="px-0">
+                                    <li>1 Listing</li>
+                                    <li>30 Days Visibility</li>
+                                    <li>Highlighted in Search Results</li>
+                                    <li>4 Revisions</li>
+                                    <li>9 days Delivery Time</li>
+                                    <li>Products Support</li>
+                                </ul>
+                            </div>
+                            <div class="d-grid">
+                                <a href="" class="ud-btn btn-thm-border">Buy Now<i class="fal fa-arrow-right-long"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="pricing_packages active text-center">
+                        <div class="heading mb10">
+                            <h1 class="text2">$49 <small>/ monthly</small></h1>
+                            <h1 class="text1">$59 <small>/ monthly</small></h1>
+                            <h4 class="package_title mt-2">Standard Plan</h4>
+                        </div>
+                        <div class="details">
+                            <p class="text mb30">One time fee for one listing or task highlighted in search results.</p>
+                            <div class="pricing-list mb40">
+                                <ul class="px-0">
+                                    <li>1 Listing</li>
+                                    <li>30 Days Visibility</li>
+                                    <li>Highlighted in Search Results</li>
+                                    <li>4 Revisions</li>
+                                    <li>9 days Delivery Time</li>
+                                    <li>Products Support</li>
+                                </ul>
+                            </div>
+                            <div class="d-grid">
+                                <a href="" class="ud-btn btn-thm-border">Buy Now<i class="fal fa-arrow-right-long"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="pricing_packages text-center">
+                        <div class="heading mb10">
+                            <h1 class="text2">$89 <small>/ monthly</small></h1>
+                            <h1 class="text1">$99 <small>/ monthly</small></h1>
+                            <h4 class="package_title mt-2">Extended Plan</h4>
+                        </div>
+                        <div class="details">
+                            <p class="text mb30">One time fee for one listing or task highlighted in search results.</p>
+                            <div class="pricing-list mb40">
+                                <ul class="px-0">
+                                    <li>1 Listing</li>
+                                    <li>30 Days Visibility</li>
+                                    <li>Highlighted in Search Results</li>
+                                    <li>4 Revisions</li>
+                                    <li>9 days Delivery Time</li>
+                                    <li>Products Support</li>
+                                </ul>
+                            </div>
+                            <div class="d-grid">
+                                <a href="" class="ud-btn btn-thm-border">Buy Now<i class="fal fa-arrow-right-long"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="pricing_packages text-center">
+                        <div class="heading mb10">
+                            <h1 class="text2">$129 <small>/ monthly</small></h1>
+                            <h1 class="text1">$139 <small>/ monthly</small></h1>
+                            <h4 class="package_title mt-2">Enterprise Plan</h4>
+                        </div>
+                        <div class="details">
+                            <p class="text mb30">One time fee for one listing or task highlighted in search results.</p>
+                            <div class="pricing-list mb40">
+                                <ul class="px-0">
+                                    <li>1 Listing</li>
+                                    <li>30 Days Visibility</li>
+                                    <li>Highlighted in Search Results</li>
+                                    <li>4 Revisions</li>
+                                    <li>9 days Delivery Time</li>
+                                    <li>Products Support</li>
+                                </ul>
+                            </div>
+                            <div class="d-grid">
+                                <a href="" class="ud-btn btn-thm-border">Buy Now<i class="fal fa-arrow-right-long"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section> *@
+
+    <!-- Our Partners -->
+   @*  <section class="our-partners pt0 pb150">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 wow fadeInUp">
+                    <div class="main-title text-center">
+                        <h6>Trusted by the world’s best</h6>
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="dots_none nav_none slider-dib-sm slider-6-grid owl-carousel owl-theme wow fadeInUp" data-wow-delay="300ms">
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/1.png" alt="1.png"></div>
+                        </div>
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/2.png" alt="2.png"></div>
+                        </div>
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/3.png" alt="3.png"></div>
+                        </div>
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/4.png" alt="4.png"></div>
+                        </div>
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/5.png" alt="5.png"></div>
+                        </div>
+                        <div class="item">
+                            <div class="partner_item"><img class="wa m-auto" src="~/template_assets/images/partners/6.png" alt="6.png"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section> *@
+
+    <section class="early-adopters pb60 pt0 text-center">
+        <div class="container">
+            <h2 class="mb20">Be One of Our Founding SkillSwappers</h2>
+            <p class="lead mb30">
+                Join us as a founding member and transform your skills into real-world impact!
+            </p>
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <a href="@Url.Action("Index", "UserDashboard")"
+                   class="ud-btn btn-thm">
+                    Go to Your Dashboard
+                </a>
+            }
+            else
+            {
+                <a href="@Url.Action("Register", "Home")"
+                   class="ud-btn btn-thm">
+                    Sign Up Free
+                </a>
+            }
+        </div>
+    </section>
+
+    <!-- Our CTA -->
+    <section class="our-cta bgc-thm4 pt90 pb90 pt60-md pb60-md mt100 mt0-lg">
+        <div class="container">
+            <div class="row justify-content-between">
+                <div class="col-md-6 col-lg-7 col-xl-5 wow fadeInLeft">
+                    <div class="cta-style3">
+                        <h2 class="cta-title">Need Expertise? Post Your Swap Today.</h2>
+                        <p class="cta-text">
+                            Tell us what you need, and we’ll match you with top SkillSwappers
+                            who’ll deliver securely and on your schedule.
+                        </p>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a href="@Url.Action("Create", "UserOfferManage")" class="ud-btn btn-thm2">
+                                Post a Swap <i class="fal fa-arrow-right-long"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Login", "Home", new { returnUrl = Url.Action("Create", "UserOfferManage") })"
+                               class="ud-btn btn-thm2">
+                                Sign In to Post a Swap
+                            </a>
+                            <a href="@Url.Action("Register", "Home", new { returnUrl = Url.Action("Create", "UserOfferManage") })"
+                               class="ud-btn btn-thm-border ms-3">
+                                Sign Up Free
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-5 col-xl-5 position-relative wow zoomIn">
+                    <div class="cta-img">
+                        <img class="w-100" src="~/template_assets/images/about/about-3.png" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+

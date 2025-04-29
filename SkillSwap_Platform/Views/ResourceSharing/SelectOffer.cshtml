@@ -1,0 +1,152 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceSelectionVM
+
+@{
+    ViewData["Title"] = "Resource Exchange";
+    ViewData["SubTitle"] = "Easily share your resources and create rewarding exchanges.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                @if (Model.OfferOptions != null && Model.OfferOptions.Any())
+                {
+                    <table class="table-style3 table at-savesearch">
+                        <thead class="t-head">
+                            <tr>
+                                <th scope="col">Offer Details</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="t-body">
+                            @foreach (var offer in Model.OfferOptions)
+                            {
+                                <tr>
+                                    <th class="ps-0" scope="row">
+                                        <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                            <div class="d-lg-flex align-items-lg-center">
+                                                <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                    <img class="mx-auto"
+                                                         src="@( !string.IsNullOrEmpty(offer.OfferImageUrl) ? offer.OfferImageUrl : "/template_assets/images/default-offer.png" )"
+                                                         alt="@offer.OfferTitle"
+                                                         style="max-width:100%" />
+                                                </div>
+                                                <div class="details ml15 ml0-md mb15-md">
+                                                    <small>@offer.Category</small>
+                                                    <h5 class="title mb-2">@offer.OfferTitle</h5>
+                                                    <p class="mb-0 fz14 list-inline-item mb5-sm text-thm" title="Received Items"><i class="flaticon-contract fz16 vam text-thm me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @offer.ReceivedCount Received</p>
+                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange Initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @offer.InitiatedDate.ToString("MMMM dd, yyyy") </p>
+                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode of learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @offer.ModeOfLearning </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <td class="vam"><span class="pending-style style2">@offer.Status</span></td>
+                                    <td class="vam">
+                                        <a asp-controller="ResourceSharing" asp-action="Create" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Share a Resource" class="table-action fz15 fw500 text-thm2"><span class="flaticon-rocket me-2 vam" style="transform:rotate(-45deg)"></span> Share</a>
+                                        <a asp-controller="ResourceSharing" asp-action="List" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Shared Resources" class="table-action fz15 fw500 text-thm2"><span class="flaticon-file-1 me-2 vam"></span> Resources</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>No offers found for sharing resources.</p>
+                }
+                @if (Model.CurrentPage > 1)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1 })">
+                                        <span class="fas fa-angle-left"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link"><span class="fas fa-angle-left"></span></span>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                if (i == Model.CurrentPage)
+                                {
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                    </li>
+                                }
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1 })">
+                                        <span class="fas fa-angle-right"></span>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                    <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                </li>
+                            }
+                        </ul>
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            Page @Model.CurrentPage of @Model.TotalPages
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>

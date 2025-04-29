@@ -19,6 +19,12 @@ public partial class TblExchangeHistory
 
     public string? Reason { get; set; }
 
+    public string? ActionType { get; set; }
+
+    public DateTime? MeetingVerifiedDate { get; set; }
+
+    public string? VerificationNote { get; set; }
+
     public virtual TblUser? ChangedByNavigation { get; set; }
 
     public virtual TblExchange Exchange { get; set; } = null!;

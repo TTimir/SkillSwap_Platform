@@ -1,0 +1,432 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.MeetingVM.MeetingLaunchVM
+
+@{
+    Layout = null;
+    var meetingRecordId = "@Model.MeetingRecordId";
+    var meetingUrl = "@Model.JoinUrl";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Google Meet-Inspired UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preload fonts similar to Google Meet (e.g., Roboto) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #fff;
+            color: #202124;
+        }
+        /* Header styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+            .header .logo {
+                height: 50px; /* Adjust as needed */
+            }
+
+            .header .btn-group button {
+                margin-left: 0.5rem;
+            }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 70px); /* subtract header height */
+            box-sizing: border-box;
+            padding: 1rem; /* Reduced overall padding */
+            gap: 1rem; /* Use gap to control space between columns */
+        }
+        /* Left Column */
+        .left-column {
+            flex: 1;
+            max-width: 450px;
+        }
+
+            .left-column h1 {
+                font-size: 2.5rem;
+                font-weight: 400;
+                margin-bottom: 1rem;
+            }
+
+            .left-column p {
+                font-size: 1.125rem;
+                color: #5f6368;
+                margin-bottom: 2rem;
+            }
+
+        .join-form {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+            .join-form input {
+                flex: 1;
+                padding: 0.75rem;
+                font-size: 1rem;
+                border: 1px solid #dadce0;
+                border-radius: 4px 0 0 4px;
+                outline: none;
+            }
+
+            .join-form button {
+                background-color: #1F4B3F;
+                padding: 0.4rem 1rem;
+                cursor: pointer;
+                border-radius: 0 4px 4px 0;
+                font-size: 1rem;
+                color: #fff;
+                display: flex;
+                align-items: center;
+            }
+
+                .join-form button:hover {
+                    background-color: #5BBB7B;
+                }
+
+                .join-form button svg {
+                    margin-left: 0.5rem;
+                    fill: #fff;
+                    width: 1rem;
+                    height: 1rem;
+                }
+
+        .learn-more {
+            margin-top: 1rem;
+        }
+
+            .learn-more a {
+                color: #1a73e8;
+                text-decoration: none;
+            }
+
+                .learn-more a:hover {
+                    text-decoration: underline;
+                }
+        /* Right Column */
+        .right-column {
+            flex: 1;
+            max-width: 450px;
+        }
+
+            .right-column h2 {
+                font-size: 1.5rem;
+                font-weight: 500;
+                margin-top: 1rem;
+            }
+
+            .right-column p {
+                font-size: 1rem;
+                color: #5f6368;
+                text-align: center;
+            }
+        /* Custom Carousel adjustments */
+        .carousel-inner img {
+            border-radius: 50%; /* Circular images */
+        }
+
+        .carousel-caption {
+            position: static;
+            margin-top: 10px;
+            padding: 0;
+            color: #202124;
+            text-align: center;
+        }
+        /* Custom slider controls */
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            background-color: #5BBB7B;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+
+        .rating-stars {
+            display: inline-flex;
+            font-size: 1.5rem;
+            direction: rtl;
+        }
+
+            .rating-stars input[type="radio"] {
+                display: none;
+            }
+
+            .rating-stars label {
+                direction: ltr;
+                cursor: pointer;
+                padding: 0 0.1rem;
+            }
+
+            .rating-stars svg {
+                fill: #ccc; /* Default star color */
+                transition: fill 0.2s ease;
+            }
+
+            .rating-stars label:hover svg,
+            .rating-stars label:hover ~ label svg,
+            .rating-stars input[type="radio"]:checked ~ label svg {
+                fill: #FFD700; /* Gold color on hover or when selected */
+            }
+
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <!-- Left side: Logo -->
+        <div>
+            <a href="@Url.Action("Index", "Home")">
+                <img src="~/template_assets/images/header-logo-dark.svg" alt="Logo" class="logo" />
+            </a>
+        </div>
+        <!-- Right side: Navigation buttons (Home & Back) -->
+        <div class="btn-group">
+            <a href="@Url.Action("Index", "Home")" class="btn">Home</a>
+            <a href="@Url.Action("Index", "ExchangeDashboard")" class="btn">
+                <!-- Inline SVG for Back Arrow -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H2.707l4.147 4.146a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z" />
+                </svg>
+                Back
+            </a>
+        </div>
+    </header>
+    <div class="main-container">
+        <!-- Left Column: Heading, Subtitle, Join Meeting Form -->
+        <div class="left-column">
+            <h1>Video calls and meetings for everyone</h1>
+            <p>Connect from anywhere, collaborate effortlessly, and celebrate together with Skill Swap.</p>
+            <!-- Join meeting form -->
+            <div class="join-form">
+                <input type="text" id="meetingId" class="form-control" value="@Model.JoinUrl" readonly />
+                <button id="joinBtn" type="button" onclick="joinMeeting()">
+                    Join Meeting
+                    <!-- Camera SVG icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 9a3 3 0 100 6 3 3 0 000-6zm8-3h-3.17l-1.84-2H8.99l-1.84 2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Learn more link -->
+            <div class="learn-more">
+                <a href="#" target="_blank">Learn more about Skill Swap</a>
+            </div>
+        </div>
+        <!-- Right Column: Carousel Slider with Auto-Slider, Dots, and Caption Below Image -->
+        <div class="right-column">
+            <!-- Bootstrap Carousel with auto-slide and indicators (dots) -->
+            <div id="meetingCarousel" class="carousel slide" data-ride="carousel" data-interval="3000">
+                <!-- Indicators (dots) -->
+               @*  <ol class="carousel-indicators">
+                    <li data-target="#meetingCarousel" data-slide-to="0" class="active"></li>
+                    <li data-target="#meetingCarousel" data-slide-to="1"></li>
+                    <li data-target="#meetingCarousel" data-slide-to="2"></li>
+                </ol> *@
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="~/template_assets/images/meeting/plan.jpg" class="d-block w-100" alt="Schedule">
+                        <div class="carousel-caption">
+                            <h5>Session Scheduled</h5>
+                            <p>Your Skill Swap session is now on your calendar with all the details added automatically.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="~/template_assets/images/meeting/Meet.jpg" class="d-block w-100" alt="Attend">
+                        <div class="carousel-caption">
+                            <h5>Meet on Time</h5>
+                            <p>Your personalized Google Meet link is ready. At the scheduled time, just click to join.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <img src="~/template_assets/images/meeting/security_illustration-1.png" class="d-block w-100" alt="Safe">
+                        <div class="carousel-caption">
+                            <h5>Meeting Secure</h5>
+                            <p>Rest assured, your session is protected with advanced security features and robust safeguards.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Controls -->
+                <a class="carousel-control-prev" href="#meetingCarousel" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="carousel-control-next" href="#meetingCarousel" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Modal for Meeting Feedback -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="feedbackForm" action="@Url.Action("SaveMeetingNotes", "GoogleCalendar")" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="feedbackModalLabel">Meeting Feedback</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Hidden field for meeting id -->
+                        <input type="hidden" name="meetingId" id="MeetingId" value="0" />
+                        <div class="form-group">
+                            <label for="MeetingNotes">Enter your meeting notes or feedback<span class="text-danger">*</span>:</label>
+                            <textarea id="MeetingNotes" name="MeetingNotes" class="form-control" rows="4" placeholder="Enter your meeting notes/feedback here..." required></textarea>
+                        </div>
+                        <!-- Star Rating Input -->
+                        <div class="form-group rating-group">
+                            <label>Meeting Quality/Rating<span class="text-danger">*</span>:</label>
+                            <div class="rating-stars">
+                                <input type="radio" id="star5" name="Rating" value="5" required />
+                                <label for="star5" title="5 star">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star4" name="Rating" value="4" required />
+                                <label for="star4" title="4 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star3" name="Rating" value="3" required />
+                                <label for="star3" title="3 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star2" name="Rating" value="2" required />
+                                <label for="star2" title="2 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+
+                                <input type="radio" id="star1" name="Rating" value="1" required />
+                                <label for="star1" title="1 stars">
+                                    <svg viewBox="0 0 576 512" width="1em" height="1em">
+                                        <path d="M316.7 17.8L381.6 150.2 512 171.5c26.2 3.8 36.7 36 17.7 54.6L439 305.8 461.4 436.5c4.5 26.4-23.2 46-46.4 33.7L288 385.4 160.9 470.2c-23.2 12.3-50.9-7.3-46.4-33.7L137 305.8 45.7 226.1c-19-18.6-8.5-50.8 17.7-54.6l130.4-21.3L259.3 17.8c11.7-23.6 45.6-23.9 57.4 0z" />
+                                    </svg>
+                                </label>
+                            </div>
+                            <span asp-validation-for="Rating" class="text-danger"></span>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Submit Feedback</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- jQuery and Bootstrap JS (includes Popper) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var joinBtn = document.getElementById("joinBtn");
+        var meetingRecordId = '@Model.MeetingRecordId'; // from model
+        var meetingUrl = '@Model.JoinUrl'; // from model
+        var popupWindow = null;
+        var pollTimer = null;
+        var meetingLaunchTime = null;
+
+        function joinMeeting() {
+            if (!meetingUrl) {
+                console.error("Meeting URL is missing.");
+                return;
+            }
+            // Open the Google Meet window as a popup.
+            popupWindow = window.open(meetingUrl, "GoogleMeet", "width=800,height=600");
+
+            // Record the time the meeting starts (when the window opens).
+            meetingLaunchTime = new Date();
+            
+            // Disable the join button to avoid multiple clicks
+            joinBtn.disabled = true;
+
+            // Start polling every half second (500 ms) to check if the popup has been closed.
+            pollTimer = window.setInterval(function () {
+                if (popupWindow && popupWindow.closed) {
+                    // Popup was closed. Stop polling.
+                    window.clearInterval(pollTimer);
+                    pollTimer = null;
+                    var meetingEndTime = new Date();
+
+                    // Call the backend to update the meeting session
+                    $.ajax({
+                        url: '@Url.Action("UpdateMeetingSession", "GoogleCalendar")',
+                        type: 'POST',
+                        data: {
+                            meetingId: meetingRecordId,
+                             meetingStartTime: meetingLaunchTime.toISOString(),
+                             actualEndTime: meetingEndTime.toISOString()
+                        },
+                        success: function () {
+                            // Show the feedback modal once the meeting has ended.
+                            $("#MeetingId").val(meetingRecordId);
+                            $("#feedbackModal").modal('show');
+                            joinBtn.disabled = false; // Optionally re-enable the join button
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Failed to update session:", error);
+                            joinBtn.disabled = false;
+                        }
+                    });
+                }
+            }, 500);
+        }
+
+        // Assuming you're using Bootstrap's modal events
+        $('#feedbackModal').on('hide.bs.modal', function (e) {
+            var notes = $('#MeetingNotes').val().trim();
+            if (!notes) {
+                // Prevent modal from closing and possibly show an alert
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                alert("Please enter your meeting notes before closing.");
+                return false;
+            }
+        });
+
+        // Extract meeting id from the meeting URL's pathname for display
+        try {
+            var urlObj = new URL(meetingUrl);
+            // For example, if meetingUrl is "https://meet.google.com/abc-defg-hij",
+            // then the meeting id will be "abc-defg-hij"
+            var extractedMeetingId = urlObj.pathname.substring(1);
+            document.getElementById("meetingId").value = extractedMeetingId;
+        } catch (e) {
+            document.getElementById("meetingId").value = "";
+        }
+    </script>
+</body>
+</html>

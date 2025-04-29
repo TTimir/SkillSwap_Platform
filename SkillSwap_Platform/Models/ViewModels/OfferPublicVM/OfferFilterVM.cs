@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 
 namespace SkillSwap_Platform.Models.ViewModels.OfferFilterVM
 {
@@ -26,7 +27,9 @@ namespace SkillSwap_Platform.Models.ViewModels.OfferFilterVM
         public int TotalPages { get; set; } = 1;
 
         // Results
+        public IEnumerable<TblReview> Reviews { get; set; }
         public List<OfferCardVM> Offers { get; set; } = new();
+
         public List<SelectListItem> CategoryOptions { get; set; } = new();
         public List<SelectListItem> SkillOptions { get; set; } = new();
         public List<SelectListItem> LanguageOptions { get; set; } = new();

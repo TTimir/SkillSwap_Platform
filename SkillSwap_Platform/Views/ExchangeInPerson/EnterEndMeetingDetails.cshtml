@@ -1,0 +1,307 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.MeetingVM.EndMeetingDetailsVM
+
+@{
+    ViewData["Title"] = "Enter End Meeting Details";
+    ViewData["SubTitle"] = "Please provide the details of your meeting end. If needed, capture and upload your meeting end proof.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb25">
+                <h5 class="list-title">Basic Information</h5>
+            </div>
+            <div class="col-xl-8">
+                <form id="endMeetingForm" asp-action="EnterEndMeetingDetails" class="form-style1" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ExchangeId" />
+                    <input type="hidden" asp-for="OtherUserId" />
+                    <input type="hidden" id="CapturedProof" name="CapturedProof" value="" />
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="EndMeetingDateTime" class="heading-color ff-heading fw500 mb10">Meeting End Time</label>
+                                <input asp-for="EndMeetingDateTime" type="datetime-local" class="form-control" value="@Model.EndMeetingDateTime.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")">
+                                <span asp-validation-for="EndMeetingDateTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="EndProofLocation" class="heading-color ff-heading fw500 mb10">Meeting End Location</label>
+                                <div class="input-group">
+                                    <input asp-for="EndProofLocation" type="text" class="form-control" placeholder="Enter meeting location" />
+                                    <span class="input-group-text" id="getLocationIcon" title="Get Current Location" style="cursor: pointer;background-color:none">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </span>
+                                </div>
+                                <span asp-validation-for="EndProofLocation" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="EndMeetingNotes" class="heading-color ff-heading fw500 mb10">Notes</label>
+                                <textarea asp-for="EndMeetingNotes" cols="30" rows="6" placeholder="Notes"></textarea>
+                                <span asp-validation-for="EndMeetingNotes" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-start">
+                                <!-- Button to open camera modal for proof capture -->
+                                <button type="button" class="ud-btn btn-thm" data-bs-toggle="modal" data-bs-target="#captureProofModal">
+                                    Capture Meeting Proof <i class="fal fa-camera" style="transform: rotate(0deg)"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mt15">
+                            <div id="capturedProofPreview" style="display:none;">
+                                <p>Captured Proof Preview:</p>
+                                <img id="proofPreviewImg" src="" alt="Captured Proof" style="max-width:100%; border: 1px solid #ddd; border-radius: 4px;" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Submit Proof of End Meeting<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Modal for Camera Capture -->
+<div class="modal fade" id="captureProofModal" tabindex="-1" aria-labelledby="captureProofModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="captureProofModalLabel">Capture Meeting End Proof</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <!-- Loading overlay -->
+                <div id="loadingOverlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; background: rgba(255, 255, 255, 0.85); padding: 10px; border-radius: 5px;">
+                    Loading camera...
+                </div>
+                <video id="video" width="100%" autoplay style="border: 1px solid #ddd; border-radius: 4px;"></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="captureBtn" class="ud-btn btn-dark">Capture Photo</button>
+                <button type="button" class="ud-btn btn-thm" data-bs-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    button:disabled,
+    button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.65; /* Optional: to visually indicate disabled state */
+    }
+</style>
+@section DynamicScript {
+    <!-- Reverse Geocoding for Input Field -->
+    <script>
+        document.getElementById('getLocationIcon').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
+                        fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.display_name) {
+                                    document.querySelector('input[name="EndProofLocation"]').value = data.display_name;
+                                } else {
+                                    alert("Unable to retrieve address from location data.");
+                                }
+                            })
+                            .catch(error => {
+                                alert("Error fetching address: " + error.message);
+                            });
+                    },
+                    function (error) {
+                        alert("Unable to fetch location: " + error.message);
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        });
+    </script>
+
+    <!-- Clear error messages on input -->
+    <script>
+        (function () {
+            $(document).ready(function () {
+                $('input[asp-for="EndMeetingDateTime"], input[asp-for="EndProofLocation"], textarea[asp-for="EndMeetingNotes"]').on('input', function () {
+                    $(this).next('span.text-danger').text('');
+                });
+            });
+        })();
+    </script>
+
+    <!-- Camera Capture Code with Overlay and Auto Coordinates -->
+    <script>
+        // Get necessary DOM elements.
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const proofPreviewImg = document.getElementById('proofPreviewImg');
+        const capturedProofInput = document.getElementById('CapturedProof');
+        const modalElement = new bootstrap.Modal(document.getElementById('captureProofModal'));
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Variable to hold the automatically fetched coordinates.
+        let autoCoordinates = "Unknown Location";
+        // Initially disable the capture button.
+        captureBtn.disabled = true;
+        let stream;
+
+        // When the modal is shown: Get coordinates (lat/lon) and camera access.
+        document.getElementById('captureProofModal').addEventListener('shown.bs.modal', function () {
+            captureBtn.disabled = true;
+            loadingOverlay.style.display = 'block';
+
+            // Get current coordinates (without reverse geocoding).
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        autoCoordinates = "Lat: " + position.coords.latitude.toFixed(4) +
+                                          ", Lon: " + position.coords.longitude.toFixed(4);
+                    },
+                    function (error) {
+                        autoCoordinates = "Unknown Location";
+                    }
+                );
+            } else {
+                autoCoordinates = "Unknown Location";
+            }
+
+            // Request camera access.
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (mediaStream) {
+                        stream = mediaStream;
+                        video.srcObject = mediaStream;
+                        video.play();
+                        video.onloadedmetadata = function () {
+                            captureBtn.disabled = false;
+                            loadingOverlay.style.display = 'none';
+                        };
+                    })
+                    .catch(function (err) {
+                        alert("Error accessing camera: " + err.message);
+                        captureBtn.disabled = true;
+                        loadingOverlay.style.display = 'none';
+                    });
+            } else {
+                alert("Camera not supported by your browser.");
+                captureBtn.disabled = true;
+                loadingOverlay.style.display = 'none';
+            }
+        });
+
+        // When the modal is hidden, stop the camera and reset the overlay.
+        document.getElementById('captureProofModal').addEventListener('hidden.bs.modal', function () {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            captureBtn.disabled = true;
+            loadingOverlay.style.display = 'block'; // Reset for next open.
+        });
+
+        // Capture image on button click and overlay system date/time and coordinates.
+        captureBtn.addEventListener('click', function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get current system date/time.
+            const currentTime = new Date();
+            const formattedTime = currentTime.toLocaleString();
+
+            // Set overlay text using the fetched coordinates.
+            const overlayText = autoCoordinates;
+
+            // Define styling for the overlay.
+            const padding = 5;
+            context.font = "16px Arial";
+            context.textAlign = "right";
+            context.textBaseline = "top";
+
+            const timeText = formattedTime;
+            const lineHeight = 20;
+            const timeWidth = context.measureText(timeText).width;
+            const coordWidth = context.measureText(overlayText).width;
+            const maxTextWidth = Math.max(timeWidth, coordWidth);
+
+            const rectWidth = maxTextWidth + padding * 2;
+            const rectHeight = lineHeight * 2 + padding * 3;
+            const rectX = canvas.width - rectWidth - 10;
+            const rectY = canvas.height - rectHeight - 10;
+
+            context.fillStyle = "rgba(0, 0, 0, 0.5)";
+            context.fillRect(rectX, rectY, rectWidth, rectHeight);
+
+            context.fillStyle = "#FFFFFF";
+            context.fillText(timeText, canvas.width - 10 - padding, rectY + padding);
+            context.fillText(overlayText, canvas.width - 10 - padding, rectY + padding + lineHeight);
+
+            // Convert canvas to Data URL.
+            const dataURL = canvas.toDataURL("image/png");
+            capturedProofInput.value = dataURL;
+            proofPreviewImg.src = dataURL;
+            document.getElementById('capturedProofPreview').style.display = 'block';
+            modalElement.hide();
+        });
+
+        // Form validation: Check if a captured image is present before submission.
+        $('#endMeetingForm').on('submit', function(e) {
+            if ($('#CapturedProof').val().trim() === "") {
+                alert("Please capture an image as proof of the meeting.");
+                e.preventDefault();
+            }
+        });
+    </script>
+}

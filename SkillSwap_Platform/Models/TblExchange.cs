@@ -9,8 +9,6 @@ public partial class TblExchange
 
     public int OfferId { get; set; }
 
-    public int RequesterId { get; set; }
-
     public DateTime ExchangeDate { get; set; }
 
     public DateTime LastStatusChangeDate { get; set; }
@@ -37,11 +35,47 @@ public partial class TblExchange
 
     public bool IsSuccessful { get; set; }
 
+    public int? OfferOwnerId { get; set; }
+
+    public int? OtherUserId { get; set; }
+
+    public bool IsInOnlineExchange { get; set; }
+
+    public bool IsInPersonExchange { get; set; }
+
+    public string? ThisMeetingLink { get; set; }
+
+    public bool IsInpersonMeetingVerified { get; set; }
+
+    public bool IsCompleted { get; set; }
+
+    public DateTime? CompletionDate { get; set; }
+
+    public DateTime? RequestDate { get; set; }
+
+    public DateTime? ResponseDate { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOfferOwner { get; set; }
+
+    public bool IsInpersonMeetingVerifiedByOtherParty { get; set; }
+
+    public bool IsMeetingEnded { get; set; }
+
+    public bool TokensSettled { get; set; }
+
+    public int? ContractId { get; set; }
+
+    public bool TokensHeld { get; set; }
+
+    public DateTime? TokenHoldDate { get; set; }
+
+    public DateTime? TokenReleaseDate { get; set; }
+
+    public virtual TblContract? Contract { get; set; }
+
     public virtual TblUser? LastStatusChangedByNavigation { get; set; }
 
     public virtual TblOffer Offer { get; set; } = null!;
-
-    public virtual TblUser Requester { get; set; } = null!;
 
     public virtual TblSkill? SkillIdOfferOwnerNavigation { get; set; }
 
@@ -49,7 +83,17 @@ public partial class TblExchange
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
 
+    public virtual ICollection<TblExchangeSkill> TblExchangeSkills { get; set; } = new List<TblExchangeSkill>();
+
+    public virtual ICollection<TblInPersonMeeting> TblInPersonMeetings { get; set; } = new List<TblInPersonMeeting>();
+
+    public virtual ICollection<TblInpersonMeetingProof> TblInpersonMeetingProofs { get; set; } = new List<TblInpersonMeetingProof>();
+
+    public virtual ICollection<TblMeeting> TblMeetings { get; set; } = new List<TblMeeting>();
+
     public virtual ICollection<TblReview> TblReviews { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
+
+    public virtual ICollection<TblTokenTransaction> TblTokenTransactions { get; set; } = new List<TblTokenTransaction>();
 }

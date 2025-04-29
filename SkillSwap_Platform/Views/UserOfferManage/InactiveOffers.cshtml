@@ -1,6 +1,6 @@
 ﻿
 @{
-    ViewData["Title"] = "Inactive Offers";
+    ViewData["Title"] = "Inactive Swap Offers";
     ViewData["SubTitle"] = "These deals are paused, reactivate them anytime.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
@@ -13,7 +13,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Offer<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.ActionLink("Create","UserOfferManage")" class="ud-btn btn-dark default-box-shadow2">Create Swap Offer<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -49,10 +49,10 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Offers</a>
-                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Offers</a>
-                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Offers</a>
-                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Offers</a>
+                        <a href="@Url.ActionLink("OfferList","UserOfferManage")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="false">All Swap Offers</a>
+                        <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Swap Offers</a>
+                        <a href="@Url.ActionLink("InactiveOffers","UserOfferManage")" class="nav-link active fw500" id="nav-item3-tab" type="button" aria-selected="true">InActive Swap Offers</a>
+                        <a href="@Url.ActionLink("DeletedOffers","UserOfferManage")" class="nav-link fw500" id="nav-item4-tab" type="button" aria-selected="false">Deleted Swap Offers</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -90,12 +90,8 @@
                                                             // Define the list of default images.
                                                             var defaultImages = new List<string>
                                                     {
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                                     };
 
                                                             // You can choose between a random image or a deterministic one.
@@ -110,11 +106,11 @@
 
                                                         @if (portfolioImages.Any())
                                                         {
-                                                            <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Offer Image">
+                                                            <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Swap Image">
                                                         }
                                                         else
                                                         {
-                                                            <img src="@selectedImage" class="card-img-top w-100" alt="Default Offer Image">
+                                                            <img src="@selectedImage" class="card-img-top w-100" alt="Default Swap Image">
                                                         }
                                                     </div>
                                                     <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
@@ -147,50 +143,61 @@
                                     }
                                 </tbody>
                             </table>
-                            <div class="mbp_pagination text-center mt30">
-                                <ul class="page_navigation">
-                                    @if (Model.CurrentPage > 1)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })">
-                                                <span class="fas fa-angle-left"></span>
-                                            </a>
-                                        </li>
-                                    }
-                                    @{
-                                        // Calculate the pagination group: display only 5 page links at a time
-                                        int groupSize = 5;
-                                        int currentGroup = (Model.CurrentPage - 1) / groupSize;
-                                        int startPage = currentGroup * groupSize + 1;
-                                        int endPage = Math.Min(startPage + groupSize - 1, Model.TotalPages);
-                                    }
-                                    @for (int i = startPage; i <= endPage; i++)
-                                    {
-                                        if (i == Model.CurrentPage)
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        @if (Model.CurrentPage > 1)
                                         {
-                                            <li class="page-item active" aria-current="page">
-                                                <a class="page-link" href="#">@i <span class="sr-only">(current)</span></a>
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage - 1 })">
+                                                    <span class="fas fa-angle-left"></span>
+                                                </a>
                                             </li>
                                         }
                                         else
                                         {
-                                            <li class="page-item">
-                                                <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
+                                            <li class="page-item disabled">
+                                                <span class="page-link"><span class="fas fa-angle-left"></span></span>
                                             </li>
                                         }
-                                    }
 
-                                    @if (Model.CurrentPage < Model.TotalPages)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })">
-                                                <span class="fas fa-angle-right"></span>
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                                <p class="mt10 mb-0 pagination_page_count text-center">Showing page @Model.CurrentPage of @Model.TotalPages offers listed</p>
-                            </div>
+                                        @for (int i = 1; i <= Model.TotalPages; i++)
+                                        {
+                                            if (i == Model.CurrentPage)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("OfferList", new { page = i })">@i</a>
+                                                </li>
+                                            }
+                                        }
+
+                                        @if (Model.CurrentPage < Model.TotalPages)
+                                        {
+                                            <li class="page-item" style="border: 1px solid #E9E9E9;">
+                                                <a class="page-link" href="@Url.Action("OfferList", new { page = Model.CurrentPage + 1 })">
+                                                    <span class="fas fa-angle-right"></span>
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled" style="border: 1px solid #E9E9E9;">
+                                                <span class="page-link"><span class="fas fa-angle-right"></span></span>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @Model.CurrentPage of @Model.TotalPages
+                                    </p>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -216,11 +223,11 @@
                             // Update the status text dynamically
                             statusTextElem.text(isActive ? "Active" : "Inactive");
                         } else {
-                            alert("There was an issue updating the offer.");
+                            alert("There was an issue updating the swap.");
                         }
                     },
                     error: function () {
-                        alert("Error updating offer status.");
+                        alert("Error updating swap status.");
                     }
                 });
             });

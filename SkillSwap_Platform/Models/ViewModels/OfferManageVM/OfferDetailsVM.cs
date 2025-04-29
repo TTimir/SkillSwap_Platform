@@ -18,6 +18,11 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         // List of image URLs from TblOfferPortfolio
         public List<string> PortfolioImages { get; set; } = new List<string>();
         public List<TblOffer> Offers { get; set; } = new List<TblOffer>();
+        public IEnumerable<TblReview> Reviews { get; set; }
+
+        public int ReviewCount { get; set; }
+        public double AverageRating { get; set; }
+
 
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }

@@ -11,6 +11,8 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public string SenderProfileImage { get; set; }
         public DateTime SentDate { get; set; }
         public string Content { get; set; }
+        public string MessageType { get; set; } = "Normal";
+        public int? ResourceId { get; set; }
         public bool IsRead { get; set; }
         public bool ShowHeader { get; set; }
         public MessageStatus Status { get; set; }
@@ -25,9 +27,20 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         // Computed property: true if the current user sent this message.
         public bool IsSentByCurrent => SenderUserID == CurrentUserID;
 
+        public bool IsMeetingCard { get; set; }
+        public string MeetingTitle { get; set; }
+        public string MeetingLink { get; set; }
 
         public int? OfferId { get; set; }
         public OfferDisplayVM OfferDetails { get; set; }
+
+        public int ExchangeId { get; set; }
+
+        public TblExchange? Exchange { get; set; }
+        public TblInPersonMeeting? InPersonMeeting { get; set; }
+
+        public string ExchangeOfferOwnerName { get; set; }
+        public string ExchangeOtherUserName { get; set; }
 
         public TblContract? ContractDetails { get; set; }
         public bool IsContractPending => ContractDetails?.Status == "Pending";

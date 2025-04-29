@@ -1,6 +1,42 @@
-﻿@{
-    ViewData["Title"] = "OfferDetails";
+﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Swap Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var reviews = ((IEnumerable<SkillSwap_Platform.Models.TblReview>)Model.Reviews) ?? new List<SkillSwap_Platform.Models.TblReview>();
+    int totalReviews = reviews.Count();
+    double averageRating = totalReviews > 0 ? reviews.Average(r => r.Rating) : 0;
+
+    int fiveStarCount = totalReviews > 0 ? reviews.Count(r => r.Rating == 5) : 0;
+    int fourStarCount = totalReviews > 0 ? reviews.Count(r => r.Rating == 4) : 0;
+    int threeStarCount = totalReviews > 0 ? reviews.Count(r => r.Rating == 3) : 0;
+    int twoStarCount = totalReviews > 0 ? reviews.Count(r => r.Rating == 2) : 0;
+    int oneStarCount = totalReviews > 0 ? reviews.Count(r => r.Rating == 1) : 0;
+
+    int fiveStarPercent = totalReviews > 0 ? (fiveStarCount * 100) / totalReviews : 0;
+    int fourStarPercent = totalReviews > 0 ? (fourStarCount * 100) / totalReviews : 0;
+    int threeStarPercent = totalReviews > 0 ? (threeStarCount * 100) / totalReviews : 0;
+    int twoStarPercent = totalReviews > 0 ? (twoStarCount * 100) / totalReviews : 0;
+    int oneStarPercent = totalReviews > 0 ? (oneStarCount * 100) / totalReviews : 0;
+
+    string reviewStatus =
+    averageRating >= 4.5 ? "Exceptional" :
+    averageRating >= 4.0 ? "Very Good" :
+    averageRating >= 3.0 ? "Good" : "Average";
+
+    var reviewList = reviews.ToList();
+    int reviewCount = reviewList.Count;
+
+    var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    int userId = 0;
+    if (int.TryParse(userIdString, out var tmp)) userId = tmp;
+
+    // check if already in wishlist
+    bool isSaved = userId > 0
+        && await WishlistService.ExistsAsync(userId, Model.OfferId);
 }
 
 <!-- Breadcumb Sections -->
@@ -18,19 +54,70 @@
             </div>
             <div class="col-sm-4 col-lg-2">
                 <div class="d-flex align-items-center justify-content-sm-end">
-                    <div class="share-save-widget d-flex align-items-center">
+                    <div id="shareBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;">
                         <span class="icon flaticon-share dark-color fz12 mr10"></span>
                         <div class="h6 mb-0">Share</div>
                     </div>
                     <div class="share-save-widget d-flex align-items-center ml15">
-                        <span class="icon flaticon-like dark-color fz12 mr10"></span>
-                        <div class="h6 mb-0">Save</div>
+                        <form asp-controller="UserWishlist"
+                              asp-action="@(isSaved ? "Remove" : "Add")"
+                              method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="offerId" value="@Model.OfferId" />
+
+                            <button type="submit"
+                                    class="border-0 bg-transparent listing-fav fz12"
+                                    data-bs-toggle="tooltip"
+                                    title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                <span class="icon dark-color fz12 mr10 @(isSaved
+                                    ? "fas fa-heart text-danger"
+                                    : "far fa-heart")"></span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Share overlay markup (can be placed near the bottom of your view) -->
+<div id="shareOverlay" class="share-overlay">
+    <div class="share-modal">
+        <button id="closeShare" class="close-btn">&times;</button>
+        <h3>Share This Swap</h3>
+        <div class="share-content">
+            <input type="text" id="shareLink" readonly value="https://yourofferlink.com" />
+            <button id="copyShare" class="ud-btn btn-thm">Copy</button>
+        </div>
+    </div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <!-- Service Details -->
 <section class="pt0 pb90 pb30-md">
     <div class="container">
@@ -62,16 +149,18 @@
                                             {
                                                 foreach (var user in Model.UserDetails)
                                                 {
-                                                    <a href="@Url.Action("Index", "UserProfile")" target="_blank" class="fz14">
+                                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = user.Username })"
+                                                       target="_blank"
+                                                       class="fz14">
                                                         @user.FirstName @user.LastName
                                                     </a>
                                                 }
                                             }
                                         </span>
                                     </a>
-                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="fas fa-star vam fz10 review-color me-2"></i> 4.82 94 reviews</p>
-                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="flaticon-file-1 vam fz20 me-2"></i> 2 Order in Queue</p>
-                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="flaticon-website vam fz20 me-2"></i> 902 Views</p>
+                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="fas fa-star vam fz10 review-color me-2"></i> @averageRating.ToString("0.00") @totalReviews reviews</p>
+                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="flaticon-file-1 vam fz20 me-2"></i> @Model.ActiveExchangeCount @((Model.ActiveExchangeCount == 1) ? "Ongoing Exchange" : "Ongoing Exchanges")</p>
+                                    <p class="mb-0 dark-color fz14 list-inline-item ml25 ml15-sm mb5-sm ml0-xs"><i class="flaticon-website vam fz20 me-2"></i> @Model.Views Views</p>
                                 </div>
                             </div>
                         </div>
@@ -130,12 +219,8 @@
                         // List of default images.
                         var defaultImages = new List<string>
                     {
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_3.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_4.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_5.png"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_6.png")
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                     };
 
                         // Check if the model has any portfolio images.
@@ -225,10 +310,10 @@
                             </div>
                         </div>
                         <hr class="opacity-100 mb60">
-                        <h4>Compare Offers</h4>
+                        <h4>Compare Swaps</h4>
                         @if (Model.CompareOffers == null)
                         {
-                            <p class="text-muted">No comparison offers available at the moment.</p>
+                            <p class="text-muted">No comparison swaps available at the moment.</p>
                         }
                         else
                         {
@@ -257,7 +342,7 @@
                                                 </div>
                                                 <span class="h4">@Model.TokenCost Token </span><br>
                                                 <span class="h4">@Model.ShortTitle</span><br>
-                                                <span class="text">Current Offer Description</span>
+                                                <span class="text">Current Swap Description</span>
                                             </th>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
@@ -335,10 +420,10 @@
                                         </tr>
                                         <tr>
                                             <th scope="row">Recommandation</th>
-                                            <td>@Model.RecommendedPercentage@("%")</td>
+                                            <td>@("%")@Model.RecommendedPercentage</td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
-                                                <td>@compareOffer.RecommendedPercentage@("%")</td>
+                                                <td>@("%")@compareOffer.RecommendedPercentage</td>
                                             }
                                         </tr>
                                         <tr class="bgc-thm3">
@@ -430,134 +515,218 @@
                                 <div class="row">
                                     <div class="col-lg-12">
                                         <div class="total_review mb30 mt45">
-                                            <h4>80 Reviews</h4>
+                                            <h4>@totalReviews Reviews</h4>
                                         </div>
                                         <div class="d-md-flex align-items-center mb30">
                                             <div class="total-review-box d-flex align-items-center text-center mb30-sm">
                                                 <div class="wrapper mx-auto">
-                                                    <div class="t-review mb15">4.96</div>
-                                                    <h5>Exceptional</h5>
-                                                    <p class="text mb-0">3,014 reviews</p>
+                                                    <div class="t-review mb15">@averageRating.ToString("0.00")</div>
+                                                    <h5>@reviewStatus</h5>
+                                                    <p class="text mb-0">@totalReviews reviews</p>
                                                 </div>
                                             </div>
                                             <div class="wrapper ml60 ml0-sm">
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">5 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: 90%;" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @fiveStarPercent%;" role="progressbar" aria-valuenow="@fiveStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">58</div>
+                                                    <div class="value text-end">@fiveStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">4 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar w-75" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @fourStarPercent%;" role="progressbar" aria-valuenow="@fourStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">20</div>
+                                                    <div class="value text-end">@fourStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">3 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar w-50" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @threeStarPercent%;" role="progressbar" aria-valuenow="@threeStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">15</div>
+                                                    <div class="value text-end">@threeStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">2 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: 30%;" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @twoStarPercent%;" role="progressbar" aria-valuenow="@twoStarPercent" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">2</div>
+                                                    <div class="value text-end">@twoStarCount</div>
                                                 </div>
                                                 <div class="review-list d-flex align-items-center mb10">
                                                     <div class="list-number">1 Star</div>
                                                     <div class="progress">
-                                                        <div class="progress-bar" style="width: 20%;" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        <div class="progress-bar" style="width: @oneStarCount%;" role="progressbar" aria-valuenow="@oneStarCount" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
-                                                    <div class="value text-end">1</div>
+                                                    <div class="value text-end">@oneStarCount</div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-12">
-                                        <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
-                                            <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
-                                            <div class="ml20">
-                                                <h6 class="mt-0 mb-0">Bessie Cooper</h6>
-                                                <div><span class="fz14">12 March 2022</span></div>
+                                    @if (Model.Reviews != null && Model.Reviews.Count > 0)
+                                    {
+                                        <div id="reviews-container">
+                                            @for (int i = 0; i < reviewCount; i++)
+                                            {
+                                                // Show only the first two reviews initially; hide the rest.
+                                                var displayStyle = i < 2 ? "" : "display:none;";
+                                                var review = reviewList[i];
+                                                <div class="col-md-12 mt20 review-item" data-review-id="@review.ReviewId" style="@displayStyle">
+                                                    <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
+                                                        <img src="@(
+                                                            !string.IsNullOrEmpty(review.Reviewer?.ProfileImageUrl)
+                                                            ? review.Reviewer.ProfileImageUrl
+                                                            : "~/template_assets/images/No_Profile_img.png"
+                                                        )" class="mr-3" alt="Reviewer Photo" style="max-width:100%; width: 7%; border-radius: 100%" />
+                                                        <div class="ml20">
+                                                            <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
+                                                            <div><span class="fz14">@review.CreatedDate.ToString("dd MMM yyyy")</span></div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Star Rating Display -->
+                                                    <div class="star-rating-display mt10">
+                                                        @for (int j = 1; j <= 5; j++)
+                                                        {
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                                 style="width:16px; height:16px; fill:@(j <= review.Rating ? "gold" : "#cccccc"); transition: fill 0.3s;">
+                                                                <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.786
+                                                                1.404 8.186L12 18.896l-7.338 3.887
+                                                                1.404-8.186L.132 9.211l8.2-1.193z" />
+                                                            </svg>
+                                                        }
+                                                    </div>
+                                                    <p class="text mt20 mb20">@review.Comments</p>
+                                                    <div class="review_cansel_btns d-flex">
+                                                        <a href="#" class="vote" data-vote="helpful"><i class="fas fa-thumbs-up"></i>Helpful <span class="vote-count helpful-count">( <span>@review.HelpfulCount</span> )</span></a>
+                                                        <a href="#" class="vote" data-vote="not_helpful"><i class="fas fa-thumbs-down"></i>Not helpful <span class="vote-count not-helpful-count">( <span>@review.NotHelpfulCount</span> )</span></a>
+                                                    </div>
+                                                    @if (review.TblReviewReplies?.Any() == true)
+                                                    {
+                                                        <div class="replies ps-4 mb-3 mt20">
+                                                            @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
+                                                            {
+                                                                var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
+                                                                .FindFirst(ClaimTypes.NameIdentifier).Value);
+                                                                <div class="reply-item mb-2">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <strong>@reply.ReplierUser.UserName</strong>
+                                                                        <small class="text-muted ms-2 me-5">
+                                                                            @reply.CreatedDate.ToString("MMM d, yyyy")
+                                                                        </small>
+                                                                        @if (!reply.IsFlagged && reply.ReplierUserId != currentUserId)
+                                                                        {
+                                                                            <form asp-action="FlagReply" asp-controller="UserReview" method="post" class="m-0 p-0">
+                                                                                <input type="hidden" name="replyId" value="@reply.ReplyId" />
+                                                                                <button type="submit"
+                                                                                        title="Flag this reply"
+                                                                                        class="btn btn-link p-0 text-muted">
+                                                                                    <span class="flaticon-flag"></span>
+                                                                                </button>
+                                                                            </form>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <span class="text-danger" title="Reply flagged">
+                                                                                <span class="flaticon-flag"></span>
+                                                                            </span>
+                                                                        }
+                                                                    </div>
+                                                                    <p class="mb-1">@reply.Comments</p>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    @if (reviewCount > 2)
+                                    {
+                                        <div class="col-md-12 mt30">
+                                            <div class="position-relative bdrb1 pb50">
+                                                <a href="javascript:void(0);" class="ud-btn btn-light-thm" id="see-more-btn">
+                                                    See More <i class="fal fa-arrow-right-long"></i>
+                                                </a>
                                             </div>
                                         </div>
-                                        <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
-                                        <div class="review_cansel_btns d-flex">
-                                            <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
-                                            <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="mbp_first position-relative d-flex align-items-center justify-content-start mt30 mb30-sm">
-                                            <img src="/template_assets/images/blog/comments-2.png" class="mr-3" alt="comments-2.png">
-                                            <div class="ml20">
-                                                <h6 class="mt-0 mb-0">Darrell Steward</h6>
-                                                <div><span class="fz14">12 March 2022</span></div>
-                                            </div>
-                                        </div>
-                                        <p class="text mt20 mb20">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
-                                        <div class="review_cansel_btns d-flex pb30">
-                                            <a href="#"><i class="fas fa-thumbs-up"></i>Helpful</a>
-                                            <a href="#"><i class="fas fa-thumbs-down"></i>Not helpful</a>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="position-relative bdrb1 pb50">
-                                            <a href="page-service-single.html" class="ud-btn btn-light-thm">See More<i class="fal fa-arrow-right-long"></i></a>
-                                        </div>
-                                    </div>
+                                    }
                                 </div>
                             </div>
                         </div>
                         <div class="bsp_reveiw_wrt">
                             <h6 class="fz17">Add a Review</h6>
-                            <p class="text">Your email address will not be published. Required fields are marked *</p>
-                            <h6>Your rating of this product</h6>
-                            <div class="d-flex">
-                                <i class="fas fa-star review-color"></i>
-                                <i class="far fa-star review-color ms-2"></i>
-                                <i class="far fa-star review-color ms-2"></i>
-                                <i class="far fa-star review-color ms-2"></i>
-                                <i class="far fa-star review-color ms-2"></i>
-                            </div>
-                            <form class="comments_form mt30 mb30-md">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-4">
-                                            <label class="fw500 fz16 ff-heading dark-color mb-2">Comment</label>
-                                            <textarea class="pt15" rows="6" placeholder="There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text."></textarea>
+                            @{
+                                var typedModel = (SkillSwap_Platform.Models.ViewModels.OfferDisplayVM)Model;
+                            }
+                            @if (typedModel.IsExchangeCompleted)
+                            {
+                                <p class="text">Your email address will not be published. Required fields are marked *</p>
+                                <form method="post" action="@Url.Action("Review", "ExchangeReview")">
+                                    @Html.AntiForgeryToken()
+                                    @Html.Hidden("ExchangeId", typedModel.Review.ExchangeId)
+                                    @Html.Hidden("OfferId", typedModel.Review.OfferId)
+                                    @Html.Hidden("Rating", typedModel.Review.Rating, new { id = "Rating" })
+
+                                    <div class="form-group">
+                                        <label>Your rating of this exchange <span class="text-danger">*</span></label>
+                                        <br />
+                                        <div class="star-rating" style="display: inline-flex; gap: 0.5rem; cursor:pointer; margin-top: 0.5rem;">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                     data-value="@i"
+                                                     class="@(i <= typedModel.Review.Rating ? "selected" : "")"
+                                                     style="width:24px; height:24px; fill:#cccccc; transition: fill 0.3s;">
+                                                    <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.786
+                                                        1.404 8.186L12 18.896l-7.338 3.887
+                                                        1.404-8.186L.132 9.211l8.2-1.193z" />
+                                                </svg>
+                                            }
+                                        </div>
+                                        <span>@Html.ValidationMessage("Review.Rating", "", new { @class = "text-danger" })</span>
+                                    </div>
+                                    <div class="row mt20">
+                                        <div class="col-md-12">
+                                            <div class="mb-4">
+                                                <label class="fw500 fz16 ff-heading dark-color mb-2">Comment<span class="text-danger">*</span></label>
+                                                <textarea name="Comments" class="pt15" rows="6" placeholder="Write your review here..."></textarea>
+                                                <span>@Html.ValidationMessage("Review.Comments", "", new { @class = "text-danger" })</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Name<span class="text-danger">*</span></label>
+                                                <input name="ReviewerName" type="text" class="form-control" placeholder="Jhon doe">
+                                                <span>@Html.ValidationMessage("Review.ReviewerName", "", new { @class = "text-danger" })</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb20">
+                                                <label class="fw500 ff-heading dark-color mb-2">Email<span class="text-danger">*</span></label>
+                                                <input name="ReviewerEmail" type="email" class="form-control" placeholder="creativejhondoe088">
+                                                <span>@Html.ValidationMessage("Review.ReviewerEmail", "", new { @class = "text-danger" })</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="checkbox-style1 d-block d-sm-flex align-items-center justify-content-between mb20">
+                                                <label class="custom_checkbox fz15 ff-heading">
+                                                    Save my name and email in this browser for the next time I comment.
+                                                    @Html.CheckBoxFor(model => typedModel.Review.RememberMe)
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </div>
+                                            <button type="submit" class="ud-btn btn-thm">Send <i class="fal fa-arrow-right-long"></i></button>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb20">
-                                            <label class="fw500 ff-heading dark-color mb-2">Name</label>
-                                            <input type="text" class="form-control" placeholder="Ali Tufan">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb20">
-                                            <label class="fw500 ff-heading dark-color mb-2">Email</label>
-                                            <input type="email" class="form-control" placeholder="creativelayers088">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="checkbox-style1 d-block d-sm-flex align-items-center justify-content-between mb20">
-                                            <label class="custom_checkbox fz15 ff-heading">
-                                                Save my name, email, and website in this browser for the next time I comment.
-                                                <input type="checkbox">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </div>
-                                        <a href="" class="ud-btn btn-thm">Send<i class="fal fa-arrow-right-long"></i></a>
-                                    </div>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning mt20">
+                                    Thanks for being a valued member! You can leave your review once you've completed your exchange.
                                 </div>
-                            </form>
+                            }
                         </div>
                     </div>
                 </div>
@@ -576,7 +745,7 @@
 
                                     <div class="tab-pane fade show active" id="nav-item2p" role="tabpanel" aria-labelledby="nav-item2p-tab">
                                         <div class="price-content">
-                                            <div class="price"><span class="flaticon-money"></span> @Model.TokenCost Tokens</div>
+                                            <div class="price"><span class="flaticon-income"></span> @Model.TokenCost Tokens</div>
                                             <p class="text fz14">Required Skill Level <b>@Model.RequiredSkillLevel</b></p>
                                             <hr class="opacity-100 mb20">
                                             <ul class="p-0 mb15 d-sm-flex align-items-center">
@@ -608,7 +777,7 @@
                                             </div>
                                             <div class="d-grid">
                                                 <a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId})" class="ud-btn btn-thm">
-                                                    Message about this Offer <i class="fal fa-arrow-right-long"></i>
+                                                    Message about this Swap <i class="fal fa-arrow-right-long"></i>
                                                 </a>
                                             </div>
                                         </div>
@@ -642,7 +811,7 @@
                                             <p class="mb-0">@("@")@details.Username</p>
                                         }
                                     }
-                                    <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color">4.9</span> (595 reviews)</p></div>
+                                    <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color">@Model.UserRating.ToString("0.00") </span> (@Model.ReviewCount reviews)</p></div>
                                 </div>
                             </div>
                             <hr class="opacity-100">
@@ -661,9 +830,9 @@
                                     </a>
                                     <a class="meta fw500 text-start">
                                         Recomm.<br><span class="fz14 fw400">
-                                            @if (int.TryParse(Model.RecommendedPercentage, out int percentage) && percentage > 0)
+                                            @if (!string.IsNullOrEmpty(Model.RecommendedPercentage))
                                             {
-                                                <span>@percentage.ToString("N2")% positive.</span>
+                                                <span>@("%")@Model.RecommendedPercentage</span>
                                             }
                                             else
                                             {
@@ -672,11 +841,13 @@
 
                                         </span>
                                     </a>
-                                    <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">%@Model.JobSuccessRate</span></a>
+                                    <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">%@Model.JobSuccessRate.ToString("0.00")</span></a>
                                 </div>
                             </div>
                             <div class="d-grid mt30">
-                                <a href="page-freelancer-single.html" class="ud-btn btn-thm-border">Contact Me<i class="fal fa-arrow-right-long"></i></a>
+                                <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = Model.UserDetails[0].Username })" class="ud-btn btn-thm-border">
+                                    Contact <i class="fal fa-arrow-right-long"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -687,152 +858,158 @@
 </section>
 
 <!-- Listings -->
-<section class="pt30 pb90 pb30-md">
-    <div class="container">
-        <div class="row wow fadeInUp">
-            <div class="col-lg-12">
-                <div class="main-title mb35">
-                    <h2>People Who Viewed This Service Also Viewed </h2>
-                    <p class="text">Give your visitor a smooth online experience with a solid UX design</p>
+@if (Model.RelatedOffers != null && ((IEnumerable<SkillSwap_Platform.Models.TblOffer>)Model.RelatedOffers).Any())
+{
+    <section class="pt30 pb90 pb30-md">
+        <div class="container">
+            <div class="row wow fadeInUp">
+                <div class="col-lg-12">
+                    @{
+                        // Retrieve the current category from your model.
+                        var category = Model.Category;
+                        string dynamicMessage = string.Empty;
+
+                        // Set a message based on the category.
+                        switch (category)
+                        {
+                            case "Graphics & Design":
+                                dynamicMessage = "Give your visitor a smooth experience with creative graphic design that shows your brand.";
+                                break;
+                            case "Digital Marketing":
+                                dynamicMessage = "Give your visitor a smooth experience with smart digital marketing that gets results.";
+                                break;
+                            case "Writing & Translation":
+                                dynamicMessage = "Give your visitor a smooth experience with clear writing and translation that speaks to everyone.";
+                                break;
+                            case "Video & Animation":
+                                dynamicMessage = "Give your visitor a smooth experience with engaging videos and animations that tell your story.";
+                                break;
+                            case "Music & Audio":
+                                dynamicMessage = "Give your visitor a smooth experience with quality music and audio that sets the right mood.";
+                                break;
+                            case "Programming & Tech":
+                                dynamicMessage = "Give your visitor a smooth experience with reliable programming and tech solutions that work perfectly.";
+                                break;
+                            case "Business":
+                                dynamicMessage = "Give your visitor a smooth experience with smart business solutions that build trust.";
+                                break;
+                            case "Lifestyle":
+                                dynamicMessage = "Give your visitor a smooth experience with lifestyle design that inspires everyday living.";
+                                break;
+                            case "Trending":
+                                dynamicMessage = "Give your visitor a smooth experience with fresh design ideas that catch the eye.";
+                                break;
+                            default:
+                                dynamicMessage = "Give your visitor a smooth experience with great practices.";
+                                break;
+                        }
+                    }
+                    <div class="main-title mb35">
+                        <h2>People Who Viewed This Service Also Viewed </h2>
+                        <p class="text">@dynamicMessage</p>
+                    </div>
                 </div>
+            </div>
+            <div class="row wow fadeInUp equal-height">
+                @foreach (var related in Model.RelatedOffers)
+                {
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="listing-style1 offer-card">
+                            <div class="list-thumb">
+                                @{
+                                    // Explicitly cast the Portfolio property to string.
+                                    var portfolioData = (string)related.Portfolio;
+                                    string[] imageUrls = new string[0];
+
+                                    if (!string.IsNullOrWhiteSpace(portfolioData))
+                                    {
+                                        // Clean up the JSON array string by removing the surrounding [ and ] characters.
+                                        var cleanedData = portfolioData.Trim();
+                                        if (cleanedData.StartsWith("["))
+                                        {
+                                            cleanedData = cleanedData.Substring(1);
+                                        }
+                                        if (cleanedData.EndsWith("]"))
+                                        {
+                                            cleanedData = cleanedData.Substring(0, cleanedData.Length - 1);
+                                        }
+
+                                        // Now split using comma and remove any extra surrounding quotes for each URL.
+                                        imageUrls = cleanedData
+                                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(url => url.Trim().Trim('"'))
+                                        .ToArray();
+                                    }
+                                }
+
+                                @if (imageUrls != null && imageUrls.Length > 0)
+                                {
+                                    <div class="list-thumb">
+                                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+                                            @foreach (var image in imageUrls)
+                                            {
+                                                <div class="item">
+                                                    <img class="w-100" src="@image" alt="@related.Title" />
+                                                    <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })" class="listing-fav fz12">
+                                                        <span class="far fa-heart"></span>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    // Fallback to default images when no valid images are found
+                                    var relateddefaultImages = new List<string>
+                        {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                        };
+
+                                    int index = related.OfferId % relateddefaultImages.Count;
+                                    var selectedImage = relateddefaultImages[index];
+
+                                    <div class="list-thumb">
+                                        <img class="w-100" src="@selectedImage" alt="@related.Title" />
+                                        <a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })" class="listing-fav fz12">
+                                            <span class="far fa-heart"></span>
+                                        </a>
+                                    </div>
+                                }
+
+                            </div>
+                            <div class="list-content">
+                                <p class="list-text body-color fz14 mb-1">@related.Category</p>
+                                <h5 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = related.OfferId })">@related.Title</a></h5>
+                                <div class="review-meta d-flex align-items-center">
+                                    <i class="fas fa-star fz10 review-color me-2"></i>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@averageRating.ToString("0.00") </span>@totalReviews reviews</p>
+                                </div>
+                                <hr class="my-2">
+                                @if (related.User != null)
+                                {
+                                    <div class="list-meta d-flex justify-content-between align-items-center mt15">
+                                        <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = related.User.UserName })">
+                                            <span class="position-relative mr10">
+                                                <img class="rounded-circle" src="@(string.IsNullOrEmpty(related.User.ProfileImageUrl) ? "/template_assets/images/No_Profile_img.png" : related.User.ProfileImageUrl)" alt="Freelancer Photo" width="25">
+                                                <span class="online-badge"></span>
+                                            </span>
+                                            <span class="fz14">@related.User?.UserName</span>
+                                        </a>
+                                        <div class="budget">
+                                            <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@related.User?.Country</span></p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
-        <div class="row wow fadeInUp">
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-1.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Web & App Design</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will design modern websites in figma or adobe xd</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-1.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-2.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                            <div class="item">
-                                <img class="w-100" src="/template_assets/images/listings/g-5.jpg" alt="">
-                                <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Art & Illustration</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will create modern flat design illustration</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-2.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Ali Tufan</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-3.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Design & Creative</p>
-                        <h5 class="list-title line-clamp2"><a href="page-services-single.html">I will build a fully responsive design in HTML,CSS, bootstrap, and javascript</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-3.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="listing-style1">
-                    <div class="list-thumb">
-                        <img class="w-100" src="/template_assets/images/listings/g-4.jpg" alt="">
-                        <a href="" class="listing-fav fz12"><span class="far fa-heart"></span></a>
-                    </div>
-                    <div class="list-content">
-                        <p class="list-text body-color fz14 mb-1">Web & App Design</p>
-                        <h5 class="list-title"><a href="page-services-single.html">I will do mobile app development for ios and android</a></h5>
-                        <div class="review-meta d-flex align-items-center">
-                            <i class="fas fa-star fz10 review-color me-2"></i>
-                            <p class="mb-0 body-color fz14"><span class="dark-color me-2">4.82</span>94 reviews</p>
-                        </div>
-                        <hr class="my-2">
-                        <div class="list-meta d-flex justify-content-between align-items-center mt15">
-                            <a href="">
-                                <span class="position-relative mr10">
-                                    <img class="rounded-circle" src="/template_assets/images/team/fl-s-4.png" alt="Freelancer Photo">
-                                    <span class="online-badge"></span>
-                                </span>
-                                <span class="fz14">Wanda Runo</span>
-                            </a>
-                            <div class="budget">
-                                <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">$983</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- Our Footer -->
 <section class="footer-style1 pt25 pb-0">
@@ -961,6 +1138,123 @@
     </div>
 </section>
 <a class="scrollToHome" href="#"><i class="fas fa-angle-up"></i></a>
+
+<style>
+    .offer-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .offer-card .list-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .offer-card .list-title {
+            min-height: 48px; /* Ensure consistent spacing for title */
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .offer-card .budget {
+            text-align: right;
+        }
+
+    .row.equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+        /* Make each column a flex container */
+        .row.equal-height > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+
+    .share-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .share-modal {
+        background: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        position: relative;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .share-modal h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 20px;
+        text-align: center;
+    }
+
+    .share-content {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+        .share-content input {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    .review_cansel_btns a.vote {
+        color: #333; /* default color */
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        .review_cansel_btns a.vote:hover {
+            color: #007bff; /* change this to your desired hover color */
+        }
+
+    .review_cansel_btns a.vote {
+        color: #333; /* default color */
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        .review_cansel_btns a.vote:hover {
+            /* This hover color will be applied only if no custom color override is set,
+                                       but our script will override these values as needed */
+            color: #007bff;
+        }
+
+</style>
 @section ProfileScript {
     <script>
         $(document).ready(function () {
@@ -1039,4 +1333,134 @@
             }
         });
     </script>
+    <script>
+        (function () {
+            const stars = document.querySelectorAll('.star-rating svg');
+            const ratingInput = document.getElementById('Rating');
+            stars.forEach(star => {
+                star.addEventListener('click', function () {
+                    const selectedValue = parseInt(this.getAttribute('data-value'));
+                    ratingInput.value = selectedValue;
+                    stars.forEach((s, index) => {
+                        if (index < selectedValue) {
+                            s.classList.add('selected');
+                            s.style.fill = 'gold'; // Visual style for selected stars
+                        } else {
+                            s.classList.remove('selected');
+                            s.style.fill = '#cccccc';
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+    <script>
+        $(document).ready(function () {
+            $("#see-more-btn").click(function () {
+                var hiddenReviews = $("#reviews-container .review-item").filter(function () {
+                    return $(this).css("display") === "none";
+                });
+                if (hiddenReviews.length > 0) {
+                    // If there are hidden reviews, show all reviews and change button text to "See Less"
+                    $("#reviews-container .review-item").show();
+                    $(this).html('See Less <i class="fal fa-arrow-right-long"></i>');
+                } else {
+                    // Otherwise, hide reviews beyond the first two and change button text back to "See More"
+                    $("#reviews-container .review-item").each(function (index) {
+                        if (index >= 2) {
+                            $(this).hide();
+                        }
+                    });
+                    $(this).html('See More <i class="fal fa-arrow-right-long"></i>');
+                    // Optionally, scroll to the reviews container
+                    $('html, body').animate({ scrollTop: $("#reviews-container").offset().top }, 500);
+                }
+            });
+        });
+    </script>
+    <script>
+        // When the share button is clicked, display the share overlay with the current URL.
+        document.getElementById("shareBtn").addEventListener("click", function () {
+            var shareInput = document.getElementById("shareLink");
+            // Set the share link to the current page URL.
+            shareInput.value = window.location.href;
+            document.getElementById("shareOverlay").style.display = "flex";
+        });
+
+        // Close the share overlay when the close button is clicked.
+        document.getElementById("closeShare").addEventListener("click", function () {
+            document.getElementById("shareOverlay").style.display = "none";
+        });
+
+        // Copy functionality for the share link.
+        document.getElementById("copyShare").addEventListener("click", function () {
+            var input = document.getElementById("shareLink");
+            input.select();
+            try {
+                var successful = document.execCommand("copy");
+                if (successful) {
+                    var btn = this;
+                    var originalText = btn.innerText;
+                    btn.innerText = "Copied";
+                    setTimeout(function () {
+                        btn.innerText = originalText;
+                    }, 3000);
+                }
+            } catch (e) {
+                console.error("Copy command failed", e);
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            $('.review_cansel_btns a.vote').click(function (e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                var vote = $btn.data('vote'); // "helpful" or "not_helpful"
+                var $reviewContainer = $btn.closest('.review-item');
+                var reviewId = $reviewContainer.data('review-id');
+
+                // Optionally disable the buttons
+                $reviewContainer.find('a.vote').prop('disabled', true);
+
+                $.ajax({
+                    url: '/ExchangeReview/Vote', // Use the correct path.
+                    type: 'POST',
+                    data: { reviewId: reviewId, vote: vote },
+                    headers: {
+                        "RequestVerificationToken": $("input[name='__RequestVerificationToken']").val()
+                    },
+                    success: function (response) {
+                        if (!response.success) {
+                            alert(response.message);
+                            // Re-enable buttons if vote not processed.
+                            $reviewContainer.find('a.vote').prop('disabled', false);
+                            return;
+                        }
+                        // Update vote counts in the UI.
+                        $reviewContainer.find('.helpful-count span').text(response.helpfulCount);
+                        $reviewContainer.find('.not-helpful-count span').text(response.notHelpfulCount);
+
+                        // Compare counts to apply color.
+                        if (response.helpfulCount > response.notHelpfulCount) {
+                            $reviewContainer.find("a.vote[data-vote='helpful']").css("color", "green");
+                            $reviewContainer.find("a.vote[data-vote='not_helpful']").css("color", "#333");
+                        } else if (response.notHelpfulCount > response.helpfulCount) {
+                            $reviewContainer.find("a.vote[data-vote='not_helpful']").css("color", "red");
+                            $reviewContainer.find("a.vote[data-vote='helpful']").css("color", "#333");
+                        } else {
+                            $reviewContainer.find("a.vote").css("color", "#333");
+                        }
+                        alert("Your vote has been recorded!");
+                    },
+                    error: function (xhr, status, error) {
+                        alert("An error occurred: " + error);
+                        $reviewContainer.find('a.vote').prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+    <partial name="_ValidationScriptsPartial" />
 }

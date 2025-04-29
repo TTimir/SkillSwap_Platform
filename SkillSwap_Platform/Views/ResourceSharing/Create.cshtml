@@ -1,0 +1,189 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceInputVM
+
+@{
+    ViewData["Title"] = "Share Your Resource";
+    ViewData["SubTitle"] = "Tell us about your resource and share it off to spark a meaningful exchange.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <button type="button" id="topShareButton" class="ud-btn btn-dark">
+            Save & Share<i class="fal fa-arrow-right-long"></i>
+        </button>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["ErrorMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb25">
+                <h5 class="list-title">Basic Information</h5>
+            </div>
+            <div class="col-xl-8">
+                <form id="resourceForm" asp-action="Create" class="form-style1" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="OwnerUserId" />
+                    <input type="hidden" asp-for="ExchangeId" />
+                    <input type="hidden" asp-for="OfferId" />
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for ="Title" class="heading-color ff-heading fw500 mb10">Resource Title</label>
+                                <input asp-for="Title" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <div class="form-style1">
+                                    <label asp-for="ResourceType" class="heading-color ff-heading fw500 mb10">Resource Type</label>
+                                    <div class="bootselect-multiselect">
+                                        <select asp-for="ResourceType" id="resourceTypeSelect" class="selectpicker">
+                                            <option value="">Select</option>
+                                            <option value="Image">Image</option>
+                                            <option value="Video">Video</option>
+                                            <option value="File">File</option>
+                                            <option value="Link">Link</option>
+                                        </select>
+                                    </div>
+                                    <span asp-validation-for="ResourceType" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Description" class="heading-color ff-heading fw500 mb10">Description</label>
+                                <textarea asp-for="Description" cols="30" rows="6" placeholder="Description"></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12" id="urlInputDiv" style="display: none;">
+                            <div class="mb20">
+                                <label asp-for="InputUrl" class="heading-color ff-heading fw500 mb10">Resource Url</label>
+                                <input asp-for="InputUrl" type="text" class="form-control" placeholder="i will" data-val="false">
+                                <span asp-validation-for="InputUrl" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-xl-7" id="fileUploadDiv" style="display: none;">
+                            <div class="profile-box d-sm-flex align-items-center mb30">
+                                <div class="profile-content ml20 ml0-xs">
+                                    <div class="d-flex align-items-center mb10">
+                                        <label for="resourceFile" class="upload-btn ml10" style="cursor:pointer;">Upload Resource</label>
+                                    </div>
+                                    <p class="text mb-0">Max file size is 5MB. Code file size limit is 100MB.</p>
+                                </div>
+                            </div>
+                            <!-- File preview container -->
+                            <div class="mb-3" id="filePreviewContainer" style="display: none;">
+                                <p id="filePreviewName" class="mb-2"></p>
+                                <img id="filePreviewImage" class="img-thumbnail" style="max-height: 200px; display: none;" alt="Image Preview" />
+                            </div>
+                        </div>
+                        <input type="file" id="resourceFile" name="File" class="form-control-file" style="display: none;" />
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save & Share<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+@section DynamicScript {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Top button click triggers the form submit
+            $("#topShareButton").click(function () {
+                $("#resourceForm").submit();
+            });
+
+            // Toggle display of URL input and file upload based on ResourceType selection.
+            $('#resourceTypeSelect').on('change', function () {
+                var selectedType = $(this).val().toLowerCase();
+                if (selectedType === "link") {
+                    $("#urlInputDiv").show();
+                    $("#fileUploadDiv, #filePreviewContainer").hide();
+                } else if (selectedType === "image" || selectedType === "video" || selectedType === "file") {
+                    // show file picker and restrict by type
+                    var accept = selectedType === "image"
+                                 ? "image/*"
+                                 : selectedType === "video"
+                                   ? "video/*"
+                                   : "*/*";
+                    $("#resourceFile").attr("accept", accept);
+                    $("#fileUploadDiv").show();
+                    $("#urlInputDiv").hide();
+                } else {
+                    $("#urlInputDiv, #fileUploadDiv, #filePreviewContainer").hide();
+                }
+            });
+
+            // File preview for file upload.
+            $('#resourceFile').on('change', function () {
+                var fileInput = this;
+                var previewContainer = $('#filePreviewContainer');
+                var previewName = $('#filePreviewName');
+                var previewImage = $('#filePreviewImage');
+
+                if (fileInput.files && fileInput.files[0]) {
+                    var file = fileInput.files[0];
+                    previewName.text(file.name);
+                    if (file.type.startsWith("image/")) {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            previewImage.attr("src", e.target.result);
+                            previewImage.show();
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewImage.hide();
+                    }
+                    previewContainer.show();
+                } else {
+                    previewContainer.hide();
+                }
+            });
+        });
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

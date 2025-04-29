@@ -23,6 +23,10 @@ public partial class TblContract
 
     public DateTime? UpdatedDate { get; set; }
 
+    public DateTime? AcceptedDate { get; set; }
+
+    public DateTime? DeclinedDate { get; set; }
+
     public decimal? TokenOffer { get; set; }
 
     public string? ContractDocument { get; set; }
@@ -54,8 +58,6 @@ public partial class TblContract
     public DateTime? CompletionDate { get; set; }
 
     public int Version { get; set; }
-
-    public int? ParentContractId { get; set; }
 
     public string? SenderName { get; set; }
 
@@ -93,7 +95,15 @@ public partial class TblContract
 
     public string? ReceiverUserName { get; set; }
 
+    public int? ParentContractId { get; set; }
+
     public int? BaseContractId { get; set; }
+
+    public DateTime? RequestDate { get; set; }
+
+    public DateTime? ResponseDate { get; set; }
+
+    public bool IsContractSigned { get; set; }
 
     public virtual TblMessage Message { get; set; } = null!;
 
@@ -102,4 +112,6 @@ public partial class TblContract
     public virtual TblUser ReceiverUser { get; set; } = null!;
 
     public virtual TblUser SenderUser { get; set; } = null!;
+
+    public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 }
