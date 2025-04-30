@@ -47,6 +47,8 @@ public partial class TblReview
 
     public virtual TblUser Reviewer { get; set; } = null!;
 
+    public virtual ICollection<TblReviewModerationHistory> TblReviewModerationHistories { get; set; } = new List<TblReviewModerationHistory>();
+
     public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
 
     public virtual TblUser User { get; set; } = null!;

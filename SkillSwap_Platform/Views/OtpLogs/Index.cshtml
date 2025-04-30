@@ -71,11 +71,17 @@
                                             <td class="vam"><span class="fz15 fw400">@u.UserName (ID @u.UserId)</span></td>
                                             <td class="vam">
                                                 @u.FailedCount
+                                                @if (u.HasRecentFailure)
+                                                {
+                                                    <span class="badge bg-success ms-2">New</span>
+                                                }
                                             </td>
-                                            <td class="vam"><span class="fz14 fw400">@u.LastAttemptAt.ToString("yyyy-MM-dd HH:mm tt") UTC</span></td>
+                                            <td class="vam">
+                                                <span class="fz14 fw400">@u.LastAttemptAt.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</span>
+                                            </td>
                                             <td class="vam">
                                                 <a asp-action="Details" asp-route-userId="@u.UserId" class="ud-btn btn-thm">
-                                                    View full log
+                                                    View logs
                                                 </a>
                                             </td>
                                         </tr>

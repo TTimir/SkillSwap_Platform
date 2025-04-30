@@ -58,14 +58,13 @@
                             <table class="table-style3 table at-savesearch">
                                 <thead class="t-head">
                                     <tr>
-                                        <th scope="col">#</th>
                                         <th scope="col">Exchange</th>
                                         <th scope="col">Buyer (Other user)</th>
                                         <th scope="col">Seller (Offer Owner)</th>
                                         <th scope="col">Amount</th>
                                         <th scope="col">Status</th>
                                         <th scope="col">Created</th>
-                                        <th scope="col">Actions</th>
+                                        <th scope="col">Admin Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
@@ -73,7 +72,7 @@
                                         <td class="vam"><span class="fz15 fw400">@Model.ExchangeId</span></td>
                                         <td class="vam"><span class="fz15 fw400">@Model.Buyer.UserName</span></td>
                                         <td class="vam"><span class="fz14 fw400">@Model.Seller.UserName</span></td>
-                                        <td class="vam"><span class="fz14 fw400">@Model.Amount.ToString("C")</span></td>
+                                        <td class="vam"><span class="fz14 fw400"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="24" height="24"> @Model.Amount.ToString("0.00")</span></td>
                                         <td class="vam"><span class="fz14 fw400">@Model.Status</span></td>
                                         <td class="vam"><span class="fz14 fw400">@Model.CreatedAt.ToString("dd MMMM, yyyy hh:mm:ss tt")</span></td>
                                         @if (Model.ReleasedAt.HasValue)
@@ -101,27 +100,65 @@
 
                                 @if (Model.Status == "Pending")
                                 {
-                                    <div class="mb-3">
-                                        <form asp-action="Release" method="post" class="d-inline">
-                                            <input type="hidden" name="id" value="@Model.EscrowId" />
-                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
-                                            <button class="btn btn-success">Release Funds</button>
-                                        </form>
+                                    <div class="row g-3 mb-4">
+                                        <!-- Release Funds Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 border-success shadow-sm">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title text-success">Release Funds</h5>
+                                                    <form asp-action="Release" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesRelease" style="height: 100px"></textarea>
+                                                            <label for="notesRelease">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-thm">
+                                                            Release <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                        <form asp-action="Refund" method="post" class="d-inline ms-2">
-                                            <input type="hidden" name="id" value="@Model.EscrowId" />
-                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
-                                            <button class="btn btn-warning">Refund</button>
-                                        </form>
+                                        <!-- Refund Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 shadow-sm" style="border-color:#111;">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title">Refund</h5>
+                                                    <form asp-action="Refund" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesRefund" style="height: 100px"></textarea>
+                                                            <label for="notesRefund">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-dark">
+                                                            Refund <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                        <form asp-action="Dispute" method="post" class="d-inline ms-2">
-                                            <input type="hidden" name="id" value="@Model.EscrowId" />
-                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
-                                            <button class="btn btn-danger">Open Dispute</button>
-                                        </form>
+                                        <!-- Dispute Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title">Open Dispute</h5>
+                                                    <form asp-action="Dispute" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesDispute" style="height: 100px"></textarea>
+                                                            <label for="notesDispute">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-light-thm" style="border:0;">
+                                                            Dispute  <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 }
-
                             </table>
                         </div>
                     </div>

@@ -69,6 +69,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblReview> TblReviews { get; set; }
 
+    public virtual DbSet<TblReviewModerationHistory> TblReviewModerationHistories { get; set; }
+
     public virtual DbSet<TblReviewReply> TblReviewReplies { get; set; }
 
     public virtual DbSet<TblRole> TblRoles { get; set; }
@@ -734,6 +736,26 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblReview_User");
+        });
+
+        modelBuilder.Entity<TblReviewModerationHistory>(entity =>
+        {
+            entity.HasKey(e => e.HistoryId).HasName("PK__tblRevie__4D7B4ABDC4451958");
+
+            entity.ToTable("tblReviewModerationHistory");
+
+            entity.Property(e => e.Action).HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Admin).WithMany(p => p.TblReviewModerationHistories)
+                .HasForeignKey(d => d.AdminId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ReviewHist_Admin");
+
+            entity.HasOne(d => d.Review).WithMany(p => p.TblReviewModerationHistories)
+                .HasForeignKey(d => d.ReviewId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ReviewHist_Review");
         });
 
         modelBuilder.Entity<TblReviewReply>(entity =>

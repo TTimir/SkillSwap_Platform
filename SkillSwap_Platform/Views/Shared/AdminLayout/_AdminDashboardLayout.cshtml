@@ -36,7 +36,7 @@
 
         try
         {
-            otpFailures = await AdminService.GetOtpFailureCountAsync();
+            otpFailures = await AdminService.GetUsersWithFailedOtpCountAsync();
         }
         catch (Exception ex)
         {
@@ -318,8 +318,8 @@
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","UserManagement", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="UserManagement" ? "-is-active" : "")">
-                                <i class="flaticon-user mr15"></i>
-                                Manage Users
+                                <i class="flaticon-sand-clock mr15"></i>
+                                Held Users
                                 @if (heldUsersCount > 0)
                                 {
                                     <span class="badge badge-pill bg-danger ms-auto">@heldUsersCount</span>
@@ -330,7 +330,7 @@
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","OtpLogs", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OtpLogs" && currentAction=="Index" ? "-is-active" : "")">
-                                <i class="flaticon-lock mr15"></i>
+                                <i class="flaticon-antivirus mr15"></i>
                                 OTP Failures
                                 @if (otpFailures > 0)
                                 {
@@ -340,7 +340,7 @@
                         </div>
 
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Index","Escrow","Admin")"
+                            <a href="@Url.ActionLink("Index","Escrow", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="Escrow" ? "-is-active" : "")">
                                 <i class="flaticon-dollar mr15"></i>
                                 Escrow Management
@@ -352,8 +352,8 @@
                         </div>
 
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("ModerationQueue","Offers", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Offers" ? "-is-active" : "")">
+                            <a href="@Url.ActionLink("Reviews","OfferReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Reviews" ? "-is-active" : "")">
                                 <i class="flaticon-review-1 mr15"></i>
                                 Offers & Reviews
                                 @if (flaggedOffers > 0)

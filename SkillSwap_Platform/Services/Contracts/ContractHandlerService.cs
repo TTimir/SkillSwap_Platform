@@ -60,20 +60,22 @@ namespace SkillSwap_Platform.Services.Contracts
                 if (senderUser == null || receiverUser == null)
                     return (false, "Sender or Receiver user not found.");
 
-                bool contractExists = await _context.TblContracts.AnyAsync(c =>
-                    c.MessageId == model.MessageId
-                    && c.OfferId == model.OfferId
-                    && c.Status != "Declined"
+                bool baseContractExists = await _context.TblContracts.AnyAsync(c =>
+                    c.OfferId == model.OfferId
                     && (
+                         // same two users, in either order
                          (c.SenderUserId == model.SenderUserId && c.ReceiverUserId == model.ReceiverUserId)
                       || (c.SenderUserId == model.ReceiverUserId && c.ReceiverUserId == model.SenderUserId)
                     )
+                    // only consider “real” contracts (not declined, not children of other contracts)
+                    && c.ParentContractId == null
+                    // only if it’s still live or being reviewed
+                    && c.Status != "Declined"
+                    && c.Status != "Expired"
                 );
 
-                if (contractExists)
-                {
-                    return (false, "A contract has already been sent for this conversation.");
-                }
+                if (baseContractExists)
+                    return (false, "A contract has already been sent for this offer and conversation.");
 
                 // Use the user records to get full names.
                 string senderFullName = $"{senderUser.FirstName} {senderUser.LastName}".Trim();

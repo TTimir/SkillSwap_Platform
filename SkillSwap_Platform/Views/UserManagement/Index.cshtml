@@ -90,8 +90,16 @@
                                             <td class="vam"><span class="fz14 fw400">@u.Email</span></td>
                                             <td class="vam"><span class="fz14 fw400">@u.HeldReason</span></td>
                                             <td class="vam">
+                                                @{
+                                                    string heldAtLocal = u.HeldAt.HasValue
+                                                    ? u.HeldAt.Value.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")
+                                                    : "—";
+                                                    string heldUntilLocal = u.HeldUntil.HasValue
+                                                    ? u.HeldUntil.Value.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")
+                                                    : "—";
+                                                }
                                                 <span class="fz15 fw400">
-                                                    <u>@(u.HeldAt?.ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</u> <i>'Untill'</i> <u>@(u.HeldUntil?.ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</u>
+                                                    <u>@heldAtLocal</u> <i>‘Until’</i> <u>@heldUntilLocal</u>
                                                 </span>
                                             </td>
                                             <td>

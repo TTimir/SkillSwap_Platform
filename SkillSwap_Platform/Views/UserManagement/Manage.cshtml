@@ -77,7 +77,7 @@
                                                     </div>
                                                 </div>
                                             </th>
-                                            <td class="vam"><span class="fz15 fw400">@(u.CreatedAt?.ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(u.CreatedAt?.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</span></td>
                                             <td class="vam">
                                                 <a asp-action="HoldHistory"
                                                    asp-controller="UserManagement"

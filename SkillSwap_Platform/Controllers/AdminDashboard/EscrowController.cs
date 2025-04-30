@@ -24,6 +24,14 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
             var model = await _escrowService.GetAllAsync(page, pageSize);
+
+            // flag escrows created in the last 15 minutes
+            var cutoff = DateTime.UtcNow.AddMinutes(-15);
+            var newIds = model.Items
+                              .Where(e => e.CreatedAt >= cutoff)
+                              .Select(e => e.EscrowId)
+                              .ToList();
+            ViewBag.NewEscrowIds = newIds;
             return View(model);
         }
 

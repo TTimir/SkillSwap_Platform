@@ -213,7 +213,7 @@ namespace SkillSwap_Platform.Controllers
                                    .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
                 if (review == null) return NotFound();
 
-                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                int currentUserId = GetUserId();
 
                 if (review.UserId == currentUserId)
                     return BadRequest("You cannot flag your own review.");
@@ -293,7 +293,7 @@ namespace SkillSwap_Platform.Controllers
                 if (reply == null)
                     return NotFound();
 
-                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                int currentUserId = GetUserId();
 
                 if (reply.ReplierUserId == currentUserId)
                     return BadRequest("You cannot flag your own review.");
@@ -304,6 +304,7 @@ namespace SkillSwap_Platform.Controllers
                 reply.FlaggedDate = DateTime.UtcNow;
                 reply.FlaggedByUserId = currentUserId;
 
+                _context.TblReviewReplies.Update(reply);
                 await _context.SaveChangesAsync();
 
                 // Notify the reply author only if someone else flags it
@@ -357,8 +358,19 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        #region Helper Class
+        /// <summary>
+        /// Helper to get the current logged in user's ID from claims.
+        /// </summary>
+        /// <returns></returns>
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+            throw new Exception("User ID not found in claims.");
+        }
 
-        #region Helper Methods
         private async Task UpdateUserStats(int userId)
         {
             try

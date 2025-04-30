@@ -6,6 +6,8 @@ namespace SkillSwap_Platform.Services.AdminControls
 {
     public class AdminDashboardService : IAdminDashboardService
     {
+        private const int OtpFailureWindowDays = 7;               // ← your global window
+        private readonly DateTime _CutoffUtc;                  // ← computed once
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<AdminDashboardService> _logger;
 
@@ -15,6 +17,7 @@ namespace SkillSwap_Platform.Services.AdminControls
         {
             _db = db;
             _logger = logger;
+            _CutoffUtc = DateTime.UtcNow.AddDays(-OtpFailureWindowDays);
         }
 
         public async Task<int> GetPendingCertificatesCountAsync()
@@ -37,7 +40,9 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblUsers
-                                .CountAsync(u => u.IsHeld);
+                        .Where(u => u.IsHeld
+                                 && u.HeldAt >= _CutoffUtc)
+                        .CountAsync();
             }
             catch (Exception ex)
             {
@@ -53,11 +58,13 @@ namespace SkillSwap_Platform.Services.AdminControls
             {
                 // assuming FailedOtpAttempts increments per failure
                 // or you have a log table
-                var totalFailures = await _db.TblUsers
-                                     .Where(u => u.FailedOtpAttempts > 0)
-                                     .SumAsync(u => (int?)u.FailedOtpAttempts);
+                var totalFailures = await _db.OtpAttempts
+                        .Where(a => !a.WasSuccessful && a.AttemptedAt >= _CutoffUtc)
+                        .Select(a => a.UserId)
+                        .Distinct()
+                        .CountAsync();
 
-                return totalFailures ?? 0;
+                return totalFailures;
             }
             catch (Exception ex)
             {
@@ -66,12 +73,23 @@ namespace SkillSwap_Platform.Services.AdminControls
             }
         }
 
+        public async Task<int> GetUsersWithFailedOtpCountAsync()
+        {
+            return await _db.OtpAttempts
+                            .Where(a => !a.WasSuccessful && a.AttemptedAt >= _CutoffUtc)
+                            .Select(a => a.UserId)
+                            .Distinct()
+                            .CountAsync();
+        }
+
         public async Task<int> GetPendingEscrowCountAsync()
         {
             try
             {
                 return await _db.TblTokenTransactions
-                        .CountAsync(tx => !tx.IsReleased);
+                            .Where(tx => !tx.IsReleased
+                                      && tx.CreatedAt >= _CutoffUtc)
+                            .CountAsync();
             }
             catch (Exception ex)
             {
@@ -85,9 +103,10 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblOfferFlags
-                       .Select(f => f.OfferId)
-                       .Distinct()
-                       .CountAsync();
+                                .Where(f => f.FlaggedDate >= _CutoffUtc)
+                                .Select(f => f.OfferId)
+                                .Distinct()
+                                .CountAsync();
             }
             catch (Exception ex)
             {
@@ -96,14 +115,14 @@ namespace SkillSwap_Platform.Services.AdminControls
             }
         }
 
-        // --- new implementations ---
-
         public async Task<int> GetFlaggedReviewsCountAsync()
         {
             try
             {
                 return await _db.TblReviews
-                                .CountAsync(r => r.IsFlagged);
+                                .Where(r => r.IsFlagged
+                                         && r.FlaggedDate >= _CutoffUtc)
+                                .CountAsync();
             }
             catch (Exception ex)
             {
@@ -117,7 +136,9 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblReviewReplies
-                                .CountAsync(r => r.IsFlagged);
+                                .Where(rr => rr.IsFlagged
+                                           && rr.FlaggedDate >= _CutoffUtc)
+                                .CountAsync();
             }
             catch (Exception ex)
             {
@@ -131,7 +152,10 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblMessages
-                                .CountAsync(m => m.IsFlagged && !m.IsApproved);
+                                .Where(m => m.IsFlagged
+                                         && !m.IsApproved
+                                         && m.SentDate >= _CutoffUtc)
+                                .CountAsync();
             }
             catch (Exception ex)
             {
@@ -145,7 +169,9 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblUsers
-                                .CountAsync(u => u.IsHeld);
+                                .Where(u => u.IsHeld
+                                         && u.HeldAt >= _CutoffUtc)
+                                .CountAsync();
             }
             catch (Exception ex)
             {

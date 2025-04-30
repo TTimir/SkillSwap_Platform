@@ -4,6 +4,7 @@
     {
         Task<int> GetPendingCertificatesCountAsync();
         Task<int> GetOtpFailureCountAsync();
+        Task<int> GetUsersWithFailedOtpCountAsync();
         Task<int> GetPendingEscrowCountAsync();
         Task<int> GetHeldUsersCountAsync();
         Task<int> GetFlaggedOffersCountAsync();

@@ -717,60 +717,129 @@ namespace SkillSwap_Platform.Controllers
                         ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                     };
 
-                    // Determine the signing timestamps for request and response.
+                    //// Determine the signing timestamps for request and response.
+                    //if (!originalContract.RequestDate.HasValue)
+                    //{
+                    //    // ──────────────── FIRST SIGNATURE ────────────────
+                    //    // No one has signed yet: record the first signature as RequestDate.
+                    //    newFinalContract.RequestDate = DateTime.UtcNow;
+                    //    newFinalContract.ResponseDate = null;
+                    //}
+                    //else if (!originalContract.ResponseDate.HasValue)
+                    //{
+                    //    // ────────────── SECOND SIGNATURE ───────────────
+                    //    // First signature is already there, but no response yet:
+                    //    // carry forward the original RequestDate and record ResponseDate.
+                    //    newFinalContract.RequestDate = originalContract.RequestDate.Value;
+                    //    newFinalContract.ResponseDate = DateTime.UtcNow;
+                    //}
+                    //else
+                    //{
+                    //    // ────────────── ALREADY FULLY SIGNED ────────────
+                    //    // Both dates exist – you can choose to throw, ignore, or log here.
+                    //    throw new InvalidOperationException("Contract has already been fully signed.");
+                    //}
+
+                    //// Role-based assignment:
+                    //if (isReceiver)
+                    //{
+                    //    // Receiver signing: preserve sender’s acceptance and update receiver’s.
+                    //    newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
+                    //    newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
+                    //    newFinalContract.SenderSignature = originalContract.SenderSignature;
+                    //    newFinalContract.SenderPlace = originalContract.SenderPlace;
+                    //    newFinalContract.SignedBySender = originalContract.SignedBySender;
+
+                    //    newFinalContract.ReceiverAgreementAccepted = true;
+                    //    newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
+                    //    newFinalContract.AcceptedDate = DateTime.UtcNow;
+                    //    newFinalContract.ReceiverSignature = partySignature.Trim();
+                    //    newFinalContract.ReceiverPlace = partyPlace.Trim();
+                    //    newFinalContract.SignedByReceiver = true;
+                    //}
+                    //else if (isSender)
+                    //{
+                    //    // Sender signing: preserve receiver’s acceptance and update sender’s.
+                    //    newFinalContract.ReceiverAgreementAccepted = originalContract.SignedByReceiver;
+                    //    newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
+                    //    newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
+                    //    newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
+                    //    newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
+
+                    //    newFinalContract.SenderAgreementAccepted = true;
+                    //    newFinalContract.SenderAcceptanceDate = DateTime.Now;
+                    //    newFinalContract.SenderSignature = partySignature.Trim();
+                    //    newFinalContract.SenderPlace = partyPlace.Trim();
+                    //    newFinalContract.SignedBySender = true;
+                    //}
+
                     if (!originalContract.RequestDate.HasValue)
                     {
-                        // ──────────────── FIRST SIGNATURE ────────────────
-                        // No one has signed yet: record the first signature as RequestDate.
+                        // Nobody has signed yet → this is the *first* signature
+                        // Record RequestDate = now, and clear ResponseDate so it can be set later.
                         newFinalContract.RequestDate = DateTime.UtcNow;
                         newFinalContract.ResponseDate = null;
+
+                        // Mark the agreement accepted and signature fields on the signer’s side:
+                        if (isSender)
+                        {
+                            newFinalContract.SenderAgreementAccepted = true;
+                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.SenderSignature = partySignature.Trim();
+                            newFinalContract.SenderPlace = partyPlace.Trim();
+                            newFinalContract.SignedBySender = true;
+                        }
+                        else // receiver is first‐signing
+                        {
+                            newFinalContract.ReceiverAgreementAccepted = true;
+                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.ReceiverSignature = partySignature.Trim();
+                            newFinalContract.ReceiverPlace = partyPlace.Trim();
+                            newFinalContract.SignedByReceiver = true;
+                        }
                     }
                     else if (!originalContract.ResponseDate.HasValue)
                     {
-                        // ────────────── SECOND SIGNATURE ───────────────
-                        // First signature is already there, but no response yet:
-                        // carry forward the original RequestDate and record ResponseDate.
+                        // First signature already recorded → this is the *second* signature
+                        // Carry forward RequestDate, set ResponseDate = now.
                         newFinalContract.RequestDate = originalContract.RequestDate.Value;
                         newFinalContract.ResponseDate = DateTime.UtcNow;
-                    }
-                    else
-                    {
-                        // ────────────── ALREADY FULLY SIGNED ────────────
-                        // Both dates exist – you can choose to throw, ignore, or log here.
-                        throw new InvalidOperationException("Contract has already been fully signed.");
-                    }
 
-                    // Role-based assignment:
-                    if (isReceiver)
-                    {
-                        // Receiver signing: preserve sender’s acceptance and update receiver’s.
+                        // Preserve the first signer’s fields, and now set the second signer’s:
                         newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
                         newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
                         newFinalContract.SenderSignature = originalContract.SenderSignature;
                         newFinalContract.SenderPlace = originalContract.SenderPlace;
                         newFinalContract.SignedBySender = originalContract.SignedBySender;
 
-                        newFinalContract.ReceiverAgreementAccepted = true;
-                        newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
-                        newFinalContract.AcceptedDate = DateTime.UtcNow;
-                        newFinalContract.ReceiverSignature = partySignature.Trim();
-                        newFinalContract.ReceiverPlace = partyPlace.Trim();
-                        newFinalContract.SignedByReceiver = true;
-                    }
-                    else if (isSender)
-                    {
-                        // Sender signing: preserve receiver’s acceptance and update sender’s.
-                        newFinalContract.ReceiverAgreementAccepted = originalContract.SignedByReceiver;
+                        newFinalContract.ReceiverAgreementAccepted = originalContract.ReceiverAgreementAccepted;
                         newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
                         newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
                         newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
                         newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
 
-                        newFinalContract.SenderAgreementAccepted = true;
-                        newFinalContract.SenderAcceptanceDate = DateTime.Now;
-                        newFinalContract.SenderSignature = partySignature.Trim();
-                        newFinalContract.SenderPlace = partyPlace.Trim();
-                        newFinalContract.SignedBySender = true;
+                        // Now apply the new signature
+                        if (isSender)
+                        {
+                            newFinalContract.SenderAgreementAccepted = true;
+                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.SenderSignature = partySignature.Trim();
+                            newFinalContract.SenderPlace = partyPlace.Trim();
+                            newFinalContract.SignedBySender = true;
+                        }
+                        else
+                        {
+                            newFinalContract.ReceiverAgreementAccepted = true;
+                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.ReceiverSignature = partySignature.Trim();
+                            newFinalContract.ReceiverPlace = partyPlace.Trim();
+                            newFinalContract.SignedByReceiver = true;
+                        }
+                    }
+                    else
+                    {
+                        // Both timestamps are already set → contract is fully signed
+                        throw new InvalidOperationException("Contract has already been fully signed.");
                     }
 
                     newFinalContract.Status = "Accepted";

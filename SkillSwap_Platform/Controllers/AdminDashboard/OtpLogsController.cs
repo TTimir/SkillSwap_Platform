@@ -38,12 +38,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 .Take(pageSize)
                 .ToListAsync();
 
+            // mark “new” if within last 15 minutes:
+            var cutoff = DateTime.UtcNow.AddMinutes(-15);
+            items.ForEach(u => u.HasRecentFailure = u.LastAttemptAt >= cutoff);
+
+            ViewBag.OtpFailureUserCount = await summaryQuery.CountAsync();
+
             // 4) Wrap in PagedResult<T>
             var model = new PagedResult<OtpUserSummaryVm>
             {
                 Page = page,
                 PageSize = pageSize,
-                TotalCount = total,
+                TotalCount = (int)ViewBag.OtpFailureUserCount,
                 Items = items
             };
 
