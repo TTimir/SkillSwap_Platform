@@ -23,6 +23,16 @@ public partial class TblUserReport
 
     public string? ActionTaken { get; set; }
 
+    public int? ExchangeId { get; set; }
+
+    public int? ReviewedByAdminId { get; set; }
+
+    public DateTime? ReviewedDateTime { get; set; }
+
+    public string? AdminActionNotes { get; set; }
+
+    public virtual TblExchange? Exchange { get; set; }
+
     public virtual TblUser ReportedUser { get; set; } = null!;
 
     public virtual TblUser ReporterUser { get; set; } = null!;

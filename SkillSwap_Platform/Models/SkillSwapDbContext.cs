@@ -29,6 +29,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblEducation> TblEducations { get; set; }
 
+    public virtual DbSet<TblEscrow> TblEscrows { get; set; }
+
     public virtual DbSet<TblExchange> TblExchanges { get; set; }
 
     public virtual DbSet<TblExchangeHistory> TblExchangeHistories { get; set; }
@@ -233,6 +235,44 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblEducation_Users");
+        });
+
+        modelBuilder.Entity<TblEscrow>(entity =>
+        {
+            entity.HasKey(e => e.EscrowId).HasName("PK__tblEscro__55766534022E078F");
+
+            entity.ToTable("tblEscrows");
+
+            entity.Property(e => e.EscrowId).HasColumnName("EscrowID");
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BuyerId).HasColumnName("BuyerID");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.HandledByAdminId).HasColumnName("HandledByAdminID");
+            entity.Property(e => e.SellerId).HasColumnName("SellerID");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.Buyer).WithMany(p => p.TblEscrowBuyers)
+                .HasForeignKey(d => d.BuyerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Escrow_Buyer");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblEscrows)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Escrow_Exchange");
+
+            entity.HasOne(d => d.HandledByAdmin).WithMany(p => p.TblEscrowHandledByAdmins)
+                .HasForeignKey(d => d.HandledByAdminId)
+                .HasConstraintName("FK_Escrow_Admin");
+
+            entity.HasOne(d => d.Seller).WithMany(p => p.TblEscrowSellers)
+                .HasForeignKey(d => d.SellerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Escrow_Seller");
         });
 
         modelBuilder.Entity<TblExchange>(entity =>
@@ -748,22 +788,27 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblSupportTickets");
 
             entity.Property(e => e.TicketId).HasColumnName("TicketID");
-            entity.Property(e => e.ClosedDate).HasColumnType("datetime");
+            entity.Property(e => e.AssignedAdminId).HasColumnName("AssignedAdminID");
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
+            entity.Property(e => e.ResolvedDate).HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Open");
             entity.Property(e => e.Subject).HasMaxLength(200);
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
+            entity.HasOne(d => d.AssignedAdmin).WithMany(p => p.TblSupportTicketAssignedAdmins)
+                .HasForeignKey(d => d.AssignedAdminId)
+                .HasConstraintName("FK_SupportTickets_Admin");
+
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblSupportTickets)
                 .HasForeignKey(d => d.ExchangeId)
                 .HasConstraintName("FK_tblSupportTickets_Exchanges");
 
-            entity.HasOne(d => d.User).WithMany(p => p.TblSupportTickets)
+            entity.HasOne(d => d.User).WithMany(p => p.TblSupportTicketUsers)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblSupportTickets_Users");
@@ -956,15 +1001,21 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.ReportId).HasColumnName("ReportID");
             entity.Property(e => e.ActionTaken).HasMaxLength(100);
+            entity.Property(e => e.ExchangeId).HasColumnName("ExchangeID");
             entity.Property(e => e.ReportDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ReportedUserId).HasColumnName("ReportedUserID");
             entity.Property(e => e.ReporterUserId).HasColumnName("ReporterUserID");
+            entity.Property(e => e.ReviewedByAdminId).HasColumnName("ReviewedByAdminID");
             entity.Property(e => e.ReviewedDate).HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblUserReports)
+                .HasForeignKey(d => d.ExchangeId)
+                .HasConstraintName("FK_UserReports_Exchange");
 
             entity.HasOne(d => d.ReportedUser).WithMany(p => p.TblUserReportReportedUsers)
                 .HasForeignKey(d => d.ReportedUserId)

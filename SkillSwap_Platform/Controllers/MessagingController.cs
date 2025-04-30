@@ -409,7 +409,7 @@ namespace SkillSwap_Platform.Controllers
         /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessage(int receiverUserId, string content, IFormFileCollection attachments, string replyPreview, int? replyMessageId, int? offerId)
+        public async Task<IActionResult> SendMessage(int receiverUserId, string content, IFormFileCollection attachments, string replyPreview, int? replyMessageId)
         {
             // Begin transaction for atomicity.
             using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -421,8 +421,21 @@ namespace SkillSwap_Platform.Controllers
                     // Normalize content: if null or whitespace, set to an empty string.
                     content = content?.Trim() ?? string.Empty;
 
+                    // Check for sensitive words in the content.
+                    var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
+                    bool isFlagged = sensitiveWarnings.Any();
+
+                    // pull it only from the form…
+                    int? usedOfferId = null;
+                    if (Request.Form.ContainsKey("offerId")
+                        && int.TryParse(Request.Form["offerId"], out var oid))
+                    {
+                        usedOfferId = oid;
+                    }
+
+
                     // enforce that either content or attachments must be provided.
-                    if (string.IsNullOrEmpty(content) && (attachments == null || !attachments.Any()))
+                    if (string.IsNullOrEmpty(content) && (attachments == null || !attachments.Any()) && !usedOfferId.HasValue)
                     {
                         string errorMsg = "Please enter a message or attach a file.";
                         // If the request is AJAX, return a JSON error result.
@@ -449,39 +462,37 @@ namespace SkillSwap_Platform.Controllers
                         return Json(new { success = false, error = errorMsg });
                     }
 
-                    // Check for sensitive words in the content.
-                    var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
-                    bool isFlagged = sensitiveWarnings.Any();
+                    // only enforce “no duplicate” when it’s a true offer‐only invite
+                    bool isOfferInvite = usedOfferId.HasValue
+                                         && string.IsNullOrWhiteSpace(content)
+                                         && (attachments == null || !attachments.Any());
 
-                    // Check for duplicate offer: if an offer is attached, ensure no message from this sender
-                    // to the receiver already has it.
-                    int? usedOfferId = null;
-                    if (int.TryParse((Request.Form["offerId"].FirstOrDefault() ?? "").Trim(), out var parsedOfferId) && parsedOfferId > 0)
-                        usedOfferId = parsedOfferId;
-
-                    // Figure out messageType
-                    string messageType = "";
-                    if (usedOfferId.HasValue
-                        && string.IsNullOrWhiteSpace(content)
-                        && (attachments == null || !attachments.Any()))
-                    {
-                        messageType = "OfferInvite";
-                    }
-                    else if (string.IsNullOrEmpty(content) && attachments?.Any() == true)
-                    {
-                        // image vs. file
-                        messageType = (attachments.Count == 1 && attachments.First().ContentType.StartsWith("image/"))
-                                      ? "Image"
-                                      : "File";
-                    }
-                    else
-                    {
-                        messageType = "Normal";
-                    }
+                    string messageType = isOfferInvite
+                        ? "OfferInvite"
+                        : string.IsNullOrEmpty(content) && attachments.Any()
+                            ? (attachments.Count == 1 && attachments.First().ContentType.StartsWith("image/")
+                                ? "Image"
+                                : "File")
+                            : "Normal";
 
                     // ONLY for real offer invites do we enforce “no duplicate contract”
-                    if (messageType == "OfferInvite")
+                    if (isOfferInvite)
                     {
+                        // ⬇︎ NEW: block duplicate invite messages
+                        bool alreadyInvited = await _context.TblMessages.AnyAsync(m =>
+                            m.SenderUserId == senderUserId &&
+                            m.ReceiverUserId == receiverUserId &&
+                            m.OfferId == usedOfferId.Value);
+
+                        if (alreadyInvited)
+                        {
+                            string errorMsg = "You have already invited this user to that offer.";
+                            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                return Json(new { success = false, error = errorMsg });
+                            TempData["ErrorMessage"] = errorMsg;
+                            return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                        }
+
                         var existingContract = await _context.TblContracts
                             .Where(c =>
                                 c.OfferId == usedOfferId.Value &&
@@ -654,9 +665,9 @@ namespace SkillSwap_Platform.Controllers
                     // Commit the transaction after successful operations.
                     await transaction.CommitAsync();
 
-                    // Load offer details if an offerId is provided
-                    OfferDisplayVM offerDisplay = null;
-                    if (usedOfferId.HasValue)
+                    // 4) Build offerDisplay only for a real invite
+                    OfferDisplayVM? offerDisplay = null;
+                    if (isOfferInvite)
                     {
                         var tblOffer = await _context.TblOffers
                             .Include(o => o.User)

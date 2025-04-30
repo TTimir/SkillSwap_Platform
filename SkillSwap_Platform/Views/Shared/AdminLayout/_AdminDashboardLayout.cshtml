@@ -215,7 +215,12 @@
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
                                                 <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Skill-Swap</a>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Logout","Home")"><i class="flaticon-logout mr10"></i>Logout</a>
+                                                <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                        <i class="flaticon-logout mr10"></i> Logout
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     </div>
@@ -268,19 +273,22 @@
         <nav id="menu" class="">
             <ul>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Home</span></a>
+                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Service</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">About</span></a>
+                    <a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Contact</span></a>
+                    <a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About</span></a>
+                </li>
+                <li>
+                    <a class="list-item" href="@Url.ActionLink("Contact","Home")"><span class="title">Contact</span></a>
                 </li>
                 <!-- Only for Mobile View -->
             </ul>

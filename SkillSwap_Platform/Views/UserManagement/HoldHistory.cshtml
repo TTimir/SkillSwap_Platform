@@ -69,11 +69,11 @@
                                     <tr>
                                         <th scope="col">#</th>
                                         <th scope="col">User</th>
-                                        <th scope="col">Held At (UTC)</th>
+                                        <th scope="col">Held At (IST)</th>
                                         <th scope="col">Category</th>
                                         <th scope="col">Hold Reason</th>
                                         <th scope="col">Held Until</th>
-                                        <th scope="col">Released At (UTC)</th>
+                                        <th scope="col">Released At (IST)</th>
                                         <th scope="col">Release Reason</th>
                                         <th scope="col">By Admin (Held / Release)</th>
                                     </tr>
@@ -81,6 +81,8 @@
                                 <tbody class="t-body">
                                     @foreach (var entry in Model.Items)
                                     {
+                                         // 1) Define your “local” zone once per page
+                                         var userZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
                                         <tr>
                                             <th scope="row">
                                                 <div class="freelancer-style1 box-shadow-none row m-0 p-0 align-items-lg-end">
@@ -92,7 +94,17 @@
                                                 </div>
                                             </th>
                                             <td class="vam"><span class="fz15 fw400">@entry.UserName</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@entry.HeldAt.ToString("dd MMM yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">
+                                                 @(
+                                                      // Convert UTC → IST and format in one go:
+                                                      TimeZoneInfo
+                                                        .ConvertTimeFromUtc(
+                                                            DateTime.SpecifyKind(entry.HeldAt, DateTimeKind.Utc),
+                                                            userZone
+                                                        )
+                                                        .ToString("dd MMM yyyy hh:mm tt")
+                                                    )
+                                            </span></td>
                                             <td class="vam"><span class="fz14 fw400">@entry.HeldCategory</span></td>
                                             <td class="vam">
                                                 <span class="d-inline-block text-truncate" style="max-width:230px;">
@@ -100,10 +112,32 @@
                                                 </span>
                                             </td>
                                             <td class="vam">
-                                                @(entry.HeldUntil?.ToString("dd MMM yyyy HH:mm tt") ?? "—")
+                                                 @(
+                                                      entry.HeldUntil.HasValue
+                                                        // 2a) Convert & format if we have a value
+                                                        ? TimeZoneInfo
+                                                            .ConvertTimeFromUtc(
+                                                              DateTime.SpecifyKind(entry.HeldUntil.Value, DateTimeKind.Utc),
+                                                              userZone
+                                                            )
+                                                            .ToString("dd MMM yyyy hh:mm tt")
+                                                        // 2b) Fallback if null
+                                                        : "—"
+                                                    )
                                             </td class="vam">
                                             <td class="vam">
-                                                @(entry.ReleaseAt?.ToString("dd MMM yyyy HH:mm tt") ?? "—")
+                                                @(
+                                                  entry.ReleaseAt.HasValue
+                                                    // 2a) Convert & format if we have a value
+                                                    ? TimeZoneInfo
+                                                        .ConvertTimeFromUtc(
+                                                          DateTime.SpecifyKind(entry.ReleaseAt.Value, DateTimeKind.Utc),
+                                                          userZone
+                                                        )
+                                                        .ToString("dd MMM yyyy hh:mm tt")
+                                                    // 2b) Fallback if null
+                                                    : "—"
+                                                )
                                             </td>
                                             <td class="vam">
                                                 <span class="d-inline-block text-truncate" style="max-width:200px;">

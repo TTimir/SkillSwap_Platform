@@ -62,9 +62,13 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             if (!heldUntil.HasValue)
                 heldUntil = DateTime.UtcNow.AddMonths(3);
 
+            var utcHeld = DateTime.SpecifyKind(heldUntil.Value, DateTimeKind.Utc);
+            var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+            var localHeld = TimeZoneInfo.ConvertTimeFromUtc(utcHeld, istZone);
+
             var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             if (await _usermanageService.HoldUserAsync(id, category, reason, heldUntil, adminId))
-                TempData["Success"] = "User held until " + heldUntil.Value.ToString("dd MMMM, yyyy hh:mm tt");
+                TempData["Success"] = $"User held until {localHeld:dd MMMM, yyyy hh:mm tt} IST";
             else
                 TempData["Error"] = "Failed to hold user.";
             return RedirectToAction(nameof(Index));

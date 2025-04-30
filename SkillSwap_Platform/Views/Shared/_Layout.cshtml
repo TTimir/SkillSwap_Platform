@@ -152,15 +152,24 @@
                                                 <div class="dropdown-menu">
                                                     <div class="user_setting_content">
                                                         <p class="fz15 fw400 ff-heading mb10 pl30">Start</p>
+                                                        @if (User.IsInRole("Admin"))
+                                                        {
+                                                            <a class="dropdown-item"
+                                                               asp-area=""
+                                                               asp-controller="OtpLogs"
+                                                               asp-action="Index">
+                                                                <i class="flaticon-goal mr10"></i> Admin Panel
+
+                                                            </a>
+                                                        }
                                                         <a class="dropdown-item" href="@Url.Action("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
-                                                        <a class="dropdown-item" href="page-dashboard-proposal.html"><i class="flaticon-document mr10"></i>My Proposals</a>
-                                                        <a class="dropdown-item" href="page-dashboard-save.html"><i class="flaticon-like mr10"></i>Saved</a>
-                                                        <a class="dropdown-item" href="page-dashboard-message.html"><i class="flaticon-chat mr10"></i>Message</a>
-                                                        <a class="dropdown-item" href="page-dashboard-reviews.html"><i class="flaticon-review-1 mr10"></i>Reviews</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Index","UserWishlist")"><i class="flaticon-like mr10"></i>Saved Swaps</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a>
+                                                        <a class="dropdown-item" href="@Url.Action("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p>
-                                                        <a class="dropdown-item" href="page-dashboard-manage-service.html"><i class="flaticon-presentation mr10"></i>Manage Services</a>
-                                                        <a class="dropdown-item" href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a>
-                                                        <a class="dropdown-item" href="page-dashboard-favorites.html"><i class="flaticon-content mr10"></i>Manage Project</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Create","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Create Swap Offer</a>
+                                                        <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
                                                         <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
                                                         <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
@@ -227,13 +236,13 @@
                         <a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a>
                     </li>
                     <li>
-                        <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                        <a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a>
                     </li>
                     <li>
-                        <a class="list-item" href="#"><span class="title">About</span></a>
+                        <a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About</span></a>
                     </li>
                     <li>
-                        <a class="list-item" href="#"><span class="title">Contact</span></a>
+                        <a class="list-item" href="@Url.ActionLink("Contact","Home")"><span class="title">Contact</span></a>
                     </li>
                     <!-- Only for Mobile View -->
                 </ul>
@@ -316,12 +325,12 @@
                             <div class="footer-widget mb-4 mb-lg-5">
                                 <a class="footer-logo" href="index.html"><img class="mb40" src="/template_assets/images/header-logo-white.svg" alt=""></a>
                                 <div class="row mb-4 mb-lg-5">
-                                    // <div class="col-auto">
-                                    //     <div class="contact-info">
-                                    //         <p class="info-title mb-2">Toll Free Customer Care</p>
-                                    //         <h5 class="info-phone"><a class="text-white" href="+(1)-123-456-7890">+(1) 123 456 7890</a></h5>
-                                    //     </div>
-                                    // </div>
+                                    <!--<div class="col-auto">
+                                         <div class="contact-info">
+                                             <p class="info-title mb-2">Toll Free Customer Care</p>
+                                             <h5 class="info-phone"><a class="text-white" href="+(1)-123-456-7890">+(1) 123 456 7890</a></h5>
+                                         </div>
+                                     </div>-->
                                     <div class="col-auto">
                                         <div class="contact-info">
                                             <p class="info-title mb-2">Need live support?</p>
@@ -329,46 +338,46 @@
                                         </div>
                                     </div>
                                 </div>
-                                // <div class="app-widget at-home9">
-                                //     <h5 class="title text-white mb20">Apps</h5>
-                                //     <div class="row mb-4 mb-lg-5">
-                                //         <div class="col-auto">
-                                //             <a href="">
-                                //                 <div class="app-info d-flex align-items-center mb10 bdrs60">
-                                //                     <div class="flex-shrink-0 pr15 border-0">
-                                //                         <i class="fab fa-apple fz30 text-white"></i>
-                                //                     </div>
-                                //                     <div class="flex-grow-1">
-                                //                         <p class="app-text text-white fz13 mb0">Download on the</p>
-                                //                         <h6 class="app-title mb-1 text-white">Apple Store</h6>
-                                //                     </div>
-                                //                 </div>
-                                //             </a>
-                                //         </div>
-                                //         <div class="col-auto">
-                                //             <a href="">
-                                //                 <div class="app-info d-flex align-items-center mb10 bdrs60">
-                                //                     <div class="flex-shrink-0 pr15 border-0">
-                                //                         <i class="fab fa-google-play fz24 text-white"></i>
-                                //                     </div>
-                                //                     <div class="flex-grow-1">
-                                //                         <p class="app-text text-white fz13 mb0">Get in on</p>
-                                //                         <h6 class="app-title mb-1 text-white">Google Play</h6>
-                                //                     </div>
-                                //                 </div>
-                                //             </a>
-                                //         </div>
-                                //     </div>
-                                // </div>
-                                // <div class="social-widget">
-                                //     <h5 class="text-white mb20">Follow Us</h5>
-                                //     <div class="social-style1">
-                                //         <a href=""><i class="fab fa-facebook-f list-inline-item"></i></a>
-                                //         <a href=""><i class="fab fa-twitter list-inline-item"></i></a>
-                                //         <a href=""><i class="fab fa-instagram list-inline-item"></i></a>
-                                //         <a href=""><i class="fab fa-linkedin-in list-inline-item"></i></a>
-                                //     </div>
-                                // </div>
+                                <!--<div class="app-widget at-home9">
+                                     <h5 class="title text-white mb20">Apps</h5>
+                                     <div class="row mb-4 mb-lg-5">
+                                         <div class="col-auto">
+                                             <a href="">
+                                                 <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                     <div class="flex-shrink-0 pr15 border-0">
+                                                         <i class="fab fa-apple fz30 text-white"></i>
+                                                     </div>
+                                                     <div class="flex-grow-1">
+                                                         <p class="app-text text-white fz13 mb0">Download on the</p>
+                                                         <h6 class="app-title mb-1 text-white">Apple Store</h6>
+                                                     </div>
+                                                 </div>
+                                             </a>
+                                         </div>
+                                         <div class="col-auto">
+                                             <a href="">
+                                                 <div class="app-info d-flex align-items-center mb10 bdrs60">
+                                                     <div class="flex-shrink-0 pr15 border-0">
+                                                         <i class="fab fa-google-play fz24 text-white"></i>
+                                                     </div>
+                                                     <div class="flex-grow-1">
+                                                         <p class="app-text text-white fz13 mb0">Get in on</p>
+                                                         <h6 class="app-title mb-1 text-white">Google Play</h6>
+                                                     </div>
+                                                 </div>
+                                             </a>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div class="social-widget">
+                                     <h5 class="text-white mb20">Follow Us</h5>
+                                     <div class="social-style1">
+                                         <a href=""><i class="fab fa-facebook-f list-inline-item"></i></a>
+                                         <a href=""><i class="fab fa-twitter list-inline-item"></i></a>
+                                         <a href=""><i class="fab fa-instagram list-inline-item"></i></a>
+                                         <a href=""><i class="fab fa-linkedin-in list-inline-item"></i></a>
+                                     </div>
+                                 </div> -->
                             </div>
                         </div>
                     </div>

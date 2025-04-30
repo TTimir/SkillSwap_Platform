@@ -13,6 +13,7 @@ using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.AdminControls;
 using SkillSwap_Platform.Services.AdminControls.Certificate;
+using SkillSwap_Platform.Services.AdminControls.Escrow;
 using SkillSwap_Platform.Services.AdminControls.UserManagement;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.DigitalToken;
@@ -86,6 +87,7 @@ builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<ICertificateReviewService, CertificateReviewService>();
 builder.Services.AddScoped<IUserManagmentService, UserManagmentService>();
 builder.Services.AddHostedService<ExpiredHoldCleanupService>();
+builder.Services.AddScoped<IEscrowService, EscrowService>();
 
 builder.Services.AddControllersWithViews(options =>
 {

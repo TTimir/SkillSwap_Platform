@@ -1,4 +1,5 @@
 ﻿@using Humanizer
+@using SkillSwap_Platform.Models.ViewModels
 @model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
 
 @{
@@ -242,9 +243,9 @@
                                 <input type="hidden" id="replyPreview" name="replyPreview" value="" />
                                 <input type="hidden" id="replyMessageId" name="replyMessageId" value="" />
                                 @* If messaging relates to an offer, include it as a hidden field *@
-                                @if (Model.OfferId.HasValue && Model.OfferId > 0)
+                                @if (ViewBag.OfferDetails != null)
                                 {
-                                    <input type="hidden" name="offerId" value="@Model.OfferId" />
+                                    <input type="hidden" name="offerId" value="@((OfferDisplayVM)ViewBag.OfferDetails).OfferId" />
                                 }
                                 <!-- Preview area for selected attachments -->
                                 <div id="filePreview" style="margin-bottom:10px;"></div>
@@ -451,13 +452,16 @@
                         } else {
                             $('#errorContainer').hide().html('');
                             $('#chatContainer').append(result);
-                            $form[0].reset();
+                            // 1️⃣ reset only your user‐editable fields, not the entire form
+                            $('#messageInput').val('');
                             $('#filePreview').empty();
                             $('#replyPreviewContainer').hide();
                             $('#replyPreview').val('');
                             $('#replyMessageId').val('');
+
+                            // 2️⃣ hide & remove the offer preview AND the hidden input
                             $("#offerPreviewWindow").hide();
-                            $("input[name='offerId']").val("");
+                            $("input[name='offerId']").remove();
                             // Update the URL: remove "offerId" parameter while preserving "otherUserId"
                             try {
                                 var currentUrl = new URL(window.location.href);
@@ -572,21 +576,21 @@
                 console.error("Error restoring URL:", error);
             }
 
-                const urlParams = new URLSearchParams(window.location.search);
-        const offerIdParam = urlParams.get("offerId");
-        if (offerIdParam) {
-            // Update the hidden input field for the offer ID
-            $("input[name='offerId']").val(offerIdParam);
-            // Show the offer preview window (assumes an element with id "offerPreviewWindow" exists)
-            $("#offerPreviewWindow").show();
-        }
+            const urlParams = new URLSearchParams(window.location.search);
+            const offerIdParam = urlParams.get("offerId");
+            if (offerIdParam) {
+                // Update the hidden input field for the offer ID
+                $("input[name='offerId']").val(offerIdParam);
+                // Show the offer preview window (assumes an element with id "offerPreviewWindow" exists)
+                $("#offerPreviewWindow").show();
+            }
 
             // When the user clicks "Remove Offer", hide the offer preview,
             // clear the hidden offer field, and update the URL.
             $("#btnRemoveOfferPreview").on("click", function () {
                 // Hide the offer preview window and clear the offer field.
                 $("#offerPreviewWindow").hide();
-                $("input[name='offerId']").val("");
+                $("input[name='offerId']").remove();
 
                 try {
                     const currentUrl = new URL(window.location.href);

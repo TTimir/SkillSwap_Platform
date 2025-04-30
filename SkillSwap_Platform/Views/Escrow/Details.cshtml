@@ -1,0 +1,138 @@
+﻿@model SkillSwap_Platform.Models.TblEscrow
+
+@{
+    ViewData["Title"] = "Escrow Details";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h4>@ViewData["Title"]</h4>
+        <h2>Escrow @("#")@Model.EscrowId</h2>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Index","Escrow")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow Details</a>
+                    </div>
+                </nav>  
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Exchange</th>
+                                        <th scope="col">Buyer (Other user)</th>
+                                        <th scope="col">Seller (Offer Owner)</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    <tr>
+                                        <td class="vam"><span class="fz15 fw400">@Model.ExchangeId</span></td>
+                                        <td class="vam"><span class="fz15 fw400">@Model.Buyer.UserName</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.Seller.UserName</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.Amount.ToString("C")</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.Status</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.CreatedAt.ToString("dd MMMM, yyyy hh:mm:ss tt")</span></td>
+                                        @if (Model.ReleasedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.ReleasedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (Model.RefundedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.RefundedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (Model.DisputedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.DisputedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(Model.AdminNotes))
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@Model.AdminNotes</span></td>
+                                        }
+                                        else
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">N/A</span></td>
+                                        }
+                                    </tr>
+                                </tbody>
+
+                                @if (Model.Status == "Pending")
+                                {
+                                    <div class="mb-3">
+                                        <form asp-action="Release" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@Model.EscrowId" />
+                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
+                                            <button class="btn btn-success">Release Funds</button>
+                                        </form>
+
+                                        <form asp-action="Refund" method="post" class="d-inline ms-2">
+                                            <input type="hidden" name="id" value="@Model.EscrowId" />
+                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
+                                            <button class="btn btn-warning">Refund</button>
+                                        </form>
+
+                                        <form asp-action="Dispute" method="post" class="d-inline ms-2">
+                                            <input type="hidden" name="id" value="@Model.EscrowId" />
+                                            <textarea name="notes" class="form-control mb-2" placeholder="Notes (optional)"></textarea>
+                                            <button class="btn btn-danger">Open Dispute</button>
+                                        </form>
+                                    </div>
+                                }
+
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+
+
+

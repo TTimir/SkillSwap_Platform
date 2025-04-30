@@ -1098,6 +1098,19 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
+        if (user.LockoutEndTime.HasValue && user.LockoutEndTime.Value > DateTime.UtcNow)
+        {
+            // 1) Convert UTC → IST
+            var utc = DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc);
+            var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+            var localEnd = TimeZoneInfo.ConvertTimeFromUtc(utc, istZone);
+
+            // 2) Show the error
+            TempData["ErrorMessage"] =
+                $"🚫 Too many failed OTP attempts. Try again at {localEnd:dd MMM yyyy hh:mm tt} IST.";
+            return RedirectToAction(nameof(LoginOtp), new { returnUrl });
+        }
+
         // 1) Gather context
         string ip;
         // 1a) First check for X-Forwarded-For (may be a comma-separated list; take the first)
@@ -1155,12 +1168,17 @@ public class HomeController : Controller
                 {
                     user.LockoutEndTime = DateTime.UtcNow.AddMinutes(15);
 
+                    // Convert for the email body
+                    var utcLock = DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc);
+                    var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+                    var localLockEnd = TimeZoneInfo.ConvertTimeFromUtc(utcLock, istZone);
+
                     // Notify by email
                     var lockSubject = "Your SkillSwap Login Temporarily Locked";
                     var lockBody = $@"
                         <p>Hi {user.FirstName},</p>
                         <p>Due to multiple unsuccessful login attempts, your account is locked for 15 minutes from now.</p>
-                        <p>Please wait until <strong>{user.LockoutEndTime:dd MMM yyyy HH:mm} UTC</strong> before trying again.</p>
+                        <p>Please wait until <strong>{localLockEnd:dd MMM yyyy HH:mm tt} IST</strong> before trying again.</p>
                         <p>If this wasn’t you, contact us at <a href=""mailto:support@skillswap.com"">support@skillswap.com</a>.</p>
                         <p>— The SkillSwap Team</p>";
                     await _emailService.SendEmailAsync(user.Email, lockSubject, lockBody, isBodyHtml: true);

@@ -19,6 +19,7 @@ using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.DigitalToken;
 using Microsoft.CodeAnalysis.Text;
+using SkillSwap_Platform.Services.AdminControls.Escrow;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -39,7 +40,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly IPdfGenerator _pdfGenerator;
         private readonly INotificationService _notif;
         private readonly IDigitalTokenService _tokenService;
-
+        private readonly IEscrowService _escrowService;
         public ContractController(
             IContractPreparationService contractPreparation,
             IContractHandlerService contractHandler,
@@ -48,7 +49,8 @@ namespace SkillSwap_Platform.Controllers
             IViewRenderService viewRenderService,
             IPdfGenerator pdfGenerator,
             INotificationService notif,
-            IDigitalTokenService tokenService)
+            IDigitalTokenService tokenService,
+            IEscrowService escrowService)
         {
             _contractPreparation = contractPreparation;
             _contractHandler = contractHandler;
@@ -58,6 +60,7 @@ namespace SkillSwap_Platform.Controllers
             _pdfGenerator = pdfGenerator;
             _notif = notif;
             _tokenService = tokenService;
+            _escrowService = escrowService;
         }
 
         #region Create Contract
@@ -715,19 +718,26 @@ namespace SkillSwap_Platform.Controllers
                     };
 
                     // Determine the signing timestamps for request and response.
-                    if (originalContract.RequestDate == default(DateTime))
+                    if (!originalContract.RequestDate.HasValue)
                     {
-                        // This is the first party signing:
-                        newFinalContract.RequestDate = DateTime.UtcNow; // Record first signature.
-                        newFinalContract.ResponseDate = null;           // No response yet.
+                        // ──────────────── FIRST SIGNATURE ────────────────
+                        // No one has signed yet: record the first signature as RequestDate.
+                        newFinalContract.RequestDate = DateTime.UtcNow;
+                        newFinalContract.ResponseDate = null;
+                    }
+                    else if (!originalContract.ResponseDate.HasValue)
+                    {
+                        // ────────────── SECOND SIGNATURE ───────────────
+                        // First signature is already there, but no response yet:
+                        // carry forward the original RequestDate and record ResponseDate.
+                        newFinalContract.RequestDate = originalContract.RequestDate.Value;
+                        newFinalContract.ResponseDate = DateTime.UtcNow;
                     }
                     else
                     {
-                        // A signing has already occurred.
-                        // Copy the first party's signing time.
-                        newFinalContract.RequestDate = originalContract.RequestDate;
-                        // Record the second party's signing time as the response.
-                        newFinalContract.ResponseDate = DateTime.UtcNow;
+                        // ────────────── ALREADY FULLY SIGNED ────────────
+                        // Both dates exist – you can choose to throw, ignore, or log here.
+                        throw new InvalidOperationException("Contract has already been fully signed.");
                     }
 
                     // Role-based assignment:
@@ -805,12 +815,21 @@ namespace SkillSwap_Platform.Controllers
                         if (exchange != null)
                             await _tokenService.HoldTokensAsync(exchange.ExchangeId);
 
+                        // 4) Create the actual escrow record
+                        await _escrowService.CreateAsync(
+                            exchange.ExchangeId,    // link back to your newly-created exchange
+                            exchange.OfferOwnerId ?? 0,  // buyer
+                            exchange.OtherUserId ?? 0,   // seller
+                            exchange.TokensPaid     // amount
+                        );
+
                         var openerId = isReceiver
                             ? originalContract.SenderUserId
                             : originalContract.ReceiverUserId;
 
                         if (!await _tokenService.HasSufficientBalanceAsync(openerId, newFinalContract.TokenOffer ?? 0m))
                         {
+                            TempData["ErrorMessage"] = $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.";
                             ModelState.AddModelError("",
                               $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
                             return View("PreviewContract", new { contractId });
