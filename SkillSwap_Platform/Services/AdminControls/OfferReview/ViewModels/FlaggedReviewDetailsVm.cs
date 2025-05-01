@@ -11,6 +11,7 @@
         public string Comment { get; set; } = "";
 
         public int? ParentReviewId { get; set; }
+        public string ParentReviewUserName { get; set; }
 
         public string? ParentReviewComment { get; set; }
 

@@ -1,11 +1,26 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.AboutUsVM
 
 @{
-    ViewData["Title"] = "About";
+    ViewData["Title"] = "About Us";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="body_content">
+    <!-- Breadcumb Sections -->
+    <section class="breadcumb-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcumb-style1">
+                        <div class="breadcumb-list">
+                            <a href="@Url.Action("Index", "Home")">Home</a>
+                            <span>@ViewData["Title"]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- About Section Area -->
     <section class="our-about pb90">
         <div class="container">

@@ -1,15 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels;
+using SkillSwap_Platform.Services.Email;
 
 namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 {
     public class OfferReviewService : IOfferReviewService
     {
         private readonly SkillSwapDbContext _db;
+        private readonly IEmailService _emailService;
 
-        public OfferReviewService(SkillSwapDbContext db)
-            => _db = db;
+        public OfferReviewService(SkillSwapDbContext db, IEmailService email)
+        {
+            _db = db;
+            _emailService = email;
+        }
 
         public async Task<PagedResult<OfferFlagVm>> GetFlaggedOffersAsync(int page, int pageSize)
         {
@@ -74,11 +81,70 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             };
         }
 
+        public async Task<PagedResult<ActiveFlagVm>> GetActiveFlagsAsync(int page, int pageSize)
+        {
+            // 1) Current review‐flags
+            var reviewFlags = _db.TblReviews
+                .Where(r => r.IsFlagged && !r.IsDeleted)
+                .Select(r => new ActiveFlagVm
+                {
+                    EntityType = "Review",
+                    EntityId = r.ReviewId,
+                    OfferId = r.OfferId,
+                    OfferTitle = r.Offer.Title,
+                    AuthorUserName = r.ReviewerName,
+                    ReporterUserId = r.FlaggedByUserId ?? 0,
+                    ReporterUserName = _db.TblUsers
+                              .Where(u => u.UserId == r.FlaggedByUserId)
+                              .Select(u => u.UserName)
+                              .FirstOrDefault() ?? "Unknown",
+                    FlaggedAt = r.FlaggedDate ?? r.CreatedDate,
+                    Reason = r.Comments ?? ""
+                });
+
+            // 2) Current reply‐flags
+            var replyFlags = _db.TblReviewReplies
+                .Where(rr => rr.IsFlagged && !rr.IsDeleted)
+                .Select(rr => new ActiveFlagVm
+                {
+                    EntityType = "Reply",
+                    EntityId = rr.ReplyId,
+                    OfferId = rr.Review.OfferId,
+                    OfferTitle = rr.Review.Offer.Title,
+                    AuthorUserName = rr.ReplierUser.UserName,
+                    ReporterUserId = rr.FlaggedByUserId ?? 0,
+                    ReporterUserName = _db.TblUsers
+                              .Where(u => u.UserId == rr.FlaggedByUserId)
+                              .Select(u => u.UserName)
+                              .FirstOrDefault() ?? "Unknown",
+                    FlaggedAt = rr.FlaggedDate ?? rr.CreatedDate,
+                    Reason = rr.Comments ?? ""
+                });
+
+            var allFlags = reviewFlags
+                .Union(replyFlags)
+                .OrderByDescending(f => f.FlaggedAt);
+
+            var total = await allFlags.CountAsync();
+            var items = await allFlags
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ActiveFlagVm>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<PagedResult<ReviewFlagVm>> GetFlaggedReviewsAsync(int page, int pageSize)
         {
             // 1) pull all flagged reviews into memory
             var flaggedReviews = await _db.TblReviews
-                .Where(r => r.IsFlagged)
+                .Where(r => r.IsFlagged && !r.IsDeleted)
                 .Include(r => r.Offer)
                 .ToListAsync();
 
@@ -164,7 +230,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         {
             // 1) Pull all flagged replies (including the parent review → offer, and the replier user)
             var flaggedReplies = await _db.TblReviewReplies
-                .Where(rr => rr.IsFlagged)
+                .Where(rr => rr.IsFlagged && !rr.IsDeleted)
                 .Include(rr => rr.Review)
                     .ThenInclude(r => r.Offer)
                 .Include(rr => rr.ReplierUser)
@@ -257,6 +323,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 ReplyId = rr.ReplyId,
                 OfferId = review.OfferId,
                 OfferTitle = review.Offer.Title,
+                ParentReviewUserName = parent.ReviewerName,
                 ReviewerUserName = replierName,
                 Rating = 0,
                 Comment = rr.Comments ?? "",
@@ -342,6 +409,177 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             });
 
             await _db.SaveChangesAsync();
+        }
+
+        public async Task ModerateAndWarnAsync(
+            int contentId,
+            bool isReply,
+            int adminId,
+            string moderationNote,
+            string warningMessage)
+        {
+            // 1) Locate the entity
+            if (!isReply)
+            {
+                // Soft‐delete the review
+                var review = await _db.TblReviews
+                                      .FirstOrDefaultAsync(r => r.ReviewId == contentId)
+                             ?? throw new KeyNotFoundException("Review not found");
+
+                review.IsDeleted = true;
+                review.DeletedAt = DateTime.UtcNow;
+                review.DeletedByAdminId = adminId;
+                review.DeletionReason = moderationNote;
+                _db.TblReviews.Update(review);
+
+                // 2) Log it
+                _db.TblReviewModerationHistories.Add(new TblReviewModerationHistory
+                {
+                    ReviewId = contentId,
+                    AdminId = adminId,
+                    Action = "DeletedReview",
+                    Notes = moderationNote,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // 3) Warn the user
+                await WarnUserInternalAsync(
+                    review.ReviewerId,
+                    warningMessage,
+                    entityType: "Review",
+                    entityId: contentId
+                );
+            }
+            else
+            {
+                var reply = await _db.TblReviewReplies
+                                     .FirstOrDefaultAsync(r => r.ReplyId == contentId)
+                            ?? throw new KeyNotFoundException("Reply not found");
+
+                reply.IsDeleted = true;
+                reply.DeletedAt = DateTime.UtcNow;
+                reply.DeletedByAdminId = adminId;
+                reply.DeletionReason = moderationNote;
+                _db.TblReviewReplies.Update(reply);
+
+                // 2) Log it (reuse your same history table, or create TblReplyModerationHistory)
+                _db.TblReviewModerationHistories.Add(new TblReviewModerationHistory
+                {
+                    ReviewId = reply.ReviewId,
+                    ReplyId = contentId,
+                    AdminId = adminId,
+                    Action = "DeletedReply",
+                    Notes = moderationNote,
+                    CreatedAt = DateTime.UtcNow
+                });
+                
+                _db.TblReviewReplies.Remove(reply);
+
+                // 3) Warn the user
+                await WarnUserInternalAsync(
+                    reply.ReplierUserId,
+                    warningMessage,
+                    entityType: "Reply",
+                    entityId: contentId
+                );
+            }
+
+            await _db.SaveChangesAsync();
+
+        }
+
+        private async Task WarnUserInternalAsync(
+            int userId,
+            string message,
+            string entityType,
+            int entityId)
+        {
+            var user = await _db.TblUsers.FindAsync(userId);
+            if (user != null)
+            {
+                var sentAt = DateTime.UtcNow.ToLocalTime()
+                        .ToString("dd MMMM, yyyy hh:mm tt");
+
+                var body = $@"
+                  <p>Hi {user.UserName},</p>
+                
+                  <p>{message}</p>
+                
+                  <p style=""font-size:.9em;color:#666;"">
+                    <em>Sent on {sentAt}</em>
+                  </p>
+                
+                  <p>
+                    If you have any questions or need help, just reply to this email and we’ll get right back to you.
+                  </p>
+                
+                  <p>
+                    Thanks,<br/>
+                    The SkillSwap Team
+                  </p>
+                ";
+
+                // send email
+                await _emailService.SendEmailAsync(
+                    to: user.Email,
+                    subject: "⚠️ Content removed – please read",
+                    body: body,
+                    isBodyHtml: true
+                );
+
+                // record a warning
+                _db.TblUserWarnings.Add(new TblUserWarning
+                {
+                    UserId = userId,
+                    EntityType = entityType,     // e.g. "Review" or "Reply"
+                    EntityId = entityId,       // the PK of the flagged entity
+                    Message = message,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        public async Task<PagedResult<FlagHistoryVm>> GetFlagHistoryAsync(int page, int pageSize)
+        {
+            // 1) Query your moderation history
+            var q = _db.TblReviewModerationHistories
+                       .Include(h => h.Admin)
+                       .Include(h => h.Review)          // for parent review → offer
+                         .ThenInclude(r => r.Offer)
+                       .Where(h => h.Action.StartsWith("Deleted")
+                                || h.Action.StartsWith("Dismissed"));
+
+            // 2) Count & page
+            var total = await q.CountAsync();
+            var items = await q
+                .OrderByDescending(h => h.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(h => new FlagHistoryVm
+                {
+                    EntityType = h.ReplyId != null ? "Reply" : "Review",
+                    EntityId = h.ReplyId > 0
+                                    ? h.ReplyId
+                                    : h.ReviewId,
+                    OfferId = h.Review.OfferId,
+                    OfferTitle = h.Review.Offer.Title,
+                    AuthorUserName = h.ReplyId > 0
+                                        ? h.Reply.ReplierUser.UserName
+                                        : h.Review.ReviewerName,
+                    AdminUserName = h.Admin.UserName,
+                    Action = h.Action,    // e.g. "DeletedReview", "DismissedFlag"
+                    Notes = h.Notes,
+                    CreatedAt = h.CreatedAt
+                })
+                .ToListAsync();
+
+            return new PagedResult<FlagHistoryVm>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

@@ -65,6 +65,8 @@ public partial class TblOffer
 
     public string? Address { get; set; }
 
+    public bool IsFlagged { get; set; }
+
     public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();

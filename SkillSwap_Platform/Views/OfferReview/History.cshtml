@@ -1,5 +1,5 @@
 ﻿@using SkillSwap_Platform.Services.AdminControls
-@model PagedResult<SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.ReviewFlagVm>
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.FlagHistoryVm>
 
 @{
     var mode = (string)ViewData["Mode"] ?? "Reviews";
@@ -8,7 +8,7 @@
       : mode == "Replies"
         ? "Flagged Review Replies"
         : "Flagged Reviews";
-    ViewData["SubTitle"] = "Here you can review and moderate all user reviews that have been flagged.";
+    ViewData["SubTitle"] = "Keep track of every time a review or reply was flagged, who flagged it, and when";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -63,55 +63,42 @@
                             <table class="table-style3 table at-savesearch">
                                 <thead class="t-head">
                                     <tr>
-                                        <th scope="col">@(mode == "Replies" ? "Reply ID" : "Review ID")</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Review ID</th>
                                         <th scope="col">Offer</th>
-                                        <th scope="col">@(mode == "Replies" ? "Replier" : "Reviewer")</th>
-                                        @if (mode == "Reviews")
-                                        {
-                                            <th scope="col">Rating</th>
-                                        }
-                                        <th scope="col">Flags</th>
-                                        <th scope="col">Last Flagged</th>
-                                        <th scope="col">Action</th>
+                                        <th scope="col">Reviewer</th>
+                                        <th scope="col">Admin</th>
+                                        <th scope="col">Admin Action</th>
+                                        <th scope="col">Admin Notes</th>
+                                        <th scope="col">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
-                                    @for (int i = 0; i < Model.Items.Count; i++)
+                                    @{
+                                        var sr = (Model.Page - 1) * Model.PageSize;
+                                    }
+                                    @foreach (var h in Model.Items)
                                     {
-                                        var item = Model.Items[i];
+                                        sr++;
                                         <tr>
-                                            <td class="vam"><span class="fz15 fw400">@item.ReviewId</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@sr</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.EntityType</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.EntityId</span></td>
                                             <td class="vam">
                                                 <a asp-controller="UserOfferDetails"
                                                    asp-action="OfferDetails"
-                                                   asp-route-offerId="@item.OfferId"
+                                                   asp-route-offerId="@h.OfferId"
                                                    target="_blank"
                                                    class="fz15 fw400 text-decoration-none">
-                                                    @item.OfferTitle
-                                                    <small class="text-muted">(ID @item.OfferId)</small>
+                                                    @h.OfferTitle <small>(ID @h.OfferId)</small>
                                                 </a>
                                             </td>
-                                            <td class="vam"><span class="fz15 fw400">@item.ReviewerUserName</span></td>
-                                            @if (mode == "Reviews")
-                                            {
-                                                <td class="vam">
-                                                    <span class="fz15 fw400">
-                                                        <span class="badge badge-pill bg-@(item.Rating >= 4 ? "success" : "warning")">
-                                                            @item.Rating <i class="fas fa-star vam fz10 review-color ml-2"></i>
-                                                        </span>
-                                                    </span>
-                                                </td>
-                                            }
-                                            <td class="vam"><span class="badge badge-pill bg-danger fz15 fw400">@item.FlagCount</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@item.LastFlaggedAt.ToLocalTime().ToString("dd MMMM, yyyy HH:mm tt")</span></td>
-                                            <td class="vam">
-                                                <a asp-action="Details"
-                                                   asp-route-id="@item.ReviewId"
-                                                   asp-route-mode="@mode"
-                                                   class="ud-btn btn-thm">
-                                                    Details
-                                                </a>
-                                            </td>
+                                            <td class="vam"><span class="fz15 fw400">@h.AuthorUserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.AdminUserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.Action</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.Notes</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")</span></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -127,7 +114,7 @@
                                         <!-- Previous -->
                                         <li class="page-item @(page == 1 ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="Reviews"
+                                               asp-action="History"
                                                asp-route-page="@(page - 1)">
                                                 <span class="fas fa-angle-left"></span>
                                             </a>
@@ -138,7 +125,7 @@
                                         {
                                             <li class="page-item @(p == page ? "active" : "")">
                                                 <a class="page-link"
-                                                   asp-action="Reviews"
+                                                   asp-action="History"
                                                    asp-route-page="@p">@p</a>
                                             </li>
                                         }
@@ -146,7 +133,7 @@
                                         <!-- Next -->
                                         <li class="page-item @(page == totalPages ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="Reviews"
+                                               asp-action="History"
                                                asp-route-page="@(page + 1)">
                                                 <span class="fas fa-angle-right"></span>
                                             </a>

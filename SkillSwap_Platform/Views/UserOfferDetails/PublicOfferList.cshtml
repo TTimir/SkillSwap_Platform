@@ -55,8 +55,13 @@
             <div class="col-lg-12">
                 <div class="breadcumb-style1">
                     <div class="breadcumb-list">
-                        <a href="@Url.Action("Index", "Home")">Home</a>
-                        <a href="#!offers">@ViewData["Title"]</a>
+                        <a asp-controller="Home" asp-action="Index">Home</a>
+                        <a asp-controller="UserOfferDetails" asp-action="PublicOfferList">Swap Offers</a>
+                        @* if there’s a category filter active, show it *@
+                        @if (!string.IsNullOrEmpty(Model.Category))
+                        {
+                            <span>@Model.Category</span>
+                        }
                     </div>
                 </div>
             </div>

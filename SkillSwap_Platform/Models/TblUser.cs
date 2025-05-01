@@ -156,6 +156,8 @@ public partial class TblUser
 
     public virtual ICollection<TblPasswordResetToken> TblPasswordResetTokens { get; set; } = new List<TblPasswordResetToken>();
 
+    public virtual ICollection<TblReview> TblReviewDeletedByAdmins { get; set; } = new List<TblReview>();
+
     public virtual ICollection<TblReviewModerationHistory> TblReviewModerationHistories { get; set; } = new List<TblReviewModerationHistory>();
 
     public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
@@ -190,6 +192,8 @@ public partial class TblUser
 
     public virtual ICollection<TblUserSkill> TblUserSkills { get; set; } = new List<TblUserSkill>();
 
+    public virtual ICollection<TblUserWarning> TblUserWarnings { get; set; } = new List<TblUserWarning>();
+
     public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
 
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
@@ -200,5 +204,4 @@ public partial class TblUser
 
     public virtual ICollection<TblRole> Roles { get; set; } = new List<TblRole>();
     public virtual ICollection<TblUserRole> TblUserRoles { get; set; } = new HashSet<TblUserRole>();
-
 }

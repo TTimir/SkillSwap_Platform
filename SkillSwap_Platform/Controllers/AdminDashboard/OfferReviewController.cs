@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using SkillSwap_Platform.Services.AdminControls.Offer_and_Review;
+using System.Drawing.Printing;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
@@ -13,6 +14,16 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
     {
         private readonly IOfferReviewService _offre;
         public OfferReviewController(IOfferReviewService offre) => _offre = offre;
+
+        [HttpGet]
+        public async Task<IActionResult> ActiveFlags(int page = 1, int pageSize = 20)
+        {
+            ViewData["Mode"] = "Active";
+            ViewData["Title"] = "Currently Flagged Content";
+            ViewData["SubTitle"] = "All reviews and replies still awaiting moderation";
+            var vm = await _offre.GetActiveFlagsAsync(page, pageSize);
+            return View("ActiveFlags", vm);
+        }
 
         // reviews
         public async Task<IActionResult> Reviews(int page = 1, int pageSize = 20)
@@ -72,6 +83,32 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             await _offre.DismissReplyFlagsAsync(replyId, adminId, notes);
             TempData["Success"] = "Reply-flag dismissed.";
             return RedirectToAction(nameof(Reviews));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Moderate(int id, string mode, string note, string warning)
+        {
+            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            bool isReply = mode == "Replies";
+
+            await _offre.ModerateAndWarnAsync(
+                contentId: id,
+                isReply: isReply,
+                adminId: adminId,
+                moderationNote: note,
+                warningMessage: warning
+            );
+
+            TempData["Success"] = "Content removed and user warned.";
+            return RedirectToAction("Reviews");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> History(int page = 1, int pageSize = 20)
+        {
+            var vm = await _offre.GetFlagHistoryAsync(page, pageSize);
+            ViewData["Mode"] = "History";
+            return View(vm);
         }
     }
 }

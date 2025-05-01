@@ -1098,14 +1098,20 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
+        if (user.LockoutEndTime.HasValue && user.LockoutEndTime.Value <= DateTime.UtcNow)
+        {
+            user.LockoutEndTime = null;
+            user.FailedOtpAttempts = 0;
+            await _dbcontext.SaveChangesAsync();
+        }
+
         if (user.LockoutEndTime.HasValue && user.LockoutEndTime.Value > DateTime.UtcNow)
         {
-            // 1) Convert UTC → IST
-            var utc = DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc);
-            var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
-            var localEnd = TimeZoneInfo.ConvertTimeFromUtc(utc, istZone);
-
-            // 2) Show the error
+            // convert to local/IST for display
+            var localEnd = TimeZoneInfo.ConvertTimeFromUtc(
+                              DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc),
+                              TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata")
+                           );
             TempData["ErrorMessage"] =
                 $"🚫 Too many failed OTP attempts. Try again at {localEnd:dd MMM yyyy hh:mm tt} IST.";
             return RedirectToAction(nameof(LoginOtp), new { returnUrl });

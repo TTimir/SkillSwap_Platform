@@ -61,6 +61,7 @@
                                             <th scope="col">Offer</th>
                                             <th scope="col">Rating</th>
                                             <th scope="col">Comment</th>
+                                            <th scope="col">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="t-body">
@@ -84,9 +85,44 @@
                                                 </span>
                                             </td>
                                             <td class="vam"><span class="fz15 fw400">@Model.Comment</span></td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <button class="ud-btn btn-light-thm"
+                                                            style="border:0;"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#mod-collapse">
+                                                        Remove & Warn
+                                                    </button>
+                                                </span>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
+
+                                <div class="collapse mt-3" id="mod-collapse">
+                                    <form asp-action="Moderate" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.ReviewId" />
+                                        <input type="hidden" name="mode" value="@(isReply ? "Replies" : "Reviews")" />
+
+                                        <div class="mb-2">
+                                            <label>Reason for removal:</label>
+                                            <textarea name="note" class="form-control" rows="2" required></textarea>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="warning-@Model.ReviewId">Warning message to user:</label>
+                                            <textarea id="warning-@Model.ReviewId" name="warning" rows="4" required>@($"Your review on '{Model.OfferTitle}' (Offer ID {Model.OfferId}) has been removed. Please do not post abusive content and follow our community guidelines.")</textarea>
+                                        </div>
+
+                                        <button type="submit" class="ud-btn btn-thm mb25 me-4" style="border:0;">Confirm</button>
+                                        <button type="button" class="ud-btn btn-white mb25 me-4"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#mod-collapse">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
                             }
                             else
                             {
@@ -94,18 +130,58 @@
                                     <thead class="t-head">
                                         <tr>
                                             <th scope="col">Reply ID</th>
+                                            <th scope="col">Parent Review By</th>
                                             <th scope="col">Parent Review</th>
+                                            <th scope="col">Replier</th>
                                             <th scope="col">Reply Text</th>
+                                            <th scope="col">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="t-body">
                                         <tr>
                                             <td class="vam"><span class="fz15 fw400">@Model.ReplyId</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ParentReviewUserName</span></td>
                                             <td class="vam"><span class="fz15 fw400">@Model.ParentReviewComment (<small>ID @Model.ParentReviewId</small>)</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ReviewerUserName</span></td>
                                             <td class="vam"><span class="fz15 fw400">@Model.Comment</span></td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <button class="ud-btn btn-light-thm"
+                                                            style="border:0;"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#mod-collapse">
+                                                        Remove & Warn
+                                                    </button>
+                                                </span>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
+
+                                <div class="collapse mt-3" id="mod-collapse">
+                                    <form asp-action="Moderate" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.ReviewId" />
+                                        <input type="hidden" name="mode" value="@(isReply ? "Replies" : "Reviews")" />
+
+                                        <div class="mb-2">
+                                            <label>Reason for removal:</label>
+                                            <textarea name="note" class="form-control" rows="2" required></textarea>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="warning-@Model.ReviewId">Warning message to user:</label>
+                                            <textarea id="warning-@Model.ReviewId" name="warning" rows="4" required>@($"Your reply of review on '{Model.OfferTitle}' (Offer ID {Model.OfferId}) has been removed. Please do not post abusive content and follow our community guidelines.")</textarea>
+                                        </div>
+
+                                        <button type="submit" class="ud-btn btn-thm mb25 me-4" style="border:0;">Confirm</button>
+                                        <button type="button" class="ud-btn btn-white mb25 me-4"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#mod-collapse">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
                             }
                             <div class="card">
                                 <div class="card-header bg-light">

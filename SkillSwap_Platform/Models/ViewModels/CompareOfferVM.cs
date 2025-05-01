@@ -13,7 +13,7 @@
         public string RequiredSkillLevel { get; set; }
         public string CollaborationMethod { get; set; }
         public int AssistanceRounds { get; set; }
-        public string RecommendedPercentage { get; set; }
+        public double RecommendedPercentage { get; set; }
         public double JobSuccessRate { get; set; }
         public string Username { get; set; }
         public List<string> CompareWillingSkills { get; set; }

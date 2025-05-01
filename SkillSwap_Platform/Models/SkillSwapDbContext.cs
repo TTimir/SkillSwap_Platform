@@ -93,6 +93,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
 
+    public virtual DbSet<TblUserWarning> TblUserWarnings { get; set; }
+
     public virtual DbSet<TblUserWishlist> TblUserWishlists { get; set; }
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
 
@@ -105,7 +107,7 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<UserMiningProgress> UserMiningProgresses { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
-    public DbSet<ReviewAggregate> ReviewAggregates { get; set; }
+    public virtual DbSet<ReviewAggregate> ReviewAggregates { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=TIMIRBHINGRADIY;Database=SkillSwapDb;Trusted_Connection=True;Encrypt=false;");
@@ -712,6 +714,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ReviewerId).HasColumnName("ReviewerID");
             entity.Property(e => e.ReviewerName).HasMaxLength(255);
 
+            entity.HasOne(d => d.DeletedByAdmin).WithMany(p => p.TblReviewDeletedByAdmins)
+                .HasForeignKey(d => d.DeletedByAdminId)
+                .HasConstraintName("FK_Reviews_DeletedByAdmin");
+
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblReviews)
                 .HasForeignKey(d => d.ExchangeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -752,6 +758,10 @@ public partial class SkillSwapDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ReviewHist_Admin");
 
+            entity.HasOne(d => d.Reply).WithMany(p => p.TblReviewModerationHistories)
+                .HasForeignKey(d => d.ReplyId)
+                .HasConstraintName("FK_tblReviewModerationHistories_Reply");
+
             entity.HasOne(d => d.Review).WithMany(p => p.TblReviewModerationHistories)
                 .HasForeignKey(d => d.ReviewId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -766,6 +776,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.Comments).HasMaxLength(1000);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.DeletionReason).HasMaxLength(500);
             entity.Property(e => e.FlaggedDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.ReplierUser).WithMany(p => p.TblReviewReplies)
@@ -1072,6 +1083,20 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblUserSkills_Users");
+        });
+
+        modelBuilder.Entity<TblUserWarning>(entity =>
+        {
+            entity.HasKey(e => e.WarningId).HasName("PK__tblUserW__21457158A7B3967D");
+
+            entity.ToTable("tblUserWarnings");
+
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblUserWarnings)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserWarnings_User");
         });
 
         modelBuilder.Entity<TblUserWishlist>(entity =>

@@ -7,7 +7,21 @@
 
 <div class="body_content">
     <!-- Breadcumb Sections -->
-    <section class="breadcumb-section wow fadeInUp mt40">
+    <section class="breadcumb-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcumb-style1">
+                        <div class="breadcumb-list">
+                            <a href="@Url.Action("Index", "Home")">Home</a>
+                            <span>@ViewData["Title"]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="breadcumb-section wow fadeInUp">
         <div class="cta-commmon-v1 cta-banner bgc-thm2 mx-auto maxw1700 pt120 pb120 bdrs16 position-relative overflow-hidden d-flex align-items-center mx20-lg">
             <img class="left-top-img wow zoomIn" src="/template_assets/images/vector-img/left-top.png" alt="">
             <img class="right-bottom-img wow zoomIn" src="/template_assets/images/vector-img/right-bottom.png" alt="">

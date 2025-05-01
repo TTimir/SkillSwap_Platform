@@ -1,13 +1,8 @@
 ﻿@using SkillSwap_Platform.Services.AdminControls
-@model PagedResult<SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.ReviewFlagVm>
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.ActiveFlagVm>
 
 @{
-    var mode = (string)ViewData["Mode"] ?? "Reviews";
-    ViewData["Title"] = mode == "History"
-        ? "Flag History"
-      : mode == "Replies"
-        ? "Flagged Review Replies"
-        : "Flagged Reviews";
+    ViewData["Title"] = "";
     ViewData["SubTitle"] = "Here you can review and moderate all user reviews that have been flagged.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
@@ -52,9 +47,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("Reviews","OfferReview")" class="nav-link @(mode=="Reviews"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Reviews</a>
-                        <a href="@Url.ActionLink("Replies","OfferReview")" class="nav-link @(mode=="Replies"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Reviews Replies</a>
-                        <a href="@Url.ActionLink("History","OfferReview")" class="nav-link @(mode=="History"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flag History</a>
+                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Flagged Reviews</a>
+                        
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -63,53 +57,49 @@
                             <table class="table-style3 table at-savesearch">
                                 <thead class="t-head">
                                     <tr>
-                                        <th scope="col">@(mode == "Replies" ? "Reply ID" : "Review ID")</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Review ID</th>
                                         <th scope="col">Offer</th>
-                                        <th scope="col">@(mode == "Replies" ? "Replier" : "Reviewer")</th>
-                                        @if (mode == "Reviews")
-                                        {
-                                            <th scope="col">Rating</th>
-                                        }
-                                        <th scope="col">Flags</th>
-                                        <th scope="col">Last Flagged</th>
+                                        <th scope="col">Reviewer</th>
+                                        <th scope="col">Reporter</th>
+                                        <th scope="col">Flagged At</th>
+                                        <th scope="col">Reason/ Comment</th>
                                         <th scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
+                                    @{
+                                        var sr = (Model.Page - 1) * Model.PageSize;
+                                    }
                                     @for (int i = 0; i < Model.Items.Count; i++)
                                     {
-                                        var item = Model.Items[i];
+                                        var f = Model.Items[i];
+                                        sr++;
                                         <tr>
-                                            <td class="vam"><span class="fz15 fw400">@item.ReviewId</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@sr</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@f.EntityType</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@f.EntityId</span></td>
                                             <td class="vam">
                                                 <a asp-controller="UserOfferDetails"
                                                    asp-action="OfferDetails"
-                                                   asp-route-offerId="@item.OfferId"
+                                                   asp-route-offerId="@f.OfferId"
                                                    target="_blank"
                                                    class="fz15 fw400 text-decoration-none">
-                                                    @item.OfferTitle
-                                                    <small class="text-muted">(ID @item.OfferId)</small>
+                                                    @f.OfferTitle
+                                                    <small class="text-muted">(ID @f.OfferId)</small>
                                                 </a>
                                             </td>
-                                            <td class="vam"><span class="fz15 fw400">@item.ReviewerUserName</span></td>
-                                            @if (mode == "Reviews")
-                                            {
-                                                <td class="vam">
-                                                    <span class="fz15 fw400">
-                                                        <span class="badge badge-pill bg-@(item.Rating >= 4 ? "success" : "warning")">
-                                                            @item.Rating <i class="fas fa-star vam fz10 review-color ml-2"></i>
-                                                        </span>
-                                                    </span>
-                                                </td>
-                                            }
-                                            <td class="vam"><span class="badge badge-pill bg-danger fz15 fw400">@item.FlagCount</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@item.LastFlaggedAt.ToLocalTime().ToString("dd MMMM, yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@f.AuthorUserName</span></td>
+                                            <td class="vam"><span class="badge badge-pill bg-danger fz15 fw400">@f.ReporterUserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@f.FlaggedAt.ToLocalTime().ToString("dd MMMM, yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@f.Reason</span></td>
                                             <td class="vam">
                                                 <a asp-action="Details"
-                                                   asp-route-id="@item.ReviewId"
-                                                   asp-route-mode="@mode"
+                                                   asp-route-id="@f.EntityId"
+                                                   asp-route-mode="@(f.EntityType == "Reply" ? "Replies" : "Reviews")"
                                                    class="ud-btn btn-thm">
-                                                    Details
+                                                    Review
                                                 </a>
                                             </td>
                                         </tr>

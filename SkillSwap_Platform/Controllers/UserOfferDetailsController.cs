@@ -11,6 +11,7 @@ using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.AdminControls.OfferFlag;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -23,11 +24,13 @@ namespace SkillSwap_Platform.Controllers
         private const string RecentCookie = "RecentlyViewedOffers"; 
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserOfferManageController> _logger;
+        private readonly IOfferFlagService _svc;
 
-        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger)
+        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc)
         {
             _context = context;
             _logger = logger;
+            _svc = svc;
         }
 
         #region Offer Details
@@ -41,6 +44,8 @@ namespace SkillSwap_Platform.Controllers
                 var offer = await _context.TblOffers
                     .Include(o => o.TblOfferPortfolios)
                     .Include(o => o.User)
+                    .Include(o => o.TblReviews)           
+                        .ThenInclude(r => r.TblReviewReplies)
                     .FirstOrDefaultAsync(o => o.OfferId == offerId);
                 if (offer == null)
                 {
@@ -206,7 +211,7 @@ namespace SkillSwap_Platform.Controllers
                             RequiredSkillLevel = o.RequiredSkillLevel,
                             CollaborationMethod = o.CollaborationMethod ?? "Not Provided",
                             AssistanceRounds = o.AssistanceRounds ?? 0,
-                            RecommendedPercentage = compareRecommendedPercentage.ToString("N2"),
+                            RecommendedPercentage = compareRecommendedPercentage,
                             JobSuccessRate = compareJobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
@@ -339,7 +344,8 @@ namespace SkillSwap_Platform.Controllers
                     Reviews = reviews,
                     ActiveExchangeCount = activeExchangeCount,
                     Views = offer.Views,
-                    RelatedOffers = relatedOffers
+                    RelatedOffers = relatedOffers,
+                    IsFlagged = offer.IsFlagged
                 };
 
                 // at the bottom of OfferDetails, before `return View(model);`
@@ -772,6 +778,40 @@ namespace SkillSwap_Platform.Controllers
             }).ToList();
 
             return PartialView("_NearbyOfferCards", cards);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Flag(int offerId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return BadRequest("Reason is required.");
+
+
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out var userIdInt))
+                return StatusCode(500, "Unable to determine your user ID.");
+
+
+            bool alreadyFlagged = await _context.TblOfferFlags
+                .AnyAsync(f => f.OfferId == offerId && f.FlaggedByUserId == userIdInt);
+
+            if (alreadyFlagged)
+            {
+                TempData["ErrorMessage"] = "You’ve already reported this swap offer.";
+                return RedirectToAction("OfferDetails", new { offerId = offerId });
+            }
+
+            try
+            {
+                await _svc.FlagOfferAsync(offerId, userIdInt, reason);
+                TempData["SuccessMessage"] = "Thank you, we’ve received your report and will review it to find the best solution.";
+                return RedirectToAction("OfferDetails", new { offerId = offerId });
+            }
+            catch
+            {
+                return StatusCode(500, "Something went wrong while submitting your report. Please try again later.");
+            }
         }
 
         #region Helper Class

@@ -287,7 +287,9 @@ namespace SkillSwap_Platform.Controllers
             {
                 // Load the reply along with its parent review so we can get the OfferId
                 var reply = await _context.TblReviewReplies
-                    .Include(r => r.Review)                  // navigation from reply → review
+                    .Include(r => r.Review)
+                        .ThenInclude(rev => rev.Offer)
+                        // navigation from reply → review
                     .FirstOrDefaultAsync(r => r.ReplyId == replyId);
 
                 if (reply == null)

@@ -27,6 +27,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public double JobSuccessRate { get; set; }
         public List<string> WillingSkills { get; set; }
         public bool IsOnline { get; set; }
+        public bool IsFlagged { get; set; }
 
         public List<UserLanguageVM> UserLanguages { get; set; }
         public List<UserDetailsVM> UserDetails { get; set; }

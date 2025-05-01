@@ -11,7 +11,7 @@ public partial class TblReviewModerationHistory
 
     public int ReviewId { get; set; }
 
-    public int ReplyId { get; set; }
+    public int? ReplyId { get; set; }
 
     public int AdminId { get; set; }
 
@@ -22,6 +22,8 @@ public partial class TblReviewModerationHistory
     public DateTime CreatedAt { get; set; }
 
     public virtual TblUser Admin { get; set; } = null!;
+
+    public virtual TblReviewReply? Reply { get; set; }
 
     public virtual TblReview Review { get; set; } = null!;
 }

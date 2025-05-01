@@ -301,8 +301,7 @@
                 <div class="dashboard_sidebar_list">
                     @if (isAdmin)
                     {
-                        <p class="fz15 fw400 ff-heading pl30">Admin Panel</p>
-
+                        <p class="fz15 fw400 ff-heading pl30">Start</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","CertificateReview", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="CertificateReview" ? "-is-active" : "")">
@@ -347,6 +346,31 @@
                                 @if (escrowPending > 0)
                                 {
                                     <span class="badge badge-pill bg-info ms-auto">@escrowPending</span>
+                                }
+                            </a>
+                        </div>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer and Review</p>
+
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-review-1 mr15"></i>
+                                Flagged Offers
+                                @if (flaggedOffers > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
+                                }
+                            </a>
+                        </div>
+
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("ActiveFlags","OfferReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="ActiveFlags" ? "-is-active" : "")">
+                                <i class="flaticon-review-1 mr15"></i>
+                                Active Flags
+                                @if (flaggedOffers > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
                                 }
                             </a>
                         </div>
