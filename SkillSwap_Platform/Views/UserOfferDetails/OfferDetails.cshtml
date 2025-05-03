@@ -141,7 +141,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="ud-btn btn-light-thm mb25 me-4" data-bs-dismiss="modal" style="border:0;">Cancel</button>
-                    <button type="submit" class="ud-btn btn-thm mb25 me-4">Submit Flag <i class="fal fa-arrow-right-long"></i></button>
+                    <button type="submit" class="ud-btn btn-thm mb25 me-4">Submit Report <i class="fal fa-arrow-right-long"></i></button>
                 </div>
             </div>
         </form>
@@ -699,8 +699,16 @@
                                                         <div class="replies ps-4 mb-3 mt20">
                                                             @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
                                                             {
-                                                                var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
-                                                                .FindFirst(ClaimTypes.NameIdentifier).Value);
+                                                                // Safely resolve current user ID once
+                                                                int currentUserId = 0;
+                                                                if (User?.Identity?.IsAuthenticated == true)
+                                                                {
+                                                                    var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                                                                    if (idClaim != null)
+                                                                    {
+                                                                        int.TryParse(idClaim.Value, out currentUserId);
+                                                                    }
+                                                                }
                                                                 <div class="reply-item mb-2">
                                                                     <div class="d-flex align-items-center">
                                                                         <strong>@reply.ReplierUser.UserName</strong>

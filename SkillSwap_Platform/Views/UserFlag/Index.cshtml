@@ -1,0 +1,262 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Models.TblUserFlag>
+
+@{
+    ViewData["Title"] = "Flagged Profiles";
+    ViewData["SubTitle"] = "Select any user to hold";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    // 1) Compute how many prior warnings this user has received
+    var flagList = Model.Items.ToList();
+    var userId = flagList.FirstOrDefault()?.FlaggedUserId ?? 0;
+    var dismissCount = flagList.Count(f => f.AdminAction == "Dismissflag");
+
+    // 2) Build the notice HTML for each strike level
+    string noticeHtml;
+    if (dismissCount == 0)
+    {
+        noticeHtml = @"
+                                                    <strong>First Warning Issued</strong><br/>
+                                                    We reviewed a report against this user and found no violation this time.<br/>
+                                                    Please ensure your future behavior aligns with our Community Guidelines.";
+    }
+    else if (dismissCount == 1)
+    {
+        noticeHtml = @"
+                                                    <strong>Final Warning Issued</strong><br/>
+                                                    A second report against this user was reviewed.<br/>
+                                                    Continued concerns may lead to suspension of their account.";
+    }
+    else
+    {
+        noticeHtml = @"
+                                                    <strong>Account Deactivated</strong><br/>
+                                                    After multiple warnings, this user’s account will be deactivated.<br/>
+                                                    If they believe this is in error, they may appeal within 7 days.";
+    }
+
+    // 3) Pick the alert class
+    var alertClass = dismissCount < 2 ? "alert-warning" : "alert-danger";
+
+    // 4) Determine the button text & placeholder
+    string buttonText, placeholderText;
+    if (dismissCount == 0)
+    {
+        buttonText = "Issue First Warning";
+        placeholderText = "Enter the reason for the first warning…";
+    }
+    else if (dismissCount == 1)
+    {
+        buttonText = "Issue Final Warning";
+        placeholderText = "Enter the reason for the final warning…";
+    }
+    else
+    {
+        buttonText = "Confirm Deactivation";
+        placeholderText = "Enter the reason for deactivation…";
+    }
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Index","UserFlag")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Flaged Profile</a>
+                        <a href="@Url.ActionLink("FlaggedUsers","UserFlag")" class="nav-link fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Flagged User History</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Profile</th>
+                                        <th scope="col">Flagged By</th>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Reason</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @{
+                                        var sr = 1;
+                                    }
+                                    @foreach (var flag in Model.Items)
+                                    {
+                                        <tr>
+                                            <td>@(sr++)</td>
+                                            <td scope="row">
+                                                <a asp-controller="UserProfile"
+                                                   asp-action="PublicProfileByUsername"
+                                                   asp-route-username="@flag.FlaggedUserId"
+                                                   target="_blank">
+                                                    @flag.FlaggedUser.UserName
+                                                </a>
+                                            </td>
+                                            <td class="vam"><span class="fz15 fw400">@flag.FlaggedByUser.UserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(flag.FlaggedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt") ?? "—")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@flag.Reason</span></td>
+                                            <td class="vam">
+                                                <div class="btn-group">
+                                                    <!-- Dismiss -->
+                                                    <button class="ud-btn btn-light-thm mr10" data-bs-toggle="modal" style="border:0"
+                                                            data-bs-target="#dismissModal-@flag.UserFlagId" title="Provide a reason for dismissing this flag">
+                                                        Dismiss
+                                                    </button>
+                                                    <!-- Remove -->
+                                                    <button class="ud-btn btn-thm" data-bs-toggle="modal"
+                                                            data-bs-target="#removeModal-@flag.UserFlagId" title="Provide a reason for deactivate this user">
+                                                        @buttonText
+                                                    </button>
+                                                </div>
+
+                                                <!-- Dismiss Modal -->
+                                                <div class="modal fade" id="dismissModal-@flag.UserFlagId">
+                                                    <div class="modal-dialog">
+                                                        <form asp-action="Dismiss" method="post" class="form-style3">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@flag.UserFlagId" />
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Dismiss Report</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="mb-3">
+                                                                        <label>Reason for dismissing</label>
+                                                                        <textarea name="adminReason" rows="4"
+                                                                                  placeholder="Please enter a reason for dismissing this report" required></textarea>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button class="ud-btn btn-light-thm" data-bs-dismiss="modal" style="border:0;">Cancel</button>
+                                                                    <button type="submit" class="ud-btn btn-thm">Confirm Dismiss</button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Remove Modal -->
+                                                <div class="modal fade" id="removeModal-@flag.UserFlagId">
+                                                    <div class="modal-dialog">
+                                                        <form asp-action="RemoveUser" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@flag.UserFlagId" />
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Deactivate User</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="mb-3">
+                                                                        <label>Reason</label>
+                                                                        <textarea name="adminReason" rows="4"
+                                                                                  placeholder="@placeholderText" required></textarea>
+                                                                    </div>
+                                                                    <div class="alert @alertClass">
+                                                                        @Html.Raw(noticeHtml)
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button class="ud-btn btn-light-thm" data-bs-dismiss="modal" style="border:0">Cancel</button>
+                                                                    <button type="submit" class="ud-btn btn-thm">@buttonText</button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Index"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+

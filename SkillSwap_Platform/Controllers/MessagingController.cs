@@ -158,6 +158,7 @@ namespace SkillSwap_Platform.Controllers
                     if (otherUserId.Value != currentUserId)
                     {
                         messages = await _context.TblMessages
+                            .Include(m => m.ApprovedByAdmin)
                             .Include(m => m.SenderUser)
                             .Include(m => m.TblMessageAttachments)
                             .Where(m =>
@@ -364,7 +365,10 @@ namespace SkillSwap_Platform.Controllers
                         Exchange = exchangeEntity,
                         InPersonMeeting = meeting,
                         ExchangeOfferOwnerName = exchangeOfferOwnerName,
-                        ExchangeOtherUserName = exchangeOtherUserName
+                        ExchangeOtherUserName = exchangeOtherUserName,
+                        ApprovedByAdminId = msg.ApprovedByAdminId,
+                        ApprovedDate = msg.ApprovedDate,
+                        ApprovedByAdminName = msg.ApprovedByAdmin?.UserName
                     });
                 }
 
@@ -424,6 +428,14 @@ namespace SkillSwap_Platform.Controllers
                     // Check for sensitive words in the content.
                     var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
                     bool isFlagged = sensitiveWarnings.Any();
+
+                    //if (isFlagged)
+                    //{
+                    //    TempData["ErrorMessage"] = "Your message has been held for review due to inappropriate content.";
+                    //    return Request.Headers["X-Requested-With"] == "XMLHttpRequest"
+                    //        ? Json(new { success = false, error = TempData["ErrorMessage"] })
+                    //        : RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                    //}
 
                     // pull it only from the form…
                     int? usedOfferId = null;
@@ -539,7 +551,8 @@ namespace SkillSwap_Platform.Controllers
                         ReplyToMessageId = (replyMessageId.HasValue && replyMessageId.Value > 0) ? replyMessageId : null,
                         SentDate = DateTime.UtcNow,
                         IsRead = false,
-                        IsFlagged = false,
+                        IsFlagged = isFlagged,
+                        IsApproved = !isFlagged,
                         OfferId = usedOfferId,
                         MessageType = messageType
                     };
@@ -566,7 +579,7 @@ namespace SkillSwap_Platform.Controllers
                         <p>You have a new message from <strong>{User.Identity.Name}</strong>:</p>
                         <blockquote>{System.Net.WebUtility.HtmlEncode(content)}</blockquote>
                         <p>
-                          <a href=""{conversationUrl}"">View full conversation</a>
+                          <a href=""{conversationUrl}"">View it on SkillSwap</a>
                         </p>
                         <p>— SkillSwap Team</p>
                     ";
@@ -725,6 +738,9 @@ namespace SkillSwap_Platform.Controllers
                             IsApproved = message.IsApproved,
                             OfferDetails = offerDisplay,
                             MessageType = messageType,
+                            ApprovedByAdminId = message.ApprovedByAdminId,
+                            ApprovedDate = message.ApprovedDate,
+                            ApprovedByAdminName = message.ApprovedByAdmin?.UserName
                         };
 
                         return PartialView("_MessageItem", messageVm);

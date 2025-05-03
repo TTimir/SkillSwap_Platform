@@ -67,11 +67,12 @@
                                         <th scope="col">Type</th>
                                         <th scope="col">Review ID</th>
                                         <th scope="col">Offer</th>
-                                        <th scope="col">Reviewer</th>
+                                        <th scope="col">Reported By</th>
+                                        <th scope="col">Reported Date</th>
                                         <th scope="col">Admin</th>
                                         <th scope="col">Admin Action</th>
+                                        <th scope="col">Action On</th>
                                         <th scope="col">Admin Notes</th>
-                                        <th scope="col">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
@@ -94,11 +95,12 @@
                                                     @h.OfferTitle <small>(ID @h.OfferId)</small>
                                                 </a>
                                             </td>
-                                            <td class="vam"><span class="fz15 fw400">@h.AuthorUserName</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@h.AdminUserName</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@h.Action</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@h.Notes</span></td>
-                                            <td class="vam"><span class="fz15 fw400">@h.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(h.FlaggedByUserName ?? "Admin")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.FlaggedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(h.AdminUserName ?? "-")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(h.AdminAction ?? "-")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@h.AdminActionDate?.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@(h.AdminReason ?? "-")</span></td>
                                         </tr>
                                     }
                                 </tbody>

@@ -14,5 +14,7 @@
         Task<int> GetFlaggedReviewRepliesCountAsync();
         Task<int> GetFlaggedMessagesCountAsync();
         Task<int> GetHeldAccountsCountAsync();
+        Task<int> GetActiveFlaggedUsersCountAsync();
+
     }
 }

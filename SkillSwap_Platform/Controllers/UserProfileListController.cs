@@ -61,6 +61,7 @@ namespace SkillSwap_Platform.Controllers
 
                 var users = await usersQuery
                     .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
+                    .Include(u => u.TblReviewReviewees)
                     .OrderByDescending(u => u.LastActive) // You might sort by LastActive or CreatedDate
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -87,6 +88,10 @@ namespace SkillSwap_Platform.Controllers
                             .Select(us => us.Skill.SkillName)
                             .ToList()
                         : new List<string>(),
+                    AverageRating = u.TblReviewReviewees.Any()
+                        ? Math.Round(u.TblReviewReviewees.Average(r => r.Rating), 1)
+                        : 0.0,
+                    ReviewCount = u.TblReviewReviewees.Count(),
                     Recommendation = u.RecommendedPercentage ?? 0.0,
                     JobSuccessRate = u.JobSuccessRate ?? 0.0,
                 }).ToList();

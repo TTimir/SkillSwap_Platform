@@ -56,15 +56,15 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             }
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DismissOffer(int offerId, string notes)
-        {
-            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            await _offre.DismissOfferFlagsAsync(offerId, adminId, notes);
-            TempData["Success"] = "All flags on that offer have been cleared.";
-            return RedirectToAction(nameof(Details), new { offerId });
-        }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DismissOffer(int offerId, string notes)
+        //{
+        //    var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        //    await _offre.DismissOfferFlagsAsync(offerId, adminId, notes);
+        //    TempData["Success"] = "All flags on that offer have been cleared.";
+        //    return RedirectToAction(nameof(Details), new { offerId });
+        //}
 
         [HttpPost]
         [ValidateAntiForgeryToken]

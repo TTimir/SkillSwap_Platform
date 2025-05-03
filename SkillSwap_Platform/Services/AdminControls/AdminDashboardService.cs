@@ -6,7 +6,7 @@ namespace SkillSwap_Platform.Services.AdminControls
 {
     public class AdminDashboardService : IAdminDashboardService
     {
-        private const int OtpFailureWindowDays = 7;               // ← your global window
+        private const int OtpFailureWindowDays = 14;               // ← your global window
         private readonly DateTime _CutoffUtc;                  // ← computed once
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<AdminDashboardService> _logger;
@@ -103,10 +103,11 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblOfferFlags
-                                .Where(f => f.FlaggedDate >= _CutoffUtc)
-                                .Select(f => f.OfferId)
-                                .Distinct()
-                                .CountAsync();
+                    .Where(f => f.FlaggedDate >= _CutoffUtc
+                                && f.AdminAction == null)      // only un‐handled flags
+                    .Select(f => f.OfferId)
+                    .Distinct()
+                    .CountAsync();
             }
             catch (Exception ex)
             {
@@ -119,10 +120,21 @@ namespace SkillSwap_Platform.Services.AdminControls
         {
             try
             {
-                return await _db.TblReviews
-                                .Where(r => r.IsFlagged
-                                         && r.FlaggedDate >= _CutoffUtc)
-                                .CountAsync();
+                // only reviews flagged in the last 7 days and not yet actioned by admin
+                var reviewCount = await _db.TblReviews
+                    .Where(r => r.IsFlagged
+                                && r.FlaggedDate >= _CutoffUtc
+                                && (r.DeletionReason == null || r.DeletedByAdminId == null))
+                    .CountAsync();
+
+                // only reply-flags flagged in the last 7 days and not yet actioned
+                var replyCount = await _db.TblReviewReplies
+                    .Where(rr => rr.IsFlagged
+                                 && rr.FlaggedDate >= _CutoffUtc
+                                 && (rr.DeletionReason == null || rr.DeletedByAdminId == null))
+                    .CountAsync();
+
+                return reviewCount + replyCount;
             }
             catch (Exception ex)
             {
@@ -152,10 +164,12 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblMessages
-                                .Where(m => m.IsFlagged
-                                         && !m.IsApproved
-                                         && m.SentDate >= _CutoffUtc)
-                                .CountAsync();
+                            .AsNoTracking()
+                            .Where(m =>
+                                   m.IsFlagged
+                                && !m.IsApproved
+                                && m.SentDate >= _CutoffUtc)
+                            .CountAsync();
             }
             catch (Exception ex)
             {
@@ -176,6 +190,29 @@ namespace SkillSwap_Platform.Services.AdminControls
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching held accounts count");
+                return 0;
+            }
+        }
+
+        public async Task<int> GetActiveFlaggedUsersCountAsync()
+        {
+            try
+            {
+                // only flags in the window
+                var cutoff = _CutoffUtc;
+                return await _db.TblUserFlags
+                    .AsNoTracking()
+                    .Where(f => f.FlaggedDate >= cutoff)
+                    .GroupBy(f => f.FlaggedUserId)
+                    // include this user only if their *latest* flag still has AdminAction == null
+                    .Where(g => g.Max(x => x.FlaggedDate)
+                               == g.Where(x => x.AdminAction == null)
+                                   .Max(x => x.FlaggedDate))
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching active flagged-users count");
                 return 0;
             }
         }

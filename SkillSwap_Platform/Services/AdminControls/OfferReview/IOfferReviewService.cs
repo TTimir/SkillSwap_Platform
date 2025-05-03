@@ -15,9 +15,15 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         Task<PagedResult<ReviewFlagVm>> GetFlaggedReplyFlagsAsync(int page, int pageSize);
         Task<FlaggedReviewDetailsVm> GetReplyDetailsAsync(int replyId);
 
-        Task DismissOfferFlagsAsync(int offerId, int adminId, string notes);
+        //Task DismissOfferFlagsAsync(int offerId, int adminId, string notes);
         Task DismissReviewFlagsAsync(int reviewId, int flagId, int adminId, string notes);
         Task DismissReplyFlagsAsync(int replyId, int adminId, string notes);
+        Task ModerateAndWarnAsync(
+             int contentId,
+             bool isReply,
+             int adminId,
+             string moderationNote,
+             string warningMessage);
 
         // Services/AdminControls/Offer_and_Review/IOfferReviewService.cs
         Task<PagedResult<FlagHistoryVm>> GetFlagHistoryAsync(int page, int pageSize);

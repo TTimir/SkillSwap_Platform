@@ -14,6 +14,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SkillSwap_Platform.Services.Email;
 using NuGet.Protocol.Plugins;
+using SkillSwap_Platform.Services.AdminControls.UserFlag;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -24,12 +25,15 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<UserProfileController> _logger;
         private readonly INotificationService _notif;
         private readonly IEmailService _emailService;
-        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService)
+        private readonly IUserFlagService _svc;
+
+        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService, IUserFlagService svc)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
             _notif = notif;
             _emailService = emailService;
+            _svc = svc;
         }
 
         #region Public Profile
@@ -205,8 +209,18 @@ namespace SkillSwap_Platform.Controllers
                     ActiveExchangeCount = activeExchangeCount,
                     Reviews = user.TblReviewReviewees,
                     ReviewCount = totalReviewsUser,
-                    AverageRating = avgRatingUser
+                    AverageRating = avgRatingUser,
+                    IsFlagged = false
                 };
+
+                if (User.Identity.IsAuthenticated)
+                {
+                    var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    model.IsFlagged = await _svc.HasPendingFlagAsync(
+                        flaggedUserId: user.UserId,
+                        flaggedByUserId: currentUserId
+                    );
+                }
 
                 return View("PublicProfile", model);
             }
@@ -1234,6 +1248,28 @@ namespace SkillSwap_Platform.Controllers
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Flag(int flaggedUserId, string reason)
+        {
+            var byIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(byIdStr, out var byUserId))
+                return Forbid();
+
+            await _svc.FlagUserAsync(flaggedUserId, byUserId, reason);
+
+            // look up the flagged user so we can grab their username
+            var flaggedUser = await _context.TblUsers
+              .Where(u => u.UserId == flaggedUserId)
+              .Select(u => new { u.UserName })
+              .FirstOrDefaultAsync();
+            if (flaggedUser == null)
+                return NotFound();
+
+            TempData["Success"] = "Thanks for letting us know! Your report has been submitted and our team will review it shortly.";
+            return RedirectToAction("PublicProfileByUsername", "UserProfile", new { username = flaggedUser.UserName });
         }
 
         private int GetUserId()

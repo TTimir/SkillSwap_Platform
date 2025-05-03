@@ -80,7 +80,7 @@
                                                 <input class="form-control" type="text" name="keyword" value="@Model.Keyword" placeholder="What are you looking for?">
                                                 <div class="search-suggestions">
                                                     <h6 class="fz14 ml30 mt25 mb-3">Popular Search</h6>
-                                                    <div class="box-suggestions">
+                                                    @* <div class="box-suggestions">
                                                         <ul class="px-0 m-0 pb-4">
                                                             <li>
                                                                 <div class="info-product">
@@ -113,7 +113,7 @@
                                                                 </div>
                                                             </li>
                                                         </ul>
-                                                    </div>
+                                                    </div> *@
                                                 </div>
                                             </div>
                                         </div>
@@ -165,7 +165,15 @@
                             <div class="list-content">
                                 <h5 class="title mb-1">@profile.UserName</h5>
                                 <p class="mb-0">@profile.Designation</p>
-                                <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color fw500">4.9</span> (595 reviews)</p></div>
+                                <div class="review">
+                                    <p>
+                                        <i class="fas fa-star fz10 review-color pr10"></i>
+                                        <span class="dark-color fw500">
+                                            @profile.AverageRating.ToString("0.0")
+                                        </span>
+                                        (@profile.ReviewCount reviews)
+                                    </p>
+                                </div>
                                 <div class="skill-tags d-flex align-items-center justify-content-center mb5">
                                     @{
                                         var skillList = profile.OfferedSkillAreas ?? new List<string>();

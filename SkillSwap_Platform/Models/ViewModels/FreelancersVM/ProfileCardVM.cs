@@ -13,6 +13,8 @@
         public string City { get; set; }
         public decimal Rating { get; set; }
         public List<string> OfferedSkillAreas { get; set; } = new List<string>();
+        public double AverageRating { get; set; }
+        public int ReviewCount { get; set; }
         public double? Recommendation { get; set; }
         public double? JobSuccessRate { get; set; }
         public DateTime? LastActive { get; set; }

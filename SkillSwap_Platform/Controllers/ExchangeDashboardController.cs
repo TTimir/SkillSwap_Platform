@@ -140,6 +140,11 @@ namespace SkillSwap_Platform.Controllers
                         isOnlineCompleted = (onlineMeetingCompleted != null);
                     }
 
+                    var offer = exchange.Offer;
+
+                    // new:
+                    bool isDeleted = offer?.IsDeleted ?? false;
+
                     // Build the dashboard item.
                     var dashboardItem = new ExchangeDashboardItemVM
                     {
@@ -163,7 +168,8 @@ namespace SkillSwap_Platform.Controllers
                         IsOnlineMeetingCompleted = isOnlineCompleted,
                         IsMeetingEnded = exchange.IsMeetingEnded,
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
-                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
+                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes,
+                        OfferIsDeleted = isDeleted
                     };
                     dashboardItem.OfferImageUrl = offerImageUrl;
                     dashboardItems.Add(dashboardItem);
@@ -273,6 +279,11 @@ namespace SkillSwap_Platform.Controllers
                         isOnlineCompleted = (onlineMeetingCompleted != null);
                     }
 
+                    var offer = exchange.Offer;
+
+                    // new:
+                    bool isDeleted = offer?.IsDeleted ?? false;
+
                     return new ExchangeDashboardItemVM
                     {
                         Exchange = exchange,
@@ -295,7 +306,8 @@ namespace SkillSwap_Platform.Controllers
                         IsOnlineMeetingCompleted = isOnlineCompleted,
                         IsMeetingEnded = exchange.IsMeetingEnded,
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
-                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes
+                        InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes,
+                        OfferIsDeleted = isDeleted
                     };
                 };
 

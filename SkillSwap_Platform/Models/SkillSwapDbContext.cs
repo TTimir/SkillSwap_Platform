@@ -87,13 +87,13 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblUserContactRequest> TblUserContactRequests { get; set; }
 
+    public virtual DbSet<TblUserFlag> TblUserFlags { get; set; }
+
     public virtual DbSet<TblUserHoldHistory> TblUserHoldHistories { get; set; }
 
     public virtual DbSet<TblUserReport> TblUserReports { get; set; }
 
     public virtual DbSet<TblUserSkill> TblUserSkills { get; set; }
-
-    public virtual DbSet<TblUserWarning> TblUserWarnings { get; set; }
 
     public virtual DbSet<TblUserWishlist> TblUserWishlists { get; set; }
     public virtual DbSet<TblUserRole> TblUserRoles { get; set; }
@@ -108,6 +108,7 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
     public virtual DbSet<ReviewAggregate> ReviewAggregates { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=TIMIRBHINGRADIY;Database=SkillSwapDb;Trusted_Connection=True;Encrypt=false;");
@@ -535,6 +536,10 @@ public partial class SkillSwapDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
+            entity.HasOne(d => d.ApprovedByAdmin).WithMany(p => p.TblMessageApprovedByAdmins)
+                .HasForeignKey(d => d.ApprovedByAdminId)
+                .HasConstraintName("FK_tblMessages_ApprovedByAdmin");
+
             entity.HasOne(d => d.Offer).WithMany(p => p.TblMessages)
                 .HasForeignKey(d => d.OfferId)
                 .HasConstraintName("FK_TblMessages_Offers_OfferId");
@@ -640,10 +645,16 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasIndex(e => e.OfferId, "IX_TblOfferFlag_OfferId");
 
+            entity.Property(e => e.AdminAction).HasMaxLength(50);
+            entity.Property(e => e.AdminActionDate).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.FlaggedDate).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Reason).HasMaxLength(500);
 
-            entity.HasOne(d => d.FlaggedByUser).WithMany(p => p.TblOfferFlags)
+            entity.HasOne(d => d.AdminUser).WithMany(p => p.TblOfferFlagAdminUsers)
+                .HasForeignKey(d => d.AdminUserId)
+                .HasConstraintName("FK_TblOfferFlag_AdminUser");
+
+            entity.HasOne(d => d.FlaggedByUser).WithMany(p => p.TblOfferFlagFlaggedByUsers)
                 .HasForeignKey(d => d.FlaggedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblOfferFlag_Users");
@@ -1009,6 +1020,28 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Subject).HasMaxLength(200);
         });
 
+        modelBuilder.Entity<TblUserFlag>(entity =>
+        {
+            entity.HasKey(e => e.UserFlagId).HasName("PK__TblUserF__2AB5267FD8D84702");
+
+            entity.Property(e => e.AdminAction).HasMaxLength(50);
+            entity.Property(e => e.AdminReason).HasMaxLength(500);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+
+            entity.HasOne(d => d.AdminUser).WithMany(p => p.TblUserFlagAdminUsers)
+                .HasForeignKey(d => d.AdminUserId)
+                .HasConstraintName("FK_UserFlags_AdminUser");
+
+            entity.HasOne(d => d.FlaggedByUser).WithMany(p => p.TblUserFlagFlaggedByUsers)
+                .HasForeignKey(d => d.FlaggedByUserId)
+                .HasConstraintName("FK_UserFlags_FlaggedBy");
+
+            entity.HasOne(d => d.FlaggedUser).WithMany(p => p.TblUserFlagFlaggedUsers)
+                .HasForeignKey(d => d.FlaggedUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserFlags_FlaggedUser");
+        });
+
         modelBuilder.Entity<TblUserHoldHistory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__tblUserH__3214EC07EEDA74EE");
@@ -1083,20 +1116,6 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblUserSkills_Users");
-        });
-
-        modelBuilder.Entity<TblUserWarning>(entity =>
-        {
-            entity.HasKey(e => e.WarningId).HasName("PK__tblUserW__21457158A7B3967D");
-
-            entity.ToTable("tblUserWarnings");
-
-            entity.Property(e => e.EntityType).HasMaxLength(50);
-
-            entity.HasOne(d => d.User).WithMany(p => p.TblUserWarnings)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserWarnings_User");
         });
 
         modelBuilder.Entity<TblUserWishlist>(entity =>

@@ -203,6 +203,8 @@
     border-radius: 4px;
     }
 </style>
+
+
 <div class="body_content bgc-thm3">
     <!-- Breadcumb Sections -->
     <section class="breadcumb-section">
@@ -223,15 +225,93 @@
                             <span class="icon flaticon-share dark-color fz12 mr10"></span>
                             <div class="h6 mb-0">Share</div>
                         </div>
-@*                         <div class="share-save-widget d-flex align-items-center ml15">
+                        @* <div class="share-save-widget d-flex align-items-center ml15">
                             <span class="icon flaticon-like dark-color fz12 mr10"></span>
                             <div class="h6 mb-0">Save</div>
                         </div> *@
+                        @if (!Model.IsFlagged)
+                    {
+                        <div data-bs-toggle="tooltip"
+                             data-bs-placement="top"
+                             title="Report this user"
+                             class="ml15">
+                            <div id="flagBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;"
+                                 data-bs-toggle="modal" data-bs-target="#flagUserModal">
+                                <span class="icon flaticon-flag dark-color fz12 mr10"></span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div data-bs-toggle="tooltip"
+                             data-bs-placement="top"
+                             title="You’ve already reported this user"
+                            class="ml15">
+                            <div id="flagBtn" class="share-save-widget d-flex align-items-center">
+                                <span class="icon flaticon-flag dark-color fz12 mr10 text-danger"></span>
+                            </div>
+                        </div>
+                    }
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Flag Modal -->
+    <div class="modal fade" id="flagUserModal" tabindex="-1" aria-labelledby="flagUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-controller="UserProfile" asp-action="Flag" method="post" class="form-style3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="flaggedUserId" value="@Model.User.UserId" />
+    
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="flagUserModalLabel">Report @Model.User.UserName</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for reporting</label>
+                            <textarea id="reason" name="reason" rows="2" placeholder="Please explain why you’re reporting this profile…" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="ud-btn btn-light-thm mb25 me-4" data-bs-dismiss="modal" style="border:0;">Cancel</button>
+                        <button type="submit" class="ud-btn btn-thm mb25 me-4">Submit Report <i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
     <!-- Overlay Modal -->
     <div id="shareOverlay" class="share-overlay">
         <div class="share-modal">

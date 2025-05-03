@@ -26,6 +26,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public IEnumerable<TblReview> Reviews { get; set; }
         public int ReviewCount { get; set; }
         public double AverageRating { get; set; }
+        public bool IsFlagged { get; set; }
     }
 
     public class SkillVM

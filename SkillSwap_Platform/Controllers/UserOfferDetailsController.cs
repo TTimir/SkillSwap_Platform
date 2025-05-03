@@ -310,6 +310,16 @@ namespace SkillSwap_Platform.Controllers
                     .Take(4)
                     .ToListAsync();
 
+                bool isFlaggedByMe = false;
+                if (User.Identity.IsAuthenticated
+                    && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var me))
+                {
+                    isFlaggedByMe = await _svc.HasPendingFlagAsync(
+                        offerId: offerId,
+                        flaggedByUserId: currentUserId.Value
+                    );
+                }
+
                 var model = new OfferDisplayVM
                 {
                     OfferId = offer.OfferId,
@@ -345,8 +355,9 @@ namespace SkillSwap_Platform.Controllers
                     ActiveExchangeCount = activeExchangeCount,
                     Views = offer.Views,
                     RelatedOffers = relatedOffers,
-                    IsFlagged = offer.IsFlagged
+                    IsFlagged = isFlaggedByMe
                 };
+
 
                 // at the bottom of OfferDetails, before `return View(model);`
                 const string sessionsKey = "RecentOfferSummaries";

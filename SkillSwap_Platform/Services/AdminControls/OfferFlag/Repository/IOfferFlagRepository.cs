@@ -9,5 +9,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository
         Task<IEnumerable<TblOfferFlag>> GetPendingFlagsAsync();
         Task DeleteAsync(TblOfferFlag flag);
         Task<IEnumerable<TblOfferFlag>> GetByOfferIdAsync(int offerId);
+        Task UpdateAsync(TblOfferFlag flag);
+
     }
 }

@@ -1,0 +1,151 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Models.TblOfferFlag>
+
+@{
+    ViewData["Title"] = "Flag History";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Flag History</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Offer</th>
+                                        <th scope="col">Flagged By</th>
+                                        <th scope="col">Flagged On</th>
+                                        <th scope="col">Admin</th>
+                                        <th scope="col">Action</th>
+                                        <th scope="col">Admin On</th>
+                                        <th scope="col">Admin Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @{
+                                        var srNo = 1;  // initialize counter
+                                    }
+                                    @foreach (var flag in Model.Items)
+                                    {
+                                        <tr>
+                                            <td class="vam"><span class="fz14 fw400">@(srNo++)</span></td>
+                                            <td class="vam">
+                                                @if (flag.Offer != null)
+                                                {
+                                                    <a asp-action="OfferDetails"
+                                                       asp-controller="UserOfferDetails"
+                                                       asp-route-offerId="@flag.OfferId"
+                                                       class="fz15 fw400 text-decoration-none"
+                                                       target="_blank">
+                                                        @flag.Offer.Title
+                                                        <i class="fst-italic">(@flag.Offer.OfferId)</i>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">[Deleted]</span>
+                                                }
+                                            </td>
+                                            <td class="vam"><span class="fz14 fw400">@(flag.FlaggedByUser?.UserName ?? $"User #{flag.FlaggedByUserId}")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@flag.FlaggedDate.ToLocalTime().ToString("dd MMM, yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@(flag.AdminUser?.UserName ?? $"#{flag.AdminUserId}")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@flag.AdminAction</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@flag.AdminActionDate?.ToLocalTime().ToString("dd MMM, yyyy HH:mm tt")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@flag.AdminReason</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="History"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="History"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="History"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

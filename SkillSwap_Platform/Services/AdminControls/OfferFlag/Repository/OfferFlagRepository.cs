@@ -39,5 +39,12 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository
                .Where(f => f.OfferId == offerId)
                .ToListAsync()
                .ContinueWith(t => (IEnumerable<TblOfferFlag>)t.Result);
+
+        public async Task UpdateAsync(TblOfferFlag flag)
+        {
+            _ctx.TblOfferFlags.Update(flag);
+            await _ctx.SaveChangesAsync();
+        }
+
     }
 }

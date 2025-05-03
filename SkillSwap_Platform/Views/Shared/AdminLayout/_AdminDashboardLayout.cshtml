@@ -12,8 +12,14 @@
     bool isAdmin = User.IsInRole("Admin");
 
     // Pending-work counters, with safe fallbacks
-    int pendingCertificates = 0, otpFailures = 0, escrowPending = 0, flaggedOffers = 0;
-    int heldUsersCount = 0;
+    int pendingCertificates = 0,
+    otpFailures = 0,
+    escrowPending = 0,
+    flaggedOffers = 0,
+    heldUsersCount = 0,
+    flaggedReviews = 0,
+    flaggedProfiles = 0,
+    flaggedMessages = 0;
     if (isAdmin)
     {
         try
@@ -59,6 +65,33 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load flagged offers count");
+        }
+
+        try
+        {
+            flaggedReviews = await AdminService.GetFlaggedReviewsCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged reviews count");
+        }
+
+        try
+        {
+            flaggedProfiles = await AdminService.GetActiveFlaggedUsersCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged profile count");
+        }
+
+        try
+        {
+            flaggedMessages = await AdminService.GetFlaggedMessagesCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged profile count");
         }
     }
 }
@@ -315,13 +348,13 @@
                         </div>
 
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Index","UserManagement", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="UserManagement" ? "-is-active" : "")">
-                                <i class="flaticon-sand-clock mr15"></i>
-                                Held Users
-                                @if (heldUsersCount > 0)
+                            <a href="@Url.ActionLink("Index","MessageReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="MessageReview" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-chat mr15"></i>
+                                Messages Review
+                                @if (flaggedMessages > 0)
                                 {
-                                    <span class="badge badge-pill bg-danger ms-auto">@heldUsersCount</span>
+                                    <span class="badge badge-pill bg-info ms-auto">@flaggedMessages</span>
                                 }
                             </a>
                         </div>
@@ -340,7 +373,7 @@
 
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","Escrow", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Escrow" ? "-is-active" : "")">
+                               class="d-flex items-center @(currentController=="Escrow" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-dollar mr15"></i>
                                 Escrow Management
                                 @if (escrowPending > 0)
@@ -349,51 +382,109 @@
                                 }
                             </a>
                         </div>
-                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer and Review</p>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offer</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","OfferFlag", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Index" ? "-is-active" : "")">
-                                <i class="flaticon-review-1 mr15"></i>
-                                Flagged Offers
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-presentation mr15"></i>
+                                Active Reports
                                 @if (flaggedOffers > 0)
                                 {
                                     <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
                                 }
                             </a>
                         </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="History" ? "-is-active" : "")">
+                                <i class="flaticon-briefcase mr15"></i>
+                                Offers Reports
+                            </a>
+                        </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer's Review</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("ActiveFlags","OfferReview", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="ActiveFlags" ? "-is-active" : "")">
-                                <i class="flaticon-review-1 mr15"></i>
-                                Active Flags
-                                @if (flaggedOffers > 0)
+                               class="d-flex items-center @(currentController=="OfferReview" && currentAction=="ActiveFlags" ? "-is-active" : "")">
+                                <i class="flaticon-review mr15"></i>
+                                Active Reports
+                                @if (flaggedReviews > 0)
                                 {
-                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedReviews</span>
                                 }
                             </a>
                         </div>
 
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Reviews","OfferReview", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Reviews" ? "-is-active" : "")">
+                               class="d-flex items-center @(currentController=="OfferReview" && currentAction=="Reviews" ? "-is-active" : "")">
                                 <i class="flaticon-review-1 mr15"></i>
-                                Offers & Reviews
-                                @if (flaggedOffers > 0)
-                                {
-                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
-                                }
+                                Offer's Reviews
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">User Profile</p>
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Reports","Admin", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Admin" && currentAction=="Reports" ? "-is-active" : "")">
+                            <a href="@Url.ActionLink("Index","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-working mr15"></i>
+                                Active Reports
+                                @if (flaggedProfiles > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedProfiles</span>
+                                }
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="History" ? "-is-active" : "")">
                                 <i class="flaticon-flag mr15"></i>
                                 User Reports
                             </a>
                         </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","UserManagement", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserManagement" ? "-is-active" : "")">
+                                <i class="flaticon-sand-clock mr15"></i>
+                                Held Users
+                                @if (heldUsersCount > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@heldUsersCount</span>
+                                }
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Privacy Manage</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","SensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="SensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-secure mr15"></i>
+                                Sensitive Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Create","SensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="SensitiveWords" && currentAction=="Create" ? "-is-active" : "")">
+                                <i class="flaticon-add mr15"></i>
+                                Add Sensitive Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","PrivacySensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="PrivacySensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-secure mr15"></i>
+                                Privacy Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Create","PrivacySensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="PrivacySensitiveWords" && currentAction=="Create" ? "-is-active" : "")">
+                                <i class="flaticon-add mr15"></i>
+                                Add Privacy Words
+                            </a>
+                        </div>
+
                     }
                 </div>
             </div>

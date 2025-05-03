@@ -2,7 +2,7 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.ActiveFlagVm>
 
 @{
-    ViewData["Title"] = "";
+    ViewData["Title"] = "Active Flags";
     ViewData["SubTitle"] = "Here you can review and moderate all user reviews that have been flagged.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
@@ -117,7 +117,7 @@
                                         <!-- Previous -->
                                         <li class="page-item @(page == 1 ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="Reviews"
+                                               asp-action="ActiveFlags"
                                                asp-route-page="@(page - 1)">
                                                 <span class="fas fa-angle-left"></span>
                                             </a>
@@ -128,7 +128,7 @@
                                         {
                                             <li class="page-item @(p == page ? "active" : "")">
                                                 <a class="page-link"
-                                                   asp-action="Reviews"
+                                                   asp-action="ActiveFlags"
                                                    asp-route-page="@p">@p</a>
                                             </li>
                                         }
@@ -136,7 +136,7 @@
                                         <!-- Next -->
                                         <li class="page-item @(page == totalPages ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="Reviews"
+                                               asp-action="ActiveFlags"
                                                asp-route-page="@(page + 1)">
                                                 <span class="fas fa-angle-right"></span>
                                             </a>

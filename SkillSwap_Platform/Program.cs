@@ -17,6 +17,8 @@ using SkillSwap_Platform.Services.AdminControls.Escrow;
 using SkillSwap_Platform.Services.AdminControls.Offer_and_Review;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository;
+using SkillSwap_Platform.Services.AdminControls.UserFlag.Repository;
+using SkillSwap_Platform.Services.AdminControls.UserFlag;
 using SkillSwap_Platform.Services.AdminControls.UserManagement;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.DigitalToken;
@@ -32,6 +34,8 @@ using SkillSwap_Platform.Services.TokenMining;
 using SkillSwap_Platform.Services.Wishlist;
 using System.Diagnostics;
 using System.Security.Claims;
+using SkillSwap_Platform.Services.AdminControls.Message;
+using SkillSwap_Platform.Services.AdminControls.PrivacyWord;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,8 +99,16 @@ builder.Services.AddScoped<IOfferReviewService, OfferReviewService>();
 // Repository registrations
 builder.Services.AddScoped<IOfferFlagRepository, OfferFlagRepository>();
 builder.Services.AddScoped<IOfferRepository, OfferRepository>();
+builder.Services.AddScoped<IUserFlagRepository, UserFlagRepository>();
 // Service registrations
 builder.Services.AddScoped<IOfferFlagService, OfferFlagService>();
+builder.Services.AddScoped<IUserFlagService, UserFlagService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<
+    SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.ISensitiveWordService,
+    SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.SensitiveWordService>();
+builder.Services.AddScoped<IPrivacySensitiveWordService, PrivacySensitiveWordService>();
+
 
 builder.Services.AddControllersWithViews(options =>
 {
