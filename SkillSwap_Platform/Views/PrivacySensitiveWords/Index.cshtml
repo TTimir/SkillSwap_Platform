@@ -2,8 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.PrivacyWord.PrivacySensitiveWordVm>
 
 @{
-    ViewData["Title"] = "Privacy Sensitive Words";
-    ViewData["SubTitle"] = "Select any user to hold";
+    ViewData["Title"] = "Privacy-Sensitive Words";
+    ViewData["SubTitle"] = "Manage terms that require special handling in user content.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -42,7 +42,7 @@
 </div>
 <div class="col-lg-3">
     <div class="text-lg-end">
-        <a href="@Url.ActionLink("Create","PrivacySensitiveWords")" class="ud-btn btn-dark">Create & Save<i class="fal fa-arrow-right-long"></i></a>
+        <a href="@Url.ActionLink("Create","PrivacySensitiveWords")" class="ud-btn btn-dark">Create a new term<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>
@@ -68,7 +68,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var sr = 1;
+                                        var sr = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var w in Model.Items)
                                     {

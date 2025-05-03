@@ -4,6 +4,7 @@
     var mode = (string)ViewData["Mode"] ?? "Reviews";
     var isReply = mode == "Replies";
     ViewData["Title"] = isReply ? "Reply Flag Details" : "Review Flag Details";
+    ViewData["SubTitle"] = "Review user reports and decide on the next steps.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -37,6 +38,11 @@
 <div class="col-lg-9">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("ActiveFlags","OfferReview")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>

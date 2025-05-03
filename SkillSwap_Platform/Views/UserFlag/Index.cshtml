@@ -2,8 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Models.TblUserFlag>
 
 @{
-    ViewData["Title"] = "Flagged Profiles";
-    ViewData["SubTitle"] = "Select any user to hold";
+    ViewData["Title"] = "Reported Profiles";
+    ViewData["SubTitle"] = "Review user reports and issue warnings or deactivations.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 
     // 1) Compute how many prior warnings this user has received
@@ -117,7 +117,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var sr = 1;
+                                        var sr = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var flag in Model.Items)
                                     {

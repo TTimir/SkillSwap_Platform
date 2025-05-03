@@ -1,9 +1,9 @@
 ﻿@using SkillSwap_Platform.Services.AdminControls
-@model PagedResult<SkillSwap_Platform.Services.AdminControls.OfferFlag.FlaggedOfferSummary>
+@model PagedResult<SkillSwap_Platform.Services.AdminControls.Escrow.EscrowHistoryVm>
 
 @{
-    ViewData["Title"] = "Flagged Offer Overview";
-    ViewData["SubTitle"] = "Get a quick overview of swap listings reported by the community.";
+    ViewData["Title"] = "Escrow History";
+    ViewData["SubTitle"] = "Track and review all past escrow transactions.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -47,8 +47,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("Index","OfferFlag")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Offers</a>
-                        <a href="@Url.ActionLink("FlaggedOfferSummary","OfferFlag")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Flagged Offer Overview</a>
+                        <a href="@Url.ActionLink("Index","Escrow")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow Counters</a>
+                        <a href="@Url.ActionLink("History","Escrow")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow History</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -58,29 +58,34 @@
                                 <thead class="t-head">
                                     <tr>
                                         <th scope="col">#</th>
-                                        <th scope="col">Offer</th>
-                                        <th scope="col">Total Flags</th>
-                                        <th scope="col"># Reports</th>
+                                        <th scope="col">Trans. ID</th>
+                                        <th scope="col">Exchange ID</th>
+                                        <th scope="col">From</th>
+                                        <th scope="col">To</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Released?</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var i = (Model.Page - 1) * Model.PageSize + 1;
+                                        var idx = (Model.Page - 1) * Model.PageSize + 1;
                                     }
-                                    @foreach (var f in Model.Items)
+                                    @foreach (var tx in Model.Items)
                                     {
                                         <tr>
-                                            <td>@(i++)</td>
-                                            <td>@f.Title</td>
-                                            <td><strong>@f.TotalFlags</strong> <span class="flaticon-flag dark-color fz12 mr10"></span></td>
-                                            <td>
-                                                <a asp-controller="OfferFlag"
-                                                   asp-action="FlaggedOfferDetails"
-                                                   asp-route-offerId="@f.OfferId"
-                                                   class="ud-btn btn-thm">
-                                                    View Details
-                                                </a>
-                                            </td>
+                                            <td class="vam">@(idx++)</td>
+                                            <td class="vam">@tx.TransactionId</td>
+                                            <td class="vam">@tx.ExchangeId</td>
+                                            <td class="vam">@(tx.FromUserName ?? "-")</td>
+                                            <td class="vam">@(tx.ToUserName ?? "-")</td>
+                                            <td class="vam">@tx.Amount.ToString("F2")</td>
+                                            <td class="vam">@tx.TxType</td>
+                                            <td class="vam">@tx.CreatedAt.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                                            <td class="vam">@tx.Description</td>
+                                            <td class="vam">@(tx.IsReleased ? "Yes" : "No")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -96,7 +101,7 @@
                                         <!-- Previous -->
                                         <li class="page-item @(page == 1 ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="FlagUserSummary"
+                                               asp-action="History"
                                                asp-route-page="@(page - 1)">
                                                 <span class="fas fa-angle-left"></span>
                                             </a>
@@ -107,7 +112,7 @@
                                         {
                                             <li class="page-item @(p == page ? "active" : "")">
                                                 <a class="page-link"
-                                                   asp-action="FlagUserSummary"
+                                                   asp-action="History"
                                                    asp-route-page="@p">@p</a>
                                             </li>
                                         }
@@ -115,7 +120,7 @@
                                         <!-- Next -->
                                         <li class="page-item @(page == totalPages ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="FlagUserSummary"
+                                               asp-action="History"
                                                asp-route-page="@(page + 1)">
                                                 <span class="fas fa-angle-right"></span>
                                             </a>
@@ -134,6 +139,3 @@
     </div>
 </div>
 </div>
-
-
-

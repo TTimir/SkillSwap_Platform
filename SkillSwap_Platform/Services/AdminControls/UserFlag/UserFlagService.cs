@@ -357,7 +357,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     .Select(f => new UserFlagHistoryItem
                     {
                         FlagId = f.UserFlagId,
-                        FlaggedBy = f.FlaggedByUser?.UserName ?? "admin action",
+                        FlaggedBy = f.FlaggedByUser?.UserName ?? "ADMIN ACTION",
                         FlaggedDate = f.FlaggedDate,
 
                         // action may be null until admin acts

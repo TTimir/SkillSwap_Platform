@@ -2,7 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Models.TblOfferFlag>
 
 @{
-    ViewData["Title"] = "Flag History";
+    ViewData["Title"] = "Flagged Offer History";
+    ViewData["SubTitle"] = "Review every report and the actions taken by moderators.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -67,7 +68,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var srNo = 1;  // initialize counter
+                                        var srNo = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var flag in Model.Items)
                                     {

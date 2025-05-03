@@ -2,7 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Models.TblUserFlag>
 
 @{
-    ViewData["SubTitle"] = "Select any user to hold";
+    ViewData["Title"] = "Flagged User Reports";
+    ViewData["SubTitle"] = "Review each report and the resulting moderator actions for this user.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 
     var list = Model?.Items ?? Enumerable.Empty<SkillSwap_Platform.Models.TblUserFlag>();
@@ -43,6 +44,11 @@
         <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Index","UserFlag")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
 </div>
 <div class="row">
     <div class="col-xl-12">
@@ -74,7 +80,7 @@
                                     {
                                         <tr>
                                             <td>@(i++)</td>
-                                            <td>@(u.FlaggedByUser?.UserName ?? "System")</td>
+                                            <td>@(u.FlaggedByUser?.UserName ?? "ADMIN ACTION")</td>
                                             <td>@u.FlaggedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
                                             <td>@u.Reason</td>
                                             <td>@(u.AdminUser?.UserName ?? "-")</td>

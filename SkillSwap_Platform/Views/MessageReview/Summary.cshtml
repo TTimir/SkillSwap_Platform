@@ -2,8 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.Message.FlaggedUserSummaryVM>
 
 @{
-    ViewData["Title"] = "User's (Of Held Messages)";
-    ViewData["SubTitle"] = "Select any message to hold";
+    ViewData["Title"] = "Users with Held Messages";
+    ViewData["SubTitle"] = "Review and manage users who’ve had messages flagged at least once.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -66,7 +66,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var idx = 1;
+                                        var idx = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var msg in Model.Items)
                                     {

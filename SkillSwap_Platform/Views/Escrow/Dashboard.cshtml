@@ -1,0 +1,136 @@
+﻿@model SkillSwap_Platform.Services.AdminControls.Escrow.EscrowDashboard.EscrowDashboardVm
+
+@{
+    ViewData["Title"] = "Escrow Dashboard";
+    ViewData["SubTitle"] = "Get a clear view of all token activities in one place.";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Escrowed</div>
+                <div class="title">@Model.TotalEscrowed</div>
+                <div class="text fz14"><span class="text-thm">@Model.RecentTransactions.Items.Count</span> Recent Txns</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-withdraw"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Released</div>
+                <div class="title">@Model.TotalReleased</div>
+                <div class="text fz14"><span class="flaticon-tick me-1 text-thm"></span> Completed</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Refunded</div>
+                <div class="title">@Model.TotalRefunded</div>
+                <div class="text fz14"><span class="text-thm me-1">↩</span> Returned</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Pending</div>
+                <div class="title">@Model.TotalPending</div>
+                <div class="text fz14"><span class="flaticon-sandclock text-thm me-1"></span> Awaiting Action</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-dollar"></i></div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                <table class="table-style3 table at-savesearch">
+                    <thead class="t-head">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Exchange #</th>
+                            <th scope="col">From → To</th>
+                            <th scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="t-body">
+                        @{
+                            var i = (Model.RecentTransactions.TotalPages - 1) * Model.RecentTransactions.Page + 1;
+                        }
+                        @foreach (var tx in Model.RecentTransactions.Items)
+                        {
+                            <tr>
+                                <td>@(i++)</td>
+                                <th scope="row">@tx.CreatedAt.ToLocalTime().ToString("dd MMM, yyyy hh:mm tt")</th>
+                                <td class="vam"><span class="pending-style style4">@tx.TxType</span></td>
+                                <td class="vam">@tx.ExchangeId</td>
+                                <td class="vam">@tx.FromUserName → @tx.ToUserName</td>
+                                <td class="vam">@tx.Amount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @{
+                    var totalPages = Model.RecentTransactions.TotalPages;
+                    var page = Model.RecentTransactions.Page;
+                }
+                @if (totalPages > 1)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            <!-- Previous -->
+                            <li class="page-item @(page == 1 ? "disabled" : "")">
+                                <a class="page-link"
+                                   asp-action="Dashboard"
+                                   asp-route-page="@(page - 1)">
+                                    <span class="fas fa-angle-left"></span>
+                                </a>
+                            </li>
+
+                            <!-- Page links -->
+                            @for (int p = 1; p <= totalPages; p++)
+                            {
+                                <li class="page-item @(p == page ? "active" : "")">
+                                    <a class="page-link"
+                                       asp-action="Dashboard"
+                                       asp-route-page="@p">@p</a>
+                                </li>
+                            }
+
+                            <!-- Next -->
+                            <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                <a class="page-link"
+                                   asp-action="Dashboard"
+                                   asp-route-page="@(page + 1)">
+                                    <span class="fas fa-angle-right"></span>
+                                </a>
+                            </li>
+                        </ul>
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            Page @(page) of @totalPages
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+

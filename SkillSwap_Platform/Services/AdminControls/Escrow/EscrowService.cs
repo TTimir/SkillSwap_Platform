@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Services.AdminControls.Escrow.EscrowDashboard;
 using SkillSwap_Platform.Services.DigitalToken;
 using SkillSwap_Platform.Services.Email;
 using System.Xml.Linq;
@@ -17,7 +18,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
             SkillSwapDbContext db,
             IDigitalTokenService tokens,
             IEmailService email,
-            ILogger<EscrowService> logger)              
+            ILogger<EscrowService> logger)
         {
             _db = db;
             _tokens = tokens;
@@ -47,11 +48,102 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
             return result;
         }
 
+        public async Task<PagedResult<EscrowHistoryVm>> GetHistoryAsync(int page, int pageSize)
+        {
+            if (page < 1) page = 1;
+
+            try
+            {
+                // 1) base query with users joined
+                var query = _db.TblTokenTransactions
+                    .AsNoTracking()
+                    .Include(tx => tx.FromUser)   // navigation property for FromUserId
+                    .Include(tx => tx.ToUser)     // navigation property for ToUserId
+                    .OrderByDescending(tx => tx.CreatedAt);
+
+                // 2) total count
+                var total = await query.CountAsync();
+
+                // 3) page
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(tx => new EscrowHistoryVm
+                    {
+                        TransactionId = tx.TransactionId,
+                        ExchangeId = tx.ExchangeId ?? 0,
+                        FromUserName = tx.FromUser!.UserName,
+                        ToUserName = tx.ToUser!.UserName,
+                        Amount = tx.Amount,
+                        TxType = tx.TxType,
+                        CreatedAt = tx.CreatedAt,
+                        Description = tx.Description,
+                        IsReleased = tx.IsReleased
+                    })
+                    .ToListAsync();
+
+                // 4) return
+                return new PagedResult<EscrowHistoryVm>
+                {
+                    Items = items,
+                    TotalCount = total,
+                    Page = page,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading escrow transaction history (page {Page})", page);
+                throw;
+            }
+        }
+
+        public async Task<EscrowDashboardVm> GetDashboardAsync(int historyPage, int historyPageSize)
+        {
+            // ensure valid paging
+            if (historyPage < 1) historyPage = 1;
+            if (historyPageSize < 1) historyPageSize = 20;
+
+            try
+            {
+                // 1) compute totals
+                var totalEscrowed = await _db.TblEscrows.SumAsync(e => e.Amount);
+                var totalReleased = await _db.TblEscrows
+                                            .Where(e => e.Status == "Released")
+                                            .SumAsync(e => e.Amount);
+                var totalRefunded = await _db.TblEscrows
+                                            .Where(e => e.Status == "Refunded")
+                                            .SumAsync(e => e.Amount);
+                var totalPending = await _db.TblEscrows
+                                            .Where(e => e.Status == "Pending")
+                                            .SumAsync(e => e.Amount);
+
+                // 2) grab the most recent N transactions
+                var transactions = await GetHistoryAsync(historyPage, historyPageSize);
+
+                return new EscrowDashboardVm
+                {
+                    TotalEscrowed = totalEscrowed,
+                    TotalReleased = totalReleased,
+                    TotalRefunded = totalRefunded,
+                    TotalPending = totalPending,
+                    RecentTransactions = transactions
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error building escrow dashboard");
+                throw;
+            }
+        }
+
         public Task<TblEscrow?> GetByIdAsync(int id)
             => _db.TblEscrows
                   .Include(e => e.Buyer)
                   .Include(e => e.Seller)
                   .Include(e => e.HandledByAdmin)
+                  .Include(e => e.Exchange)                // ← load the Exchange
+                     .ThenInclude(x => x.Offer)
                   .FirstOrDefaultAsync(e => e.EscrowId == id);
 
         private async Task _HandleAsync(int id, int adminId, string notes,

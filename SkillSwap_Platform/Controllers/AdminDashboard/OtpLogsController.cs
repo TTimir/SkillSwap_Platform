@@ -14,7 +14,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         private readonly SkillSwapDbContext _db;
         public OtpLogsController(SkillSwapDbContext db) => _db = db;
 
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
             // 1) Build the grouped‐summary query
             var summaryQuery = _db.OtpAttempts
@@ -56,7 +56,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             return View(model);
         }
 
-        public async Task<IActionResult> Details(int userId, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> Details(int userId, int page = 1, int pageSize = 10)
         {
             var query = _db.OtpAttempts
                            .Where(a => a.UserId == userId)

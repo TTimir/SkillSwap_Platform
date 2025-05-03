@@ -2,7 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.UserFlag.FlaggedUserSummary>
 
 @{
-    ViewData["Title"] = "Flagged Users";
+    ViewData["Title"] = "Reported Users Overview";
+    ViewData["SubTitle"] = "Review reported profiles and view detailed report histories.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -64,7 +65,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var i = 1;
+                                        var i = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var u in Model.Items)
                                     {

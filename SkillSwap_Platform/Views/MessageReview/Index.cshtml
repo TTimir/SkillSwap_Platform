@@ -2,8 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.Message.HeldMessageVM>
 
 @{
-    ViewData["Title"] = "Held Chat Messages";
-    ViewData["SubTitle"] = "Select any message to hold";
+    ViewData["Title"] = "Held Messages";
+    ViewData["SubTitle"] = "Review flagged chats and approve or dismiss them.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -68,7 +68,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var idx = 1;
+                                        var idx = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var msg in Model.Items)
                                     {

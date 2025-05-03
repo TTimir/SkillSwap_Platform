@@ -2,7 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Models.TblEscrow>
 
 @{
-    ViewData["Title"] = "Escrow Management";
+    ViewData["Title"] = "Escrow Transactions";
+    ViewData["SubTitle"] = "Monitor and manage all current escrow operations.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
     var newIds = ViewBag.NewEscrowIds as List<int> ?? new List<int>();
 }
@@ -46,7 +47,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("Index","Escrow")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Escrow Transactions</a>
+                        <a href="@Url.ActionLink("Index","Escrow")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow Counters</a>
+                        <a href="@Url.ActionLink("History","Escrow")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow History</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">

@@ -35,12 +35,26 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             return View(model);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> History(int page = 1, int pageSize = 20)
+        {
+            var model = await _escrowService.GetHistoryAsync(page, pageSize);
+            return View(model);
+        }
+
         // GET: /Admin/Escrow/Details/123
         public async Task<IActionResult> Details(int id)
         {
             var escrow = await _escrowService.GetByIdAsync(id);
             if (escrow == null) return NotFound();
             return View(escrow);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Dashboard(int page = 1, int pageSize = 20)
+        {
+            var vm = await _escrowService.GetDashboardAsync(page, pageSize);
+            return View(vm);
         }
 
         [HttpPost("Release/{id}")]

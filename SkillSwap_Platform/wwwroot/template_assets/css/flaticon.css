@@ -10,6 +10,7 @@ url("../fonts/flaticon_freelancer.svg") format("svg");
 i[class^="flaticon-"]:before,
 i[class*=" flaticon-"]:before,
 span[class^="flaticon-"]:before,
+span[class^="flaticon-"]:before,
 span[class*=" flaticon-"]:before {
     font-family: flaticon !important;
     font-style: normal;

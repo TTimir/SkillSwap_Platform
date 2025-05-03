@@ -34,7 +34,12 @@
 <div class="col-lg-9">
     <div class="dashboard_title_area">
         <h4>@ViewData["Title"]</h4>
-        <h2>Escrow @("#")@Model.EscrowId</h2>
+        <h3>
+            Escrow @("#")@Model.EscrowId
+            &ndash;
+            Offer @("#")@Model.Exchange.OfferId:
+            @Model.Exchange.Offer.Title
+        </h3>
     </div>
 </div>
 <div class="col-lg-3">

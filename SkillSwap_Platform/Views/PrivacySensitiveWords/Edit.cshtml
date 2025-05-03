@@ -1,18 +1,11 @@
 ﻿@model SkillSwap_Platform.Services.AdminControls.PrivacyWord.PrivacySensitiveWordVm
 
 @{
-    ViewData["Title"] = "Edit Privacy Sensitive Word";
+    ViewData["Title"] = "Update Sensitive Term";
+    ViewData["SubTitle"] = "Update the word used to safeguard user privacy.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
-<div class="col-lg-9">
-    <div class="dashboard_title_area">
-        <h2>@ViewData["Title"]</h2>
-        <p class="text">@ViewData["SubTitle"]</p>
-    </div>
-</div>
-
-</div>
 @if (TempData["Success"] != null)
 {
     <div class="col-lg-12">
@@ -39,6 +32,14 @@
         </div>
     </div>
 }
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
 <div class="row">
     <div class="col-xl-12">
         <form asp-action="Edit" method="post">

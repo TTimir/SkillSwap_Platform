@@ -2,8 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.UserFlag.UserFlagHistoryVM>
 
 @{
-    ViewData["Title"] = "Flag History";
-    ViewData["SubTitle"] = "Select any user to hold";
+    ViewData["Title"] = "User report History";
+    ViewData["SubTitle"] = "Track each report and the actions taken for reported users.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -68,7 +68,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var sr = 1;
+                                        var sr = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var userVm in Model.Items)
                                     {
@@ -94,10 +94,10 @@
 
                                                 @* Every history row gets its own details *@
                                                 <td>@item.FlaggedBy</td>
-                                                <td>@item.FlaggedDate.ToString("g")</td>
-                                                <td>@(item.ActionTaken ?? "Pending")</td>
+                                                <td>@item.FlaggedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                                                <td><strong>@(item.ActionTaken ?? "Pending")</strong></td>
                                                 <td>@(item.AdminUser ?? "-")</td>
-                                                <td>@(item.ActionDate?.ToString("g") ?? "-")</td>
+                                                <td>@(item.ActionDate?.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt") ?? "-")</td>
                                                 <td>@(item.AdminReason ?? "-")</td>
                                             </tr>
 

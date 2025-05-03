@@ -2,7 +2,8 @@
 @model PagedResult<SkillSwap_Platform.Models.TblOfferFlag>
 
 @{
-    ViewData["SubTitle"] = "Select any user to hold";
+    ViewData["Title"] = "Offer Report Details";
+    ViewData["SubTitle"] = "Review each report, moderator actions, and notes for this offer.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 
     var list = Model?.Items ?? Enumerable.Empty<SkillSwap_Platform.Models.TblOfferFlag>();
@@ -41,6 +42,11 @@
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
         <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Index","OfferFlag")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
     </div>
 </div>
 </div>

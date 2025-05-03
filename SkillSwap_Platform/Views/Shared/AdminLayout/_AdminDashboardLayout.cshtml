@@ -371,11 +371,19 @@
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Escrow & Transactions</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","Escrow", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Escrow" && currentAction=="InDashboarddex" ? "-is-active" : "")">
+                                <i class="flaticon-pay-day mr15"></i>
+                                Escrow Statement
+                            </a>
+                        </div>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","Escrow", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="Escrow" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-dollar mr15"></i>
-                                Escrow Management
+                                Escrow Counters
                                 @if (escrowPending > 0)
                                 {
                                     <span class="badge badge-pill bg-info ms-auto">@escrowPending</span>
@@ -383,7 +391,7 @@
                             </a>
                         </div>
 
-                        <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offer</p>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offer & Reports</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","OfferFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Index" ? "-is-active" : "")">
@@ -403,7 +411,7 @@
                             </a>
                         </div>
 
-                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer's Review</p>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer's Review & Reports</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("ActiveFlags","OfferReview", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferReview" && currentAction=="ActiveFlags" ? "-is-active" : "")">
@@ -424,7 +432,7 @@
                             </a>
                         </div>
 
-                        <p class="fz15 fw400 ff-heading pl30 mt30">User Profile</p>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">User Profile & Reports</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","UserFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Index" ? "-is-active" : "")">
@@ -455,7 +463,7 @@
                             </a>
                         </div>
 
-                        <p class="fz15 fw400 ff-heading pl30 mt30">Privacy Manage</p>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Privacy & Manage</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","SensitiveWords", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="SensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
@@ -473,7 +481,7 @@
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","PrivacySensitiveWords", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="PrivacySensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
-                                <i class="flaticon-secure mr15"></i>
+                                <i class="flaticon-antivirus mr15"></i>
                                 Privacy Words
                             </a>
                         </div>

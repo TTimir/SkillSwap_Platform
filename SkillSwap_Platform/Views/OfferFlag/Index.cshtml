@@ -3,6 +3,7 @@
 
 @{
     ViewData["Title"] = "Flagged Offers";
+    ViewData["SubTitle"] = "Review community reports and take action on swap listings.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -66,7 +67,7 @@
                                 </thead>
                                 <tbody class="t-body">
                                     @{
-                                        var srNo = 1;  // initialize counter
+                                        var srNo = (Model.Page - 1) * Model.PageSize + 1;
                                     }
                                     @foreach (var flag in Model.Items)
                                     {
