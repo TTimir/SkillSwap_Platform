@@ -82,6 +82,37 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
             return View(vm);
         }
+
+        public async Task<IActionResult> Dashboard(DateTime? from, DateTime? to)
+        {
+            var start = from ?? DateTime.UtcNow.AddMonths(-1);
+            var end = to ?? DateTime.UtcNow;
+            var model = await _svc.GetDashboardMetricsAsync(start, end);
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFlagsByDay([FromQuery] int days = 30)
+        {
+            var end = DateTime.UtcNow;
+            var start = end.AddDays(-days);
+            // We only need the trends, so call the service for that window:
+            var metrics = await _svc.GetDashboardMetricsAsync(start, end);
+            // Map to simple DTO
+            var result = metrics.FlagTrends
+                .Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), count = d.Count });
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFlagResolutionBreakdown()
+        {
+            // Use a broad window so you get all actions
+            var metrics = await _svc.GetDashboardMetricsAsync(DateTime.UtcNow.AddYears(-1), DateTime.UtcNow);
+            var result = metrics.ResolutionBreakdown
+                .Select(r => new { action = r.Action, count = r.Count });
+            return Ok(result);
+        }
     }
 }
 

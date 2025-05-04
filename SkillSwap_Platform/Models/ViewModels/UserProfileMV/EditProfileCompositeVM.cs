@@ -162,13 +162,20 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public string? CertificateFilePath { get; set; }
         [Required(ErrorMessage = "Set completion date!")]
         [Display(Name = "Completion Date")]
-        public DateTime CertificateDate { get; set; }
+        public DateTime? CertificateDate { get; set; }
         [Required(ErrorMessage = "Enter issuer name!")]
         [Display(Name = "Issuer Name")]
         public string? CertificateFrom { get; set; }
+        public DateTime? CompleteDate { get; set; }
         public bool IsApproved { get; set; }
+        public DateTime? ApprovedDate { get; set; }
+        public DateTime? RejectionDate { get; set; }
+        public string RejectionReason { get; set; }
+
         // Flag for deletion.
         public bool IscertDeleted { get; set; }
+
+
     }
 
     public class SkillsVM

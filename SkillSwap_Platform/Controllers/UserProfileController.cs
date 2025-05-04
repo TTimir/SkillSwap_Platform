@@ -192,6 +192,26 @@ namespace SkillSwap_Platform.Controllers
                 int totalReviewsUser = user.TblReviewReviewees.Count();
                 double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
+                var certificateVMs = user.TblUserCertificateUsers
+                    .Select(c => new CertificateVM
+                    {
+                        CertificateId = c.CertificateId,
+                        CertificateName = c.CertificateName,
+                        CertificateFrom = c.CertificateFrom,
+                        CertificateFilePath = c.CertificateFilePath,
+                        IsApproved = c.IsApproved,
+                        ApprovedDate = c.ApprovedDate,
+                        RejectionDate = c.RejectDate,
+                        RejectionReason = c.RejectionReason,
+                        CertificateDate = c.CompleteDate
+                    })
+                    .ToList();
+
+                var currentUser = User.Identity.IsAuthenticated
+                    ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
+                    : -1;
+                bool isOwnProfile = currentUser == user.UserId;
+
                 // Build the public user profile view model.
                 var model = new UserProfileVM
                 {
@@ -199,7 +219,6 @@ namespace SkillSwap_Platform.Controllers
                     Educations = user.TblEducations.OrderByDescending(e => e.StartDate).ToList(),
                     Experiences = user.TblExperiences.OrderByDescending(e => e.StartDate).ToList(),
                     Languages = user.TblLanguages.ToList(),
-                    Certificates = user.TblUserCertificateUsers.ToList(),
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
@@ -210,7 +229,9 @@ namespace SkillSwap_Platform.Controllers
                     Reviews = user.TblReviewReviewees,
                     ReviewCount = totalReviewsUser,
                     AverageRating = avgRatingUser,
-                    IsFlagged = false
+                    IsFlagged = false,
+                    Certificates = certificateVMs,
+                    IsOwnProfile = isOwnProfile,
                 };
 
                 if (User.Identity.IsAuthenticated)
@@ -394,6 +415,27 @@ namespace SkillSwap_Platform.Controllers
                 int totalReviewsUser = user.TblReviewReviewees.Count();
                 double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
+                var certificateVMs = user.TblUserCertificateUsers
+                    .Select(c => new CertificateVM
+                    {
+                        CertificateId = c.CertificateId,
+                        CertificateName = c.CertificateName,
+                        CertificateFrom = c.CertificateFrom,
+                        CertificateFilePath = c.CertificateFilePath,
+                        IsApproved = c.IsApproved,
+                        ApprovedDate = c.ApprovedDate,
+                        RejectionDate = c.RejectDate,
+                        RejectionReason = c.RejectionReason,
+                        CertificateDate = c.CompleteDate
+                    })
+                    .ToList();
+
+                // detect owner vs. visitor
+                var currentUserId = User.Identity.IsAuthenticated
+                    ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
+                    : -1;
+                bool isOwnProfile = currentUserId == user.UserId;
+
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
                 {
@@ -401,7 +443,7 @@ namespace SkillSwap_Platform.Controllers
                     Educations = user.TblEducations.OrderByDescending(e => e.StartDate).ToList(),
                     Experiences = user.TblExperiences.OrderByDescending(e => e.StartDate).ToList(),
                     Languages = user.TblLanguages.ToList(),
-                    Certificates = user.TblUserCertificateUsers.ToList(),
+                    Certificates = certificateVMs,
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
@@ -411,7 +453,8 @@ namespace SkillSwap_Platform.Controllers
                     ActiveExchangeCount = activeExchangeCount,
                     Reviews = user.TblReviewReviewees,
                     ReviewCount = totalReviewsUser,
-                    AverageRating = avgRatingUser
+                    AverageRating = avgRatingUser,
+                    IsOwnProfile = isOwnProfile,
                 };
 
                 return View(model);

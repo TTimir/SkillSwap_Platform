@@ -336,8 +336,15 @@
                     {
                         <p class="fz15 fw400 ff-heading pl30">Start</p>
                         <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminDashboard", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminDashboard" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-house mr15"></i>
+                                Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","CertificateReview", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="CertificateReview" ? "-is-active" : "")">
+                               class="d-flex items-center @(currentController=="CertificateReview" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-document mr15"></i>
                                 Certificates
                                 @if (pendingCertificates > 0)
@@ -393,6 +400,13 @@
 
                         <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offer & Reports</p>
                         <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-home mr15"></i>
+                                Report Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","OfferFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-presentation mr15"></i>
@@ -433,6 +447,13 @@
                         </div>
 
                         <p class="fz15 fw400 ff-heading pl30 mt30">User Profile & Reports</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-home mr15"></i>
+                                Report Dashboard
+                            </a>
+                        </div>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","UserFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Index" ? "-is-active" : "")">

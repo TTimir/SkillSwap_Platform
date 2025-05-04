@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PuppeteerSharp;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Services.AdminControls.OfferFlag;
 using SkillSwap_Platform.Services.AdminControls.UserFlag.Repository;
 using SkillSwap_Platform.Services.Email;
 
@@ -466,6 +467,81 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize
+            };
+        }
+
+        public async Task<UserDashboardMetricsDto> GetUserDashboardMetricsAsync(
+    DateTime periodStart, DateTime periodEnd,
+    int mostFlaggedTake = 5, int recentActionsTake = 10)
+        {
+            // 1) simple counts
+            var totalUsers = await _ctx.TblUsers.CountAsync();
+            var flaggedUsers = await _ctx.TblUsers.CountAsync(u => u.IsFlagged);
+            var pendingFlags = await _ctx.TblUserFlags.CountAsync(f => f.AdminAction == null);
+            var resolvedFlags = await _ctx.TblUserFlags.CountAsync(f => f.AdminAction != null);
+
+            // 2) flags by day (Y/M/D grouping)
+            var trendsRaw = await _ctx.TblUserFlags
+                .Where(f => f.FlaggedDate >= periodStart && f.FlaggedDate <= periodEnd)
+                .GroupBy(f => new { f.FlaggedDate.Year, f.FlaggedDate.Month, f.FlaggedDate.Day })
+                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.Day, Count = g.Count() })
+                .ToListAsync();
+            var flagTrends = trendsRaw
+                .Select(x => new DateCount(new DateTime(x.Year, x.Month, x.Day), x.Count))
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            // 3) resolution breakdown
+            var resolution = await _ctx.TblUserFlags
+                .Where(f => f.AdminAction != null)
+                .GroupBy(f => f.AdminAction!)
+                .Select(g => new ActionCount(g.Key, g.Count()))
+                .ToListAsync();
+
+            // 4) most-flagged users
+            var mostFlagged = await _ctx.TblUserFlags
+                .GroupBy(f => f.FlaggedUserId)
+                .Select(g => new { UserId = g.Key, TotalFlags = g.Count() })
+                .OrderByDescending(x => x.TotalFlags)
+                .Take(mostFlaggedTake)
+                .Join(
+                    _ctx.TblUsers,
+                    grp => grp.UserId,
+                    u => u.UserId,
+                    (grp, u) => new FlaggedUserSummary
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        TotalFlags = grp.TotalFlags
+                    }
+                )
+                .ToListAsync();
+
+            // 5) recent actions timeline
+            var recent = await _ctx.TblUserFlags
+                .Where(f => f.AdminAction != null)
+                .OrderByDescending(f => f.AdminActionDate)
+                .Take(recentActionsTake)
+                .Select(f => new RecentActionDto(
+                    f.AdminAction!,
+                    f.AdminUser!.UserName,
+                    f.FlaggedUser!.UserName,
+                    f.AdminActionDate!.Value))
+                .ToListAsync();
+
+            return new UserDashboardMetricsDto
+            {
+                TotalUsers = totalUsers,
+                FlaggedUsers = flaggedUsers,
+                PendingFlags = pendingFlags,
+                ResolvedFlags = resolvedFlags,
+                FlagTrends = flagTrends,
+                ResolutionBreakdown = resolution,
+                MostFlaggedUsers = mostFlagged,
+                RecentUserActions = recent
             };
         }
 

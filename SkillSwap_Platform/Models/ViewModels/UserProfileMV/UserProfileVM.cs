@@ -13,7 +13,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public IEnumerable<TblEducation> Educations { get; set; }
         public IEnumerable<TblExperience> Experiences { get; set; }
         public IEnumerable<TblLanguage> Languages { get; set; }
-        public IEnumerable<TblUserCertificate> Certificates { get; set; }
+        public IEnumerable<CertificateVM> Certificates { get; set; }
 
         public IEnumerable<SkillVM> Skills { get; set; }
         public List<OfferDetailsVM> Offers { get; set; }
@@ -27,6 +27,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public int ReviewCount { get; set; }
         public double AverageRating { get; set; }
         public bool IsFlagged { get; set; }
+        public bool IsOwnProfile { get; set; }
     }
 
     public class SkillVM

@@ -85,5 +85,32 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 : "Flagged User Details";
             return View("FlaggedUserDetails", vm);
         }
+
+        // GET /Admin/UserFlag/Dashboard
+        public async Task<IActionResult> Dashboard(DateTime? from, DateTime? to)
+        {
+            var start = from ?? DateTime.UtcNow.AddMonths(-1);
+            var end = to ?? DateTime.UtcNow;
+            var model = await _svc.GetUserDashboardMetricsAsync(start, end);
+            return View(model);
+        }
+
+        // AJAX: /Admin/UserFlag/GetFlagsByDay?days=30
+        [HttpGet]
+        public async Task<IActionResult> GetFlagsByDay(int days = 30)
+        {
+            var end = DateTime.UtcNow;
+            var start = end.AddDays(-days);
+            var m = await _svc.GetUserDashboardMetricsAsync(start, end);
+            return Ok(m.FlagTrends.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), count = d.Count }));
+        }
+
+        // AJAX: /Admin/UserFlag/GetFlagResolutionBreakdown
+        [HttpGet]
+        public async Task<IActionResult> GetFlagResolutionBreakdown()
+        {
+            var m = await _svc.GetUserDashboardMetricsAsync(DateTime.UtcNow.AddYears(-1), DateTime.UtcNow);
+            return Ok(m.ResolutionBreakdown.Select(r => new { action = r.Action, count = r.Count }));
+        }
     }
 }

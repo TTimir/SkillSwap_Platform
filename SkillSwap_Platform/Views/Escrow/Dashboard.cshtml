@@ -81,7 +81,7 @@
                                 <th scope="row">@tx.CreatedAt.ToLocalTime().ToString("dd MMM, yyyy hh:mm tt")</th>
                                 <td class="vam"><span class="pending-style style4">@tx.TxType</span></td>
                                 <td class="vam">@tx.ExchangeId</td>
-                                <td class="vam">@tx.FromUserName → @tx.ToUserName</td>
+                                <td class="vam">@(tx.FromUserName ?? "YET TO TAKE") → @(tx.ToUserName ?? "YET TO RELEASE")</td>
                                 <td class="vam">@tx.Amount</td>
                             </tr>
                         }

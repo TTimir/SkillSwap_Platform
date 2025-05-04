@@ -18,5 +18,9 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
         Task<bool> HasPendingFlagAsync(int flaggedUserId, int flaggedByUserId);
 
         Task<PagedResult<TblUserFlag>> GetFlagsForUserAsync(int flaggedUserId, int page, int pageSize);
+
+        Task<UserDashboardMetricsDto> GetUserDashboardMetricsAsync(
+            DateTime periodStart, DateTime periodEnd,
+            int mostFlaggedTake = 5, int recentActionsTake = 10);
     }
 }

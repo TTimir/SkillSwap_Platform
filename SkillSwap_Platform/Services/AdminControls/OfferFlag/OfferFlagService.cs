@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository;
 using SkillSwap_Platform.Services.Email;
+using System.Linq;
 
 namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
 {
@@ -367,6 +368,82 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize
+            };
+        }
+
+        public async Task<DashboardMetricsDto> GetDashboardMetricsAsync(
+    DateTime periodStart, DateTime periodEnd,
+    int mostFlaggedTake = 5,
+    int recentActionsTake = 10)
+        {
+            // 1) Simple counts
+            var totalOffers = await _ctx.TblOffers.CountAsync(o => !o.IsDeleted);
+            var flaggedOffers = await _ctx.TblOffers.CountAsync(o => o.IsFlagged && !o.IsDeleted);
+            var pendingFlags = await _ctx.TblOfferFlags.CountAsync(f => f.AdminAction == null);
+            var resolvedFlags = await _ctx.TblOfferFlags.CountAsync(f => f.AdminAction != null);
+
+            // 2) Flags‐by‐day: group by Y/M/D in SQL, then project
+            var flagsByDayRaw = await _ctx.TblOfferFlags
+                .Where(f => f.FlaggedDate >= periodStart && f.FlaggedDate <= periodEnd)
+                .GroupBy(f => new { f.FlaggedDate.Year, f.FlaggedDate.Month, f.FlaggedDate.Day })
+                .Select(g => new { g.Key.Year, g.Key.Month, g.Key.Day, Count = g.Count() })
+                .ToListAsync();
+
+            var flagTrends = flagsByDayRaw
+                .Select(x => new DateCount(new DateTime(x.Year, x.Month, x.Day), x.Count))
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            // 3) Resolution breakdown
+            var resolutionBreakdown = await _ctx.TblOfferFlags
+                .Where(f => f.AdminAction != null)
+                .GroupBy(f => f.AdminAction!)
+                .Select(g => new ActionCount(g.Key, g.Count()))
+                .ToListAsync();
+
+            // 4) Most-flagged offers
+            var mostFlaggedOffers = await _ctx.TblOfferFlags
+                .Where(f => !f.Offer.IsDeleted)
+                .GroupBy(f => f.OfferId)
+                .Select(g => new { OfferId = g.Key, TotalFlags = g.Count() })
+                .OrderByDescending(x => x.TotalFlags)
+                .Take(mostFlaggedTake)
+                .Join(
+                    _ctx.TblOffers,
+                    grp => grp.OfferId,
+                    o => o.OfferId,
+                    (grp, o) => new FlaggedOffersSummary(
+                        o.OfferId,
+                        o.Title,
+                        grp.TotalFlags,
+                        o.Portfolio
+                    )
+                )
+                .ToListAsync();
+
+            // 5) Recent admin actions
+            var recentActions = await _ctx.TblOfferFlags
+                .Where(f => f.AdminAction != null)
+                .OrderByDescending(f => f.AdminActionDate)
+                .Take(recentActionsTake)
+                .Select(f => new RecentActionDto(
+                    f.AdminAction!,
+                    f.AdminUser!.FirstName,
+                    f.Offer!.Title,
+                    f.AdminActionDate.Value))
+                .ToListAsync();
+
+            // Assemble and return
+            return new DashboardMetricsDto
+            {
+                TotalOffers = totalOffers,
+                FlaggedOffers = flaggedOffers,
+                PendingFlags = pendingFlags,
+                ResolvedFlags = resolvedFlags,
+                FlagTrends = flagTrends,
+                ResolutionBreakdown = resolutionBreakdown,
+                MostFlaggedOffers = mostFlaggedOffers,
+                RecentActions = recentActions
             };
         }
     }

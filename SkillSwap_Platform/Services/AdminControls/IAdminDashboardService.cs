@@ -16,5 +16,8 @@
         Task<int> GetHeldAccountsCountAsync();
         Task<int> GetActiveFlaggedUsersCountAsync();
 
+
+        Task<AdminDashboardMetricsDto> GetAdminDashboardMetricsAsync(DateTime periodStart, DateTime periodEnd);
+
     }
 }

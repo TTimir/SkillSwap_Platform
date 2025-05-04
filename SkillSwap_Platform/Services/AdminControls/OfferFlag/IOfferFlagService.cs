@@ -16,5 +16,10 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
         Task<bool> HasPendingFlagAsync(int offerId, int flaggedByUserId);
         Task<PagedResult<FlaggedOfferSummary>> GetFlaggedOfferSummariesAsync(int page, int pageSize);
         Task<PagedResult<TblOfferFlag>> GetFlagsForOfferAsync(int offerId, int page, int pageSize);
+
+        Task<DashboardMetricsDto> GetDashboardMetricsAsync(
+                DateTime periodStart, DateTime periodEnd,
+                int mostFlaggedTake = 5,
+                int recentActionsTake = 10);
     }
 }

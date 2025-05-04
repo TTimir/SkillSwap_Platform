@@ -1,0 +1,235 @@
+﻿@using SkillSwap_Platform.Services.AdminControls.OfferFlag
+@model DashboardMetricsDto
+
+@{
+    ViewData["Title"] = "Swap-Reports Dashboard";
+    ViewData["SubTitle"] = "Overview of swap-offer moderation metrics.";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Offers</div>
+                <div class="title">@Model.TotalOffers</div>
+                <div class="text fz14"><span class="text-thm">@Model.TotalOffers - @Model.FlaggedOffers</span> Active</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-contract"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Reported Offers</div>
+                <div class="title">@Model.FlaggedOffers</div>
+                <div class="text fz14"><span class="text-thm">@Model.PendingFlags</span> Pending</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Pending Reports</div>
+                <div class="title">@Model.PendingFlags</div>
+                <div class="text fz14"><span class="text-thm">@Model.PendingFlags</span> Yet to review</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review-1"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Resolved Reports</div>
+                <div class="title">@Model.ResolvedFlags</div>
+                <div class="text fz14"><span class="text-thm">@Model.ResolvedFlags</span> Total</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-success"></i></div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-8">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Reports Over Time</h4>
+                    <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select id="trendRange" class="selectpicker show-tick">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>This Month</option>
+                            <option value="365">This Year</option>
+                        </select>
+                    </div>
+                </div>
+                <canvas id="flagsTrendChart" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb50">
+                <h5 class="title">Resolution by Action</h5>
+            </div>
+            <canvas id="resolutionChart" height="260px"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 col-xxl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="d-flex justify-content-between bdrb1 pb15 mb20">
+                <h5 class="title">Most-Reported Swaps</h5>
+                <a asp-area="Admin" asp-controller="OfferFlag" asp-action="FlaggedOfferSummary" class="text-decoration-underline text-thm6">View All</a>
+            </div>
+            <div class="dashboard-img-service">
+                @foreach (var offer in Model.MostFlaggedOffers)
+                {
+                    <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
+                        <div class="list-thumb flex-shrink-0 bdrs4">
+                            @{
+                                var svc = offer;
+                                // 1) Try to parse the stored JSON
+                                List<string> portfolioImages = new();
+                                if (!string.IsNullOrWhiteSpace(svc.Portfolio))
+                                {
+                                    try
+                                    {
+                                        portfolioImages = Newtonsoft.Json.JsonConvert
+                                        .DeserializeObject<List<string>>(svc.Portfolio)
+                                        ?? new List<string>();
+                                    }
+                                    catch
+                                    {
+                                        // ignore parse errors
+                                    }
+                                }
+
+                                // 2) Your two “no-offer” defaults
+                                var defaultImages = new[]
+                                {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                        };
+
+                                // 3) Deterministic index from OfferId
+                                var defaultIndex = svc.OfferId % defaultImages.Length;
+                                var fallbackUrl = defaultImages[defaultIndex];
+
+                                // 4) Final image choice
+                                var imgUrl = portfolioImages.Any()
+                                ? portfolioImages.First()
+                                : fallbackUrl;
+                            }
+                            <img class="w-100" src="@imgUrl" alt="@svc.Title">
+                        </div>
+                        <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
+                            <h6 class="list-title mb-2"><a asp-area="Admin" asp-controller="OfferFlag" asp-action="FlaggedOfferDetails" asp-route-offerId="@offer.OfferId"> @offer.Title</a></h6>
+                            <div class="list-meta d-flex justify-content-between align-items-center">
+                                <div class="review-meta d-flex align-items-center">
+                                    <i class="fas fa-flag fz10 review-color me-2"></i>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@offer.TotalFlags reports</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="opacity-100 mt-0" />
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xxl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="d-flex justify-content-between bdrb1 pb15 mb30">
+                <h5 class="title">Recent Moderation Actions</h5>
+                <a asp-area="Admin" asp-controller="OfferFlag" asp-action="History" class="text-decoration-underline text-thm6">View All</a>
+            </div>
+            <div class="dashboard-img-service">
+                @foreach (var action in Model.RecentActions)
+                {
+                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb10">
+                        <div class="list-thumb wa flex-shrink-0 bdrs4 mb15-lg">
+                            <i class="fas fa-genderless"></i>
+                        </div>
+                        <div class="list-content flex-grow-1 py-0 pb10 pl15 pl0-lg">
+                            <h6 class="list-title mb-2">@action.AdminUser performed <span class="text-thm"> @action.Action </span> Report on <span class="line-clamp2"> @action.OfferTitle</span> </h6>
+                            <div class="list-meta d-flex justify-content-between align-items-center">
+                                <div class="review-meta d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Action taken by Moderator On">
+                                    <p class="mb-0 body-color fz14"><span class="icon flaticon-calendar fz15 fw500 dark-color">&nbsp; @action.ActionDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></p>
+                                </div>
+                                <div class="budget">
+                                    <p class="mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="On Offer"><span class="icon flaticon-income fz15 fw500 dark-color line-clamp2">&nbsp; on “@action.OfferTitle”</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="opacity-100 mt-0" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+@section DynamicAdminScript {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Helper to fetch JSON and parse dates
+        async function fetchJson(url) {
+          const resp = await fetch(url);
+          return await resp.json();
+        }
+
+        // Render Flag Trends line chart
+        async function renderFlagTrends(range) {
+          const data = await fetchJson(`/Admin/OfferFlag/GetFlagsByDay?days=${range}`);
+          const ctx = document.getElementById('flagsTrendChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.map(d => new Date(d.date).toLocaleDateString()),
+              datasets: [{
+                label: 'Offer Reports',
+                data: data.map(d => d.count),
+                fill: false,
+                tension: 0.4
+              }]
+            },
+            options: { responsive: true }
+          });
+        }
+
+        // Render Resolution Breakdown doughnut chart
+        async function renderResolutionChart() {
+          const data = await fetchJson('/Admin/OfferFlag/GetFlagResolutionBreakdown');
+          const ctx = document.getElementById('resolutionChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: data.map(d => d.action),
+              datasets: [{ data: data.map(d => d.count) }]
+            },
+            options: { responsive: true }
+          });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+          const select = document.getElementById('trendRange');
+          renderFlagTrends(select.value);
+          renderResolutionChart();
+
+          select.addEventListener('change', () => {
+            renderFlagTrends(select.value);
+          });
+        });
+    </script>
+}
+

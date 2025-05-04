@@ -108,7 +108,6 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
     public virtual DbSet<ReviewAggregate> ReviewAggregates { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=TIMIRBHINGRADIY;Database=SkillSwapDb;Trusted_Connection=True;Encrypt=false;");
@@ -976,6 +975,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CertificateFrom).HasMaxLength(100);
             entity.Property(e => e.CertificateName).HasMaxLength(200);
             entity.Property(e => e.CompleteDate).HasColumnType("datetime");
+            entity.Property(e => e.RejectDate).HasColumnType("datetime");
             entity.Property(e => e.SkillId).HasColumnName("SkillID");
             entity.Property(e => e.SubmittedDate)
                 .HasDefaultValueSql("(getdate())")

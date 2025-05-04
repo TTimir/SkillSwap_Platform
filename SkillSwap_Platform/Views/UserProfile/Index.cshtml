@@ -463,18 +463,18 @@
                                                         <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
                                                             @if (certificate.IsApproved)
                                                             {
-                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToString("MMMM dd, yyyy")</span>
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToLocalTime().ToString("MMMM dd, yyyy")</span>
                                                             }
                                                             else
                                                             {
-                                                                <span><i class="fas fa-times-circle"></i> Not Approved</span>
+                                                                <span><i class="fas fa-times-circle"></i> Not Approved on @certificate.RejectionDate?.ToLocalTime().ToString("MMMM dd, yyyy")</span>
                                                             }
                                                         </span>
                                                         <h5 class="mt15">
                                                             @certificate.CertificateName
                                                             @if (certificate.CompleteDate.HasValue)
                                                             {
-                                                                <small>(Completed on @certificate.CompleteDate.Value.ToString("MMMM d, yyyy"))</small>
+                                                                <small>(Completed on @certificate.CompleteDate.Value.ToLocalTime().ToString("MMMM d, yyyy"))</small>
                                                             }
                                                         </h5>
                                                         <h6 class="text-thm">@certificate.CertificateFrom</h6>
@@ -487,11 +487,11 @@
                                                                     <!-- PDF Preview wrapped with preview container -->
                                                                     <div class="preview-container" data-preview-type="pdf" data-src="@certificate.CertificateFilePath">
                                                                         <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
-                                                                        <div class="preview-overlay"><i class="fas fa-search-plus" style="color:#5BBB7B"></i></div>
+                                                                        <div class="preview-overlay"><i class="flaticon-search" style="color:#5BBB7B"></i></div>
                                                                     </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
-                                                                        <i class="fas fa-download me-2"></i> Download Certificate
+                                                                        <i class="fas fa-download me-2" style="transform:rotate(0deg)"></i> Download Certificate
                                                                     </a>
                                                                 }
                                                                 else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
@@ -499,7 +499,7 @@
                                                                     <!-- Image Preview wrapped with preview container -->
                                                                     <div class="preview-container" data-preview-type="image" data-src="@certificate.CertificateFilePath">
                                                                         <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
-                                                                        <div class="preview-overlay"><i class="flaticon-search " style="color:#5BBB7B"></i></div>
+                                                                        <div class="preview-overlay"><i class="flaticon-search" style="color:#5BBB7B"></i></div>
                                                                     </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
@@ -508,6 +508,14 @@
                                                                 }
                                                             }
                                                         </div>
+                                                        @if (!certificate.IsApproved && (certificate.RejectionDate != null || certificate.RejectionReason != null) && Model.IsOwnProfile)
+                                                        {
+                                                          <p class="mt-2 text-danger">
+                                                            <strong>Reason:</strong> @certificate.RejectionReason<br />
+                                                            You may delete and re-upload for re-evaluation.<br />
+                                                            <em>This message is only visible to you.</em>
+                                                          </p>
+                                                        }
                                                     </div>
                                                 </div>
                                             }
