@@ -1045,6 +1045,28 @@ public class HomeController : Controller
                       || !DateTimeOffset.TryParse(expiresString, out var exp)
                       || DateTimeOffset.UtcNow >= exp;
 
+        // read the raw string from session
+        var rawNext = HttpContext.Session.GetString("NextResendAt");
+
+        DateTimeOffset? nextAllowed = null;
+        if (!string.IsNullOrEmpty(rawNext)
+            && DateTimeOffset.TryParse(rawNext, out var parsed))
+        {
+            nextAllowed = parsed;
+        }
+
+        int retryAfter = 0;
+        if (nextAllowed.HasValue && nextAllowed.Value > DateTimeOffset.UtcNow)
+        {
+            retryAfter = (int)(nextAllowed.Value - DateTimeOffset.UtcNow).TotalSeconds;
+        }
+
+        ViewBag.ResendRetryAfter = retryAfter;
+        ViewBag.ResendAttemptsLeft = Math.Max(
+            0,
+            3 - (HttpContext.Session.GetInt32("ResendCount") ?? 0)
+        );
+
         if (needsNewOtp)
         {
             // generate & email OTP
@@ -1144,7 +1166,7 @@ public class HomeController : Controller
             ip = "unknown";
         }
 
-        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
+        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp, out string totpFailure);
         var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
         bool isEmailOk = emailOtp != null && emailOtp == otp;
         var method = isTotpOk ? "TOTP" : "Email";
@@ -1200,7 +1222,7 @@ public class HomeController : Controller
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "❌ Invalid code. Please try again.";
+                    TempData["ErrorMessage"] = "❌ The email code you entered is incorrect.";
                 }
 
                 ModelState.AddModelError(
@@ -1315,7 +1337,8 @@ public class HomeController : Controller
             var emailOtp = HttpContext.Session.GetString("EmailOtp");
 
             // check Google Auth TOTP
-            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp);
+            string totpFailure;
+            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp, out totpFailure);
             // check email‐OTP
             bool isEmailValid = emailOtp != null && emailOtp == otp;
 
@@ -1383,6 +1406,83 @@ public class HomeController : Controller
         }
     }
     #endregion
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendOtp()
+    {
+        const int MaxResends = 5;
+        const int cooldownSeconds = 30;
+
+        // retrieve the pending-login user
+        var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
+        if (loginUser == null)
+            return Json(new { success = false, message = "Session expired" });
+
+        // 1) how many times we've already resent
+        int sentCount = HttpContext.Session.GetInt32("ResendCount") ?? 0;
+
+        // 2) when we're next allowed to resend
+        var nextRaw = HttpContext.Session.GetString("NextResendAt");
+        DateTimeOffset? nextAllowed = null;
+        if (!string.IsNullOrEmpty(nextRaw)
+            && DateTimeOffset.TryParse(nextRaw, out var parsed))
+        {
+            nextAllowed = parsed;
+        }
+
+        // 3) check cooldown
+        if (nextAllowed.HasValue && nextAllowed.Value > DateTimeOffset.UtcNow)
+        {
+            var retryAfter = (int)(nextAllowed.Value - DateTimeOffset.UtcNow).TotalSeconds;
+            return Json(new
+            {
+                success = false,
+                retryAfter = retryAfter,
+                message = $"Please wait {retryAfter}s before requesting another code."
+            });
+        }
+
+        // 4) check total attempts
+        if (sentCount >= MaxResends)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "You've reached the maximum number of resend attempts. Please try again later."
+            });
+        }
+
+        // generate a new email OTP
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
+        HttpContext.Session.SetString("LoginEmailOtp_Expires",
+            DateTimeOffset.UtcNow.AddMinutes(5).ToString("o"));
+
+        // increment and set a new cooldown
+        HttpContext.Session.SetInt32("ResendCount", ++sentCount);
+        HttpContext.Session.SetString("NextResendAt", 
+            DateTimeOffset.UtcNow.AddSeconds(cooldownSeconds).ToString());
+
+        // send it
+        var htmlBody = $@"
+            <p>Hi {loginUser.UserName},</p>
+            <p>Your new login code is: <strong>{emailOtp}</strong></p>
+            <p>It’s valid for the next 05 minutes.</p>
+            <p>If you didn’t request this, ignore this email.</p>";
+        
+        await _emailService.SendEmailAsync(
+            loginUser.Email,
+            "Your new SkillSwap login code",
+            htmlBody,
+            isBodyHtml: true);
+
+        return Json(new
+        {
+            success = true,
+            retryAfter = cooldownSeconds
+        });
+    }
 
     #region Logout
     // POST: /Home/Logout

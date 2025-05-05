@@ -1,0 +1,123 @@
+﻿@model IEnumerable<SkillSwap_Platform.Models.TblSkillSwapFaq>
+
+@{
+    ViewData["Title"] = "Manage FAQs";
+    var sections = new[] { "HowItWorks", "ContactUs" };
+    var currentSection = (string)ViewBag.Section ?? sections[0];
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        @foreach (var sec in sections)
+                        {
+                            <a class="nav-link @(sec == currentSection ? "active" : "") fw500"
+                               asp-action="Index"
+                               asp-route-section="@sec">
+                                @sec.Replace("HowItWorks", "How It Works").Replace("ContactUs", "Contact Us")
+                            </a>
+                        }
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            @if (!Model.Any())
+                            {
+                                <div class="alert alert-info">
+                                    There are no FAQs in the “@currentSection” section yet.
+                                    <a asp-action="Create"
+                                       asp-route-section="@currentSection"
+                                       class="btn btn-sm btn-primary ms-2">
+                                        Add your first FAQ
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Sort</th>
+                                            <th scope="col">Question</th>
+                                            <th scope="col">Answer</th>
+                                            <th scope="col" class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+
+                                        @foreach (var f in Model)
+                                        {
+                                            <tr>
+                                                <td class="vam">@f.SortOrder</td>
+                                                <td class="vam">@f.Question</td>
+                                                <td class="vam">@f.Answer</td>
+                                                <td class="vam" class="text-end">
+                                                    <div class="d-flex">
+                                                        <a asp-action="Edit" asp-route-id="@f.FaqId" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                        <form asp-action="Delete" asp-route-id="@f.FaqId" method="post" class="d-inline">
+                                                            <button type="submit" class="icon me-2" style="border:0;"
+                                                                    onclick="return confirm('Delete this FAQ?');">
+                                                                <span class="flaticon-delete"></span>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a asp-action="Create"
+                           asp-route-section="@currentSection"
+                           class="ud-btn btn-thm w-100">
+                            Add FAQ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

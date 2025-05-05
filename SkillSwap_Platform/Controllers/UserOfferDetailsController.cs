@@ -215,7 +215,7 @@ namespace SkillSwap_Platform.Controllers
                             JobSuccessRate = compareJobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
-                            ProfileImage = portfolioUrls.FirstOrDefault()
+                            ProfileImage = o.User.ProfileImageUrl ?? "/template_assets/images/No_Profile_img.png"
                         };
                     }).ToList();
 
@@ -342,7 +342,7 @@ namespace SkillSwap_Platform.Controllers
                     Tools = offer.Tools,
                     UserRating = userRating,
                     ReviewCount = reviewCount,
-                    RecommendedPercentage = recommendedPercentage.ToString("N2"),  // e.g., "75.00"
+                    RecommendedPercentage = recommendedPercentage,  // e.g., "75.00"
                     JobSuccessRate = userJobSuccessRate, // e.g., 75.00 (you can format in the view)
                     CompareOffers = comparableOffers,
                     IsOnline = isOnline,
@@ -358,6 +358,20 @@ namespace SkillSwap_Platform.Controllers
                     IsFlagged = isFlaggedByMe
                 };
 
+                // load FAQs for this offer
+                var faqs = await _context.TblOfferFaqs
+                    .Where(f => f.OfferId == offerId && !f.IsDeleted)
+                    .OrderBy(f => f.CreatedDate)
+                    .Select(f => new OfferFaqVM
+                    {
+                        FaqId = f.FaqId,
+                        OfferId = f.OfferId,
+                        Question = f.Question,
+                        Answer = f.Answer
+                    })
+                    .ToListAsync();
+
+                model.Faqs = faqs;
 
                 // at the bottom of OfferDetails, before `return View(model);`
                 const string sessionsKey = "RecentOfferSummaries";

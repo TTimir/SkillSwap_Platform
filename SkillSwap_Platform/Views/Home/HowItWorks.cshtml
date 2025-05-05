@@ -335,58 +335,7 @@
                 <div class="col-lg-8 mx-auto">
                     <div class="ui-content">
                         <div class="accordion-style1 faq-page mb-4 mb-lg-5">
-                            <div class="accordion" id="accordionExample">
-                                <div class="accordion-item active">
-                                    <h2 class="accordion-header" id="headingOne">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">What exactly is a “swap”?</button>
-                                    </h2>
-                                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
-                                        <div class="accordion-body">Think of it as trading skills. you post what you’d like to learn, someone else offers to teach it, you agree on a timeline and token rate and voilà, you both walk away happier.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingTwo">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">How do I start a swap?</button>
-                                    </h2>
-                                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
-                                        <div class="accordion-body">
-                                            Hit “Swap Now”, give us a clear title and description, set your deadline and token budget, then submit. Verified Swappers will send you proposals straight away.
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingThree">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">How does escrow protect my tokens?</button>
-                                    </h2>
-                                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
-                                        <div class="accordion-body">Tokens live in a “safety box” until you confirm you’re 100 % satisfied. Neither you nor your Swapper can touch them until the job is done—so there’s zero worry about paying too soon or not getting paid.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFour">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">How do I pick the right Swapper?</button>
-                                    </h2>
-                                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-parent="#accordionExample">
-                                        <div class="accordion-body">Every profile shows real star ratings, genuine reviews, and (where available) work samples. We also verify each Swapper’s identity, so you can choose with confidence.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFive">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">What if I’m not happy with the work?</button>
-                                    </h2>
-                                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-parent="#accordionExample">
-                                        <div class="accordion-body">No problem, You can request up to two rounds of revisions. If you still feel it’s not right, simply cancel the swapand your tokens will come back to you, no questions asked.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingSix">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">Where can I get help or raise a dispute?</button>
-                                    </h2>
-                                    <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-parent="#accordionExample">
-                                        <div class="accordion-body">Our support team is always here to help — you can reach us through the support panel or get in touch directly, and we’ll respond within 24 hours.</div>
-                                    </div>
-                                </div>
-                            </div>
+                            @await Component.InvokeAsync("Faq", new { section = "HowItWorks" })
                         </div>
                     </div>
                 </div>

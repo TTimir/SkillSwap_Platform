@@ -83,6 +83,8 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
             }
         }
 
+        public List<OfferFaqVM> Faqs { get; set; } = new List<OfferFaqVM>();
+
         [BindNever] 
         public List<SelectListItem> UserSkills { get; set; } = new List<SelectListItem>();
         [BindNever]

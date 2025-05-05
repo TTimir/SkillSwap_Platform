@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.NotificationTrack;
@@ -159,7 +160,7 @@ namespace SkillSwap_Platform.Controllers
 
             int currentUserId = GetUserId();
             // Check if the user already has 6 offers
-            var userOfferCount = await _context.TblOffers.CountAsync(o => o.UserId == currentUserId);
+            var userOfferCount = await _context.TblOffers.CountAsync(o => o.UserId == currentUserId && !o.IsDeleted);
             if (userOfferCount >= 5)
             {
                 ViewBag.ErrorMessage = "You have reached the maximum number of offers allowed (5). You cannot create more than 5 offers.";
@@ -244,6 +245,39 @@ namespace SkillSwap_Platform.Controllers
                         // Optionally, update the offer's Portfolio JSON field.
                         offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
                         await _context.SaveChangesAsync();
+
+                        if (model.Faqs == null || !model.Faqs.Any())
+                        {
+                            // tell the user they forgot to add at least one FAQ
+                            ViewBag.ErrorMessage = "Please add at least one question & answer pair in the FAQ section.";
+
+                            // re-populate all your dropdowns, etc.
+                            var userId = GetUserId();
+                            PopulateDropdowns(model, userId);
+
+                            // short-circuit: render the same view with the error message
+                            return View(model);
+                        }
+
+                        //  — save FAQs —
+                        if (model.Faqs != null && model.Faqs.Any())
+                        {
+                            foreach (var fq in model.Faqs)
+                            {
+                                // skip any empty entries
+                                if (string.IsNullOrWhiteSpace(fq.Question) || string.IsNullOrWhiteSpace(fq.Answer))
+                                    continue;
+
+                                _context.TblOfferFaqs.Add(new TblOfferFaq
+                                {
+                                    OfferId = offer.OfferId,
+                                    Question = fq.Question,
+                                    Answer = fq.Answer,
+                                    CreatedDate = DateTime.UtcNow
+                                });
+                            }
+                            await _context.SaveChangesAsync();
+                        }
                     }
 
                     // log notification:
@@ -349,6 +383,21 @@ namespace SkillSwap_Platform.Controllers
                     Longitude = offer.Longitude,
                     Latitude = offer.Latitude
                 };
+
+                var existingFaqs = await _context.TblOfferFaqs
+                    .Where(f => f.OfferId == offerId && !f.IsDeleted)
+                    .OrderBy(f => f.CreatedDate)
+                    .ToListAsync();
+
+                model.Faqs = existingFaqs
+                    .Select(f => new OfferFaqVM
+                    {
+                        FaqId = f.FaqId,
+                        OfferId = f.OfferId,
+                        Question = f.Question,
+                        Answer = f.Answer
+                    })
+                    .ToList();
 
                 PopulateDropdownsForEdit(model, userId);
                 return View(model);
@@ -518,6 +567,48 @@ namespace SkillSwap_Platform.Controllers
                             {
                                 _context.TblOfferPortfolios.Remove(entry);
                             }
+                        }
+                    }
+
+                    // 1) load current FAQs from DB
+                    var currentFaqs = await _context.TblOfferFaqs
+                        .Where(f => f.OfferId == model.OfferId && !f.IsDeleted)
+                        .ToListAsync();
+
+                    // 2) delete any removed in the form
+                    var removed = currentFaqs
+                        .Where(f => !model.Faqs.Any(vm => vm.FaqId == f.FaqId))
+                        .ToList();
+                    removed.ForEach(f => f.IsDeleted = true);
+
+                    if (model.Faqs == null || !model.Faqs.Any())
+                    {
+                        ViewBag.ErrorMessage = "Please add at least one question & answer pair in the FAQ section.";
+                        PopulateDropdownsForEdit(model, GetUserId());
+                        return View(model);
+                    }
+
+                    // 3) add or update each posted FAQ
+                    foreach (var vm in model.Faqs)
+                    {
+                        if (vm.FaqId > 0)
+                        {
+                            // update
+                            var ent = currentFaqs.First(f => f.FaqId == vm.FaqId);
+                            ent.Question = vm.Question;
+                            ent.Answer = vm.Answer;
+                            ent.UpdatedDate = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            // new
+                            _context.TblOfferFaqs.Add(new TblOfferFaq
+                            {
+                                OfferId = model.OfferId,
+                                Question = vm.Question,
+                                Answer = vm.Answer,
+                                CreatedDate = DateTime.UtcNow
+                            });
                         }
                     }
 
@@ -771,11 +862,11 @@ namespace SkillSwap_Platform.Controllers
                 int userId = GetUserId();
                 int pageSize = 5; // 5 offers per page
 
-                var totalOffers = await _context.TblOffers.Where(o => o.UserId == userId).CountAsync();
+                var totalOffers = await _context.TblOffers.Where(o => o.UserId == userId && !o.IsDeleted).CountAsync();
                 var totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
 
                 var offers = await _context.TblOffers
-                    .Where(o => o.UserId == userId)
+                    .Where(o => o.UserId == userId && !o.IsDeleted)
                     .Include(o => o.TblOfferPortfolios)
                     .OrderByDescending(o => o.CreatedDate)
                     .Skip((page - 1) * pageSize)
@@ -879,6 +970,144 @@ namespace SkillSwap_Platform.Controllers
                 _logger.LogError(ex, "Error fetching inactive offers for user.");
                 TempData["ErrorMessage"] = "An error occurred while loading inactive offers.";
                 return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        #endregion
+
+        #region FAQ Management
+
+        // GET: /Offer/FAQ/List/{offerId}
+        [HttpGet]
+        public async Task<IActionResult> FaqList(int offerId)
+        {
+            try
+            {
+                var faqs = await _context.TblOfferFaqs
+                    .Where(f => f.OfferId == offerId && !f.IsDeleted)
+                    .OrderBy(f => f.CreatedDate)
+                    .Select(f => new OfferFaqVM
+                    {
+                        FaqId = f.FaqId,
+                        OfferId = f.OfferId,
+                        Question = f.Question,
+                        Answer = f.Answer
+                    })
+                    .ToListAsync();
+
+                return PartialView("_FaqList", faqs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading FAQs for offer {OfferId}", offerId);
+                return StatusCode(500, "Unable to load FAQs.");
+            }
+        }
+
+        // GET: /Offer/FAQ/Create/{offerId}
+        [HttpGet]
+        public IActionResult CreateFaq(int offerId)
+        {
+            return PartialView("_FaqForm", new OfferFaqVM { OfferId = offerId });
+        }
+
+        // POST: /Offer/FAQ/Create
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFaq(OfferFaqVM model)
+        {
+            if (!ModelState.IsValid)
+                return PartialView("_FaqForm", model);
+
+            try
+            {
+                var faq = new TblOfferFaq
+                {
+                    OfferId = model.OfferId,
+                    Question = model.Question,
+                    Answer = model.Answer,
+                    CreatedDate = DateTime.UtcNow
+                };
+                _context.TblOfferFaqs.Add(faq);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating FAQ for offer {OfferId}", model.OfferId);
+                return StatusCode(500, "Error creating FAQ.");
+            }
+        }
+
+        // GET: /Offer/FAQ/Edit/{faqId}
+        [HttpGet]
+        public async Task<IActionResult> EditFaq(int faqId)
+        {
+            try
+            {
+                var faq = await _context.TblOfferFaqs.FindAsync(faqId);
+                if (faq == null || faq.IsDeleted) return NotFound();
+
+                var vm = new OfferFaqVM
+                {
+                    FaqId = faq.FaqId,
+                    OfferId = faq.OfferId,
+                    Question = faq.Question,
+                    Answer = faq.Answer
+                };
+                return PartialView("_FaqForm", vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading FAQ {FaqId} for edit", faqId);
+                return StatusCode(500, "Unable to load FAQ.");
+            }
+        }
+
+        // POST: /Offer/FAQ/Edit
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFaq(OfferFaqVM model)
+        {
+            if (!ModelState.IsValid)
+                return PartialView("_FaqForm", model);
+
+            try
+            {
+                var faq = await _context.TblOfferFaqs.FindAsync(model.FaqId);
+                if (faq == null || faq.IsDeleted) return NotFound();
+
+                faq.Question = model.Question;
+                faq.Answer = model.Answer;
+                faq.UpdatedDate = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating FAQ {FaqId}", model.FaqId);
+                return StatusCode(500, "Error updating FAQ.");
+            }
+        }
+
+        // POST: /Offer/FAQ/Delete/{faqId}
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFaq(int faqId)
+        {
+            try
+            {
+                var faq = await _context.TblOfferFaqs.FindAsync(faqId);
+                if (faq == null || faq.IsDeleted) return NotFound();
+
+                faq.IsDeleted = true;
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting FAQ {FaqId}", faqId);
+                return StatusCode(500, "Error deleting FAQ.");
             }
         }
 

@@ -73,6 +73,8 @@ public partial class TblOffer
 
     public virtual ICollection<TblMessage> TblMessages { get; set; } = new List<TblMessage>();
 
+    public virtual ICollection<TblOfferFaq> TblOfferFaqs { get; set; } = new List<TblOfferFaq>();
+
     public virtual ICollection<TblOfferFlag> TblOfferFlags { get; set; } = new List<TblOfferFlag>();
 
     public virtual ICollection<TblOfferPortfolio> TblOfferPortfolios { get; set; } = new List<TblOfferPortfolio>();

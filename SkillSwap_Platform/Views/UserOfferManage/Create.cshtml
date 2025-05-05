@@ -253,6 +253,41 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- FAQ Section -->
+            <div class="ps-widget bgc-white bdrs12 p30 mb30">
+                <h5 class="list-title mb20">Frequently Asked Questions</h5>
+
+                <div id="faq-items">
+                    @* the first item (index 0) *@
+                    <div class="faq-item" data-index="0">
+                        <div class="mb40">
+                            <label>🔥 Ask a Thought-Provoking Question <span class="text-danger">*</span></label>
+                            <input name="Faqs[0].Question" class="form-control faq-question" placeholder="e.g. What makes this offer stand out from the rest?" />
+                        </div>
+                        <div class="mb-2">
+                            <label>💡 Provide a Clear, Concise Answer <span class="text-danger">*</span></label>
+                            <textarea name="Faqs[0].Answer" class="faq-answer" rows="3" placeholder="e.g. This offer includes a personalized 1-on-1 session, downloadable resources, and a 24-hour turnaround."></textarea>
+                        </div>
+                        <div class="faq-error text-danger small mb20"></div>
+                        <button type="button" class="ud-btn btn-light-thm mb25 me-4 remove-faq" style="border:0;">Remove</button>
+                        <hr />
+                    </div>
+                </div>
+
+                <button type="button" id="add-faq" class="ud-btn btn-thm mb25">
+                    <i class="fas fa-plus me-1" style="transform:rotate(0deg)"></i> Add FAQ
+                </button>
+
+                <hr class="opacity-100 mb60">
+                <h4>Frequently Asked Questions</h4>
+
+                <div class="accordion-style1 faq-page mb-4 mb-lg-5 mt30">
+                    <div class="accordion" id="faqPreviewAccordion">
+
+                    </div>
+                </div>
+            </div>
             <div class="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative">
                 <div class="bdrb1 pb15 mb25">
                     <h5 class="list-title">Upload Attachments</h5>
@@ -516,6 +551,104 @@
               { timeout: 10000 }
             );
           });
+        });
+    </script>
+    <script>
+        $(function() {
+          const maxFaqs = 5;
+          let faqIndex = 1;  // next index
+
+          function updatePreview() {
+            const $acc = $("#faqPreviewAccordion").empty();
+            $(".faq-item").each(function(i) {
+              const q = $(this).find(".faq-question").val().trim();
+              const a = $(this).find(".faq-answer").val().trim();
+              if (!q && !a) return;
+
+              const hid = `faqHeading${i}`, cid = `faqCollapse${i}`, first = i===0;
+              $acc.append(`
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="${hid}">
+                    <button class="accordion-button ${first?"":"collapsed"}"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#${cid}"
+                            aria-expanded="${first}"
+                            aria-controls="${cid}">
+                      ${q}
+                    </button>
+                  </h2>
+                  <div id="${cid}"
+                       class="accordion-collapse collapse ${first?"show":""}"
+                       aria-labelledby="${hid}"
+                       data-bs-parent="#faqPreviewAccordion">
+                    <div class="accordion-body">${a}</div>
+                  </div>
+                </div>`);
+            });
+          }
+
+          function validateBlock($blk) {
+            const q = $blk.find(".faq-question").val().trim(),
+                  a = $blk.find(".faq-answer").val().trim(),
+                  $err = $blk.find(".faq-error").empty();
+            if (!q || !a) {
+              $err.text("Both question and answer are required before adding a new FAQ.");
+              return false;
+            }
+            return true;
+          }
+
+          $("#add-faq").click(() => {
+            const count = $(".faq-item").length;
+            const $last = $(".faq-item").last();
+
+            // don't exceed max
+            if (count >= maxFaqs) {
+              alert(`You can only add up to ${maxFaqs} FAQs.`);
+              return;
+            }
+
+            // validate last block
+            if (!validateBlock($last)) return;
+
+            // clear any leftover error
+            $last.find(".faq-error").empty();
+
+            // append new block
+            const idx = faqIndex++;
+            $("#faq-items").append(`
+              <div class="faq-item" data-index="${idx}">
+                <div class="mb40">
+                  <label>🔥 Ask a Thought-Provoking Question <span class="text-danger">*</span></label>
+                  <input name="Faqs[${idx}].Question" class="form-control faq-question" />
+                </div>
+                <div class="mb20">
+                  <label>💡 Provide a Clear, Concise Answer <span class="text-danger">*</span></label>
+                  <textarea name="Faqs[${idx}].Answer" class="faq-answer" rows="3"></textarea>
+                </div>
+                <div class="faq-error text-danger small mb20"></div>
+                <button type="button" class="ud-btn btn-light-thm remove-faq" style="border:0;">Remove</button>
+                <hr />
+              </div>
+            `);
+
+            updatePreview();
+          });
+
+          $(document).on("click", ".remove-faq", function() {
+            $(this).closest(".faq-item").remove();
+            updatePreview();
+          });
+
+          $(document).on("input", ".faq-question, .faq-answer", function() {
+            // clear error on input
+            $(this).closest(".faq-item").find(".faq-error").empty();
+            updatePreview();
+          });
+
+          // initial render
+          updatePreview();
         });
     </script>
 }

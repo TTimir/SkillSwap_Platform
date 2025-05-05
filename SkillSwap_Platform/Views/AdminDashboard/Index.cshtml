@@ -377,7 +377,8 @@
                                 ? portfolioImages.First()
                                 : fallbackUrl;
                             }
-                            <img class="w-100" src="@imgUrl" alt="@svc.Title">                        </div>
+                            <img class="w-100" src="@imgUrl" alt="@svc.Title">
+                        </div>
                         <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
                             <h6 class="list-title mb-2"><a asp-area="Admin" asp-controller="OfferFlag" asp-action="FlaggedOfferSummary" asp-route-offerId="@svc.OfferId">@svc.Title</a></h6>
                             <div class="list-meta d-flex justify-content-between align-items-center">
@@ -418,9 +419,9 @@
                             </h6>
                             <div class="list-meta d-flex justify-content-between align-items-center">
                                 <div class="review-meta d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Exchange Date">
-                                    <p class="mb-0 body-color fz14" >@buy.Date.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                    <p class="mb-0 body-color fz14">@buy.Date.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                                 </div>
-                                <div class="budget"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Digital Token Of Exchange">
+                                <div class="budget" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Tokens Exchanged">
                                     <p class="mb-0"><span class="fz15 fw500 dark-color"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @buy.Amount.ToString("F2")</span></p>
                                 </div>
                             </div>
@@ -465,49 +466,49 @@
 @section DynamicAdminScript {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-                // serialize flag trends
-                const flagTrendData = @Html.Raw(
+                    // serialize flag trends
+                    const flagTrendData = @Html.Raw(
         System.Text.Json.JsonSerializer.Serialize(
             Model.FlagTrends.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), count = d.Count })
         )
     );
-                // serialize resolution breakdown
-                const resolutionData = @Html.Raw(
+                    // serialize resolution breakdown
+                    const resolutionData = @Html.Raw(
         System.Text.Json.JsonSerializer.Serialize(
             Model.ResolutionBreakdown
                  .Select(r => new { action = r.Label, count = r.Count })
         )
     );
 
-                    document.addEventListener('DOMContentLoaded', () => {
-                        // Flag Trends Line Chart
-                        const trendCtx = document.getElementById('flagTrendsChart').getContext('2d');
-                        new Chart(trendCtx, {
-                            type: 'line',
-                            data: {
-                                labels: flagTrendData.map(d => d.date),
-                                datasets: [{
-                                    label: 'Reports Trend',
-                                    data: flagTrendData.map(d => d.count),
-                                    fill: false,
-                                    tension: 0.4
-                                }]
-                            },
-                            options: { responsive: true }
-                        });
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Flag Trends Line Chart
+                            const trendCtx = document.getElementById('flagTrendsChart').getContext('2d');
+                            new Chart(trendCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: flagTrendData.map(d => d.date),
+                                    datasets: [{
+                                        label: 'Reports Trend',
+                                        data: flagTrendData.map(d => d.count),
+                                        fill: false,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: { responsive: true }
+                            });
 
-                        // Resolution Breakdown Doughnut Chart
-                        const resCtx = document.getElementById('resolutionBreakdownChart').getContext('2d');
-                        new Chart(resCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: resolutionData.map(r => r.action),
-                                datasets: [{
-                                    data: resolutionData.map(r => r.count)
-                                }]
-                            },
-                            options: { responsive: true }
+                            // Resolution Breakdown Doughnut Chart
+                            const resCtx = document.getElementById('resolutionBreakdownChart').getContext('2d');
+                            new Chart(resCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: resolutionData.map(r => r.action),
+                                    datasets: [{
+                                        data: resolutionData.map(r => r.count)
+                                    }]
+                                },
+                                options: { responsive: true }
+                            });
                         });
-                    });
     </script>
 }

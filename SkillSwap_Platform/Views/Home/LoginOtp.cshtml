@@ -652,7 +652,12 @@
                                         <label class="form-label fw600 dark-color">Enter OTP</label>
                                         <input type="text" name="Otp" class="form-control" placeholder="Enter OTP" require>
                                     </div>
-
+                                    <div class="mt-3 mb-3">
+                                        <button id="resend-btn" class="btn btn-link">
+                                            Resend code
+                                        </button>
+                                        <span id="resend-info"></span>
+                                    </div>
                                     <div class="d-grid mb20">
                                         <button class="ud-btn btn-thm" type="submit">Verify OTP<i class="fal fa-arrow-right-long"></i></button>
                                     </div>
@@ -827,5 +832,66 @@
     <script src="/template_assets/js/wow.min.js"></script>
     <!-- Custom script for all pages -->
     <script src="/template_assets/js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const btn = document.getElementById('resend-btn');
+          const info = document.getElementById('resend-info');
+          let countdown;
+          let intervalId;
+
+          function startCountdown(seconds) {
+            clearInterval(intervalId);
+            let remaining = seconds;
+            btn.disabled = true;
+            info.textContent = ` (wait ${remaining}s)`;
+            intervalId = setInterval(() => {
+              remaining--;
+              if (remaining > 0) {
+                info.textContent = ` (wait ${remaining}s)`;
+              } else {
+                clearInterval(intervalId);
+                btn.disabled = false;
+                info.textContent = '';
+              }
+            }, 1000);
+          }
+
+          btn.addEventListener('click', async e => {
+            e.preventDefault();
+            if (btn.disabled) return;   // double-safety
+
+            // 1) immediately disable and start 30s countdown
+            startCountdown(30);
+
+            // 2) grab CSRF token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            // 3) fire your POST
+            try {
+              const resp = await fetch('@Url.Action("ResendOtp", "Home")', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'RequestVerificationToken': token
+                }
+              });
+              const json = await resp.json();
+              if (!json.success) {
+                // server says “please wait” or “too many tries”
+                clearInterval(intervalId);
+                info.textContent = '';
+                alert(json.message || 'Unable to resend right now.');
+                // if server sent a retryAfter, restart countdown at that
+                if (json.retryAfter) startCountdown(json.retryAfter);
+              }
+              // if success, we’ve already started the countdown above
+            } catch {
+              clearInterval(intervalId);
+              info.textContent = '';
+              alert('Network error. Try again later.');
+            }
+          });
+        });
+    </script>
 </body>
 </html>

@@ -59,6 +59,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblOffer> TblOffers { get; set; }
 
+    public virtual DbSet<TblOfferFaq> TblOfferFaqs { get; set; }
+
     public virtual DbSet<TblOfferFlag> TblOfferFlags { get; set; }
 
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
@@ -76,6 +78,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblRole> TblRoles { get; set; }
 
     public virtual DbSet<TblSkill> TblSkills { get; set; }
+
+    public virtual DbSet<TblSkillSwapFaq> TblSkillSwapFaqs { get; set; }
 
     public virtual DbSet<TblSupportTicket> TblSupportTickets { get; set; }
 
@@ -636,6 +640,24 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_tblOffers_Users");
         });
 
+        modelBuilder.Entity<TblOfferFaq>(entity =>
+        {
+            entity.HasKey(e => e.FaqId).HasName("PK__tblOffer__9C741C43E70DD7FA");
+
+            entity.ToTable("tblOfferFaq");
+
+            entity.Property(e => e.Answer).HasMaxLength(1000);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Question).HasMaxLength(200);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferFaqs)
+                .HasForeignKey(d => d.OfferId)
+                .HasConstraintName("FK_TblOfferFaq_TblOffer");
+        });
+
         modelBuilder.Entity<TblOfferFlag>(entity =>
         {
             entity.HasKey(e => e.OfferFlagId);
@@ -822,6 +844,17 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.SkillCategory).HasMaxLength(100);
             entity.Property(e => e.SkillName).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TblSkillSwapFaq>(entity =>
+        {
+            entity.HasKey(e => e.FaqId).HasName("PK__tblSkill__9C741C43DCE41AF8");
+
+            entity.ToTable("tblSkillSwapFaq");
+
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Section).HasMaxLength(100);
         });
 
         modelBuilder.Entity<TblSupportTicket>(entity =>
