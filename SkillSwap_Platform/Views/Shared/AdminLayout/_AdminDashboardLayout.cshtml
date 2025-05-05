@@ -132,7 +132,7 @@
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
     @{
-        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png"); 
+        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
         .token-balance {
@@ -350,6 +350,13 @@
                     {
                         <p class="fz15 fw400 ff-heading pl30">Start</p>
                         <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","Metrics", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Metrics" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-home-1 mr15"></i>
+                                Matrix Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","AdminDashboard", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="AdminDashboard" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-house mr15"></i>
@@ -367,7 +374,7 @@
                             <a href="@Url.ActionLink("Index","CertificateReview", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="CertificateReview" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-document mr15"></i>
-                                Certificates
+                                Review Certificates
                                 @if (pendingCertificates > 0)
                                 {
                                     <span class="badge badge-pill bg-danger ms-auto">@pendingCertificates</span>
@@ -379,7 +386,7 @@
                             <a href="@Url.ActionLink("Index","MessageReview", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="MessageReview" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-review-1 mr15"></i>
-                                Messages Review
+                                Review Messages
                                 @if (flaggedMessages > 0)
                                 {
                                     <span class="badge badge-pill bg-info ms-auto">@flaggedMessages</span>
@@ -424,7 +431,7 @@
                             <a href="@Url.ActionLink("Dashboard","OfferFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
                                 <i class="flaticon-home mr15"></i>
-                                Report Dashboard
+                                Reports Dashboard
                             </a>
                         </div>
                         <div class="sidebar_list_item">
@@ -442,7 +449,7 @@
                             <a href="@Url.ActionLink("History","OfferFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="History" ? "-is-active" : "")">
                                 <i class="flaticon-briefcase mr15"></i>
-                                Offers Reports
+                                Reported Offers
                             </a>
                         </div>
 
@@ -463,7 +470,7 @@
                             <a href="@Url.ActionLink("Reviews","OfferReview", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OfferReview" && currentAction=="Reviews" ? "-is-active" : "")">
                                 <i class="flaticon-review-1 mr15"></i>
-                                Offer's Reviews
+                                Reported Offer's Reviews
                             </a>
                         </div>
 
@@ -472,7 +479,7 @@
                             <a href="@Url.ActionLink("Dashboard","UserFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
                                 <i class="flaticon-home mr15"></i>
-                                Report Dashboard
+                                Reports Dashboard
                             </a>
                         </div>
                         <div class="sidebar_list_item">
@@ -490,7 +497,7 @@
                             <a href="@Url.ActionLink("History","UserFlag", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="UserFlag" && currentAction=="History" ? "-is-active" : "")">
                                 <i class="flaticon-flag mr15"></i>
-                                User Reports
+                                Reported Users
                             </a>
                         </div>
                         <div class="sidebar_list_item">
@@ -546,21 +553,32 @@
                                     <button onclick="myFunction()" class="dropbtn"><i class="fa fa-bars pr10"></i> Dashboard Navigation</button>
                                     <ul id="myDropdown" class="dropdown-content">
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Start</p></li>
-                                        <li><a href="@Url.ActionLink("Index","TrackNotifications")"><i class="flaticon-home mr10"></i>Dashboard</a></li>
-                                        <li><a href="@Url.ActionLink("Index","UserWishlist")"><i class="flaticon-document mr10"></i>My Proposals</a></li>
-                                        <li><a href="@Url.ActionLink("Conversation","Messaging")"><i class="flaticon-like mr10"></i>Saved</a></li>
-                                        <li><a href="@Url.ActionLink("MyOffers","UserReview")"><i class="flaticon-chat mr10"></i>Message</a></li>
-                                        <li><a href="@Url.ActionLink("DigitalTokenStatements","UserDigitalToken")"><i class="flaticon-review-1 mr10"></i>Reviews</a></li>
-                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Swap Offers and Manage</p></li>
-                                        <li><a href="@Url.ActionLink("ActiveOffers","UserOfferManage")"><i class="flaticon-receipt mr10"></i>Invoice</a></li>
-                                        <li><a href="@Url.ActionLink("OfferList","UserOfferManage")"><i class="flaticon-dollar mr10"></i>Payouts</a></li>
-                                        <li><a href="@Url.ActionLink("Create","UserOfferManage")"><i class="flaticon-web mr10"></i>Statements</a></li>
-                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Exchanges and History</p></li>
-                                        <li><a href="@Url.ActionLink("Index","ExchangeDashboard")"><i class="flaticon-presentation mr10"></i>Manage Services</a></li>
-                                        <li><a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a></li>
-                                        <li><a href="@Url.ActionLink("Selectoffer", "ResourceSharing")"><i class="flaticon-content mr10"></i>Manage Project</a></li>
+                                        <li><a href="@Url.ActionLink("Index","AdminDashboard")"><i class="flaticon-house mr10"></i>Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","FaqAdmin")"><i class="flaticon-chat mr10"></i>Manage FAQs</a></li>
+                                        <li><a href="@Url.ActionLink("Index","CertificateReview")"><i class="flaticon-document mr10"></i>Review Certificates</a></li>
+                                        <li><a href="@Url.ActionLink("Index","MessageReview")"><i class="flaticon-review-1 mr10"></i>Review Messages</a></li>
+                                        <li><a href="@Url.ActionLink("Index","OtpLogs")"><i class="flaticon-antivirus mr10"></i>OTP Failures</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Escrow & Transactions</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","Escrow")"><i class="flaticon-pay-day mr10"></i>Escrow Statement</a></li>
+                                        <li><a href="@Url.ActionLink("Index","Escrow")"><i class="flaticon-dollar mr10"></i>Escrow Counters</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Swap Offer & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","OfferFlag")"><i class="flaticon-home mr10"></i>Reports Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","OfferFlag")"><i class="flaticon-presentation mr10"></i>Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("History","OfferFlag")"><i class="flaticon-briefcase mr10"></i> Reported Offers</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Offer's Review & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("ActiveFlags","OfferReview")"><i class="flaticon-review mr10"></i>Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("Reviews","OfferReview")"><i class="flaticon-review-1 mr10"></i> Reported Offer's Reviews</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">User Profile & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","UserFlag")"><i class="flaticon-home mr10"></i>Reports Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserFlag")"><i class="flaticon-working mr10"></i> Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("History","UserFlag")"><i class="flaticon-flag mr10"></i> Reported Users</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserManagement")"><i class="flaticon-sand-clock mr10"></i>Held Users</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Privacy & Manage</p></li>
+                                        <li><a href="@Url.ActionLink("Index","SensitiveWords")"><i class="flaticon-secure mr10"></i>Sensitive Words</a></li>
+                                        <li><a href="@Url.ActionLink("Create","SensitiveWords")"><i class="flaticon-add mr10"></i>Add Sensitive Words</a></li>
+                                        <li><a href="@Url.ActionLink("Index","PrivacySensitiveWords")"><i class="flaticon-antivirus mr10"></i>Privacy Words</a></li>
+                                        <li><a href="@Url.ActionLink("Create","PrivacySensitiveWords")"><i class="flaticon-add mr10"></i>Add Privacy Words</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
-                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a></li>
                                         <li>
                                             <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
@@ -633,7 +651,7 @@
         @if (User.Identity.IsAuthenticated)
         {
             <script src="~/js/Tokenminer.js" asp-append-version="true"></script>
-        }        
+        }
         @RenderSection("DynamicAdminScript", required: false)
 </body>
 </html>

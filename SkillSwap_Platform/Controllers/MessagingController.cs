@@ -40,7 +40,7 @@ namespace SkillSwap_Platform.Controllers
         /// <param name="otherUserId">The ID of the other participant.</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> Conversation(int? otherUserId, int? offerId)
+        public async Task<IActionResult> Conversation(int? otherUserId, int? offerId, string searchTerm)
         {
             try
             {
@@ -86,8 +86,12 @@ namespace SkillSwap_Platform.Controllers
 
                 // 1. Get all distinct conversation partner IDs for the current user
                 var partnerIds = await _context.TblMessages
-                    .Where(m => m.SenderUserId == currentUserId || m.ReceiverUserId == currentUserId)
-                    .Select(m => m.SenderUserId == currentUserId ? m.ReceiverUserId : m.SenderUserId)
+                    .Where(m => !m.IsDeleted
+                             && (m.SenderUserId == currentUserId
+                              || m.ReceiverUserId == currentUserId))
+                    .Select(m => m.SenderUserId == currentUserId
+                                  ? m.ReceiverUserId
+                                  : m.SenderUserId)
                     .Distinct()
                     .ToListAsync();
 
@@ -122,6 +126,16 @@ namespace SkillSwap_Platform.Controllers
                             )
                         });
                     }
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var term = searchTerm.Trim();
+                    chatMembers = chatMembers
+                        .Where(c =>
+                            c.UserName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                         || c.Designation.Contains(term, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
                 }
 
                 // sort the chat members by last message time (most recent first)
@@ -389,7 +403,67 @@ namespace SkillSwap_Platform.Controllers
                     ChatMembers = chatMembers,
                     Messages = messageViewModels,
                     OfferId = offerId,
+                    SearchTerm = searchTerm
                 };
+
+                // 1️⃣ Fetch all contract records between the two users, ordered newest first:
+                var allContracts = await _context.TblContracts
+                    .Where(c =>
+                        (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
+                        (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
+                    .Include(c => c.Offer)
+                    .OrderByDescending(c => c.CreatedDate)
+                    .ToListAsync();
+
+                // 2️⃣ Count distinct offers:
+                viewModel.TotalSwapOffersCount = allContracts
+                    .Select(c => c.OfferId)
+                    .Distinct()
+                    .Count();
+
+                // 3️⃣ For each offer, pick the very first record (latest date):
+                viewModel.SwapOffers = allContracts
+                    .GroupBy(c => c.OfferId)
+                    .Select(g => {
+                        var newest = g.First();  // because we ordered Descending
+                        return new OfferInviteVM
+                        {
+                            OfferId = g.Key,
+                            Title = newest.Offer.Title,
+                            LatestStatus = newest.Status,
+                            LatestDate = newest.CreatedDate
+                        };
+                    })
+                    .OrderByDescending(o => o.LatestDate)
+                    .Take(3)
+                    .ToList();
+
+                // After viewModel is mostly built...
+                var latestContract = await _context.TblContracts
+                    .Include(c => c.Offer)
+                    .Where(c =>
+                        (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
+                        (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
+                    .Where(c => c.Status != "Declined")           // only “active” ones
+                    .OrderByDescending(c => c.UpdatedDate)        // or CreatedDate if you prefer
+                    .FirstOrDefaultAsync();
+
+                if (latestContract != null)
+                {
+                    viewModel.LatestActiveOffer = new LatestOfferVM
+                    {
+                        OfferId = latestContract.OfferId,
+                        Title = latestContract.Offer.Title,
+                        ContractUniqueId = latestContract.ContractUniqueId,
+                        CurrentStagePdfUrl = latestContract.ContractDocument,
+                        // assume you have a PDF URL stored in the contract record
+                        Status = latestContract.Status
+                    };
+                }
+                else
+                {
+                    viewModel.LatestActiveOffer = null;
+                }
 
                 return View(viewModel);
             }
@@ -761,6 +835,51 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
         }
+        #endregion
+
+        #region Delete Conversation
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConversation(int otherUserId)
+        {
+            int currentUserId = GetUserId();
+
+            // ❶ Load the other user’s info
+            var otherUser = await _context.TblUsers
+                .Where(u => u.UserId == otherUserId)
+                .Select(u => new { u.UserName })
+                .FirstOrDefaultAsync();
+
+            // ❷ Fetch all messages
+            var msgs = await _context.TblMessages
+                .Where(m =>
+                    (m.SenderUserId == currentUserId && m.ReceiverUserId == otherUserId) ||
+                    (m.SenderUserId == otherUserId && m.ReceiverUserId == currentUserId))
+                .ToListAsync();
+
+            if (!msgs.Any())
+            {
+                TempData["ErrorMessage"] = "No conversation found to delete.";
+                return RedirectToAction("Conversation", new { otherUserId });
+            }
+
+            // ❸ Soft-delete
+            foreach (var m in msgs)
+            {
+                m.IsDeleted = true;
+                m.DeletedOn = DateTime.UtcNow;
+                m.DeletedByUserId = currentUserId;
+            }
+            await _context.SaveChangesAsync();
+
+            // ❹ Use their actual name in your confirmation
+            var name = otherUser?.UserName ?? "that user";
+            TempData["SuccessMessage"] = $"Your conversation with {name} has been deleted.";
+
+            return RedirectToAction("Conversation", new { otherUserId = (int?)null });
+        }
+
         #endregion
 
         #region Helper Class

@@ -1,0 +1,590 @@
+﻿@model SkillSwap_Platform.Services.AdminControls.PlatformMetrics.PlatformMetricsDto
+
+@{
+    ViewData["Title"] = "Platform Performance";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+
+<!-- ────────────── Metrics Guide ────────────── -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light p-3">
+            <h5 class="mb-3">📊 Metrics Guide</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Full Name</th>
+                        <th>Meaning</th>
+                        <th>Calculation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total Users</td>
+                        <td>–</td>
+                        <td>Total registered accounts</td>
+                        <td>Count of users where <code>IsHeld == false</code></td>
+                    </tr>
+                    <tr>
+                        <td>DAU</td>
+                        <td>Daily Active Users</td>
+                        <td>How many unique users signed in today</td>
+                        <td>Count of users with <code>LastActive ≥ today</code></td>
+                    </tr>
+                    <tr>
+                        <td>WAU</td>
+                        <td>Weekly Active Users</td>
+                        <td>Unique users active in past 7 days</td>
+                        <td>Count of users with <code>LastActive ≥ today–7d</code></td>
+                    </tr>
+                    <tr>
+                        <td>MAU</td>
+                        <td>Monthly Active Users</td>
+                        <td>Unique users active in past 30 days</td>
+                        <td>Count of users with <code>LastActive ≥ today–30d</code></td>
+                    </tr>
+                    <tr>
+                        <td>ARPU</td>
+                        <td>Average Revenue Per User</td>
+                        <td>Revenue generated per MAU</td>
+                        <td><code>TotalRevenueMonth ÷ MAU</code></td>
+                    </tr>
+                    <tr>
+                        <td>Day-1 Retention</td>
+                        <td>–</td>
+                        <td>% of yesterday’s new users who returned today</td>
+                        <td><code>(returnedDay1 ÷ newYesterday)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Day-7 Retention</td>
+                        <td>–</td>
+                        <td>% of users who signed up 7d ago and used in last 7d</td>
+                        <td><code>(returnedDay7 ÷ cohort7dAgo)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Swaps per MAU</td>
+                        <td>–</td>
+                        <td>Average successful swaps per monthly user</td>
+                        <td><code>successfulSwaps ÷ MAU</code></td>
+                    </tr>
+                    <tr>
+                        <td>Offers per 1k DAU</td>
+                        <td>–</td>
+                        <td>Offers created per 1,000 daily users</td>
+                        <td><code>(offersToday ÷ DAU)×1,000</code></td>
+                    </tr>
+                    <tr>
+                        <td>Cancel Rate</td>
+                        <td>–</td>
+                        <td>% of exchanges that were cancelled</td>
+                        <td><code>(cancelledExchanges ÷ totalExchanges)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>LTV</td>
+                        <td>Lifetime Value per User</td>
+                        <td>Average revenue per user over lifetime</td>
+                        <td><code>allPayments ÷ TotalUsers</code></td>
+                    </tr>
+                    <tr>
+                        <td>Churn Rate</td>
+                        <td>–</td>
+                        <td>% of last month’s active users who didn’t return</td>
+                        <td><code>((lastMthMAU – returned)÷lastMthMAU)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Error Rate</td>
+                        <td>–</td>
+                        <td>% of failed requests (stubbed)</td>
+                        <td>From your error‐logging (stubbed=0)</td>
+                    </tr>
+                    <tr>
+                        <td>P95 Latency</td>
+                        <td>–</td>
+                        <td>95th percentile request latency (ms)</td>
+                        <td>From your APM tool (stubbed=0)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ────────────────────── Key Metrics Cards ────────────────────── -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="card text-center p-3">
+            <div class="card-header">Total Users</div>
+            <div class="card-body">
+                <h3>@Model.TotalUsers</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-center p-3">
+            <div class="card-header">New Users Today</div>
+            <div class="card-body">
+                <h3>@Model.NewUsersToday</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-center p-3">
+            <div class="card-header">DAU (Daily Active User)</div>
+            <div class="card-body">
+                <h3>@Model.DAU</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-center p-3">
+            <div class="card-header">WAU (Weekly Active User)</div>
+            <div class="card-body">
+                <h3>@Model.WAU</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="card-header">New This Week</div>
+            <div class="card-body">
+                <h3>@Model.NewUsersThisWeek</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="card-header">MAU (Monthly Active User)</div>
+            <div class="card-body">
+                <h3>@Model.MAU</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="card-header">Revenue (30d)</div>
+            <div class="card-body">
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.TotalRevenueMonth.ToString("F2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="card-header">ARPU (Average Revenue Per User)</div>
+            <div class="card-body">
+                <h3>@Model.ARPU</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ────────────────────── Retention & Feature Cards ────────────────────── -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Day-1 Retention</div>
+            <div class="card-body">
+                <h3>@Model.Day1Retention.ToString("F1")% </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Day-7 Retention</div>
+            <div class="card-body">
+                <h3>@Model.Day7Retention.ToString("F1")% </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Swaps per MAU</div>
+            <div class="card-body">
+                <h3>@Model.SwapsPerMAU</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Offers per 1k DAU</div>
+            <div class="card-body">
+                <h3>@Model.OffersPer1kDAU.ToString("F2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Canceled Exchanges</div>
+            <div class="card-body">
+                <h3>@Model.TotalCancelledExchanges</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Cancel Rate</div>
+            <div class="card-body">
+                <h3>@Model.CancelRate.ToString("F1")% </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ────────────────────── LTV & System Health Cards ────────────────────── -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">LTV (Lifetime Value/User)</div>
+            <div class="card-body">
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.LTV</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">Error Rate</div>
+            <div class="card-body">
+                <h3>@Model.ErrorRate.ToString("F1")% </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-header">P95 Latency (ms)</div>
+            <div class="card-body">
+                <h3>@Model.P95LatencyMs</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ────────────────────── Charts ────────────────────── -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Engagement Over Time</h4>
+                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select class="selectpicker show-tick">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div> *@
+                </div>
+                <canvas id="summaryRadar" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Engagement Over Time</h4>
+                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select class="selectpicker show-tick">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div> *@
+                </div>
+                <canvas id="engagementChart" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Feature Usage</h4>
+                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select class="selectpicker show-tick">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div> *@
+                </div>
+                <canvas id="featureChart" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Tokens & Exchanges</h4>
+                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select class="selectpicker show-tick">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div> *@
+                </div>
+                <canvas id="tokenExchangeChart" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb50">
+                <h5 class="title">User Activity Distribution</h5>
+            </div>
+            <canvas id="activityPie" height="260px"></canvas>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb50">
+                <h5 class="title">Retention Rates</h5>
+            </div>
+            <canvas id="retentionPie" height="260px"></canvas>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb50">
+                <h5 class="title">Churn vs. Retained</h5>
+            </div>
+            <canvas id="churnPie" height="260px"></canvas>
+        </div>
+    </div>
+</div>
+</div>
+
+@section DynamicAdminScript {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // full-text lookups for tooltips
+        const fullLabels = {
+          DAU:   'Daily Active Users',
+          WAU:   'Weekly Active Users',
+          MAU:   'Monthly Active Users',
+          'Day-1 Retention': 'Day-1 Retention Rate',
+          'Day-7 Retention': 'Day-7 Retention Rate',
+          'Churn %':         'Churn Rate',
+          'Retained %':      'Retention Rate'
+        };
+
+        // serialize model data
+        const activityData  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[] { Model.DAU, Model.WAU, Model.MAU }));
+        const retentionData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[] { Model.Day1Retention, Model.Day7Retention }));
+        const dto           = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // safely initialize any chart by ID
+            function safeInit(getEl, initFn) {
+                const el = getEl();
+                if (!el) { console.warn('Chart element missing:', getEl); return; }
+                try { initFn(el); }
+                catch (e) { console.error('Chart init error:', el.id, e); }
+            }
+
+            // ── Key Metrics Snapshot (radar) ──
+            safeInit(
+              () => document.getElementById('summaryRadar'),
+              canvas => new Chart(canvas.getContext('2d'), {
+                type: 'radar',
+                data: {
+                  labels: [
+                    'New Users Today',
+                    'DAU',
+                    'MAU',
+                    'Day-1 Retention %',
+                    'Day-7 Retention %'
+                  ],
+                  datasets: [{
+                    label: 'Key Metrics',
+                    data: [
+                      dto.NewUsersToday,
+                      dto.DAU,
+                      dto.MAU,
+                      dto.Day1Retention,
+                      dto.Day7Retention
+                    ],
+                    fill: true,
+                    tension: 0.3
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  scales: {
+                    r: {
+                      beginAtZero: true,
+                      ticks: {
+                        callback: value => value.toFixed(0)
+                      }
+                    }
+                  },
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: ctx => `${ctx.label}: ${ctx.parsed.r.toFixed(ctx.label.includes('Retention') ? 1 : 0)}${ctx.label.includes('Retention') ? '%' : ''}`
+                      }
+                    }
+                  }
+                }
+              })
+            );
+
+            // ── Tokens & Exchanges (bar) ─────────────────────────────────────────
+            safeInit(
+              () => document.getElementById('tokenExchangeChart'),
+              canvas => {
+                new Chart(canvas.getContext('2d'), {
+                  type: 'bar',
+                  data: {
+                    labels: [
+                      'Total Exchanges',
+                      'Successful',
+                      'Canceled',
+                      'In-Person',
+                      'Online',
+                      'Token Txns'
+                    ],
+                    datasets: [{
+                      label: 'Count / Volume',
+                      data: [
+                        dto.TotalExchanges,
+                        dto.TotalSuccessfulExchanges,
+                        dto.TotalCancelledExchanges,
+                        dto.InPersonExchanges,
+                        dto.DigitalExchanges,
+                        dto.TotalTokenTransactions
+                      ]
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: {
+                      tooltip: {
+                        callbacks: {
+                          label: ctx => {
+                            const idx = ctx.dataIndex;
+                            const val = ctx.parsed.y;
+                            // last bar is token-txn count, so just integer
+                            return `${ctx.dataset.label}: ${val}${idx === 5 ? '' : ''}`;
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+            );
+
+            // Engagement Over Time (line)
+            safeInit(
+                () => document.getElementById('engagementChart'),
+                canvas => new Chart(canvas.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                      labels: ['Today','Last 7d','Last 30d'],
+                      datasets: [{ label:'Active Users', data:activityData, tension:0.4 }]
+                    },
+                    options: {
+                      responsive: true,
+                      scales:{ y:{ beginAtZero:true } },
+                      plugins:{
+                        tooltip:{ callbacks:{ label:ctx=>`${ctx.dataset.label}: ${ctx.parsed}` } }
+                      }
+                    }
+                })
+            );
+
+            // User Activity Distribution (pie)
+            safeInit(
+                () => document.getElementById('activityPie'),
+                canvas => new Chart(canvas.getContext('2d'), {
+                    type:'pie',
+                    data:{ labels:['DAU','WAU','MAU'], datasets:[{ data:activityData }] },
+                    options:{
+                      responsive:true,
+                      plugins:{
+                        legend:{ position:'bottom' },
+                        tooltip:{
+                          callbacks:{
+                            title:items=>fullLabels[items[0].label]||items[0].label,
+                            label:item=>`${item.label}: ${item.parsed}`
+                          }
+                        }
+                      }
+                    }
+                })
+            );
+
+            // Retention Rates (pie)
+            safeInit(
+                () => document.getElementById('retentionPie'),
+                canvas => new Chart(canvas.getContext('2d'), {
+                    type:'pie',
+                    data:{ labels:['Day-1 Retention','Day-7 Retention'], datasets:[{ data:retentionData }] },
+                    options:{
+                      responsive:true,
+                      plugins:{
+                        legend:{ position:'bottom' },
+                        tooltip:{
+                          callbacks:{
+                            title:items=>fullLabels[items[0].label]||items[0].label,
+                            label:ctx=>`${ctx.label}: ${ctx.parsed.toFixed(1)}%`
+                          }
+                        }
+                      }
+                    }
+                })
+            );
+
+            // Feature Usage (bar)
+            safeInit(
+                () => document.getElementById('featureChart'),
+                canvas => new Chart(canvas.getContext('2d'), {
+                    type:'bar',
+                    data:{
+                      labels:['Swaps/User','Offers/1k DAU'],
+                      datasets:[{ label:'Feature Usage', data:[dto.SwapsPerMAU, dto.OffersPer1kDAU] }]
+                    },
+                    options:{
+                      responsive:true,
+                      scales:{ y:{ beginAtZero:true } },
+                      plugins:{
+                        tooltip:{ callbacks:{ label:ctx=>`${ctx.dataset.label}: ${ctx.parsed}` } }
+                      }
+                    }
+                })
+            );
+
+            // Churn vs Retained (pie)
+            safeInit(
+                () => document.getElementById('churnPie'),
+                canvas => new Chart(canvas.getContext('2d'), {
+                    type:'pie',
+                    data:{
+                      labels:['Churn %','Retained %'],
+                      datasets:[{ data:[dto.ChurnRate, 100 - dto.ChurnRate] }]
+                    },
+                    options:{
+                      responsive:true,
+                      plugins:{
+                        legend:{ position:'bottom' },
+                        tooltip:{ callbacks:{ label:ctx=>`${ctx.label}: ${ctx.parsed.toFixed(1)}%` } }
+                      }
+                    }
+                })
+            );
+        });
+    </script>
+}
+
+

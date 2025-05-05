@@ -92,18 +92,6 @@
                                 </div>
                                 <!-- Responsive Menu -->
                                 <ul id="respMenu" class="ace-responsive-menu" data-menu-style="horizontal">
-                                    @if (User.IsInRole("Admin"))
-                                    {
-                                        <li class="visible_list">
-                                            <a class="list-item"
-                                               asp-area="Admin"
-                                               asp-controller="AdminDashboard"
-                                               asp-action="Index">
-                                                <span class="title"> Admin Panel </span>
-                                            </a>
-                                        </li>
-                                    }
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","UserDashboard")"><span class="title">Dashboard</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a></li>

@@ -1,5 +1,6 @@
 ﻿using Google;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SkillSwap_Platform.Models;
 
 namespace SkillSwap_Platform.Services.AdminControls
@@ -444,18 +445,51 @@ namespace SkillSwap_Platform.Services.AdminControls
         // 1) Top‐viewed offers (assumes TblOffers.ViewCount & TblOffers.ImageUrl exist)
         private async Task<List<ViewedServiceDto>> GetMostViewedServicesAsync(int take)
         {
-            return await _db.TblOffers
-                .Where(o => !o.IsDeleted)
-                .OrderByDescending(o => o.Views)
-                .Take(take)
-                .Select(o => new ViewedServiceDto
+            var raw = await _db.TblOffers
+    .Where(o => !o.IsDeleted)
+    .OrderByDescending(o => o.Views)
+    .Take(take)
+    .Select(o => new {
+        o.OfferId,
+        o.Title,
+        o.Portfolio,
+        o.Views
+    })
+    .ToListAsync();
+
+            // define your fallback images
+            var defaultImages = new[]{
+    "/template_assets/images/listings/No_Offer_img_1.jpg",
+    "/template_assets/images/listings/No_Offer_img_2.jpg"
+};
+
+            return raw.Select(o => {
+                // try to parse the JSON portfolio field
+                List<string> urls = new();
+                if (!string.IsNullOrWhiteSpace(o.Portfolio))
+                {
+                    try
+                    {
+                        urls = JsonConvert.DeserializeObject<List<string>>(o.Portfolio)
+                               ?? new List<string>();
+                    }
+                    catch { /* ignore parse errors */ }
+                }
+
+                // pick either the first real URL or a deterministic fallback
+                var img = urls.Any()
+                    ? urls.First()
+                    : defaultImages[o.OfferId % defaultImages.Length];
+
+                return new ViewedServiceDto
                 {
                     OfferId = o.OfferId,
                     Title = o.Title,
-                    ImageUrl = o.Portfolio ?? "/template_assets/images/listings/no-image.jpg",
+                    ImageUrl = img,
                     ViewCount = o.Views
-                })
-                .ToListAsync();
+                };
+            })
+            .ToList();
         }
 
         // 2) Recent purchases (successful exchanges)

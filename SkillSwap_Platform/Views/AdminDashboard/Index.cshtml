@@ -336,7 +336,7 @@
     <div class="col-md-6 col-xxl-4">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="d-flex justify-content-between bdrb1 pb15 mb20">
-                <h5 class="title">Most Viewed Services</h5>
+                <h5 class="title">Most Viewed Swaps</h5>
                 <a class="text-decoration-underline text-thm6" href="">View All</a>
             </div>
             <div class="dashboard-img-service">
@@ -344,40 +344,7 @@
                 {
                     <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
                         <div class="list-thumb flex-shrink-0 bdrs4">
-                            @{
-                                // 1) Try to parse the stored JSON
-                                List<string> portfolioImages = new();
-                                if (!string.IsNullOrWhiteSpace(svc.Portfolio))
-                                {
-                                    try
-                                    {
-                                        portfolioImages = Newtonsoft.Json.JsonConvert
-                                        .DeserializeObject<List<string>>(svc.Portfolio)
-                                        ?? new List<string>();
-                                    }
-                                    catch
-                                    {
-                                        // ignore parse errors
-                                    }
-                                }
-
-                                // 2) Your two “no-offer” defaults
-                                var defaultImages = new[]
-                                {
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
-                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
-                        };
-
-                                // 3) Deterministic index from OfferId
-                                var defaultIndex = svc.OfferId % defaultImages.Length;
-                                var fallbackUrl = defaultImages[defaultIndex];
-
-                                // 4) Final image choice
-                                var imgUrl = portfolioImages.Any()
-                                ? portfolioImages.First()
-                                : fallbackUrl;
-                            }
-                            <img class="w-100" src="@imgUrl" alt="@svc.Title">
+                            <img class="w-100" src="@svc.ImageUrl" alt="@svc.Title">
                         </div>
                         <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
                             <h6 class="list-title mb-2"><a asp-area="Admin" asp-controller="OfferFlag" asp-action="FlaggedOfferSummary" asp-route-offerId="@svc.OfferId">@svc.Title</a></h6>
@@ -403,7 +370,7 @@
     <div class="col-md-6 col-xxl-4">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="d-flex justify-content-between bdrb1 pb15 mb30">
-                <h5 class="title">Recent Purchased Services</h5>
+                <h5 class="title">Recent Swap Exchanges</h5>
                 <a class="text-decoration-underline text-thm6" href="">View All</a>
             </div>
             <div class="dashboard-img-service">

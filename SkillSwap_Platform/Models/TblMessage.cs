@@ -41,6 +41,12 @@ public partial class TblMessage
 
     public int? ExchangeId { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedOn { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
     [NotMapped]
     public OfferDisplayVM OfferPreview { get; set; }
     public virtual TblUser? ApprovedByAdmin { get; set; }

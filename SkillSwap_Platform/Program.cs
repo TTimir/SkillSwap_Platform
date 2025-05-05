@@ -37,6 +37,7 @@ using System.Security.Claims;
 using SkillSwap_Platform.Services.AdminControls.Message;
 using SkillSwap_Platform.Services.AdminControls.PrivacyWord;
 using SkillSwap_Platform.Services.AdminControls.Faqs;
+using SkillSwap_Platform.Services.AdminControls.PlatformMetrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -110,6 +111,7 @@ builder.Services.AddScoped<
     SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.SensitiveWordService>();
 builder.Services.AddScoped<IPrivacySensitiveWordService, PrivacySensitiveWordService>();
 builder.Services.AddScoped<IFaqService, FaqService>();
+builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 
 
 builder.Services.AddControllersWithViews(options =>
