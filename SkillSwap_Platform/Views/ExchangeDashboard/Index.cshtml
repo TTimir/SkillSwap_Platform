@@ -145,7 +145,7 @@
                                                 {
                                                     @if (item.CanLaunchMeeting)
                                                     {
-                                                        <a href="@Url.Action("Authorize", "GoogleAuth", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })"
+                                                        <a asp-controller="GoogleCalendar" asp-action="CreateEvent" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
                                                            class="ud-btn btn-light-thm me-4"
                                                            data-bs-toggle="tooltip" data-bs-placement="top"
                                                            title="Launch Online Meet (Session @(item.RecentMeetingLaunchCount + 1))">
@@ -166,7 +166,7 @@
                                                     <!-- Only show the online meet button if no meeting has yet been completed -->
                                                     @if (item.CanLaunchMeeting)
                                                     {
-                                                        <a href="@Url.Action("Authorize", "GoogleAuth", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })"
+                                                        <a asp-controller="GoogleCalendar" asp-action="CreateEvent" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
                                                            class="ud-btn btn-light-thm me-4"
                                                            data-bs-toggle="tooltip" data-bs-placement="top"
                                                            title="Launch Online Meet (Session @(item.RecentMeetingLaunchCount + 1))">
@@ -217,26 +217,57 @@
                                                 }
                                             }
                                         </td>
+                                        @{
+                                            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                                            bool isOfferOwner = currentUserId == item.Exchange.OfferOwnerId;
+                                            bool hasConfirmed = isOfferOwner
+                                            ? item.Exchange.IsCompletedByOfferOwner
+                                            : item.Exchange.IsCompletedByOtherParty;
+                                            bool bothConfirmed = item.Exchange.IsCompletedByOfferOwner && item.Exchange.IsCompletedByOtherParty;
+
+                                            // your original “meeting completed” test:
+                                            bool meetingDone = (item.ExchangeMode?.Equals("online", StringComparison.OrdinalIgnoreCase) == true
+                                            && item.IsOnlineMeetingCompleted)
+                                            || (item.ExchangeMode?.Equals("in-person", StringComparison.OrdinalIgnoreCase) == true
+                                            && item.IsMeetingEnded);
+                                        }
                                         <td>
-                                            @if ((item.ExchangeMode?.Equals("online", StringComparison.OrdinalIgnoreCase) == true && item.IsOnlineMeetingCompleted)
-                                                || (item.ExchangeMode?.Equals("in-person", StringComparison.OrdinalIgnoreCase) == true && item.IsMeetingEnded))
+                                            @if (meetingDone)
                                             {
-                                                <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                    <button type="submit" class="ud-btn btn-thm2 me-4 mb10"
-                                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="Mark this exchange as completed">
-                                                        Mark as Done <i class="fal fa-check" style="transform:rotate(0deg)"></i>
-                                                    </button>
-                                                </form>
-                                                <form asp-action="CancelExchange" asp-controller="ExchangeDashboard" method="post">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                    <button type="submit" class="ud-btn btn-danger" title="Cancel this exchange">
-                                                        Cancel Exchange <i class="fal fa-times" style="transform:rotate(0deg)"></i>
-                                                    </button>
-                                                </form>
+                                                @if (!hasConfirmed)
+                                                {
+                                                    <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                        <button type="submit" class="ud-btn btn-thm2 me-4 mb10"
+                                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                title="Mark this exchange as completed">
+                                                            I’m Done <i class="fal fa-check" style="transform:rotate(0deg)"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else if (!bothConfirmed)
+                                                {
+                                                    <span class="text-info">
+                                                        Waiting on the other party to confirm…
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">
+                                                        ✅ Completed
+                                                    </span>
+                                                }
+                                                @if (!item.Exchange.IsCompleted)
+                                                {
+                                                    <form asp-action="CancelExchange" asp-controller="ExchangeDashboard" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                        <button type="submit" class="ud-btn btn-danger" title="Cancel this exchange">
+                                                            Cancel Exchange <i class="fal fa-times" style="transform:rotate(0deg)"></i>
+                                                        </button>
+                                                    </form>
+                                                }
                                             }
                                         </td>
                                     </tr>

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 
 namespace SkillSwap_Platform.Services.AdminControls
 {
@@ -580,4 +581,5 @@ namespace SkillSwap_Platform.Services.AdminControls
     internal record SwapMetrics(int TotalSwapsExecuted, double SwapSuccessRate, decimal AverageSwapValue);
     internal record RevenueMetrics(decimal FeesCollected, decimal PayoutsToUsers, decimal MonthlyRecurringRevenue);
     #endregion
+
 }

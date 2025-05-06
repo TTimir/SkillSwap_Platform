@@ -447,6 +447,7 @@
                   data: {
                     labels: [
                       'Total Exchanges',
+                      'Resource Share',
                       'Successful',
                       'Canceled',
                       'In-Person',
@@ -457,6 +458,7 @@
                       label: 'Count / Volume',
                       data: [
                         dto.TotalExchanges,
+                        dto.TotalResourceShare,
                         dto.TotalSuccessfulExchanges,
                         dto.TotalCancelledExchanges,
                         dto.InPersonExchanges,
@@ -471,16 +473,11 @@
                     plugins: {
                       tooltip: {
                         callbacks: {
-                          label: ctx => {
-                            const idx = ctx.dataIndex;
-                            const val = ctx.parsed.y;
-                            // last bar is token-txn count, so just integer
-                            return `${ctx.dataset.label}: ${val}${idx === 5 ? '' : ''}`;
-                          }
+                              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
+                            }
                         }
                       }
                     }
-                  }
                 });
               }
             );

@@ -132,6 +132,7 @@ namespace SkillSwap_Platform.Services.AdminControls.PlatformMetrics
 
                 // b) Exchanges
                 dto.TotalExchanges = await _db.TblExchanges.CountAsync();
+
                 dto.TotalSuccessfulExchanges = await _db.TblExchanges
                                                        .CountAsync(x => x.IsSuccessful);
                 dto.TotalCancelledExchanges = await _db.TblExchanges
@@ -144,7 +145,16 @@ namespace SkillSwap_Platform.Services.AdminControls.PlatformMetrics
 
                 dto.CancelRate = dto.TotalExchanges > 0
                     ? Math.Round(dto.TotalCancelledExchanges / (double)dto.TotalExchanges * 100, 2)
-                    : 0;    
+                    : 0;
+
+                // ── 9) RESOURCE SHARING ──────────────────────────────
+                // count up all Google-Meet based sessions:
+                dto.TotalOnlineMeetings = await _db.TblMeetings
+                                                 .CountAsync(m => m.MeetingType == "Google Meet");
+
+                // count up all in-person meeting records:
+                dto.TotalInPersonMeetings = await _db.TblInPersonMeetings
+                                                 .CountAsync();
             }
             catch (Exception ex)
             {

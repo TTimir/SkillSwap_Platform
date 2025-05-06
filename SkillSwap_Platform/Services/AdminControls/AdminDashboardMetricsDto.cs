@@ -47,6 +47,12 @@ namespace SkillSwap_Platform.Services.AdminControls
         public decimal PayoutsToUsers { get; set; }
         public decimal MonthlyRecurringRevenue { get; set; }
 
+
+        public int TotalOnlineMeetings { get; set; }
+        public int TotalInPersonMeetings { get; set; }
+        public int TotalResourceShare => TotalOnlineMeetings + TotalInPersonMeetings;
+
+
         // Support & Feedback
         public int OpenSupportTickets { get; set; }
         public double AverageTicketResolutionHours { get; set; }

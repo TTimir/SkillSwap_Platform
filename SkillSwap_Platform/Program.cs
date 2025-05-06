@@ -38,6 +38,7 @@ using SkillSwap_Platform.Services.AdminControls.Message;
 using SkillSwap_Platform.Services.AdminControls.PrivacyWord;
 using SkillSwap_Platform.Services.AdminControls.Faqs;
 using SkillSwap_Platform.Services.AdminControls.PlatformMetrics;
+using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,6 +90,7 @@ builder.Services
        .AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
+builder.Services.AddScoped<GoogleCalendarService>();
 
 
 // Admin Services
@@ -105,6 +107,7 @@ builder.Services.AddScoped<IUserFlagRepository, UserFlagRepository>();
 // Service registrations
 builder.Services.AddScoped<IOfferFlagService, OfferFlagService>();
 builder.Services.AddScoped<IUserFlagService, UserFlagService>();
+
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<
     SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.ISensitiveWordService,
@@ -112,6 +115,7 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<IPrivacySensitiveWordService, PrivacySensitiveWordService>();
 builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
+builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
 
 
 builder.Services.AddControllersWithViews(options =>

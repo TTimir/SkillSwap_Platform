@@ -1,0 +1,51 @@
+﻿
+@{
+    ViewData["Title"] = "My Calendar";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div id="calendar"></div>
+</div>
+
+<style>
+    /* only needed if you used classNames instead of color */
+    .fc-event.skillswap-event {
+        background-color: #28a745 !important;
+        border-color: #218838 !important;
+        color: white !important;
+    }
+</style>
+@section DynamicScript {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          var calendarEl = document.getElementById('calendar');
+          var calendar   = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+              left:   'prev,next today',
+              center: 'title',
+              right:  'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '/GoogleCalendar/EventsJson',
+            eventClick: function(info) {
+              if (info.event.url) {
+                window.open(info.event.url, '_blank');
+                info.jsEvent.preventDefault();
+              }
+            },
+            height: 650,
+          });
+          calendar.render();
+        });
+    </script>
+}

@@ -583,6 +583,7 @@ namespace SkillSwap_Platform.Controllers
                 return NotFound("Exchange not found.");
             }
 
+            // 1) Ensure any meeting requirements are met...
             if (exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
             {
                 // Check that there is a completed online meeting (if required).
@@ -621,24 +622,54 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
 
-            // Mark exchange as completed.
-            exchange.Status = "Completed";
-            exchange.IsCompleted = true;
-            exchange.CompletionDate = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            // Log a history record.
-            int userId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int uid) ? uid : 0;
-            var historyRecord = new TblExchangeHistory
+            // 2) Flip the flag for the current user
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            if (currentUserId == exchange.OfferOwnerId)
+                exchange.IsCompletedByOfferOwner = true;
+            else if (currentUserId == exchange.OtherUserId)
+                exchange.IsCompletedByOtherParty = true;
+            else
             {
-                ExchangeId = exchange.ExchangeId,
-                OfferId = exchange.OfferId,
-                ChangeDate = DateTime.UtcNow,
-                ChangedStatus = "Exchange Completed",
-                Reason = "Exchange marked as completed successfully.",
-                ChangedBy = userId
-            };
-            _context.TblExchangeHistories.Add(historyRecord);
+                return Forbid();
+            }
+
+            // 3) If *both* have now clicked “done”, finalize and release tokens
+            if (exchange.IsCompletedByOfferOwner && exchange.IsCompletedByOtherParty)
+            {
+                exchange.Status = "Completed";
+                exchange.IsCompleted = true;
+                exchange.CompletionDate = DateTime.UtcNow;
+
+                // release held tokens
+                await _tokenService.ReleaseTokensAsync(exchangeId);
+
+                // log a full‐exchange history entry
+                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                {
+                    ExchangeId = exchangeId,
+                    OfferId = exchange.OfferId,
+                    ChangeDate = DateTime.UtcNow,
+                    ChangedStatus = "Exchange Completed",
+                    Reason = "Both parties confirmed completion.",
+                    ChangedBy = currentUserId
+                });
+            }
+            else
+            {
+                // log a “partial” history entry
+                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                {
+                    ExchangeId = exchangeId,
+                    OfferId = exchange.OfferId,
+                    ChangeDate = DateTime.UtcNow,
+                    ChangedStatus = "Completion Confirmation",
+                    Reason = currentUserId == exchange.OfferOwnerId
+                                       ? "Offer owner confirmed completion."
+                                       : "Other party confirmed completion.",
+                    ChangedBy = currentUserId
+                });
+                TempData["SuccessMessage"] = "Your completion has been recorded. Waiting on the other party.";
+            }
             await _context.SaveChangesAsync();
 
             if (exchange != null)
@@ -678,8 +709,19 @@ namespace SkillSwap_Platform.Controllers
                     return RedirectToAction("Index");
                 }
 
+                // 1) Mark it cancelled
+                exchange.Status = "Cancelled";
+                await _context.SaveChangesAsync();
+
                 // 2) Refund the held tokens
-                await _tokenService.RefundTokensAsync(exchangeId);
+                try
+                {
+                    await _tokenService.RefundTokensAsync(exchangeId);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.LogWarning(ex, "No tokens to refund for exchange {ExchangeId}.", exchangeId);
+                }
 
                 // 3) Record an exchange‐history entry
                 var userId = GetCurrentUserId();

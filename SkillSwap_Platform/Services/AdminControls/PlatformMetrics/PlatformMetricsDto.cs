@@ -52,5 +52,9 @@
         public int InPersonExchanges { get; set; }
         public int DigitalExchanges { get; set; }
 
+
+        public int TotalOnlineMeetings { get; set; }
+        public int TotalInPersonMeetings { get; set; }
+        public int TotalResourceShare => TotalOnlineMeetings + TotalInPersonMeetings;
     }
 }

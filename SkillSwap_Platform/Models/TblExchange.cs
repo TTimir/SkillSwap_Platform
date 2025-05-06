@@ -47,6 +47,10 @@ public partial class TblExchange
 
     public bool IsInpersonMeetingVerified { get; set; }
 
+    public bool IsCompletedByOfferOwner { get; set; }
+
+    public bool IsCompletedByOtherParty { get; set; }
+
     public bool IsCompleted { get; set; }
 
     public DateTime? CompletionDate { get; set; }

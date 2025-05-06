@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Services.AdminControls
+﻿using SkillSwap_Platform.Services.AdminControls.AdminSearch;
+
+namespace SkillSwap_Platform.Services.AdminControls
 {
     public interface IAdminDashboardService
     {
@@ -18,6 +20,5 @@
 
 
         Task<AdminDashboardMetricsDto> GetAdminDashboardMetricsAsync(DateTime periodStart, DateTime periodEnd);
-
     }
 }

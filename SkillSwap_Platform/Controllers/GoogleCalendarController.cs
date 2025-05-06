@@ -10,20 +10,25 @@ using Google.Apis.Auth.OAuth2.Responses;
 using SkillSwap_Platform.Models.ViewModels.MeetingVM;
 using Newtonsoft.Json.Linq;
 using SkillSwap_Platform.Services.NotificationTrack;
+using SkillSwap_Platform.Services;
+using Hangfire.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkillSwap_Platform.Controllers
 {
     public class GoogleCalendarController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly GoogleCalendarService _cal;
         private readonly ILogger<GoogleCalendarController> _logger;
         private readonly SkillSwapDbContext _dbContext;
         private readonly TimeSpan _reuseThreshold = TimeSpan.FromHours(1);
         private readonly INotificationService _notif;
 
-        public GoogleCalendarController(IConfiguration configuration, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext, INotificationService notif)
+        public GoogleCalendarController(IConfiguration configuration, GoogleCalendarService cal, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext, INotificationService notif)
         {
             _configuration = configuration;
+            _cal = cal;
             _logger = logger;
             _dbContext = dbContext;
             _notif = notif;
@@ -271,6 +276,109 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error creating Google Calendar event.");
                 return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var uidClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(uidClaim, out var userId))
+                return Challenge(); // not logged in
+
+            try
+            {
+                var events = await _cal.GetUpcomingEventsAsync(userId);
+                return View(events);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("not connected"))
+            {
+                // No valid token—send them to Connect page
+                return RedirectToAction(nameof(Connect));
+            }
+        }
+
+        // GET /GoogleCalendar/Connect
+        [HttpGet]
+        public IActionResult Connect()
+        {
+            // Simple view with a “Connect Calendar” button
+            return View();
+        }
+
+
+        // JSON endpoint for FullCalendar
+        [HttpGet]
+        public async Task<IActionResult> EventsJson()
+        {
+            var uid = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var events = await _cal.GetUpcomingEventsAsync(uid);
+
+            var fcEvents = events.Select(ev =>
+            {
+                // coalesce into a non-nullable DateTime, then ISO‐format:
+                var startDt = ev.Start?.DateTime ?? DateTime.Parse(ev.Start.Date);
+                var endDt = ev.End?.DateTime ?? DateTime.Parse(ev.End.Date);
+
+                // identify a SkillSwap event by your summary or description convention
+                bool isSwap = ev.Summary?.StartsWith("SkillSwap Exchange #") == true
+                           || ev.Description?.Contains("Your upcoming SkillSwap session") == true;
+
+                return new
+                {
+                    id = ev.Id,
+                    title = ev.Summary,
+                    start = startDt.ToString("o"),
+                    end = endDt.ToString("o"),
+                    url = ev.HtmlLink,
+                    classNames = isSwap ? new[] { "skillswap-event" } : Array.Empty<string>()
+                };
+            });
+
+            return Json(fcEvents);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateCalEvent(int exchangeId)
+        {
+            var uid = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // Load exchange
+            var exch = await _dbContext.TblExchanges.FindAsync(exchangeId);
+            if (exch == null)
+                return NotFound();
+
+            // Guard: ensure RequestDate is set
+            if (!exch.RequestDate.HasValue)
+            {
+                TempData["CalendarError"] = "Cannot sync to calendar: no scheduled date.";
+                return RedirectToAction("Details", "Exchange", new { id = exchangeId });
+            }
+
+            // Convert to non-nullable UTC DateTime
+            var startUtc = exch.RequestDate.Value.ToUniversalTime();
+            var endUtc = startUtc.AddHours(1);            // assume 1h duration
+
+            try
+            {
+                var link = await _cal.CreateSwapEventAsync(
+                    uid,
+                    exchangeId,
+                    startUtc,
+                    endUtc
+                );
+
+                // Optionally mark in DB that we’ve synced
+                //exch.GoogleEventLink = link;
+                _dbContext.TblExchanges.Update(exch);
+                await _dbContext.SaveChangesAsync();
+
+                return Redirect(link);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create calendar event");
+                TempData["CalendarError"] = "Could not sync with Google Calendar.";
+                return RedirectToAction("Details", "Exchange", new { id = exchangeId });
             }
         }
 

@@ -406,6 +406,22 @@
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Search Terms</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Users","AdminSearch", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminSearch" && currentAction=="Users" ? "-is-active" : "")">
+                                <i class="flaticon-photo mr15"></i>
+                                User Profile
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Offers","AdminSearch", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminSearch" && currentAction=="Offers" ? "-is-active" : "")">
+                                <i class="flaticon-briefcase mr15"></i>
+                                Swap Offers
+                            </a>
+                        </div>
+
                         <p class="fz15 fw400 ff-heading pl30 mt30">Escrow & Transactions</p>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Dashboard","Escrow", new { area = "Admin" })"
