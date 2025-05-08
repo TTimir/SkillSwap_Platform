@@ -275,6 +275,7 @@ namespace SkillSwap_Platform.Services.AdminControls
                     FeesCollected = revenue.FeesCollected,
                     PayoutsToUsers = revenue.PayoutsToUsers,
                     MonthlyRecurringRevenue = revenue.MonthlyRecurringRevenue,
+                    TotalTokensInCirculation = await _db.TblUsers.SumAsync(u => u.DigitalTokenBalance),
 
                     MostViewedServices = topViewed,
                     RecentPurchasedServices = recentBuys,

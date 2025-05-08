@@ -2,10 +2,10 @@
 using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 using SkillSwap_Platform.Services.AdminControls;
 using Microsoft.AspNetCore.Authorization;
-using SkillSwap_Platform.Models.ViewModels.AdminSearch;
 using SkillSwap_Platform.Services.AdminControls.AdminSearch.ViewModel;
 using System.Security.Claims;
 using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {

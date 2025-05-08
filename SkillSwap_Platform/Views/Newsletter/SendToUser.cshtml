@@ -1,0 +1,233 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.SendToUserVm
+
+@{
+    ViewData["Title"] = "Send Individual Message";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    // If you have a pre-selected user, capture their name:
+    var initialUserName = !string.IsNullOrEmpty(Model.UserName)
+        ? Model.UserName
+        : "User";
+}
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb25">
+                <h5 class="list-title">Basic Information</h5>
+            </div>
+            <div class="col-xl-8">
+                <form asp-action="SendToUser" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <div class="form-style1">
+                                    <label for="templateSelect" class="form-label fw500 fz16 dark-color">Template</label>
+                                    <div class="bootselect-multiselect">
+                                        <select id="templateSelect" asp-for="SelectedTemplateId" asp-items="(SelectList)ViewBag.Templates" class="selectpicker">
+                                            <option value="">— custom —</option>
+                                        </select>
+                                        <button type="submit" id="saveTemplateBtn" class="ud-btn btn-thm mt10">Save as Template</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <div class="form-style1">
+                                    <label asp-for="UserId" class="form-label fw500 fz16 dark-color"></label>
+                                    <div class="bootselect-multiselect">
+                                        <select asp-for="UserId" asp-items="(IEnumerable<SelectListItem>)ViewBag.Users" class="selectpicker" data-live-search="true" data-width="100%">
+                                        </select>
+                                        <span asp-validation-for="UserId" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="Subject" class="heading-color ff-heading fw500 mb10"></label>
+                                <input asp-for="Subject" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="Subject" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Content" class="heading-color ff-heading fw500 mb10"></label>
+                                <textarea asp-for="Content" id="Content" cols="30" rows="6" placeholder="Email Content..."></textarea>
+                                <span asp-validation-for="Content" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-xl-7">
+                            <div class="mb-3">
+                                <label class="form-label">Attachments (optional)</label>
+                                <input type="file"
+                                       id="Attachments"
+                                       asp-for="Attachments"
+                                       class="form-control"
+                                       type="file"
+                                       multiple />
+                                <div id="attachmentPreview" class="mt-2 d-flex flex-wrap"></div>
+
+                                <span asp-validation-for="Attachments" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" id="sendButton" class="ud-btn btn-thm">Send to @initialUserName <i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <h5>Attachments Preview</h5>
+        <div id="preview"
+             style="border:1px solid #ccc;
+                padding:1em;
+                min-height:300px;
+                overflow:auto;">
+            @Html.Raw(Model.Content ?? "<em>(no content)</em>")
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+    #attachmentPreview img {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    #attachmentPreview .badge {
+        padding: 0.5em;
+        max-width: 150px;
+        display: inline-block;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+</style>
+
+@section DynamicAdminScript {
+    <script>
+            const templateMap = @Html.Raw(Json.Serialize(ViewBag.TemplateContent));
+
+        const contentEl = document.getElementById("Content");
+        const previewEl = document.getElementById("preview");
+        const selectEl  = document.getElementById("templateSelect");
+
+        function updatePreview(html) {
+            previewEl.innerHTML = html;
+        }
+
+        contentEl.addEventListener("input", e => updatePreview(e.target.value));
+
+        selectEl.addEventListener("change", function() {
+            const html = templateMap[this.value] || "";
+            contentEl.value = html;
+            updatePreview(html);
+        });
+
+        // kick it off on page load
+        updatePreview(contentEl.value);
+
+        document.getElementById("saveTemplateBtn").addEventListener("click", () => {
+            const name = prompt("Enter a name for this template");
+            if (!name) return;
+            fetch("@Url.Action("SaveTemplate")", {
+                method: "POST",
+                headers: {
+                    "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    templateName: name,
+                    htmlContent: contentEl.value
+                })
+            })
+            .then(r => r.json())
+            .then(j => {
+                if (j.success) alert("Template saved! Refresh to see it in the list.");
+                else alert("Error saving template: " + j.error);
+            });
+        });
+
+            // 4) “Send to …” button text
+            const userSelect = document.getElementById('UserId'),
+                  sendBtn    = document.getElementById('sendButton');
+            function refreshSendText(){
+                const t = userSelect.options[userSelect.selectedIndex]?.text || 'User';
+                sendBtn.innerHTML = `Send to ${t}`;
+            }
+            userSelect.addEventListener('change', refreshSendText);
+            refreshSendText();
+
+            // 5) Attachment thumbnails/badges
+            const attachIn  = document.getElementById('Attachments'),
+                  attachOut = document.getElementById('attachmentPreview');
+            attachIn.addEventListener('change',function(){
+                attachOut.innerHTML='';
+                Array.from(this.files).forEach(f=>{
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText='margin:0 .5rem .5rem 0;text-align:center';
+                    if (f.type.startsWith('image/')){
+                        const img=new Image();
+                        img.style.cssText='max-width:80px;max-height:80px;object-fit:cover';
+                        const r=new FileReader();
+                        r.onload=e=>img.src=e.target.result;
+                        r.readAsDataURL(f);
+                        wrapper.appendChild(img);
+                    } else {
+                        const span=document.createElement('span');
+                        span.className='badge bg-secondary';
+                        span.textContent=f.name;
+                        wrapper.appendChild(span);
+                    }
+                    attachOut.appendChild(wrapper);
+                });
+            });
+    </script>
+
+    @* keep your existing validation scripts too *@
+    <partial name="_ValidationScriptsPartial" />
+}
+

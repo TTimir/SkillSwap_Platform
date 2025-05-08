@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Middlewares;
 using SkillSwap_Platform.Models;
 
 namespace SkillSwap_Platform.Middlewares
@@ -11,38 +12,44 @@ namespace SkillSwap_Platform.Middlewares
     public class UpdateLastActiveMiddleware
     {
         private readonly RequestDelegate _next;
+        private static readonly TimeSpan _minUpdateInterval = TimeSpan.FromMinutes(1);
 
         public UpdateLastActiveMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+            => _next = next;
 
-        public async Task Invoke(HttpContext context, SkillSwapDbContext dbContext)
+        public async Task Invoke(HttpContext context, SkillSwapDbContext db)
         {
-            if (context.User?.Identity != null && context.User.Identity.IsAuthenticated)
+            var user = context.User;
+            if (user?.Identity?.IsAuthenticated == true)
             {
-                int userId;
-                if (int.TryParse(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId))
+                var uidClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(uidClaim, out var uid))
                 {
-                    var user = await dbContext.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
-                    if (user != null)
+                    var lastActive = await db.TblUsers
+                                             .Where(u => u.UserId == uid)
+                                             .Select(u => u.LastActive)
+                                             .FirstOrDefaultAsync();
+
+                    if (lastActive == null
+                        || DateTime.UtcNow - lastActive > _minUpdateInterval)
                     {
-                        user.LastActive = DateTime.UtcNow;
-                        await dbContext.SaveChangesAsync();
+                        // attach only LastActive
+                        var stub = new TblUser { UserId = uid, LastActive = DateTime.UtcNow };
+                        db.TblUsers.Attach(stub);
+                        db.Entry(stub).Property(u => u.LastActive).IsModified = true;
+                        await db.SaveChangesAsync();
                     }
                 }
-             }
+            }
 
             await _next(context);
         }
     }
 
-    // Extension method used to add the middleware to the HTTP request pipeline.
     public static class UpdateLastActiveMiddlewareExtensions
     {
-        public static IApplicationBuilder UseUpdateLastActiveMiddleware(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<UpdateLastActiveMiddleware>();
-        }
+        public static IApplicationBuilder UseUpdateLastActive(
+            this IApplicationBuilder builder)
+            => builder.UseMiddleware<UpdateLastActiveMiddleware>();
     }
 }

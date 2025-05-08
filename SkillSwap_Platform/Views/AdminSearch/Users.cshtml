@@ -69,7 +69,15 @@
                             var idx = startItem + i;
                             <tr>
                                 <td>@idx</td>
-                                <td>@u.UserName</td>
+                                <td>
+                                    <a asp-action="PublicProfileByUsername"
+                                       asp-controller="UserProfile"
+                                       asp-route-username="@u.UserName"
+                                       class="text-decoration-none"
+                                        target="_blank">
+                                        @u.UserName
+                                    </a>
+                                </td>
                                 <td>@u.Email</td>
                                 <td>@u.CreatedDate.ToLocalTime().ToString("dd MMM, yyyy hh:mm tt")</td>
                                 <td>@(u.IsHeld ? "Yes" : "No")</td>

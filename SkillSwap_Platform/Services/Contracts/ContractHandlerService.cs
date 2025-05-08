@@ -62,6 +62,7 @@ namespace SkillSwap_Platform.Services.Contracts
 
                 bool baseContractExists = await _context.TblContracts.AnyAsync(c =>
                     c.OfferId == model.OfferId
+                    && c.MessageId == model.MessageId
                     && (
                          // same two users, in either order
                          (c.SenderUserId == model.SenderUserId && c.ReceiverUserId == model.ReceiverUserId)

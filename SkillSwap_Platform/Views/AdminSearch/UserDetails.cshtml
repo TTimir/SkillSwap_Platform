@@ -1,4 +1,5 @@
-﻿@model SkillSwap_Platform.Models.ViewModels.AdminSearch.UserDetailVM
+﻿@using SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch
+@model UserDetailVM
 
 @{
     ViewData["Title"] = "User Details";
@@ -201,6 +202,64 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Flagged Messages (@Model.User.FlaggedMessages.Count)</strong>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.User.FlaggedMessages.Any())
+        {
+            <p class="p-3 mb-0">No flagged messages.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Msg ID</th>
+                        <th>Sender</th>
+                        <th>Content</th>
+                        <th>Sent</th>
+                        <th>Approve?</th>
+                        <th>Admin Approved By</th>
+                        <th>Approved On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.User.FlaggedMessages)
+                    {
+                        <tr>
+                            <td>@f.MessageId</td>
+                            <td>@f.SenderUserName</td>
+                            <td>@Html.Raw(Html.Encode(f.Content))</td>
+                            <td>@fmt(f.SentDate)</td>
+                            <td>@(f.IsApproved ? "Yes" : "No")</td>
+                            <td>@(f.ApprovedByAdminName ?? "—")</td>
+                            <td>@fmt(f.ApprovedDate)</td>
+                            <td>
+                                @if (!f.ApprovedDate.HasValue)
+                                {
+                                    <a asp-controller="AdminSearch"
+                                       asp-action="ApproveMessage"
+                                       asp-route-messageId="@f.MessageId"
+                                       class="btn btn-sm btn-success">
+                                        Approve
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
 <!-- Certificates -->
 <div class="card mb-4">
     <div class="card-header"><strong>Certificates (@Model.User.Certificates.Count)</strong></div>
@@ -301,6 +360,53 @@
         }
     </div>
 </div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Offers Flagged by User (@Model.User.OfferFlags.Count)</strong>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.User.OfferFlags.Any())
+        {
+            <p class="p-3 mb-0">This user hasn’t flagged any offers.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Flag ID</th>
+                        <th>Offer ID</th>
+                        <th>Title</th>
+                        <th>Flagged On</th>
+                        <th>Admin Action</th>
+                        <th>Action Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.User.OfferFlags)
+                    {
+                        <tr>
+                            <td>@f.FlagId</td>
+                            <td>
+                                <a asp-controller="AdminSearch"
+                                   asp-action="OfferDetails"
+                                   asp-route-offerId="@f.OfferId">
+                                    @f.OfferId
+                                </a>
+                            </td>
+                            <td>@f.OfferTitle</td>
+                            <td>@fmt(f.FlaggedDate)</td>
+                            <td>@(string.IsNullOrEmpty(f.AdminAction) ? "Pending" : f.AdminAction)</td>
+                            <td>@fmt(f.AdminActionDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
 
 <!-- Skills -->
 <div class="card mb-5">

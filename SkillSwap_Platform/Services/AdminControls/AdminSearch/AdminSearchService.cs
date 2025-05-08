@@ -490,6 +490,40 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                 })
                 .ToListAsync();
 
+            // — FLAGGED MESSAGES — 
+            dto.FlaggedMessages = await _db.TblMessages.AsNoTracking()
+                .Where(m =>
+                    (m.SenderUserId == userId || m.ReceiverUserId == userId)
+                    && m.IsFlagged
+                )
+                .OrderByDescending(m => m.SentDate)
+                .Select(m => new FlaggedMessageDto
+                {
+                    MessageId = m.MessageId,
+                    SenderUserName = m.SenderUser.UserName,
+                    Content = m.Content,
+                    SentDate = m.SentDate,
+                    IsApproved = m.IsApproved,                 // assumes you have this
+                    ApprovedByAdminName = m.ApprovedByAdmin.UserName,    // navigation property
+                    ApprovedDate = m.ApprovedDate
+                })
+                .ToListAsync();
+
+            // — OFFER FLAGS HISTORY —
+            dto.OfferFlags = await _db.TblOfferFlags.AsNoTracking()
+                .Where(f => f.FlaggedByUserId == userId)
+                .OrderByDescending(f => f.FlaggedDate)
+                .Select(f => new UserOfferFlagDto
+                {
+                    FlagId = f.OfferFlagId,
+                    OfferId = f.OfferId,
+                    OfferTitle = f.Offer.Title,
+                    FlaggedDate = f.FlaggedDate,
+                    AdminAction = f.AdminAction,
+                    AdminActionDate = f.AdminActionDate
+                })
+                .ToListAsync();
+
             // — ACTIVITY OVERVIEW —
             dto.TotalOffersCreated = await _db.TblOffers.CountAsync(o => o.UserId == userId);
             dto.TotalExchangesInitiated = await _db.TblExchanges.CountAsync(x => x.OtherUserId == userId);

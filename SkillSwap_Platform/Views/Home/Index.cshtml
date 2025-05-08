@@ -640,14 +640,7 @@
                                 <div class="list-thumb">
                                     <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
                                         <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" style="max-width:100%;" />
-                                        @{
-                                            // Check if ViewData contains the online status.
-                                            bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
-                                        }
-                                        @if (isOnline)
-                                        {
-                                            <span class="online"></span>
-                                        }
+                                        <vc:online-indicator user-id="@freelancer.UserId" />
                                     </div>
                                 </div>
                                 <div class="list-content">

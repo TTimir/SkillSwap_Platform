@@ -69,6 +69,7 @@
                         <div class="list-item pt5">
                             <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
                                 <div class="d-flex align-items-center position-relative">
+                                     <vc:online-indicator user-id="@contact.UserID" />
                                     <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
                                     <div class="d-sm-flex">
                                         <div class="d-inline-block">

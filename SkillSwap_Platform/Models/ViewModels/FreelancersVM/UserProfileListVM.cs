@@ -15,6 +15,7 @@ namespace SkillSwap_Platform.Models.ViewModels.FreelancersVM
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
         public string Category { get; set; }
+        public DateTime? LastActive { get; set; }
 
         // Optional: Add filter options for dropdowns if needed
         public List<SelectListItem> LocationOptions { get; set; } = new();

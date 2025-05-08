@@ -94,6 +94,7 @@ namespace SkillSwap_Platform.Controllers
                     ReviewCount = u.TblReviewReviewees.Count(),
                     Recommendation = u.RecommendedPercentage ?? 0.0,
                     JobSuccessRate = u.JobSuccessRate ?? 0.0,
+                    LastActive = u.LastActive
                 }).ToList();
 
                 var vm = new UserProfileListVM

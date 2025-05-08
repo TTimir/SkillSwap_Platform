@@ -65,6 +65,10 @@
         // ▼ NEW PENDING ITEMS ▼
         public int PendingFlagReviewsCount { get; set; }
         public int PendingCertificatesCount { get; set; }
+
+        public List<FlaggedMessageDto> FlaggedMessages { get; set; } = new();
+
+        public List<UserOfferFlagDto> OfferFlags { get; set; } = new();
     }
 
     // define each sub-DTO similarly:
@@ -89,4 +93,25 @@
         public int? Proficiency { get; set; }
     }
 
+    public class FlaggedMessageDto
+    {
+        public int MessageId { get; set; }
+        public string SenderUserName { get; set; } = "";
+        public string Content { get; set; } = "";
+        public DateTime SentDate { get; set; }
+
+        // ▼ NEW ▼
+        public bool IsApproved { get; set; }
+        public string? ApprovedByAdminName { get; set; }
+        public DateTime? ApprovedDate { get; set; }
+    }
+    public class UserOfferFlagDto
+    {
+        public int FlagId { get; set; }
+        public int OfferId { get; set; }
+        public string OfferTitle { get; set; } = "";
+        public DateTime FlaggedDate { get; set; }
+        public string? AdminAction { get; set; }
+        public DateTime? AdminActionDate { get; set; }
+    }
 }

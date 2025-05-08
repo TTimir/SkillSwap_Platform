@@ -1,7 +1,7 @@
 ﻿using SkillSwap_Platform.Services.AdminControls;
 using SkillSwap_Platform.Services.AdminControls.AdminSearch.ViewModel;
 
-namespace SkillSwap_Platform.Models.ViewModels.AdminSearch
+namespace SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch
 {
     public class OfferSearchVM
     {

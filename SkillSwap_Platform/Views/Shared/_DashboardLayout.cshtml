@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
 
 @{
@@ -135,18 +136,32 @@
                                 <li class="user_setting">
                                     <div class="dropdown">
                                         <a class="btn" href="#" data-bs-toggle="dropdown">
-                                            @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
-                                            {
-                                                <div>
-                                                    <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="circle-rounded" width="100" style="max-width:50%;" />
-                                                </div>
+                                            @{
+                                                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                string src = "~/template_assets/images/No_Profile_img.png";
+
+                                                if (int.TryParse(idClaim, out var uid))
+                                                {
+                                                    try
+                                                    {
+                                                        var url = _db.TblUsers
+                                                        .Where(u => u.UserId == uid)
+                                                        .Select(u => u.ProfileImageUrl)
+                                                        .FirstOrDefault();
+                                                        if (!string.IsNullOrEmpty(url))
+                                                        {
+                                                            src = url;
+                                                        }
+                                                    }
+                                                    catch
+                                                    {
+                                                        // DB was unreachable—just leave the fallback image
+                                                    }
+                                                }
                                             }
-                                            else
-                                            {
-                                                <div>
-                                                    <img src="/template_assets/images/No_Profile_img.png" class="circle-rounded" alt="anonymous_image.png" width="100" style="max-width:50%;">
-                                                </div>
-                                            }
+                                            <div>
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                            </div>
                                         </a>
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">

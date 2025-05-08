@@ -1,5 +1,6 @@
-﻿@using System.Security.Claims
+﻿@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
+@using System.Security.Claims
 
 <!DOCTYPE html>
 <html lang="en">
@@ -141,12 +142,31 @@
                                         <li class="user_setting">
                                             <div class="dropdown">
                                                 <a class="btn" href="#" data-bs-toggle="dropdown">
-                                                    <!-- Profile Image -->
                                                     @{
-                                                        var profileUrl = ViewData["UserProfileImage"] as string;
+                                                        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                        string src = "~/template_assets/images/No_Profile_img.png";
+
+                                                        if (int.TryParse(idClaim, out var uid))
+                                                        {
+                                                            try
+                                                            {
+                                                                var url = _db.TblUsers
+                                                                .Where(u => u.UserId == uid)
+                                                                .Select(u => u.ProfileImageUrl)
+                                                                .FirstOrDefault();
+                                                                if (!string.IsNullOrEmpty(url))
+                                                                {
+                                                                    src = url;
+                                                                }
+                                                            }
+                                                            catch
+                                                            {
+                                                                // DB was unreachable—just leave the fallback image
+                                                            }
+                                                        }
                                                     }
                                                     <div>
-                                                        <img src="@(!string.IsNullOrEmpty(profileUrl) ? Url.Content(profileUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
                                                     </div>
                                                 </a>
                                                 <div class="dropdown-menu">

@@ -116,6 +116,8 @@ builder.Services.AddScoped<IPrivacySensitiveWordService, PrivacySensitiveWordSer
 builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
+builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
+
 
 
 builder.Services.AddControllersWithViews(options =>

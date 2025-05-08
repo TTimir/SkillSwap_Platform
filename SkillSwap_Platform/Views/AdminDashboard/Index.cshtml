@@ -179,7 +179,7 @@
             <div class="details">
                 <div class="fz15">Disputed Escrows</div>
                 <div class="title">@Model.DisputedEscrows</div>
-                <div class="text fz14">Escrows currently in dispute</div>
+                <div class="text fz14">Escrows that are  currently in dispute</div>
             </div>
             <div class="icon text-center"><i class="flaticon-flag"></i></div>
         </div>
@@ -187,6 +187,16 @@
 </div>
 <!-- Tokens & Settlement -->
 <div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Digital Tokens</div>
+                <div class="title">@Model.TotalTokensInCirculation.ToString("F2")</div>
+                <div class="text fz14">	Total Digital Tokens in Circulation</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
     <div class="col-sm-6 col-xxl-3">
         <div class="d-flex align-items-center justify-content-between statistics_funfact">
             <div class="details">
@@ -278,7 +288,7 @@
             <div class="details">
                 <div class="fz15">Swap Success Rate</div>
                 <div class="title">@($"{Model.SwapSuccessRate:0.##}%")</div>
-                <div class="text fz14">	(Successful / Total) × 100%</div>
+                <div class="text fz14">	Success Rate = (Successful / Total) × 100%</div>
             </div>
             <div class="icon text-center"><i class="flaticon-success"></i></div>
         </div>

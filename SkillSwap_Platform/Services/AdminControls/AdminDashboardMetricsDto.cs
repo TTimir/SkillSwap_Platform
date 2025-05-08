@@ -46,6 +46,7 @@ namespace SkillSwap_Platform.Services.AdminControls
         public decimal FeesCollected { get; set; }
         public decimal PayoutsToUsers { get; set; }
         public decimal MonthlyRecurringRevenue { get; set; }
+        public decimal TotalTokensInCirculation { get; set; }
 
 
         public int TotalOnlineMeetings { get; set; }

@@ -19,6 +19,10 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
 
+    public virtual DbSet<NewsletterLog> NewsletterLogs { get; set; }
+
+    public virtual DbSet<NewsletterTemplate> NewsletterTemplates { get; set; }
+
     public virtual DbSet<OtpAttempt> OtpAttempts { get; set; }
 
     public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
@@ -129,6 +133,37 @@ public partial class SkillSwapDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.MiningLogs)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_MiningLog_User");
+        });
+
+        modelBuilder.Entity<NewsletterLog>(entity =>
+        {
+            entity.ToTable("NewsletterLog");
+
+            entity.Property(e => e.RecipientEmail)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
+            entity.Property(e => e.SentAtUtc).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.SentByAdmin)
+                .HasMaxLength(450)
+                .HasDefaultValue("");
+            entity.Property(e => e.Subject)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
+        });
+
+        modelBuilder.Entity<NewsletterTemplate>(entity =>
+        {
+            entity.HasKey(e => e.TemplateId);
+
+            entity.ToTable("NewsletterTemplate");
+
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(450)
+                .HasDefaultValue("");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
         });
 
         modelBuilder.Entity<OtpAttempt>(entity =>
