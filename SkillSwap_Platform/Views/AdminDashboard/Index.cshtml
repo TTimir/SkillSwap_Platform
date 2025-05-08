@@ -446,7 +446,7 @@
                     // serialize flag trends
                     const flagTrendData = @Html.Raw(
         System.Text.Json.JsonSerializer.Serialize(
-            Model.FlagTrends.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), count = d.Count })
+            Model.FlagTrends.Select(d => new { date = d.Date.ToLocalTime().ToString("yyyy-MM-dd"), count = d.Count })
         )
     );
                     // serialize resolution breakdown

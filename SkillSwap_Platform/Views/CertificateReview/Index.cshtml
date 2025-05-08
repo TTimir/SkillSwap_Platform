@@ -79,7 +79,7 @@
                                                 </div>
                                             </th>
                                             <td class="vam"><span class="fz15 fw400">@cert.UserName <i>(@cert.LoginName)</i></span></td>
-                                            <td class="vam"><span class="fz14 fw400">@cert.SubmittedDate.ToString("dd MMMM, yyyy hh:mm tt")</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@cert.SubmittedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</span></td>
                                             <td class="vam">
                                                 <span class="badge bg-@(
             cert.Status == "Pending"  ? "secondary" :

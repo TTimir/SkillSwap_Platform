@@ -19,16 +19,19 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         private readonly INewsletterService _newsletter;
         private readonly INewsletterTemplateService _newsletterTemp;
         private readonly SkillSwapDbContext _db;
+        private readonly IWebHostEnvironment _env;
         private readonly ILogger<NewsletterController> _logger;
 
         public NewsletterController(
             INewsletterService newsletter,
             SkillSwapDbContext db,
+            IWebHostEnvironment env,
             ILogger<NewsletterController> logger,
             INewsletterTemplateService newsletterTemp)
         {
             _newsletter = newsletter;
             _db = db;
+            _env = env ?? throw new ArgumentNullException(nameof(env));
             _logger = logger;
             _newsletterTemp = newsletterTemp;
         }
@@ -279,11 +282,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 return BadRequest();
 
             // build full path under wwwroot
-            var filePath = Path.Combine(
-                 Directory.GetCurrentDirectory(),
-                 "wwwroot",
-                 file.Replace('/', Path.DirectorySeparatorChar)
-                 );
+            var relative = file.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var filePath = Path.Combine(_env.WebRootPath, relative);
 
             if (!System.IO.File.Exists(filePath))
                 return NotFound();
@@ -293,13 +293,12 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             if (!provider.TryGetContentType(filePath, out var contentType))
                 contentType = "application/octet-stream";
 
-            // Read the file
-            var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            var memory = new MemoryStream();
+            await using (var stream = System.IO.File.OpenRead(filePath))
+                await stream.CopyToAsync(memory);
+            memory.Position = 0;
 
-            // Force inline display
-            Response.Headers["Content-Disposition"] = $"inline; filename=\"{file}\"";
-
-            return File(bytes, contentType);
+            return File(memory, contentType, Path.GetFileName(relative), enableRangeProcessing: true);
         }
 
         #region Helper Class

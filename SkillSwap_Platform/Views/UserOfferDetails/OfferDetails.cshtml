@@ -666,7 +666,7 @@
                                                         )" class="mr-3" alt="Reviewer Photo" style="max-width:100%; width: 7%; border-radius: 100%" />
                                                             <div class="ml20">
                                                                 <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
-                                                                <div><span class="fz14">@review.CreatedDate.ToString("dd MMM yyyy")</span></div>
+                                                                <div><span class="fz14">@review.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</span></div>
                                                             </div>
                                                         </div>
                                                         <!-- Star Rating Display -->
@@ -706,7 +706,7 @@
                                                                     <div class="d-flex align-items-center">
                                                                         <strong>@reply.ReplierUser.UserName</strong>
                                                                         <small class="text-muted ms-2 me-5">
-                                                                            @reply.CreatedDate.ToString("MMM d, yyyy")
+                                                                            @reply.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
                                                                         </small>
                                                                         @if (!reply.IsFlagged && reply.ReplierUserId != currentUserId)
                                                                         {

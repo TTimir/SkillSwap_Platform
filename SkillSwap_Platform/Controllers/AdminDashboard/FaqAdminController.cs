@@ -52,9 +52,17 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         {
             if (!ModelState.IsValid)
                 return View(model);
-
-            await _faqs.AddAsync(model);
-            return RedirectToAction(nameof(Index), new { section = model.Section });
+            try
+            {
+                await _faqs.AddAsync(model);
+                TempData["Success"] = "FAQ added.";
+                return RedirectToAction(nameof(Index), new { section = model.Section });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Could not add FAQ.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
 
         // load for editing (ignores deleted)
@@ -72,9 +80,16 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         {
             if (!ModelState.IsValid)
                 return View(model);
-
-            await _faqs.UpdateAsync(model);
-            return RedirectToAction(nameof(Index), new { section = model.Section });
+            try
+            {
+                await _faqs.UpdateAsync(model);
+                return RedirectToAction(nameof(Index), new { section = model.Section });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Could not update FAQ.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
 
         // soft‐delete
@@ -83,10 +98,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         {
             var faq = await _faqs.GetByIdAsync(id);
             if (faq == null)
-                return NotFound();
+                return RedirectToAction("EP404", "EP");
 
-            await _faqs.DeleteAsync(id);
-            return RedirectToAction(nameof(Index), new { section = faq.Section });
+            try
+            {
+                await _faqs.DeleteAsync(id);
+                return RedirectToAction(nameof(Index), new { section = faq.Section });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Could not delete FAQ.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
     }
 }

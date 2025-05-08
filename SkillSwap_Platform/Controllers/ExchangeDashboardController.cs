@@ -26,6 +26,8 @@ namespace SkillSwap_Platform.Controllers
             _tokenService = tokenService;
         }
 
+        #region Active Dashboard
+
         // GET: /ExchangeDashboard/
         public async Task<IActionResult> Index(int page = 1)
         {
@@ -196,10 +198,13 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading exchange dashboard for user {UserId}", GetCurrentUserId());
                 TempData["ErrorMessage"] = "An error occurred while loading the exchange dashboard.";
-                return RedirectToAction("Error", "Home");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
+        #endregion
+
+        #region Exchange History
         // GET: /ExchangeDashboard/ExchangeHistory
         [Authorize]
         public async Task<IActionResult> ExchangeHistory(int completedPage = 1, int declinedPage = 1)
@@ -357,10 +362,12 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading exchange history for user {UserId}", GetCurrentUserId());
                 TempData["ErrorMessage"] = "An error occurred while loading the exchange history.";
-                return RedirectToAction("Error", "Home");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
+        #region Exchange Details
         // GET: /Exchange/Details/{id}
         public async Task<IActionResult> Details(int id, int timelinePage = 1, string search = null, string sortOrder = "desc")
         {
@@ -377,7 +384,7 @@ namespace SkillSwap_Platform.Controllers
                 if (exchange == null)
                 {
                     _logger.LogWarning("Exchange with id {Id} not found.", id);
-                    return NotFound();
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Filter histories based on the search term if provided.
@@ -569,10 +576,12 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error retrieving exchange details for ExchangeId {ExchangeId}", id);
                 TempData["ErrorMessage"] = "An error occurred while retrieving exchange details.";
-                return RedirectToAction("Index", "ExchangeDashboard");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
+        #region Exchange Staus Marking
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> MarkExchangeCompleted(int exchangeId)
@@ -580,7 +589,8 @@ namespace SkillSwap_Platform.Controllers
             var exchange = await _context.TblExchanges.FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
             if (exchange == null)
             {
-                return NotFound("Exchange not found.");
+                TempData["ErrorMessage"] = "Exchange not found.";
+                return RedirectToAction("EP404", "EP");
             }
 
             // 1) Ensure any meeting requirements are met...
@@ -608,92 +618,99 @@ namespace SkillSwap_Platform.Controllers
 
                 if (inPerson == null
                     || !inPerson.IsInpersonMeetingVerifiedByOfferOwner
-                    || !inPerson.IsInpersonMeetingVerifiedByOtherParty)
+                    || !inPerson.IsInpersonMeetingVerifiedByOtherParty
+                    || proof == null
+                    || proof.EndProofDateTime == null
+                    || string.IsNullOrWhiteSpace(proof.EndProofImageUrl))
                 {
-                    TempData["ErrorMessage"] = "Both parties must verify the in-person meeting via OTP before completing.";
-                    return RedirectToAction("Index");
-                }
-
-                // 2) End-meeting proof:
-                if (proof == null || proof.EndProofDateTime == null || string.IsNullOrWhiteSpace(proof.EndProofImageUrl))
-                {
-                    TempData["ErrorMessage"] = "You must submit end-meeting proof before marking the exchange as complete.";
+                    TempData["ErrorMessage"] = "Both parties must verify and submit end-meeting proof before completing.";
                     return RedirectToAction("Index");
                 }
             }
 
             // 2) Flip the flag for the current user
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            if (currentUserId == exchange.OfferOwnerId)
-                exchange.IsCompletedByOfferOwner = true;
-            else if (currentUserId == exchange.OtherUserId)
-                exchange.IsCompletedByOtherParty = true;
-            else
+
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return Forbid();
-            }
-
-            // 3) If *both* have now clicked “done”, finalize and release tokens
-            if (exchange.IsCompletedByOfferOwner && exchange.IsCompletedByOtherParty)
-            {
-                exchange.Status = "Completed";
-                exchange.IsCompleted = true;
-                exchange.CompletionDate = DateTime.UtcNow;
-
-                // release held tokens
-                await _tokenService.ReleaseTokensAsync(exchangeId);
-
-                // log a full‐exchange history entry
-                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                if (currentUserId == exchange.OfferOwnerId)
+                    exchange.IsCompletedByOfferOwner = true;
+                else if (currentUserId == exchange.OtherUserId)
+                    exchange.IsCompletedByOtherParty = true;
+                else
                 {
-                    ExchangeId = exchangeId,
-                    OfferId = exchange.OfferId,
-                    ChangeDate = DateTime.UtcNow,
-                    ChangedStatus = "Exchange Completed",
-                    Reason = "Both parties confirmed completion.",
-                    ChangedBy = currentUserId
-                });
-            }
-            else
-            {
-                // log a “partial” history entry
-                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                    return Forbid();
+                }
+
+                // 3) If *both* have now clicked “done”, finalize and release tokens
+                if (exchange.IsCompletedByOfferOwner && exchange.IsCompletedByOtherParty)
                 {
-                    ExchangeId = exchangeId,
-                    OfferId = exchange.OfferId,
-                    ChangeDate = DateTime.UtcNow,
-                    ChangedStatus = "Completion Confirmation",
-                    Reason = currentUserId == exchange.OfferOwnerId
-                                       ? "Offer owner confirmed completion."
-                                       : "Other party confirmed completion.",
-                    ChangedBy = currentUserId
+                    exchange.Status = "Completed";
+                    exchange.IsCompleted = true;
+                    exchange.CompletionDate = DateTime.UtcNow;
+
+                    // release held tokens
+                    await _tokenService.ReleaseTokensAsync(exchangeId);
+
+                    // log a full‐exchange history entry
+                    _context.TblExchangeHistories.Add(new TblExchangeHistory
+                    {
+                        ExchangeId = exchangeId,
+                        OfferId = exchange.OfferId,
+                        ChangeDate = DateTime.UtcNow,
+                        ChangedStatus = "Exchange Completed",
+                        Reason = "Both parties confirmed completion.",
+                        ChangedBy = currentUserId
+                    });
+                }
+                else
+                {
+                    // log a “partial” history entry
+                    _context.TblExchangeHistories.Add(new TblExchangeHistory
+                    {
+                        ExchangeId = exchangeId,
+                        OfferId = exchange.OfferId,
+                        ChangeDate = DateTime.UtcNow,
+                        ChangedStatus = "Completion Confirmation",
+                        Reason = currentUserId == exchange.OfferOwnerId
+                                           ? "Offer owner confirmed completion."
+                                           : "Other party confirmed completion.",
+                        ChangedBy = currentUserId
+                    });
+                    TempData["SuccessMessage"] = "Your completion has been recorded. Waiting on the other party.";
+                }
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetCurrentUserId(),
+                    Title = "Exchange Marked as Comepleted",
+                    Message = "You successfully completed your exchange.",
+                    Url = Url.Action("Index", "ExchangeDashboard"),
                 });
-                TempData["SuccessMessage"] = "Your completion has been recorded. Waiting on the other party.";
+
+                TempData["SuccessMessage"] = "Exchange marked as completed.";
+
+                // Redirect to the review page for that exchange.
+                return RedirectToAction("ReviewExchange", new { exchangeId = exchange.ExchangeId });
             }
-            await _context.SaveChangesAsync();
-
-            if (exchange != null)
-                await _tokenService.ReleaseTokensAsync(exchange.ExchangeId);
-
-            // log notification:
-            await _notif.AddAsync(new TblNotification
+            catch (Exception ex)
             {
-                UserId = GetCurrentUserId(),
-                Title = "Exchange Marked as Comepleted",
-                Message = "You successfully completed your exchange.",
-                Url = Url.Action("Index", "ExchangeDashboard"),
-            });
-
-            TempData["SuccessMessage"] = "Exchange marked as completed.";
-
-            // Redirect to the review page for that exchange.
-            return RedirectToAction("ReviewExchange", new { exchangeId = exchange.ExchangeId });
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Error marking exchange {ExchangeId} as completed", exchangeId);
+                TempData["ErrorMessage"] = "An error occurred while marking the exchange as completed.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CancelExchange(int exchangeId)
         {
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 // 1) Verify the exchange exists and is not already completed/declined
@@ -701,7 +718,10 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
 
                 if (exchange == null)
-                    return NotFound("Exchange not found.");
+                {
+                    TempData["ErrorMessage"] = "Exchange not found.";
+                    return RedirectToAction("EP404", "EP");
+                }
 
                 if (exchange.IsCompleted || exchange.Status == "Cancelled")
                 {
@@ -721,6 +741,7 @@ namespace SkillSwap_Platform.Controllers
                 catch (InvalidOperationException ex)
                 {
                     _logger.LogWarning(ex, "No tokens to refund for exchange {ExchangeId}.", exchangeId);
+                    return RedirectToAction("EP500", "EP");
                 }
 
                 // 3) Record an exchange‐history entry
@@ -735,6 +756,7 @@ namespace SkillSwap_Platform.Controllers
                     ChangedBy = userId
                 });
                 await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 // 4) Notify the user(s)
                 await _notif.AddAsync(new TblNotification
@@ -750,11 +772,13 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error cancelling exchange {ExchangeId}", exchangeId);
                 TempData["ErrorMessage"] = "An error occurred while cancelling the exchange.";
-                return RedirectToAction("Index");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
         [HttpGet]
         public async Task<IActionResult> ReviewExchange(int exchangeId)
@@ -765,7 +789,8 @@ namespace SkillSwap_Platform.Controllers
                 .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
             if (exchange == null)
             {
-                return NotFound("Exchange not found.");
+                TempData["ErrorMessage"] = "Exchange not found.";
+                return RedirectToAction("EP404", "EP");
             }
 
             // Check if cookies for reviewer details exist.
@@ -777,8 +802,8 @@ namespace SkillSwap_Platform.Controllers
             {
                 ExchangeId = exchange.ExchangeId,
                 OfferTitle = exchange.Offer?.Title ?? "N/A",
-                ReviewerName = reviewerName,     
-                ReviewerEmail = reviewerEmail         
+                ReviewerName = reviewerName,
+                ReviewerEmail = reviewerEmail
             };
 
             return View(reviewVm);
@@ -796,12 +821,6 @@ namespace SkillSwap_Platform.Controllers
                     .Select(e => e.ErrorMessage)
                     .ToList();
 
-                // Log the errors (assumes you have an ILogger<T> injected into your controller)
-                _logger.LogError(
-                    "Model validation failed. Errors: {ValidationErrors}",
-                    string.Join(" | ", validationErrors)
-                );
-
                 return View(model);
             }
 
@@ -809,8 +828,9 @@ namespace SkillSwap_Platform.Controllers
             var exchange = await _context.TblExchanges.FirstOrDefaultAsync(e => e.ExchangeId == model.ExchangeId);
             if (exchange == null)
             {
-                ModelState.AddModelError(string.Empty, "Exchange not found.");
-                return View(model);
+                TempData["ErrorMessage"] = "Exchange not found.";
+                return RedirectToAction("EP404", "EP");
+
             }
 
             // Determine the current user's id.
@@ -831,8 +851,8 @@ namespace SkillSwap_Platform.Controllers
             // Optionally, add error handling if revieweeId remains 0.
             if (revieweeId == 0)
             {
-                ModelState.AddModelError(string.Empty, "Unable to determine the reviewee for this exchange.");
-                return View(model);
+                TempData["ErrorMessage"] = "\"Unable to determine the reviewee for this exchange.";
+                return RedirectToAction("EP404", "EP");
             }
 
             // Here you would store the review details in the database.

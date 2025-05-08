@@ -101,7 +101,7 @@
                                                     <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                         <li>Time Commitment:  @Model.TimeCommitmentDays days </li>
                                                         <li>Availability Set: @Model.FreelanceType</li>
-                                                        <li>Created Date: @Model.CreatedDate?.ToString("MMMM dd,yyyy")</li>
+                                                        <li>Created Date: @Model.CreatedDate?.ToLocalTime().ToString("MMMM dd,yyyy")</li>
                                                     </ul>
                                                 </div>
                                             </div>

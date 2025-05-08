@@ -15,8 +15,16 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var model = await _performanceService.GetCurrentMetricsAsync();
-            return View(model);
+            try
+            {
+                var model = await _performanceService.GetCurrentMetricsAsync();
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Unable to load metrics right now.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
     }
 }

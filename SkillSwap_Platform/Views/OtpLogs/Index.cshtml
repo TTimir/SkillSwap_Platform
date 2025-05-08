@@ -98,7 +98,7 @@
                                             @if (Model.Page > 1)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Index"
                                                    asp-route-page="@(Model.Page - 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-left"></span>
@@ -121,7 +121,7 @@
                                                 else
                                                 {
                                                     <a class="page-link"
-                                                       asp-action="Manage"
+                                                       asp-action="Index"
                                                        asp-route-page="@p"
                                                        asp-route-pageSize="@Model.PageSize">@p</a>
                                                 }
@@ -133,7 +133,7 @@
                                             @if (Model.Page < Model.TotalPages)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Index"
                                                    asp-route-page="@(Model.Page + 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-right"></span>

@@ -25,7 +25,7 @@ namespace SkillSwap_Platform.Controllers
             _reviews = reviews ?? throw new ArgumentNullException(nameof(reviews));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _notif = notif;
+            _notif = notif ?? throw new ArgumentNullException(nameof(notif));
             _emailService = emailService;
         }
 
@@ -49,7 +49,7 @@ namespace SkillSwap_Platform.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading offers for user");
-                return StatusCode(500, "Could not load your offers.");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -71,10 +71,11 @@ namespace SkillSwap_Platform.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading reviews for offer {OfferId}", offerId);
-                return StatusCode(500, "An error occurred while loading reviews.");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
+        #region Submit Review
         // POST: /UserReview/SubmitReview
         [HttpPost]
         public async Task<IActionResult> SubmitReview(int offerId, int rating)
@@ -85,10 +86,10 @@ namespace SkillSwap_Platform.Controllers
                 try
                 {
                     var offer = await _context.TblOffers.Include(o => o.User).FirstOrDefaultAsync(o => o.OfferId == offerId);
-                    if (offer == null) return NotFound("Offer not found");
+                    if (offer == null) return RedirectToAction("EP404", "EP");
 
                     var user = offer.User;
-                    if (user == null) return NotFound("User not found");
+                    if (user == null) return RedirectToAction("EP404", "EP");
 
                     // ✅ Save the new review
                     var review = new TblReview
@@ -130,11 +131,13 @@ namespace SkillSwap_Platform.Controllers
                 {
                     await transaction.RollbackAsync();
                     _logger.LogError(ex, "Error submitting review for offer {OfferId}", offerId);
-                    return StatusCode(500, "An error occurred while submitting your review.");
+                    return RedirectToAction("EP500", "EP");
                 }
             }
         }
+        #endregion
 
+        #region Submit Reply
         // POST: /UserReview/SubmitReply
         [HttpPost]
         public async Task<IActionResult> SubmitReply(int reviewId, string replyText)
@@ -145,7 +148,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     var review = await _context.TblReviews.FindAsync(reviewId);
                     if (review == null)
-                        return NotFound("Review not found");
+                        return RedirectToAction("EP404", "EP");
 
                     var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     if (!int.TryParse(userIdClaim, out var userId))
@@ -198,11 +201,13 @@ namespace SkillSwap_Platform.Controllers
                 {
                     await tx.RollbackAsync();
                     _logger.LogError(ex, "Error submitting reply to review {ReviewId}", reviewId);
-                    return StatusCode(500, "An error occurred while submitting your reply.");
+                    return RedirectToAction("EP500", "EP");
                 }
             }
         }
+        #endregion
 
+        #region Flag Review & Reply
         [HttpPost]
         public async Task<IActionResult> Flag(int reviewId)
         {
@@ -276,9 +281,10 @@ namespace SkillSwap_Platform.Controllers
             catch
             {
                 _logger.LogError("Error flagging review {ReviewId}", reviewId);
-                return StatusCode(500, "An error occurred while flagging the review.");
+                return RedirectToAction("EP500", "EP");
             }
         }
+       
 
         [HttpPost]
         public async Task<IActionResult> FlagReply(int replyId)
@@ -356,9 +362,10 @@ namespace SkillSwap_Platform.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error flagging reply {ReplyId}", replyId);
-                return StatusCode(500, "An error occurred while flagging the reply.");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
         #region Helper Class
         /// <summary>

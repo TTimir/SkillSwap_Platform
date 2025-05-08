@@ -25,28 +25,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             _logger = logger;
         }
 
+        #region Search Offers
         [HttpGet]
         public async Task<IActionResult> Offers(string term = "", int page = 1)
         {
-            var criteria = new SearchCriteria
+            try
             {
-                Term = term,
-                Page = page,
-                PageSize = 10
-            };
+                var criteria = new SearchCriteria
+                {
+                    Term = term,
+                    Page = page,
+                    PageSize = 10
+                };
 
-            var results = await _searchService.SearchOffersAsync(criteria);
-            var vm = new OfferSearchVM
+                var results = await _searchService.SearchOffersAsync(criteria);
+                var vm = new OfferSearchVM
+                {
+                    Term = term,
+                    Results = results
+                };
+                return View(vm);
+            }
+            catch (Exception ex)
             {
-                Term = term,
-                Results = results
-            };
-            return View(vm);
+                TempData["ErrorMessage"] = "Unable to search offers. Please try again.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
+        #endregion
 
+        #region Offer Details
         [HttpGet]
         public async Task<IActionResult> OfferDetails(int id)
         {
+            if (id <= 0) return BadRequest();
             try
             {
                 // 1) get current user ID from claims
@@ -65,10 +77,12 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _logger.LogError(ex, "Failed to load details for offer {OfferId}", id);
                 TempData["ErrorMessage"] = "Unable to load offer details.";
-                return RedirectToAction("Offers");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
+        #region Search Users
         [HttpGet]
         public async Task<IActionResult> Users(string? term, int page = 1)
         {
@@ -83,13 +97,16 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _logger.LogError(ex, "Failed to load user search results");
                 TempData["ErrorMessage"] = "Unable to load users. Please try again later.";
-                return View(new PagedResult<UserSearchResultDto>());
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
+        #region User Details
         [HttpGet]
         public async Task<IActionResult> UserDetails(int id)
         {
+            if (id <= 0) return BadRequest();
             try
             {
                 var dto = await _searchService.GetUserDetailAsync(id);
@@ -99,9 +116,10 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _logger.LogError(ex, "Failed to load details for user {UserId}", id);
                 TempData["ErrorMessage"] = "Unable to load user details.";
-                return RedirectToAction("Users");
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
 
     }
 }

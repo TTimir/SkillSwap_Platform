@@ -65,57 +65,56 @@ namespace SkillSwap_Platform.Services.Wishlist
             try
             {
                 // Load Wishlist → Offer → Offer.User
-                var query = _db.TblUserWishlists
+                var baseQuery = _db.TblUserWishlists
+                    .AsNoTracking()
                     .Where(w => w.UserId == userId)
                     .Include(w => w.Offer)
                       .ThenInclude(o => o.User);
 
-                var totalCount = await query.CountAsync();
+                var totalCount = await baseQuery.CountAsync();
 
-                var pageEntries = await _db.TblUserWishlists
-    .Where(w => w.UserId == userId)
-    .Include(w => w.Offer)
-       .ThenInclude(o => o.User)
-    .AsSingleQuery()      // ← absolutely no CTEs
-    .OrderByDescending(w => w.CreatedAt)
-    .Skip((page - 1) * pageSize)
-    .Take(pageSize)
-    .ToListAsync();
+                //var pageEntries = await _db.TblUserWishlists
+                //    .Where(w => w.UserId == userId)
+                //    .Include(w => w.Offer)
+                //       .ThenInclude(o => o.User)
+                //    .AsSingleQuery()      // ← absolutely no CTEs
+                //    .OrderByDescending(w => w.CreatedAt)
+                //    .Skip((page - 1) * pageSize)
+                //    .Take(pageSize)
+                //    .ToListAsync();
 
-                
-                var items = await _db.TblUserWishlists
-    .Where(w => w.UserId == userId)
-    .OrderByDescending(w => w.CreatedAt)
-    .Skip((page - 1) * pageSize)
-    .Take(pageSize)
-    .Select(w => new OfferWishlistVm
-    {
-        OfferId = w.OfferId,
-        Title = w.Offer.Title,
-        ThumbnailUrl = !string.IsNullOrEmpty(w.Offer.Portfolio)
-            ? JsonConvert
-                .DeserializeObject<List<string>>(w.Offer.Portfolio)
-                .FirstOrDefault()!
-            : "/template_assets/images/default-offer.png",
-        CreatedAt = w.CreatedAt,
+                var items = await baseQuery
+                    .OrderByDescending(w => w.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(w => new OfferWishlistVm
+                    {
+                        OfferId = w.OfferId,
+                        Title = w.Offer.Title,
+                        ThumbnailUrl = !string.IsNullOrEmpty(w.Offer.Portfolio)
+                            ? JsonConvert
+                                .DeserializeObject<List<string>>(w.Offer.Portfolio)
+                                .FirstOrDefault()!
+                            : "/template_assets/images/default-offer.png",
+                        CreatedAt = w.CreatedAt,
 
-        Category = w.Offer.Category,
+                        Category = w.Offer.Category,
 
-        // these become scalar subqueries in the SQL—no CTE!
-        ReviewCount = _db.TblReviews
-            .Where(r => r.OfferId == w.OfferId)
-            .Count(),
+                        // these become scalar subqueries in the SQL—no CTE!
+                        ReviewCount = _db.TblReviews
+                            .Where(r => r.OfferId == w.OfferId)
+                            .Count(),
 
-        AverageRating = _db.TblReviews
-            .Where(r => r.OfferId == w.OfferId)
-            .Average(r => (double?)r.Rating) ?? 0,
+                        AverageRating = _db.TblReviews
+                            .Where(r => r.OfferId == w.OfferId)
+                            .Average(r => (double?)r.Rating) ?? 0,
 
-        OwnerUsername = w.Offer.User.UserName,
-        OwnerProfileImage = w.Offer.User.ProfileImageUrl
-                              ?? "/template_assets/images/No_Profile_img.png",
-        Location = w.Offer.User.City
-    })
-    .ToListAsync();
+                        OwnerUsername = w.Offer.User.UserName,
+                        OwnerProfileImage = w.Offer.User.ProfileImageUrl
+                                              ?? "/template_assets/images/No_Profile_img.png",
+                        Location = w.Offer.User.City
+                    })
+                    .ToListAsync();
 
                 return new WishlistPagedVm
                 {

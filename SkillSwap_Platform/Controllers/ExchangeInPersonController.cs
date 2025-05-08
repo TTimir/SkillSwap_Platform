@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Services.NotificationTrack;
 using Google.Apis.Calendar.v3.Data;
+using System.Text;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -33,7 +34,7 @@ namespace SkillSwap_Platform.Controllers
             var exchange = await _context.TblExchanges.FindAsync(exchangeId);
             if (exchange == null)
             {
-                return NotFound();
+                return RedirectToAction("EP404", "EP");
             }
 
             // Build the view model with a default scheduled time (e.g., one hour later).
@@ -56,6 +57,8 @@ namespace SkillSwap_Platform.Controllers
             {
                 return View(model);
             }
+
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 // Ensure the current user is a participant.
@@ -81,7 +84,7 @@ namespace SkillSwap_Platform.Controllers
                 // Load the related exchange record (to retrieve participant IDs)
                 var exchange = await _context.TblExchanges.FindAsync(model.ExchangeId);
                 if (exchange == null)
-                    return NotFound();
+                    return RedirectToAction("EP404", "EP");
 
                 // Update the exchange record with meeting mode and OTP info.
                 exchange.IsInPersonExchange = true;
@@ -102,12 +105,7 @@ namespace SkillSwap_Platform.Controllers
                     // The sender is the current user.
                     SenderUserId = currentUserId,
                     ReceiverUserId = model.OtherUserId,
-                    Content = $"<div style='background:rgba(91, 187, 123, 0.05); color:#5BBB7B; border:1px solid #5BBB7B; padding:10px; border-radius:5px;'>" +
-                              $"<strong>Meeting Scheduled:</strong> {model.ScheduledDateTime.ToLocalTime():dd MMMM, yyyy HH:mm}<br/>" +
-                              $"<strong>Location:</strong> {model.Location}<br/>" +
-                              (!string.IsNullOrWhiteSpace(model.Notes) ? $"<strong>Notes:</strong> {model.Notes}<br/>" : "") +
-                              $"<br/><strong>Important:</strong> Please share your OTP with the other party. Your OTP is: ******" +
-                              $"</div>",
+                    Content = BuildInPersonNotificationContent(model, newMeeting, currentUserId),
                     SentDate = DateTime.UtcNow,
                     MessageType = "InPersonMeetNotification",
                     ExchangeId = model.ExchangeId,
@@ -128,6 +126,7 @@ namespace SkillSwap_Platform.Controllers
                 };
                 _context.TblExchangeHistories.Add(schedulingHistory);
                 await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 // log notification:
                 await _notif.AddAsync(new TblNotification
@@ -135,7 +134,7 @@ namespace SkillSwap_Platform.Controllers
                     UserId = GetUserId(),
                     Title = "In-Person Meeting Scheduled",
                     Message = "Meeting for your in-person meet scheduled.",
-                    Url = Url.Action("Conversation", "Messaging"),
+                    Url = Url.Action("Conversation", "Messaging", new { exchangeId = model.ExchangeId })
                 });
 
                 TempData["SuccessMessage"] = "In-person meeting scheduled successfully. A notification has been sent to the other party.";
@@ -143,11 +142,32 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error scheduling in-person meeting for exchange {ExchangeId}", model.ExchangeId);
                 TempData["ErrorMessage"] = "An error occurred while scheduling the meeting.";
                 return View(model);
             }
         }
+
+        // Helper to build the HTML content
+        private string BuildInPersonNotificationContent(
+            ScheduleInPersonVM model,
+            TblInPersonMeeting meeting,
+            int currentUserId)
+        {
+            // hide actual OTP in content
+            var safeOtp = "******";
+            var sb = new StringBuilder();
+            sb.Append("<div class='notification inperson'>")
+              .Append($"<strong>Scheduled:</strong> {model.ScheduledDateTime.ToLocalTime():dd MMM yyyy HH:mm}<br/>")
+              .Append($"<strong>Location:</strong> {model.Location}<br/>");
+            if (!string.IsNullOrEmpty(model.Notes))
+                sb.Append($"<strong>Notes:</strong> {model.Notes}<br/>");
+            sb.Append($"<strong>OTP:</strong> {safeOtp}")
+              .Append("</div>");
+            return sb.ToString();
+        }
+
         #endregion
 
         #region OTP Verification and Retrieval
@@ -397,7 +417,7 @@ namespace SkillSwap_Platform.Controllers
                 UserId = GetUserId(),
                 Title = "In-Person Meeting Proof",
                 Message = "Meeting for your in-person meet start Proof Submitted.",
-                Url = Url.Action("Conversation", "Messaging"),
+                Url = Url.Action("Conversation", "Messaging", new { exchangeId = model.ExchangeId })
             });
 
             TempData["SuccessMessage"] = "Your meeting end proof has been uploaded successfully.";
@@ -414,7 +434,7 @@ namespace SkillSwap_Platform.Controllers
             var meetingRecord = await _context.TblExchanges.FirstOrDefaultAsync(m => m.ExchangeId == exchangeId);
             if (meetingRecord == null)
             {
-                return NotFound();
+                return RedirectToAction("EP404", "EP");
             }
 
             // Build the view model. Default end meeting time is now.
@@ -486,7 +506,7 @@ namespace SkillSwap_Platform.Controllers
                     UserId = GetUserId(),
                     Title = "In-Person Meeting Proof",
                     Message = "Meeting for your in-person meet end Proof Submitted.",
-                    Url = Url.Action("Conversation", "Messaging"),
+                    Url = Url.Action("Conversation", "Messaging", new { exchangeId = model.ExchangeId })
                 });
 
                 TempData["SuccessMessage"] = "Your end meeting details have been submitted successfully.";

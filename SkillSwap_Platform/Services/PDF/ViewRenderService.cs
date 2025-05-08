@@ -39,12 +39,12 @@ namespace SkillSwap_Platform.Services.PDF
             // Find the view
             var viewResult = _viewEngine.FindView(actionContext, viewName, isMainPage: false);
             if (!viewResult.Success)
-            {
-                throw new ArgumentNullException($"{viewName} does not match any available view");
-            }
+                throw new InvalidOperationException($"View '{viewName}' not found for controller '{controllerName}'.");
 
-            using var sw = new StringWriter();
-            var viewContext = new ViewContext(
+            try
+            {
+                await using var sw = new StringWriter();
+                var viewContext = new ViewContext(
                 actionContext,
                 viewResult.View,
                 new ViewDataDictionary<TModel>(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = model },
@@ -52,8 +52,13 @@ namespace SkillSwap_Platform.Services.PDF
                 sw,
                 new HtmlHelperOptions());
 
-            await viewResult.View.RenderAsync(viewContext);
-            return sw.ToString();
+                await viewResult.View.RenderAsync(viewContext);
+                return sw.ToString();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Error rendering view '{viewName}': {ex.Message}", ex);
+            }
         }
     }
 }

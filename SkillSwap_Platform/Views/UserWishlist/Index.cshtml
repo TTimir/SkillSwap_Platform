@@ -44,7 +44,7 @@
                                     <div class="col-sm-6 col-xl-3">
                                         <div class="listing-style1">
                                             <div class="list-thumb">
-                                                <img class="w-100" src="@Url.Content(item.ThumbnailUrl)" alt="@item.Title">
+                                                <img class="w-100" src="@Url.Content(item.ThumbnailUrl ?? "~/template_assets/images/default-offer.png")" alt="@item.Title" loading="lazy">
                                                 <form asp-controller="UserWishlist"
                                                       asp-action="Remove"
                                                       method="post"
@@ -63,10 +63,10 @@
                                             </div>
                                             <div class="list-content">
                                                 <p class="list-text body-color fz14 mb-1">@item.Category</p>
-                                                <h5 class="list-title line-clamp2   "><a asp-controller="UserOfferDetails" asp-action="OfferDetails" asp-route-id="@item.OfferId" class="text-dark">@item.Title</a></h5>
+                                                <h5 class="list-title line-clamp2"><a asp-controller="UserOfferDetails" asp-action="OfferDetails" asp-route-id="@item.OfferId" class="text-dark">@item.Title</a></h5>
                                                 <div class="review-meta d-flex align-items-center">
                                                     <i class="fas fa-star fz10 review-color me-2"></i>
-                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@item.AverageRating.ToString("0.00")</span>@item.ReviewCount reviews</p>
+                                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@item.AverageRating.ToString("0.0")</span>@item.ReviewCount reviews</p>
                                                 </div>
                                                 <hr class="my-2">
                                                 <div class="list-meta d-flex justify-content-between align-items-center mt15">
@@ -77,7 +77,7 @@
                                                         <span class="fz14">@item.OwnerUsername</span>
                                                     </a>
                                                     <div class="budget">
-                                                        <p class="mb-0 body-color">Location <br /><span class="fz17 fw500 dark-color ms-1">@item.Location</span></p>
+                                                        <p class="mb-0 body-color">Location <br /><span class="fz17 fw500 dark-color ms-1">@(item.Location ?? "—")</span></p>
                                                     </div>
                                                 </div>
                                             </div>

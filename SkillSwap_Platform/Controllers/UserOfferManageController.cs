@@ -321,7 +321,7 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(o => o.OfferId == offerId && o.UserId == userId);
                 if (offer == null)
                 {
-                    return NotFound("Offer not found");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Deserialize portfolio JSON (if any)
@@ -469,7 +469,7 @@ namespace SkillSwap_Platform.Controllers
                     var offer = await _context.TblOffers.FirstOrDefaultAsync(o => o.OfferId == model.OfferId && o.UserId == userId);
                     if (offer == null)
                     {
-                        return NotFound("Offer not found");
+                        return RedirectToAction("EP500", "EP");
                     }
 
                     // Update the offer entity with values from the model.
@@ -635,7 +635,7 @@ namespace SkillSwap_Platform.Controllers
                     await transaction.RollbackAsync();
                     ModelState.AddModelError("", "An error occurred while updating your offer. Please try again.");
                     PopulateDropdownsForEdit(model, userId);
-                    return View(model);
+                    return RedirectToAction("EP500", "EP");
                 }
             }
         }
@@ -681,7 +681,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading delete confirmation for offer {OfferId} for user {UserId}", offerId, userId);
                 TempData["ErrorMessage"] = "An error occurred while loading the offer.";
-                return RedirectToAction("OfferList", "UserOfferManage");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -1000,7 +1000,7 @@ namespace SkillSwap_Platform.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading FAQs for offer {OfferId}", offerId);
-                return StatusCode(500, "Unable to load FAQs.");
+                return RedirectToAction("EP500", "EP");
             }
         }
 

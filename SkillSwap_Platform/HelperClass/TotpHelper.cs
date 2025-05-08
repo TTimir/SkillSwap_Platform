@@ -31,33 +31,26 @@ namespace SkillSwap_Platform.HelperClass
         /// ✅ **Verify the TOTP Code Securely**
         public static bool VerifyTotpCode(string secretKey, string userCode, out string failureReason)
         {
-            // Normalize the secret.
-            string formattedSecret = secretKey.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(userCode))
+            {
+                failureReason = "No code provided.";
+                return false;
+            }
 
             // Convert the Base32 secret to bytes.
-            byte[] secretBytes = Base32Encoding.ToBytes(formattedSecret);
+            byte[] secretBytes = Base32Encoding.ToBytes(secretKey.Trim().ToUpperInvariant());
 
-            // Create a Totp instance with parameters matching Google Authenticator:
-            // 30-second time step, 6-digit code, SHA1.
+            // Create a Totp instance (30s step, 6-digit, SHA1).
             var totp = new Totp(secretBytes, step: 30, mode: OtpHashMode.Sha1, totpSize: 6);
 
             // Get current UTC time.
             DateTime utcNow = DateTime.UtcNow;
 
-            // Compute OTP for the current time, previous, and next time steps.
-            string expectedOtpCurrent = totp.ComputeTotp(utcNow);
-            string expectedOtpPrevious = totp.ComputeTotp(utcNow.AddSeconds(-30));
-            string expectedOtpNext = totp.ComputeTotp(utcNow.AddSeconds(30));
-
-            // Allow a verification window of one time step before and after.
             var window = new VerificationWindow(previous: 1, future: 1);
-            if (userCode != null)
+            bool isValid = totp.VerifyTotp(userCode.Trim(), out _, window);
+            if (!isValid)
             {
-                bool verified = totp.VerifyTotp(userCode, out long timeStepMatched, window);
-            }
-            else
-            {
-                failureReason = "The code is invalid. Please ensure your authenticator app’s clock is set correctly.";
+                failureReason = "Invalid code or clock skew. Please ensure your authenticator app’s clock is set correctly.";
                 return false;
             }
 

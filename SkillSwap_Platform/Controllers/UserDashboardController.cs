@@ -54,15 +54,12 @@ namespace SkillSwap_Platform.Controllers
                 var newReviews = Math.Max(0, rawNewReviews - 2);
 
                 // 1️⃣ Top 7 offers by total Views
-                var allOffers = await _db.TblOffers
+                var top7 = await _db.TblOffers
                     .Where(o => o.UserId == userId)
+                    .OrderByDescending(o => o.Views)
                     .Select(o => new { o.Title, o.Views })
-                    .ToListAsync();
-
-                var top7 = allOffers
-                    .OrderByDescending(x => x.Views)
                     .Take(7)
-                    .ToList();
+                    .ToListAsync();
 
                 // 2️⃣ Views aggregated by Category
                 var byCat = await _db.TblOffers
@@ -177,7 +174,7 @@ namespace SkillSwap_Platform.Controllers
                     RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
                 };
 
-                return View("Error", errorVm);
+                return RedirectToAction("EP500", "EP");
             }
         }
     }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.WishlistVM;
 using SkillSwap_Platform.Services.Wishlist;
 using System.Security.Claims;
@@ -11,18 +13,27 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly IWishlistService _wishlist;
         private readonly ILogger<UserWishlistController> _logger;
+        private readonly IConfiguration _config;
+        private readonly SkillSwapDbContext _dbcontext;
 
-        public UserWishlistController(IWishlistService wishlist, ILogger<UserWishlistController> logger)
+        public UserWishlistController(IWishlistService wishlist, ILogger<UserWishlistController> logger, IConfiguration config, SkillSwapDbContext dbContext)
         {
             _wishlist = wishlist;
             _logger = logger;
+            _config = config;
+            _dbcontext = dbContext;
         }
 
+        #region Helpers
         private int GetCurrentUserId()
         {
-            return int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id))
+                throw new InvalidOperationException("User ID claim missing");
+            return id;
         }
+        #endregion
 
+        #region List
         [HttpGet]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
@@ -45,41 +56,44 @@ namespace SkillSwap_Platform.Controllers
                 });
             }
         }
+        #endregion
 
+        #region Add / Remove
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(int offerId)
         {
+            await using var tx = await _dbcontext.Database.BeginTransactionAsync();
             try
             {
                 await _wishlist.AddToWishlistAsync(GetCurrentUserId(), offerId);
-                return RedirectToAction(
-                    actionName: "OfferDetails",
-                    controllerName: "UserOfferDetails",
-                    routeValues: new { offerId });
+                await tx.CommitAsync();
+                return RedirectToAction("OfferDetails", "UserOfferDetails", new { offerId });
             }
             catch
             {
+                await tx.RollbackAsync();
                 TempData["ErrorMessage"] = "Failed to add to wishlist.";
-                return RedirectToAction("Index", "Offer");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Remove(int offerId)
         {
+            await using var tx = await _dbcontext.Database.BeginTransactionAsync();
             try
             {
                 await _wishlist.RemoveFromWishlistAsync(GetCurrentUserId(), offerId);
-                return RedirectToAction(
-                    actionName: "OfferDetails",
-                    controllerName: "UserOfferDetails",
-                    routeValues: new { offerId });
+                await tx.CommitAsync();
+                return RedirectToAction("OfferDetails", "UserOfferDetails", new { offerId });
             }
             catch
             {
+                await tx.RollbackAsync();
                 TempData["ErrorMessage"] = "Failed to remove from wishlist.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("EP500", "EP");
             }
         }
+        #endregion
     }
 }

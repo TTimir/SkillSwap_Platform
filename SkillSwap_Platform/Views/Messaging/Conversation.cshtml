@@ -78,10 +78,8 @@
                                         </div>
                                         <div class="iul_notific">
                                             @{
-                                                // Parse the stored value
-                                                var dt = DateTime.Parse(contact.LastMessageTime);
                                                 // Explicitly specify that it’s local time
-                                                dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                                                var dt = DateTime.Parse(contact.LastMessageTime).ToLocalTime();
                                             }
                                             <small>@dt.Humanize()</small>
                                             @if (contact.UnreadCount > 0)

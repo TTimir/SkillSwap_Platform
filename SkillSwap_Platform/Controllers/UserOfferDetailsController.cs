@@ -36,8 +36,9 @@ namespace SkillSwap_Platform.Controllers
         #region Offer Details
         // GET: /UserOffer/Details/{offerId}
         [HttpGet]
-        public async Task<IActionResult> OfferDetails(int offerId)
+        public async Task<IActionResult> OfferDetails(int offerId, CancellationToken ct)
         {
+            using var tx = _context.Database.BeginTransaction();
             try
             {
                 // Fetch the offer including its portfolio items.
@@ -49,7 +50,7 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(o => o.OfferId == offerId);
                 if (offer == null)
                 {
-                    return NotFound("Offer not found.");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // 2. Retrieve reviews related to the offer.
@@ -166,6 +167,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch comparable offers (excluding the current offer) in a separate try-catch block.
                 List<CompareOfferVM> comparableOffers = new List<CompareOfferVM>();
+                using var tx2 = _context.Database.BeginTransaction(); 
                 try
                 {
                     // Fetch comparable offers from the database (raw data without processing)
@@ -222,7 +224,9 @@ namespace SkillSwap_Platform.Controllers
                 }
                 catch (Exception ex)
                 {
+                    await tx2.RollbackAsync(ct);
                     _logger.LogError(ex, "Error fetching comparable offers for Offer {OfferId}", offerId);
+                    return RedirectToAction("EP500", "EP");
                 }
 
                 // ***************** NEW LOGIC FOR REVIEW ************************
@@ -284,14 +288,17 @@ namespace SkillSwap_Platform.Controllers
                     // This user hasn't viewed this offer in the current session; update the view count.
                     _ = Task.Run(async () =>
                     {
+                        using var tx3 = _context.Database.BeginTransaction();
                         try
                         {
                             offer.Views++;  // Increment the view count (make sure your model includes a Views property)
                             await _context.SaveChangesAsync();
+                            await tx.RollbackAsync(ct);
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error updating view count for offer {OfferId}", offerId);
+                            await tx3.RollbackAsync(ct);
                         }
                     });
                     // Set the session flag so that subsequent refreshes in the same session won't increment the count.
@@ -409,6 +416,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Error fetching details for offer {OfferId}", offerId);
                 TempData["ErrorMessage"] = "An error occurred while loading offer details.";
                 return RedirectToAction("EP500", "EP");
@@ -424,6 +432,7 @@ namespace SkillSwap_Platform.Controllers
             int? maxTimeCommitment, string skillLevel, string designTool,
             string freelanceType, string interactionMode, int page = 1, int pageSize = 20)
         {
+            using var tx = _context.Database.BeginTransaction();
             try
             {
                 var currentUserId = User.Identity.IsAuthenticated
@@ -718,6 +727,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error loading public offer list");
                 TempData["ErrorMessage"] = "An error occurred while loading offers.";
                 return RedirectToAction("EP500", "EP");

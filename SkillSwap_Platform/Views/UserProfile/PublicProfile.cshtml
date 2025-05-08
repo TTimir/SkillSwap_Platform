@@ -383,7 +383,7 @@
                                                             <i class="fas fa-star vam fz10 review-color me-2"></i> 0 reviews
                                                         </p>
                                                     }                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-place vam fz20 me-2"></i> @Model.User.City, @Model.User.Country</p>
-                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToString("MMMM d, yyyy")</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToLocalTime().ToString("MMMM d, yyyy")</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -488,7 +488,7 @@
                                     {
                                         <div class="m-circle text-thm">M</div>
                                         <div class="wrapper mb40">
-                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToString("yyyy")</span>
+                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToLocalTime().ToString("yyyy")</span>
                                             <h5 class="mt15">@education.DegreeName</h5>
                                             <h6 class="text-thm">@education.InstitutionName</h6>
                                             <p>@(string.IsNullOrWhiteSpace(education.Description) ? "No description available." : education.Description)</p>
@@ -503,7 +503,7 @@
                                     {
                                         <div class="m-circle text-thm">M</div>
                                         <div class="wrapper mb40">
-                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToString("MM/yyyy")</span>
+                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToLocalTime().ToString("MM/yyyy")</span>
                                             <h5 class="mt15">@experience.Position</h5>
                                             <h6 class="text-thm">@experience.CompanyName</h6>
                                             <p>@(string.IsNullOrWhiteSpace(experience.Description) ? "No description available." : experience.Description)</p>
@@ -531,7 +531,7 @@
                                                         <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
                                                             @if (certificate.IsApproved)
                                                             {
-                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToString("MMMM dd, yyyy")</span>
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToLocalTime().ToString("MMMM dd, yyyy")</span>
                                                             }
                                                             else
                                                             {
@@ -758,7 +758,7 @@
                                                                      alt="Reviewer Photo" class="rounded-circle mr10" style="width:40px; height:40px;" />
                                                                 <div class="ml20">
                                                                     <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
-                                                                    <small class="text-muted">@review.CreatedDate.ToString("dd MMM, yyyy")</small>
+                                                                    <small class="text-muted">@review.CreatedDate.ToLocalTime().ToString("dd MMM, yyyy")</small>
                                                                 </div>
                                                             </div>
                                                             <div class="review-rating my10">
@@ -960,7 +960,7 @@
                                         <span class="text"><i class="flaticon-place text-thm2 pe-2 vam"></i>Location</span> <span class="">@Model.User.City, @Model.User.Country</span>
                                     </a>
                                     <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
-                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToString("MMMM dd, yyyy")</span>
+                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span>
                                     </a>
                                     <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
                                         <span class="text"><i class="flaticon-calendar text-thm2 pe-2 vam"></i>Last Exchange</span> 

@@ -23,7 +23,7 @@ namespace SkillSwap_Platform.Controllers
         // GET: /UserProfileList/PublicProfileList
         [HttpGet]
         public async Task<IActionResult> PublicProfileList(
-            string keyword, string location, int page = 1, int pageSize = 20)
+            string keyword, string location, int page = 1, int pageSize = 10)
         {
             try
             {
@@ -44,17 +44,17 @@ namespace SkillSwap_Platform.Controllers
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
                     usersQuery = usersQuery.Where(u =>
-                        u.UserName.Contains(keyword) ||
-                        u.FirstName.Contains(keyword) ||
-                        u.LastName.Contains(keyword));
+                        EF.Functions.Like(u.UserName, $"%{keyword}%") ||
+                        EF.Functions.Like(u.FirstName, $"%{keyword}%") ||
+                        EF.Functions.Like(u.LastName, $"%{keyword}%"));
                 }
 
                 // Apply location filter on city or country.
                 if (!string.IsNullOrWhiteSpace(location))
                 {
                     usersQuery = usersQuery.Where(u =>
-                        u.City.Contains(location) ||
-                        u.Country.Contains(location));
+                        EF.Functions.Like(u.City, $"%{location}%") ||
+                        EF.Functions.Like(u.Country, $"%{location}%"));
                 }
 
                 int totalUsers = await usersQuery.CountAsync();

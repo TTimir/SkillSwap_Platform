@@ -178,7 +178,7 @@
                             <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
                             <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
                             <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
-                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                             <p>
                                 <strong>Status:</strong>
                                 <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
@@ -272,7 +272,7 @@
                         <div class="exchange-verification-info">
                             <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
                             <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
-                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            <strong>Date:</strong> @Model.SentDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")
                             @if (meetingEnd.HasValue)
                             {
                                 <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />
@@ -513,7 +513,7 @@
                             <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
                             <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
                             <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
-                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                             <p>
                                 <strong>Status:</strong>
                                 <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
@@ -605,7 +605,7 @@
                         <div class="exchange-verification-info">
                             <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
                             <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
-                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            <strong>Date:</strong> @Model.SentDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")
                             @if (meetingEnd.HasValue)
                             {
                                 <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />

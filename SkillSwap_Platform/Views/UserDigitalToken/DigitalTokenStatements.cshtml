@@ -79,7 +79,7 @@
                                 _ => "style4"
                             };
                             <tr class="@(tx.Highlight ? "active" : "")">
-                                <th scope="row">@tx.Date.ToString("MMMM d, yyyy")</th>
+                                <th scope="row">@tx.Date.ToLocalTime().ToString("MMMM d, yyyy")</th>
                                 <td class="vam"><span class="pending-style @badgeClass">@tx.Type</span></td>
                                 <td class="vam">@tx.Detail</td>
                                 <td class="vam">

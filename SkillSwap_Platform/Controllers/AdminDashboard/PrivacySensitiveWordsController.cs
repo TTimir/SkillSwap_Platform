@@ -23,8 +23,16 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         [HttpGet]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
-            var model = await _svc.GetPagedAsync(page, pageSize);
-            return View(model);
+            try
+            {
+                var model = await _svc.GetPagedAsync(page, pageSize);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Unable to load words";
+                return RedirectToAction("EP500", "EP");
+            }
         }
 
         [HttpGet]
@@ -46,7 +54,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _log.LogError(ex, "Create failed {@Vm}", vm);
                 ModelState.AddModelError("", "Unable to add word.");
-                return View(vm);
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -73,7 +81,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _log.LogError(ex, "Edit failed {@Vm}", vm);
                 ModelState.AddModelError("", "Unable to update word.");
-                return View(vm);
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -89,6 +97,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 _log.LogError(ex, "Delete failed {Id}", id);
                 TempData["Error"] = "Unable to delete word.";
+                return RedirectToAction("EP500", "EP");
             }
             return RedirectToAction(nameof(Index));
         }

@@ -38,6 +38,7 @@ namespace SkillSwap_Platform.Controllers
         [Obsolete]
         public async Task<IActionResult> CreateEvent(int? exchangeId, int otherUserId)
         {
+            using var tx = await _dbContext.Database.BeginTransactionAsync();
             try
             {
                 // Get current user id
@@ -59,19 +60,19 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
                 if (exchange == null)
                 {
-                    _logger.LogError("Exchange with id {ExchangeId} not found.", exchangeId);
-                    return NotFound("Exchange not found.");
+                    TempData["ErrorMessage"] = "Exchange not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 var offer = exchange.Offer;
                 if (offer == null)
                 {
-                    _logger.LogError("Associated offer for exchange id {ExchangeId} is null.", exchangeId);
-                    return NotFound("Offer not found.");
+                    TempData["ErrorMessage"] = "Offer not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
-            exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                    exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
                 {
                     exchange.IsInOnlineExchange = true;
                 }
@@ -106,8 +107,7 @@ namespace SkillSwap_Platform.Controllers
                 var userToken = await _dbContext.UserGoogleTokens.FirstOrDefaultAsync(t => t.UserId == userId);
                 if (userToken == null)
                 {
-                    // No token stored – must re-authorize.
-                    return RedirectToAction("Authorize", "GoogleAuth");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // If token is expired, refresh it.
@@ -116,8 +116,7 @@ namespace SkillSwap_Platform.Controllers
                     userToken = await RefreshAccessTokenAsync(userToken);
                     if (userToken == null)
                     {
-                        // Refresh failed; redirect to reauthorize.
-                        return RedirectToAction("Authorize", "GoogleAuth");
+                        return RedirectToAction("EP404", "EP");
                     }
                 }
 
@@ -237,7 +236,8 @@ namespace SkillSwap_Platform.Controllers
 
                 if (exchange == null)
                 {
-                    return NotFound("Exchange record not found.");
+                    TempData["ErrorMessage"] = "Exchange not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Store Exchange history record.
@@ -253,6 +253,7 @@ namespace SkillSwap_Platform.Controllers
                 };
                 _dbContext.TblExchangeHistories.Add(historyRecord);
                 await _dbContext.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 // log notification:
                 await _notif.AddAsync(new TblNotification
@@ -274,8 +275,9 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error creating Google Calendar event.");
-                return StatusCode(500, "Internal Server Error");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -414,8 +416,8 @@ namespace SkillSwap_Platform.Controllers
                 var meeting = await _dbContext.TblMeetings.FirstOrDefaultAsync(m => m.MeetingId == meetingId);
                 if (meeting == null)
                 {
-                    _logger.LogError("Meeting with id {MeetingId} not found.", meetingId);
-                    return NotFound("Meeting not found.");
+                    TempData["ErrorMessage"] = "Meeting not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Update the meeting record with the provided notes, and mark the meeting as 'Completed'.
@@ -455,8 +457,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving meeting notes for meeting id {MeetingId}.", meetingId);
-                return StatusCode(500, "Internal Server Error");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -516,7 +517,8 @@ namespace SkillSwap_Platform.Controllers
             var meeting = await _dbContext.TblMeetings.FirstOrDefaultAsync(m => m.MeetingId == meetingId);
             if (meeting == null)
             {
-                return NotFound("Meeting record not found.");
+                TempData["ErrorMessage"] = "Meeting record not found.";
+                return RedirectToAction("EP404", "EP");
             }
 
             // Use the meetingStartTime passed from the client instead of the one stored in the DB.

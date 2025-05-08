@@ -98,7 +98,7 @@
                                                         }
                                                         @* <i class="fas fa-star vam fz10 review-color me-2"></i><span class="fz15 fw500">4.98</span> *@
                                                         </div>
-                                                    <div class="ms-3"><span class="fz14 text">@r.CreatedDate.ToString("MMM d, yyyy")</span></div>
+                                                    <div class="ms-3"><span class="fz14 text">@r.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")</span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -113,7 +113,7 @@
                                                         <div class="d-flex align-items-center">
                                                             <strong>@reply.ReplierUser.UserName</strong>
                                                             <small class="text-muted ms-2">
-                                                                @reply.CreatedDate.ToString("MMM d, yyyy")
+                                                                @reply.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
                                                             </small>
                                                         </div>
                                                         <p class="mb-1">@reply.Comments</p>
@@ -189,7 +189,7 @@
                                                         </div>
                                                         <div class="ms-3">
                                                             <span class="fz14 text">
-                                                                @r.CreatedDate.ToString("MMM d, yyyy")
+                                                                @r.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
                                                             </span>
                                                         </div>
                                                     </div>

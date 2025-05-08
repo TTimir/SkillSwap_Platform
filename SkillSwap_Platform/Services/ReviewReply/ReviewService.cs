@@ -34,29 +34,41 @@ namespace SkillSwap_Platform.Services.ReviewReply
 
         public async Task<ReviewReplyVm> AddReplyAsync(int reviewId, string text, int userId)
         {
-            var reply = new TblReviewReply
+            using var tx = await _db.Database.BeginTransactionAsync();
+            try
             {
-                ReviewId = reviewId,
-                ReplierUserId = userId,
-                Comments = text,
-                CreatedDate = DateTime.UtcNow
-            };
+                var reply = new TblReviewReply
+                {
+                    ReviewId = reviewId,
+                    ReplierUserId = userId,
+                    Comments = text,
+                    CreatedDate = DateTime.UtcNow
+                };
 
-            _db.TblReviewReplies.Add(reply);
-            await _db.SaveChangesAsync();
+                _db.TblReviewReplies.Add(reply);
+                await _db.SaveChangesAsync();
 
-            // load back for VM
-            var reloaded = await _db.TblReviewReplies
-                .Include(r => r.ReplierUser)
-                .FirstAsync(r => r.ReplyId == reply.ReplyId);
+                // load back for VM
+                var reloaded = await _db.TblReviewReplies
+                    .Include(r => r.ReplierUser)
+                    .FirstAsync(r => r.ReplyId == reply.ReplyId);
 
-            return new ReviewReplyVm
+                await tx.CommitAsync();
+
+                return new ReviewReplyVm
+                {
+                    ReplyId = reloaded.ReplyId,
+                    RepliedBy = reloaded.ReplierUser.UserName,
+                    CreatedAt = reloaded.CreatedDate,
+                    Text = reloaded.Comments
+                };
+            }
+            catch (Exception ex)
             {
-                ReplyId = reloaded.ReplyId,
-                RepliedBy = reloaded.ReplierUser.UserName,
-                CreatedAt = reloaded.CreatedDate,
-                Text = reloaded.Comments
-            };
+                await tx.RollbackAsync();
+                _log.LogError(ex, "Error adding reply to review {ReviewId} by user {UserId}", reviewId, userId);
+                throw;
+            }
         }
     }
-    }
+}

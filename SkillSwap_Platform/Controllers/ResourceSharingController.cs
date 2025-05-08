@@ -82,7 +82,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error in SelectOffer.");
                 TempData["ErrorMessage"] = "An error occurred while selecting an offer.";
-                return RedirectToAction("Index", "ExchangeDashboard");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -111,10 +111,11 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error displaying resource input form.");
                 TempData["ErrorMessage"] = "An error occurred while loading the resource sharing form.";
-                return RedirectToAction("SelectOffer");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
+        #region POST: Share Resource
         /// <summary>
         /// Processes the resource sharing form submission.
         /// </summary>
@@ -122,29 +123,32 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ResourceInputVM model)
         {
-            try
+            ModelState.Remove("ExchangeId");
+            ModelState.Remove("OfferId");
+            ModelState.Remove("File");
+            ModelState.Remove("InputUrl");
+            if (!ModelState.IsValid)
             {
-                ModelState.Remove("ExchangeId");
-                ModelState.Remove("OfferId"); 
-                ModelState.Remove("File");
-                ModelState.Remove("InputUrl");
-                if (!ModelState.IsValid)
+                foreach (var state in ModelState)
                 {
-                    foreach (var state in ModelState)
+                    foreach (var error in state.Value.Errors)
                     {
-                        foreach (var error in state.Value.Errors)
-                        {
-                            _logger.LogError("ModelState error in field '{Field}': {ErrorMessage}", state.Key, error.ErrorMessage);
-                        }
+                        _logger.LogError("ModelState error in field '{Field}': {ErrorMessage}", state.Key, error.ErrorMessage);
                     }
                 }
+            }
 
+            // Start a transaction to encompass both resource and message inserts
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+            try
+            {
                 // If the resource is not a Link, ensure a file is provided.
                 if (model.ResourceType != "Link")
                 {
                     if (model.File == null || model.File.Length <= 0)
                     {
-                        TempData["ErrorMessage"] =  "No file selected.";
+                        TempData["ErrorMessage"] = "No file selected.";
                         return View("Create", model);
                     }
                 }
@@ -278,7 +282,7 @@ namespace SkillSwap_Platform.Controllers
                     Message = $"A new resource was shared for “{offerTitle}.”",
                     Url = Url.Action("List", "ResourceSharing"),
                 });
-
+                await tx.CommitAsync();
                 TempData["SuccessMessage"] = "Resource shared successfully.";
 
                 // Redirect back to the resource list for the current exchange.
@@ -286,11 +290,14 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing resource sharing form.");
-                TempData["ErrorMessage"] = "An error occurred while sharing the resource.";
-                return RedirectToAction("SelectOffer");
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Failed to share resource for Exchange={ExchangeId}, Offer={OfferId}", model.ExchangeId, model.OfferId);
+                TempData["ErrorMessage"] = "An unexpected error occurred. Please try again.";
+                return RedirectToAction("EP500", "EP");
             }
         }
+
+        #endregion
 
         /// <summary>
         /// Displays a list of shared resources for a specific exchange and offer.
@@ -311,7 +318,7 @@ namespace SkillSwap_Platform.Controllers
                 if (exchange == null)
                 {
                     TempData["ErrorMessage"] = "Exchange not found.";
-                    return RedirectToAction("Index", "ExchangeDashboard");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 int currentUserId = GetCurrentUserId();
@@ -369,7 +376,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error loading resource list for exchange {ExchangeId}", exchangeId);
                 TempData["ErrorMessage"] = "An error occurred while loading resources.";
-                return RedirectToAction("Index", "ExchangeDashboard");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -381,7 +388,7 @@ namespace SkillSwap_Platform.Controllers
             if (resource == null)
             {
                 TempData["ErrorMessage"] = "Resource not found.";
-                return RedirectToAction("List", new { exchangeId = 0, offerId = 0 });
+                return RedirectToAction("EP404", "EP");
             }
 
             // Build the physical file path; assuming resource.FilePath is the public relative URL like "/uploads/resources/filename.ext"
