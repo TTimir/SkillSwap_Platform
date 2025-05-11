@@ -8,6 +8,8 @@
         public string Email { get; set; } = "";
         public DateTime CreatedDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsVerified { get; set; }
         public bool IsHeld { get; set; }
         public DateTime? HeldAt { get; set; }
         public int FailedOtpAttempts { get; set; }
@@ -69,10 +71,14 @@
         public List<FlaggedMessageDto> FlaggedMessages { get; set; } = new();
 
         public List<UserOfferFlagDto> OfferFlags { get; set; } = new();
+        public List<EducationDto> Education { get; set; }
+        public List<UserExperienceDto> Experiences { get; set; } = new();
+        public List<LanguageDto> Languages { get; set; }
+        public List<KycDto> KycDetails { get; set; }
     }
 
     // define each sub-DTO similarly:
-    public class UserExchangeDto { public int ExchangeId; public string OfferTitle; public string Status; public DateTime? RequestDate; public DateTime? CompletionDate; public decimal TokensPaid; }
+    public class UserExchangeDto { public int ExchangeId; public string OfferTitle; public string Mode; public DateTime? RequestDate; public DateTime? CompletionDate; public string Status; public decimal TokensPaid; public DateTime? LastStatusChangeDate; public string LastStatusChangeBy; public string SkillRequester; public string SkillOwner; public bool TokensSettled; public DateTime? TokenHoldDate; public DateTime? TokenReleaseDate; }
     public class ReviewDto { public int ReviewId; public string ReviewerName; public double Rating; public string Comments; public DateTime CreatedDate; public bool IsFlagged; public DateTime? FlaggedDate; }
     public class CertificateDto { public int CertificateId; public DateTime RequestedDate; public DateTime? ApprovedDate; public string SkillName; }
     public class TokenTransactionsDto { public int TransactionId; public string Type; public decimal Amount; public DateTime CreatedAt; }
@@ -113,5 +119,40 @@
         public DateTime FlaggedDate { get; set; }
         public string? AdminAction { get; set; }
         public DateTime? AdminActionDate { get; set; }
+    }
+
+    public class EducationDto
+    {
+        public string InstitutionName { get; set; }
+        public string Degree { get; set; }
+        public string Description { get; set; }
+        public string University { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
+
+    public class UserExperienceDto
+    {
+        public int ExperienceId { get; set; }
+        public string Company { get; set; }
+        public string Position { get; set; }
+        public string Description { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
+
+    public class LanguageDto
+    {
+        public string Language { get; set; }
+        public string Proficiency { get; set; }
+    }
+
+    public class KycDto
+    {
+        public string DocumentName { get; set; }
+        public string DocumentNumber { get; set; }
+        public string ImageUrl { get; set; }
+        public DateTime UploadedDate { get; set; }
+        public bool IsVerified { get; set; }
     }
 }

@@ -45,9 +45,7 @@
             </div>
             <nav>
                 <ul>
-                    <li><a href="#">Home</a></li>
                     <li><a class="active" href="#">Onboarding</a></li>
-                    <li><a href="#">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -134,14 +132,136 @@
                 <input type="text" name="ReferralSource" class="form-control" placeholder="E.g., Social media, friend referral..." value="@Model.ReferralSource" />
                 <span asp-validation-for="ReferralSource" class="text-danger"></span>
             </div>
-            <div class="text-center my-4">
+            <div class="text-center my-2">
                 <button type="submit" class="ud-btn btn-dark mb25 me-4">
-                    What's Next ? <i class="fal fa-arrow-right-long"></i>
+                    What's Next? <i class="fal fa-arrow-right-long"></i>
                 </button>
                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
             </div>
+            @if (ViewBag.StepReward != null)
+            {
+                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+                <p class="text-center text-primary">
+                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+                </p>
+            }
         }
     </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="creditInfoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content position-relative overflow-hidden border-0">
+                <!-- Gradient hero section -->
+                <div class="p-5 text-center text-white" style="background: linear-gradient(135deg, #1e3a8a 0%, #22d3ee 100%);">
+                    <img src="/template_assets/images/rocket-illustration.svg"
+                         alt="Rocket"
+                         style="width: 80px; margin-bottom: .5rem;">
+                    <h3 class="fw-bold mb-1">Welcome to SkillSwap! 👋</h3>
+                    <p class="mb-3 lead text-white-50">Complete all 6 steps to unlock your <strong>2.00 TK</strong> reward.</p>
+                    <span class="badge bg-light text-dark fs-5 py-2 px-3"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> 2.00 TK</span>
+                </div>
+
+                <!-- Copy & CTA -->
+                <div class="p-4">
+                    <p class="mb-4 text-center">
+                        Let’s walk through a quick roadmap—so you can start swapping faster and earn tokens!
+                    </p>
+
+                    <!-- Unique step-strip -->
+                    <div class="d-flex justify-content-between flex-wrap mb-4">
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">1</div>
+                            <small>Role</small>
+                        </div>
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">2</div>
+                            <small>Personal</small>
+                        </div>
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">3</div>
+                            <small>Skills</small>
+                        </div>
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">4</div>
+                            <small>Prefs</small>
+                        </div>
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">5</div>
+                            <small>Certs</small>
+                        </div>
+                        <div class="text-center flex-fill mx-1">
+                            <div class="step-circle mb-2">6</div>
+                            <small>Socials</small>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="ud-btn btn-thm w-100"
+                            data-bs-dismiss="modal">
+                        Get started — I’m ready!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="creditSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <h5 class="modal-title mb-3">Way to go!</h5>
+                <p>You've just earned <strong><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @(ViewBag.StepReward.ToString("0.##")) TK</strong> 🎉</p>
+                <button type="button" class="ud-btn btn-thm mt-3" data-bs-dismiss="modal">
+                    On to the next step!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            border: 2px solid #4e54c8;
+            border-radius: 50%;
+            font-weight: bold;
+            color: #4e54c8;
+            margin: 0 auto;
+        }
+    </style>
+
+    
+    <!-- Show info popup once per session -->
+    <script src="/template_assets/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (!sessionStorage.getItem('seenCreditInfo')) {
+            new bootstrap.Modal(document.getElementById('creditInfoModal')).show();
+            sessionStorage.setItem('seenCreditInfo', '1');
+          }
+        });
+    </script>
+    <!-- TempData-driven success popup -->
+    @if (TempData["ShowCreditSuccess"] != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              var modal = new bootstrap.Modal(document.getElementById('creditSuccessModal'));
+              modal.show();
+
+              // when they click “On to the next step!”, navigate:
+              document.getElementById('creditSuccessModal')
+                      .querySelector('button[data-bs-dismiss]')
+                      .addEventListener('click', () => {
+                window.location.href = '@Url.Action("ProfileCompletion")';
+              });
+            });
+        </script>
+        @* clear it so it won’t re-fire on refresh *@
+        TempData.Remove("ShowCreditSuccess");
+    }
 
     <script>
         function selectRole(role, element) {

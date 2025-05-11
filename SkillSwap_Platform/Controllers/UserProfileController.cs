@@ -57,8 +57,10 @@ namespace SkillSwap_Platform.Controllers
                     .Include(u => u.TblUserSkills)
                         .ThenInclude(us => us.Skill)
                     .Include(u => u.TblReviewReviewees)
+                        .ThenInclude(r => r.Reviewer)
+                    .Include(u => u.TblReviewReviewees)
                         .ThenInclude(r => r.TblReviewReplies)
-                        .ThenInclude(rep => rep.ReplierUser)
+                            .ThenInclude(rep => rep.ReplierUser)
                     .FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower());
 
                 if (user == null)

@@ -97,7 +97,8 @@ namespace SkillSwap_Platform.Services.Newsletter
                         RecipientEmail = to,
                         AttachmentNames = string.Join(";", savedPaths),
                         SentAtUtc = now,
-                        SentByAdmin = adminName
+                        SentByAdmin = adminName,
+                        IsBroadcast = true
                     });
                 }
                 catch (Exception ex)
@@ -158,7 +159,8 @@ namespace SkillSwap_Platform.Services.Newsletter
                     RecipientEmail = user.Email,
                     AttachmentNames = string.Join(";", savedPaths),
                     SentAtUtc = now,
-                    SentByAdmin = adminName
+                    SentByAdmin = adminName,
+                    IsBroadcast = false
                 });
             }
             catch (Exception ex)

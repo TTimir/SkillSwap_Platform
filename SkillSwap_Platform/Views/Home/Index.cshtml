@@ -471,10 +471,21 @@
                                                         }
                                                         else
                                                         {
+                                                            // List of default images.
+                                                            var defaultImages = new List<string>
+                                                            {
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                                            };
+
+                                                            // Use a deterministic approach:
+                                                            int index = offer.OfferId % defaultImages.Count;
+                                                            var selectedImage = defaultImages[index];
+
                                                             <!-- Fallback Image logic if no PortfolioImages exist -->
                                                             <div class="list-thumb">
                                                                 <img class="w-100"
-                                                                     src="~/template_assets/images/listings/No_Offer_img_1.png"
+                                                                     src="@selectedImage"
                                                                      alt="@offer.Title" />
                                                                 @{
                                                                     // get current user ID
@@ -819,7 +830,7 @@
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <img class="wa" src="/template_assets/images/testimonials/testimonial-1.png" alt="">
+                                    @* <img class="wa" src="/template_assets/images/testimonials/testimonial-1.png" alt=""> *@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-0">Jevin Talaviya</h6>
@@ -837,7 +848,7 @@
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <img class="wa" src="/template_assets/images/testimonials/testimonial-2.png" alt="">
+                                    @* <img class="wa" src="/template_assets/images/testimonials/testimonial-2.png" alt=""> *@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-0">Smit Bhuva</h6>
@@ -855,7 +866,7 @@
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <img class="wa" src="/template_assets/images/testimonials/testimonial-3.png" alt="">
+                                    @* <img class="wa" src="/template_assets/images/testimonials/testimonial-3.png" alt=""> *@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-0">Arjun M</h6>
@@ -873,7 +884,7 @@
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <img class="wa" src="/template_assets/images/testimonials/testimonial-4.png" alt="">
+                                    @* <img class="wa" src="/template_assets/images/testimonials/testimonial-4.png" alt=""> *@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-0">Vatsal Mangukiya</h6>
@@ -891,7 +902,7 @@
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <img class="wa" src="/template_assets/images/testimonials/testimonial-5.png" alt="">
+                                    @* <img class="wa" src="/template_assets/images/testimonials/testimonial-5.png" alt=""> *@
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="mb-0">Guatam Nakum</h6>

@@ -364,12 +364,15 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
             // 1) Basic profile + flags summary
             var u = await _db.TblUsers.AsNoTracking()
                  .Where(x => x.UserId == userId)
-                 .Select(x => new {
+                 .Select(x => new
+                 {
                      x.UserId,
                      x.UserName,
                      x.Email,
                      x.CreatedDate,
                      x.LastActive,
+                     x.IsActive,
+                     x.IsVerified,
                      x.IsHeld,
                      x.HeldAt,
                      x.FailedOtpAttempts,
@@ -385,6 +388,8 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                 Email = u.Email,
                 CreatedDate = u.CreatedDate,
                 LastLoginDate = u.LastActive,
+                IsActive = u.IsActive,
+                IsVerified = u.IsVerified,
                 IsHeld = u.IsHeld,
                 HeldAt = u.HeldAt,
                 FailedOtpAttempts = u.FailedOtpAttempts ?? 0,
@@ -406,18 +411,97 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
             // 3b) Registration date
             dto.RegistrationDate = u.CreatedDate;
 
-            // 4) Exchanges
-            dto.Exchanges = await _db.TblExchanges.AsNoTracking()
+            var skillMap = await _db.TblSkills.ToDictionaryAsync(s => s.SkillId, s => s.SkillName);
+
+            // Step 1: Get exchange data into memory
+            var rawExchanges = await _db.TblExchanges.AsNoTracking()
                 .Where(x => x.OfferOwnerId == userId || x.OtherUserId == userId)
-                .OrderByDescending(x => x.ExchangeDate).Take(20)
-                .Select(x => new UserExchangeDto
+                .OrderByDescending(x => x.ExchangeDate)
+                .Take(20)
+                .Select(x => new
                 {
-                    ExchangeId = x.ExchangeId,
-                    OfferTitle = x.Offer.Title,
-                    Status = x.Status,
-                    RequestDate = x.RequestDate,
-                    CompletionDate = x.CompletionDate,
-                    TokensPaid = x.TokensPaid
+                    x.ExchangeId,
+                    x.Offer.Title,
+                    x.ExchangeMode,
+                    x.Description,
+                    x.Status,
+                    x.LastStatusChangeDate,
+                    x.LastStatusChangedBy,
+                    x.RequestDate,
+                    x.CompletionDate,
+                    x.SkillIdRequester,
+                    x.SkillIdOfferOwner,
+                    x.TokensPaid,
+                    x.TokensSettled,
+                    x.TokenHoldDate,
+                    x.TokenReleaseDate
+                })
+                .ToListAsync(); // materialize into memory
+
+            var userMap = await _db.TblUsers
+                .Select(u => new { u.UserId, u.UserName })
+                .ToDictionaryAsync(u => u.UserId, u => u.UserName);
+
+            // Step 2: Now project with C# + dictionary logic
+            dto.Exchanges = rawExchanges.Select(x => new UserExchangeDto
+            {
+                ExchangeId = x.ExchangeId,
+                OfferTitle = x.Title,
+                Mode = x.ExchangeMode,
+                Status = x.Status,
+                LastStatusChangeDate = x.LastStatusChangeDate,
+                LastStatusChangeBy = userMap.TryGetValue(x.LastStatusChangedBy ?? 0, out var changer) ? changer : "—",
+                RequestDate = x.RequestDate,
+                CompletionDate = x.CompletionDate,
+                SkillRequester = skillMap.TryGetValue(x.SkillIdRequester ?? 0, out var skillReq) ? skillReq : "—",
+                SkillOwner = skillMap.TryGetValue(x.SkillIdOfferOwner ?? 0, out var skillOwn) ? skillOwn : "—",
+                TokensPaid = x.TokensPaid,
+                TokensSettled = x.TokensSettled,
+                TokenHoldDate = x.TokenHoldDate,
+                TokenReleaseDate = x.TokenReleaseDate
+            }).ToList();
+
+            dto.Education = await _db.TblEducations.AsNoTracking()
+                .Where(e => e.UserId == userId)
+                .Select(e => new EducationDto
+                {
+                    InstitutionName = e.InstitutionName,
+                    Degree = e.DegreeName,
+                    Description = e.Description,
+                    University = e.UniversityName,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate
+                }).ToListAsync();
+
+            dto.Experiences = await _db.TblExperiences.AsNoTracking()
+                .Where(e => e.UserId == userId)
+                .Select(e => new UserExperienceDto
+                {
+                    ExperienceId = e.ExperienceId,
+                    Company = e.CompanyName,
+                    Position = e.Position,
+                    Description = e.Description,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate
+                }).ToListAsync();
+
+            dto.Languages = await _db.TblLanguages.AsNoTracking()
+                .Where(l => l.UserId == userId)
+                .Select(l => new LanguageDto
+                {
+                    Language = l.Language,
+                    Proficiency = l.Proficiency
+                }).ToListAsync();
+
+            dto.KycDetails = await _db.TblKycUploads.AsNoTracking()
+                .Where(k => k.UserId == userId)
+                .Select(k => new KycDto
+                {
+                    DocumentName = k.DocumentName,
+                    DocumentNumber = k.DocumentNumber,
+                    ImageUrl = k.DocumentImageUrl,
+                    UploadedDate = k.UploadedDate,
+                    IsVerified = k.IsVerified
                 }).ToListAsync();
 
             // 5) Reviews & replies

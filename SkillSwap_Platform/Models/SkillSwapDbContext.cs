@@ -8,13 +8,19 @@ namespace SkillSwap_Platform.Models;
 
 public partial class SkillSwapDbContext : DbContext
 {
+    private readonly bool _isAdminContext;
+
     public SkillSwapDbContext()
     {
     }
 
-    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options)
+    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options, IHttpContextAccessor http)
         : base(options)
     {
+        var user = http.HttpContext?.User;
+        // If the user is authenticated AND in the "Admin" role, allow full visibility
+        _isAdminContext = user?.Identity?.IsAuthenticated == true
+                       && user.IsInRole("Admin");
     }
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
@@ -68,6 +74,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblOfferFlag> TblOfferFlags { get; set; }
 
     public virtual DbSet<TblOfferPortfolio> TblOfferPortfolios { get; set; }
+
+    public virtual DbSet<TblOnboardingProgress> TblOnboardingProgresses { get; set; }
 
     public virtual DbSet<TblPasswordResetToken> TblPasswordResetTokens { get; set; }
 
@@ -739,6 +747,16 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_OfferPortfolio_Offers");
         });
 
+        modelBuilder.Entity<TblOnboardingProgress>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("PK_TblOnboardingProgress_UserId");
+
+            entity.ToTable("TblOnboardingProgress");
+
+            entity.Property(e => e.UserId).ValueGeneratedNever();
+            entity.Property(e => e.TotalTokensGiven).HasColumnType("decimal(18, 2)");
+        });
+
         modelBuilder.Entity<TblPasswordResetToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__TblPassw__3214EC07A7EA8FDC");
@@ -1315,8 +1333,14 @@ public partial class SkillSwapDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        // Apply the conditional filter to TblUser
         modelBuilder.Entity<TblUser>()
-           .HasQueryFilter(u => !u.IsEscrowAccount);
+            .HasQueryFilter(u =>
+                // Always hide escrow accounts
+                !u.IsEscrowAccount
+             // And hide Admin-role users if NOT in an admin context
+             && (_isAdminContext || !u.Role.Equals("Admin"))
+            );
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

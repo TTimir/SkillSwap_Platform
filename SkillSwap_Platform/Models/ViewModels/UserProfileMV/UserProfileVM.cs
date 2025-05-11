@@ -4,6 +4,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 {
     public class UserProfileVM
     {
+        public int UserId { get; set; }
         // Main user info
         public TblUser User { get; set; }
 

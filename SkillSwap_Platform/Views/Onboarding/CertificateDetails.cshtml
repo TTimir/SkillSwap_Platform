@@ -168,18 +168,44 @@
                             </div>
 
 
-                            <div class="text-center my-4">
+                            <div class="text-center my-2">
                                 <button type="submit" class="ud-btn btn-dark mb25 me-4">
                                     What's Next ? <i class="fal fa-arrow-right-long"></i>
                                 </button>
                                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
                             </div>
 
+                            @if (ViewBag.StepReward != null)
+                            {
+                                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+                                <p class="text-center text-primary">
+                                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+                                </p>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
         }
+
+
+        <div class="modal fade" id="creditSuccessModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-center p-4">
+                    <h5 class="modal-title mb-3">Way to go!</h5>
+                    <p>
+                        You've just earned <strong>
+                            <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32">
+                            @(ViewBag.StepReward.ToString("0.##")) TK
+                        </strong> 🎉
+                    </p>
+                    <button type="button" class="ud-btn btn-thm mt-3" data-bs-dismiss="modal">
+                        On to the next step!
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Wrapper End -->
         <!-- Correct order -->
         <script src="/template_assets/js/jquery-3.6.4.min.js"></script>
@@ -269,5 +295,24 @@
             });
 
         </script>
+        <!-- TempData-driven success popup -->
+        @if (TempData["ShowCreditSuccess"] != null)
+        {
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                  var modal = new bootstrap.Modal(document.getElementById('creditSuccessModal'));
+                  modal.show();
+
+                  // when they click “On to the next step!”, navigate:
+                  document.getElementById('creditSuccessModal')
+                          .querySelector('button[data-bs-dismiss]')
+                          .addEventListener('click', () => {
+                    window.location.href = '@Url.Action("AdditionalInfo")';
+                  });
+                });
+            </script>
+            @* clear it so it won’t re-fire on refresh *@
+            TempData.Remove("ShowCreditSuccess");
+        }
 </body>
 </html>

@@ -107,7 +107,11 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header"><strong>Average Rating</strong></div>
-            <div class="card-body"><h3>@Model.offer.AverageRating.ToString("F1") ★</h3></div>
+            <div class="card-body">
+                <h3>@Model.offer.AverageRating.ToString("F1") ★</h3> <small class="text-muted">
+                    Avg. Rating
+                </small>
+            </div>
         </div>
     </div>
 </div>
@@ -123,7 +127,7 @@
     <div class="col-md-8">
         <div class="card mb-4">
             <div class="card-header"><strong>Total Refunded</strong></div>
-            <div class="card-body"><h3>@Model.offer.RefundedAmount.ToString("F2")</h3></div>
+            <div class="card-body"><h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.offer.RefundedAmount.ToString("F2")</h3></div>
         </div>
     </div>
 </div>
@@ -185,9 +189,13 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        var sr = 1;
+                    }
                     @foreach (var m in Model.offer.ChatHistory)
                     {
                         <tr>
+                            <td>@(sr++)</td>
                             <td>@m.SenderUserName</td>
                             <td>@m.MessageType</td>
                             <td>@Regex.Replace(m.Content, "<.*?>", "")</td>

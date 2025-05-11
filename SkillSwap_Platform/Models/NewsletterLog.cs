@@ -20,4 +20,6 @@ public partial class NewsletterLog
     public string RecipientEmail { get; set; } = null!;
 
     public string? AttachmentNames { get; set; }
+
+    public bool IsBroadcast { get; set; }
 }

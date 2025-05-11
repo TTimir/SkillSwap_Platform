@@ -39,6 +39,20 @@
 
                     <dt class="col-sm-4">Held At</dt>
                     <dd class="col-sm-8">@fmt(Model.User.HeldAt)</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.User.IsActive ? "bg-success" : "bg-danger")">
+                            @(Model.User.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.User.IsVerified ? "bg-success" : "bg-danger")">
+                            @(Model.User.IsVerified ? "Verified" : "Unverified")
+                        </span>
+                    </dd>
                 </dl>
             </div>
         </div>
@@ -80,6 +94,9 @@
             <div class="card-header"><strong>Offers Created</strong></div>
             <div class="card-body">
                 <h3>@Model.User.TotalOffersCreated</h3>
+                <small class="text-muted">
+                    Total Swap Offers
+                </small>
             </div>
         </div>
     </div>
@@ -103,6 +120,9 @@
             <div class="card-header"><strong>Avg. Rating Received</strong></div>
             <div class="card-body">
                 <h3>@Model.User.AverageRatingReceived.ToString("F1") ★</h3>
+                <small class="text-muted">
+                    Avg. Rating/ Recommendation
+                </small>
             </div>
         </div>
     </div>
@@ -114,7 +134,7 @@
         <div class="card mb-4">
             <div class="card-header"><strong>Tokens Earned</strong></div>
             <div class="card-body">
-                <h3>@Model.User.TokensEarned.ToString("F2")</h3>
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.TokensEarned.ToString("F2")</h3>
             </div>
         </div>
     </div>
@@ -122,7 +142,7 @@
         <div class="card mb-4">
             <div class="card-header"><strong>Tokens Spent</strong></div>
             <div class="card-body">
-                <h3>@Model.User.TokensSpent.ToString("F2")</h3>
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.TokensSpent.ToString("F2")</h3>
             </div>
         </div>
     </div>
@@ -130,7 +150,7 @@
         <div class="card mb-4">
             <div class="card-header"><strong>Current Balance</strong></div>
             <div class="card-body">
-                <h3>@Model.User.CurrentTokenBalance.ToString("F2")</h3>
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.CurrentTokenBalance.ToString("F2")</h3>
             </div>
         </div>
     </div>
@@ -180,20 +200,40 @@
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>Exchange ID</th>
                         <th>Offer</th>
                         <th>Status</th>
-                        <th>Date</th>
-                        <th>Tokens</th>
+                        <th>Mode</th>
+                        <th>Skills</th>
+                        <th>Requested</th>
+                        <th>Last Status Change Date</th>
+                        <th>Last Status Change By</th>
+                        <th>Completed</th>
+                        <th>Tokens Released?</th>
+                        <th>Tokens Held/Released</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var ex in Model.User.Exchanges)
                     {
                         <tr>
+                            <td>@ex.ExchangeId</td>
                             <td>@ex.OfferTitle</td>
                             <td>@ex.Status</td>
-                            <td>@fmt(ex.RequestDate)</td>
-                            <td>@ex.TokensPaid</td>
+                            <td>@ex.Mode</td>
+                            <td>
+                                Requester: @ex.SkillRequester <br />
+                                Owner: @ex.SkillOwner
+                            </td>
+                            <td>@(ex.RequestDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")</td>
+                            <td>@ex.LastStatusChangeDate?.ToString("dd MMM yyyy hh:mm tt")</td>
+                            <td>@ex.LastStatusChangeBy</td>
+                            <td>@(ex.CompletionDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")</td>
+                            <td>@(ex.TokensSettled ? "Yes" : "No")</td>
+                            <td>
+                                Held: @(ex.TokenHoldDate?.ToString("dd MMM, yyyy hh:mm tt") ?? "No") <br />
+                                Released: @(ex.TokenReleaseDate?.ToString("dd MMM, yyyy hh:mm tt") ?? "No")
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -260,6 +300,125 @@
     </div>
 </div>
 
+<!-- Education -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Education (@Model.User.Education.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Education.Any())
+        {
+            <p class="p-3">No education records.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @{
+                    var sr = 1;
+                }
+                @foreach (var edu in Model.User.Education)
+                {
+                    <li class="list-group-item">@(sr++). &nbsp; @edu.Degree from @edu.InstitutionName (@edu.StartDate?.ToLocalTime().ToString("MMMM yyyy") – @edu.EndDate?.ToLocalTime().ToString("MMMM yyyy")) <br /> <small>@edu.Description</small></li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<!-- Experiences -->
+<div class="card mb-4">
+    @{
+        int totalMonths = 0;
+
+        foreach (var exp in Model.User.Experiences)
+        {
+            var start = exp.StartDate ?? DateTime.UtcNow;
+            var end = exp.EndDate ?? DateTime.UtcNow;
+            totalMonths += ((end.Year - start.Year) * 12 + end.Month - start.Month);
+        }
+
+        int totalYears = totalMonths / 12;
+        int remainingMonths = totalMonths % 12;
+        var expLabel = $"{totalYears} year{(totalYears != 1 ? "s" : "")}, {remainingMonths} month{(remainingMonths != 1 ? "s" : "")}";
+    }
+    <div class="card-header"><strong>Experiences (@Model.User.Experiences.Count)  — @expLabel</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Experiences.Any())
+        {
+            <p class="p-3">No experience records.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @{
+                    var sr = 1;
+                }
+                @foreach (var exp in Model.User.Experiences)
+                {
+                    <li class="list-group-item">
+                        @(sr++). &nbsp;<strong>@exp.Position</strong> at <strong>@exp.Company</strong>
+                        <br />
+                        @{
+                            var start = exp.StartDate ?? DateTime.UtcNow;
+                            var end = exp.EndDate ?? DateTime.UtcNow;
+
+                            int months = (end.Year - start.Year) * 12 + end.Month - start.Month;
+                            int years = months / 12;
+                            int remainingsMonth = months % 12;
+
+                            var duration = years > 0
+                            ? $"{years} year{(years > 1 ? "s" : "")}" + (remainingsMonth > 0 ? $", {remainingsMonth} month{(remainingMonths > 1 ? "s" : "")}" : "")
+                            : $"{remainingsMonth} month{(remainingsMonth > 1 ? "s" : "")}";
+                        }
+                        <small class="text-muted">
+                            @((exp.StartDate?.ToString("MMMM yyyy") ?? "N/A") + " – " + (exp.EndDate?.ToString("MMMM yyyy") ?? "Present"))
+                            &nbsp; • @duration
+                        </small>
+                        @if (!string.IsNullOrEmpty(exp.Description))
+                        {
+                            <p class="mb-0 mt-1">@exp.Description</p>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<!-- Languages -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Languages (@Model.User.Languages.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Languages.Any())
+        {
+            <p class="p-3">No language records.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Language</th>
+                        <th>Proficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var lang in Model.User.Languages)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@lang.Language</td>
+                            <td>@lang.Proficiency</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
 <!-- Certificates -->
 <div class="card mb-4">
     <div class="card-header"><strong>Certificates (@Model.User.Certificates.Count)</strong></div>
@@ -293,6 +452,46 @@
     </div>
 </div>
 
+<!-- KYC -->
+<div class="card mb-4">
+    <div class="card-header"><strong>KYC Details (@Model.User.KycDetails.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.KycDetails.Any())
+        {
+            <p class="p-3">No KYC uploaded.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Document</th>
+                        <th>Number</th>
+                        <th>Status</th>
+                        <th>Uploaded Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var doc in Model.User.KycDetails)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@doc.DocumentName</td>
+                            <td>@doc.DocumentNumber</td>
+                            <td>@doc.UploadedDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                            <td>@(doc.IsVerified ? "Verified" : "Not Verified")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
 <!-- Token Transaction History -->
 <div class="card mb-4">
     <div class="card-header"><strong>Token Transaction History (@Model.User.TokenTransactions.Count)</strong></div>
@@ -306,6 +505,7 @@
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>Type</th>
                         <th>Amount</th>
@@ -314,7 +514,9 @@
                 <tbody>
                     @foreach (var t in Model.User.TokenTransactions)
                     {
+                        var sr = 1;
                         <tr>
+                            <td>@(sr++)</td>
                             <td>@fmt(t.CreatedAt)</td>
                             <td>@t.Type</td>
                             <td>@t.Amount</td>
@@ -339,6 +541,7 @@
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Title</th>
                         <th>Category</th>
                         <th>Created</th>
@@ -346,9 +549,13 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        var sr = 1;
+                    }
                     @foreach (var o in Model.User.OffersCreated)
                     {
                         <tr>
+                            <td>@(sr++)</td>
                             <td>@o.Title</td>
                             <td>@o.Category</td>
                             <td>@fmt(o.CreatedDate)</td>
@@ -421,18 +628,35 @@
             <table class="table mb-0">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Name</th>
                         <th>Category</th>
                         <th>Proficiency</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        var sr = 1;
+                    }
                     @foreach (var s in Model.User.Skills)
                     {
                         <tr>
+                            <td>@(sr++)</td>
                             <td>@s.SkillName</td>
                             <td>@s.SkillCategory</td>
-                            <td>@s.Proficiency</td>
+                            <td>
+                                @{
+                                    var level = s.Proficiency;
+                                    string label = level switch
+                                    {
+                                        1 => "Basic",
+                                        2 => "Intermediate",
+                                        3 => "Proficient",
+                                        _ => "Unknown"
+                                    };
+                                }
+                                @label
+                            </td>
                         </tr>
                     }
                 </tbody>

@@ -332,9 +332,6 @@
                     </li>
                 }
                 <li>
-                    <a class="list-item" href="@Url.ActionLink("Index","UserDashboard")"><span class="title">Home</span></a>
-                </li>
-                <li>
                     <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a>
                 </li>
                 <li>
@@ -376,6 +373,13 @@
                                class="d-flex items-center @(currentController=="AdminDashboard" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-house mr15"></i>
                                 Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","AdminMining", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminMining" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-money mr15"></i>
+                                Token Emit Setting
                             </a>
                         </div>
                         <div class="sidebar_list_item">

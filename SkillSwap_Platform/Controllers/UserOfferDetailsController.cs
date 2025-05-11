@@ -12,6 +12,7 @@ using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -21,7 +22,7 @@ namespace SkillSwap_Platform.Controllers
     [AllowAnonymous]
     public class UserOfferDetailsController : Controller
     {
-        private const string RecentCookie = "RecentlyViewedOffers"; 
+        private const string RecentCookie = "RecentlyViewedOffers";
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserOfferManageController> _logger;
         private readonly IOfferFlagService _svc;
@@ -45,7 +46,7 @@ namespace SkillSwap_Platform.Controllers
                 var offer = await _context.TblOffers
                     .Include(o => o.TblOfferPortfolios)
                     .Include(o => o.User)
-                    .Include(o => o.TblReviews)           
+                    .Include(o => o.TblReviews)
                         .ThenInclude(r => r.TblReviewReplies)
                     .FirstOrDefaultAsync(o => o.OfferId == offerId);
                 if (offer == null)
@@ -167,7 +168,6 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch comparable offers (excluding the current offer) in a separate try-catch block.
                 List<CompareOfferVM> comparableOffers = new List<CompareOfferVM>();
-                using var tx2 = _context.Database.BeginTransaction(); 
                 try
                 {
                     // Fetch comparable offers from the database (raw data without processing)
@@ -224,7 +224,7 @@ namespace SkillSwap_Platform.Controllers
                 }
                 catch (Exception ex)
                 {
-                    await tx2.RollbackAsync(ct);
+                    await tx.RollbackAsync(ct);
                     _logger.LogError(ex, "Error fetching comparable offers for Offer {OfferId}", offerId);
                     return RedirectToAction("EP500", "EP");
                 }
@@ -288,17 +288,16 @@ namespace SkillSwap_Platform.Controllers
                     // This user hasn't viewed this offer in the current session; update the view count.
                     _ = Task.Run(async () =>
                     {
-                        using var tx3 = _context.Database.BeginTransaction();
                         try
                         {
                             offer.Views++;  // Increment the view count (make sure your model includes a Views property)
                             await _context.SaveChangesAsync();
-                            await tx.RollbackAsync(ct);
+                            await tx.CommitAsync(ct);
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error updating view count for offer {OfferId}", offerId);
-                            await tx3.RollbackAsync(ct);
+                            await tx.RollbackAsync(ct);
                         }
                     });
                     // Set the session flag so that subsequent refreshes in the same session won't increment the count.
@@ -614,10 +613,11 @@ namespace SkillSwap_Platform.Controllers
                      .Skip((page - 1) * pageSize)
                      .Take(pageSize)
                     .ToListAsync();
-                
+
                 var reviewAggregates = await _context.TblReviews
                     .GroupBy(r => r.OfferId)
-                    .Select(g => new {
+                    .Select(g => new
+                    {
                         OfferId = g.Key,
                         ReviewCount = g.Count(),
                         AverageRating = g.Average(r => r.Rating)
@@ -628,7 +628,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     var portfolio = string.IsNullOrWhiteSpace(o.Portfolio)
                         ? new List<string>()
-                        : Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>();
+                        : JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>();
 
                     // Default values if no reviews are available.
                     int reviewCount = 0;
@@ -745,6 +745,7 @@ namespace SkillSwap_Platform.Controllers
             //    and that have valid offer‐level coords
             var candidates = await _context.TblOffers
                 .Include(o => o.User)
+                .Include(o => o.TblOfferPortfolios)
                 .Where(o => o.IsActive
                          && !o.IsDeleted
                          && o.UserId != userId
@@ -767,7 +768,8 @@ namespace SkillSwap_Platform.Controllers
             }
 
             var nearest = candidates
-                .Select(o => new {
+                .Select(o => new
+                {
                     Offer = o,
                     Dist = Distance(lat, lng, o.Latitude.Value, o.Longitude.Value)
                 })
@@ -777,24 +779,27 @@ namespace SkillSwap_Platform.Controllers
                 .ToList();
 
             // 3) pull one GROUP BY over the entire review set
-            var allAgg = await _context.TblReviews
+            var aggDict = (await _context.TblReviews
                 .GroupBy(r => r.OfferId)
-                .Select(g => new {
+                .Select(g => new
+                {
                     OfferId = g.Key,
                     ReviewCount = g.Count(),
                     AvgRating = g.Average(r => (double)r.Rating)
                 })
-                .ToListAsync();
-
-            var aggDict = allAgg.ToDictionary(a => a.OfferId);
+                .ToListAsync())
+                .ToDictionary(x => x.OfferId);
 
             // 4) project to your OfferCardVM
             var cards = nearest.Select(o =>
             {
+                var imgs = o.TblOfferPortfolios?.Any() == true
+                                   ? o.TblOfferPortfolios.Select(p => p.FileUrl).ToList()
+                                   : (!string.IsNullOrWhiteSpace(o.Portfolio)
+                                        ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>()
+                                        : new List<string>());
+                
                 aggDict.TryGetValue(o.OfferId, out var a);
-                var imgs = string.IsNullOrWhiteSpace(o.Portfolio)
-                           ? new List<string>()
-                           : JsonConvert.DeserializeObject<List<string>>(o.Portfolio);
 
                 return new OfferCardVM
                 {

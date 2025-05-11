@@ -76,19 +76,22 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         [HttpGet("history")]
         public async Task<IActionResult> History(int page = 1, int pageSize = 10)
         {
+            var query = _db.NewsletterLogs
+                   .AsNoTracking()
+                   .Where(l => l.IsBroadcast)            // ← filter
+                   .OrderByDescending(l => l.SentAtUtc);
+
             // 1) count all logs
-            var total = await _db.NewsletterLogs.CountAsync();
+            var total = await query.CountAsync();
 
             // 2) fetch only this page
-            var rawLogs = await _db.NewsletterLogs
-                .AsNoTracking()
-                .OrderByDescending(x => x.SentAtUtc)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var rawLogs = await query
+                   .Skip((page - 1) * pageSize)
+                   .Take(pageSize)
+                   .ToListAsync();
 
             // 3) build our VM
-           var vm = new NewsletterHistoryVm
+            var vm = new NewsletterHistoryVm
             {
                 Logs = rawLogs.Select(l => new NewsletterLogVm
                 {
@@ -206,8 +209,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             };
 
             // 3) no user selected -> empty list
-            if (!userId.HasValue)
-                return View(vm);
+            if (!userId.HasValue) return View(new NewsletterHistoryVm { Page = page, PageSize = pageSize });
 
             // 4) lookup user by ID
             var user = await _db.TblUsers
@@ -223,19 +225,19 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
             // 5) build query for this user’s logs
             var query = _db.NewsletterLogs
-                .AsNoTracking()
-                .Where(l => l.RecipientEmail == user.Email)
-                .OrderByDescending(l => l.SentAtUtc);
+                   .AsNoTracking()
+                   .Where(l => !l.IsBroadcast             // ← only the 1:1 messages
+                            && l.RecipientEmail == user.Email)
+                   .OrderByDescending(l => l.SentAtUtc);
 
             // 6) count & fetch page
             vm.TotalCount = await query.CountAsync();
-            var rawLogs = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var raw = await query.Skip((page - 1) * pageSize)
+                   .Take(pageSize)
+                   .ToListAsync();
 
             // 7) project into VM
-            vm.Logs = rawLogs
+            vm.Logs = raw
                 .Select(l => new NewsletterLogVm
                 {
                     NewsletterLogId = l.NewsletterLogId,

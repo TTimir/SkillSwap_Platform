@@ -198,7 +198,7 @@
                                                 <label for="certificateInput" class="upload-btn certificate-label" style="cursor: pointer;">
                                                     Upload Document (PDF)
                                                 </label>
-                                                <input type="file" class="certificateInput" id="certificateInput" accept=".pdf" style="display: none;">
+                                                <input type="file" name="kycFile" class="certificateInput" id="certificateInput" accept=".pdf" style="display: none;">
                                             </div>
                                             <p class="text mb-0">Max file size is 5MB. Allowed file type: PDF (.pdf)</p>
                                             <small id="fileError" class="text-danger mt-1" style="display: none;"></small>
@@ -209,19 +209,48 @@
                             </div>
 
                             <!-- Navigation Buttons -->
-                            <div class="text-center my-4">
+                            <div class="text-center my-2">
                                 <button type="submit" class="ud-btn btn-dark mb25 me-4">
                                     Completed ? <i class="fal fa-arrow-right-long"></i>
                                 </button>
                                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
                             </div>
 
+                            @if (ViewBag.StepReward != null)
+                            {
+                                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+                                <p class="text-center text-primary">
+                                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+                                </p>
+                            }
                         </div>
 
                     </div>
                 </div>
             </div>
         }
+    </div>
+
+    <div class="modal fade" id="creditSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <h5 class="modal-title mb-3">Way to go!</h5>
+                <p>
+                    You've just earned&nbsp;
+                    <strong>
+                        <img src="/template_assets/images/SSDToken.png" width="32" height="32" alt="Token">
+                        @TempData["TotalEarned"] TK
+                    </strong>
+                    🎉 for completing your onboarding steps.
+                </p>
+                <small class="mb-4 text-muted">
+                    The tokens are now in your account—go check your dashboard to start swapping!
+                </small>
+                <button id="toHomeBtn" type="button" class="ud-btn btn-thm mt-3" data-bs-dismiss="modal">
+                    Take me home!
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -304,6 +333,29 @@
             }
         });
     </script>
+    <!-- TempData-driven success popup -->
+    @if (TempData["ShowCreditSuccess"] != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              var modal = new bootstrap.Modal(document.getElementById('creditSuccessModal'));
+              modal.show();
 
+              // 1) If they click the button, go home
+              document.getElementById('toHomeBtn')
+                      .addEventListener('click', () => {
+                window.location.href = '@Url.Action("Login", "Home")';
+              });
+
+              // 2) Or after 5 seconds, auto-redirect
+              setTimeout(() => {
+                window.location.href = '@Url.Action("Login", "Home")';
+              }, 5000);
+            });
+        </script>
+        @* clear so it doesn’t re-fire if they refresh *@
+        TempData.Remove("ShowCreditSuccess");
+        TempData.Remove("TotalEarned");
+    }
 </body>
 </html>

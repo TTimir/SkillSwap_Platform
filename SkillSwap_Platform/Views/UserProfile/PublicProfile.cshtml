@@ -231,28 +231,28 @@
                             <div class="h6 mb-0">Save</div>
                         </div> *@
                         @if (!Model.IsFlagged)
-                    {
-                        <div data-bs-toggle="tooltip"
-                             data-bs-placement="top"
-                             title="Report this user"
-                             class="ml15">
-                            <div id="flagBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;"
-                                 data-bs-toggle="modal" data-bs-target="#flagUserModal">
-                                <span class="icon flaticon-flag dark-color fz12 mr10"></span>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div data-bs-toggle="tooltip"
-                             data-bs-placement="top"
-                             title="You’ve already reported this user"
+                        {
+                            <div data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Report this user"
                             class="ml15">
-                            <div id="flagBtn" class="share-save-widget d-flex align-items-center">
-                                <span class="icon flaticon-flag dark-color fz12 mr10 text-danger"></span>
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;"
+                                data-bs-toggle="modal" data-bs-target="#flagUserModal">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10"></span>
+                                </div>
                             </div>
-                        </div>
-                    }
+                        }
+                        else
+                        {
+                            <div data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="You’ve already reported this user"
+                            class="ml15">
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10 text-danger"></span>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -265,7 +265,7 @@
             <form asp-controller="UserProfile" asp-action="Flag" method="post" class="form-style3">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="flaggedUserId" value="@Model.User.UserId" />
-    
+
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="flagUserModalLabel">Report @Model.User.UserName</h5>
@@ -286,32 +286,32 @@
         </div>
     </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="col-lg-12">
-        <div class="ui-content">
-            <div class="message-alart-style1">
-                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
-                    @TempData["Success"]
-                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+    @if (TempData["Success"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                        @TempData["Success"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="col-lg-12">
-        <div class="ui-content">
-            <div class="message-alart-style1">
-                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
-                    @TempData["Error"]
-                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                        @TempData["Error"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 
     <!-- Overlay Modal -->
     <div id="shareOverlay" class="share-overlay">
@@ -340,30 +340,14 @@
                                                     <!-- Profile Image -->
                                                     @{
                                                         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                                                        string src = "~/template_assets/images/No_Profile_img.png";
-
-                                                        if (int.TryParse(idClaim, out var uid))
-                                                        {
-                                                            try
-                                                            {
-                                                                var url = _db.TblUsers
-                                                                .Where(u => u.UserId == uid)
-                                                                .Select(u => u.ProfileImageUrl)
-                                                                .FirstOrDefault();
-                                                                if (!string.IsNullOrEmpty(url))
-                                                                {
-                                                                    src = url;
-                                                                }
-                                                            }
-                                                            catch
-                                                            {
-                                                                // DB was unreachable—just leave the fallback image
-                                                            }
-                                                        }
+// if the profile has no image, show fallback:
+    var src = string.IsNullOrWhiteSpace(Model.User.ProfileImageUrl)
+        ? "~/template_assets/images/No_Profile_img.png"
+        : Model.User.ProfileImageUrl;
                                                     }
                                                     <div>
                                                         <vc:online-indicator user-id="@Model.UserId" />
-                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:100%;" />
                                                     </div>
                                                     @*<span class="online"></span>
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
@@ -418,7 +402,7 @@
                                             @{
                                                 // Assume AverageResponseTime in your model is in hours.
                                                 double avgResponseHours = 0;
-                                                double.TryParse(Model.AverageResponseTime, out avgResponseHours);; 
+                                                double.TryParse(Model.AverageResponseTime, out avgResponseHours);
                                                 string avgResponseDisplay = "";
 
                                                 if (avgResponseHours <= 0)
@@ -531,20 +515,32 @@
                                                         <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
                                                             @if (certificate.IsApproved)
                                                             {
-                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToLocalTime().ToString("MMMM dd, yyyy")</span>
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @(certificate.ApprovedDate?.ToLocalTime().ToString("MMMM dd, yyyy") ?? "-")</span>
                                                             }
                                                             else
                                                             {
-                                                                <span><i class="fas fa-times-circle"></i> Not Approved on @certificate.RejectionDate.ToLocalTime().ToString("MMMM dd, yyyy")</span>
+                                                                if (certificate.IsApproved)
+                                                                {
+                                                                    <span><i class="fas fa-times-circle"></i> Not Approved on @(certificate.RejectionDate.ToLocalTime().ToString("MMMM dd, yyyy") ?? "-")</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span> Not reviewed yet</span>
+
+                                                                }
                                                             }
                                                         </span>
                                                         <h5 class="mt15">
                                                             @certificate.CertificateName
-                                                            @if (certificate.CompleteDate != DateTime.MinValue)
-                                                            {
-                                                                <small>(Completed on @certificate.CompleteDate.Value.ToLocalTime().ToString("MMMM d, yyyy"))</small>
-                                                            }
-                                                        </h5>
+<small>
+  (Completed on
+    @(certificate.CompleteDate > DateTime.MinValue
+        ? certificate.CompleteDate.ToLocalTime().ToString("MMMM d, yyyy")
+        : ""
+     )
+  )
+</small>
+</h5>
                                                         <h6 class="text-thm">@certificate.CertificateFrom</h6>
                                                         <div class="certificate-preview">
                                                             @if (!string.IsNullOrEmpty(certificate.CertificateFilePath))
@@ -619,7 +615,7 @@
                                                                 var defaultImages = new List<string>
                                                                 {
                                                                     Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                                                 };
 
                                                                 // Use a deterministic approach:
@@ -754,8 +750,12 @@
 
                                                         <div class="col-md-12 mb20 review-item" data-review-id="@review.ReviewId" style="@displayStyle">
                                                             <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
-                                                                <img src="@(!string.IsNullOrEmpty(review.Reviewer?.ProfileImageUrl) ? review.Reviewer.ProfileImageUrl : "/template_assets/images/No_Profile_img.png")" 
-                                                                     alt="Reviewer Photo" class="rounded-circle mr10" style="width:40px; height:40px;" />
+                                                                <img src="@Url.Content(
+                                                                          string.IsNullOrWhiteSpace(review.Reviewer?.ProfileImageUrl)
+                                                                            ? "~/template_assets/images/No_Profile_img.png"
+                                                                            : review.Reviewer.ProfileImageUrl
+                                                                        )" 
+                                                                     alt="Reviewer Photo" class="rounded-circle" style="width:50px; height:50px; max-width:100%" />
                                                                 <div class="ml20">
                                                                     <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
                                                                     <small class="text-muted">@review.CreatedDate.ToLocalTime().ToString("dd MMM, yyyy")</small>
@@ -783,9 +783,16 @@
                                                                 <div class="replies ps-4 mb-3 mt20 mb20">
                                                                     @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
                                                                     {
-                                                                        var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
-                                                                        .FindFirst(ClaimTypes.NameIdentifier).Value);
-                                                                        <div class="reply-item mb-2">
+// Try to pull your user-id claim safely
+    int currentUserId = -1;
+    
+    if (!string.IsNullOrEmpty(idClaim))
+    {
+        // Now it’s safe to parse
+        currentUserId = int.Parse(idClaim);
+    }
+
+    <div class="reply-item mb-2">
                                                                             <div class="d-flex align-items-center">
                                                                                 <strong>@reply.ReplierUser.UserName</strong>
                                                                                 <small class="text-muted ms-2 me-5">

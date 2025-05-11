@@ -435,7 +435,7 @@
                                     {
                                         <div class="m-circle text-thm">M</div>
                                         <div class="wrapper mb40">
-                                            <span class="tag">@education.StartDateToLocalTime().ToString("yyyy") - @education.EndDate?.ToLocalTime().ToString("yyyy")</span>
+                                            <span class="tag">@education.StartDate.ToLocalTime().ToString("yyyy") - @education.EndDate?.ToLocalTime().ToString("yyyy")</span>
                                             <h5 class="mt15">@education.DegreeName</h5>
                                             <h6 class="text-thm">@education.InstitutionName</h6>
                                             <p>@(string.IsNullOrWhiteSpace(education.Description) ? "No description available." : education.Description)</p>
