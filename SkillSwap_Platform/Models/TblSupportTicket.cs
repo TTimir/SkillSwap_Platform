@@ -19,7 +19,15 @@ public partial class TblSupportTicket
 
     public DateTime CreatedDate { get; set; }
 
-    public DateTime? ClosedDate { get; set; }
+    public DateTime? ResolvedDate { get; set; }
+
+    public int? AssignedAdminId { get; set; }
+
+    public string? AdminNotes { get; set; }
+
+    public DateTime? UpdatedDate { get; set; }
+
+    public virtual TblUser? AssignedAdmin { get; set; }
 
     public virtual TblExchange? Exchange { get; set; }
 

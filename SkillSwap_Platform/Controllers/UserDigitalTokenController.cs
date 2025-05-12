@@ -20,29 +20,37 @@ namespace SkillSwap_Platform.Controllers
 
             // 1) load all transactions involving this user
             var allTx = await _db.TblTokenTransactions
+                .AsNoTracking()
+                .Where(t => t.FromUserId == currentUserId || t.ToUserId == currentUserId)
                 .Include(t => t.FromUser)
                 .Include(t => t.ToUser)
-                .Where(t => t.FromUserId == currentUserId || t.ToUserId == currentUserId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
             // 2) project into our view-model
             var txVms = allTx
-                .Select(t => new TokenTransactionVm
-                {
-                    Date = t.CreatedAt,
-                    Type = t.TxType,            // e.g. "Hold"/"Release"/etc.
-                    Detail = t.Description,
-                    Amount = t.Amount,
-                    Highlight = false,            // you can flag some rows as needed
-                    CounterpartyId = t.FromUserId == currentUserId
-                             ? t.ToUserId.Value
-                             : t.FromUserId.Value,
-                    CounterpartyName = t.FromUserId == currentUserId
-                             ? t.ToUser.UserName
-                             : t.FromUser.UserName
-                })
-                .ToList();
+                        .Select(t =>
+                        {
+                            // decide which side is the counterparty
+                            var isOutgoing = t.FromUserId == currentUserId;
+                            var counterparty = isOutgoing
+                                ? t.ToUser           // make sure ToUser isn't null 
+                                : t.FromUser;        // likewise for FromUser
+
+                            return new TokenTransactionVm
+                            {
+                                Date = t.CreatedAt,
+                                Type = t.TxType,
+                                Detail = t.Description,
+                                Amount = t.Amount,
+                                Highlight = false,
+                                CounterpartyId = isOutgoing
+                                                      ? t.ToUserId.GetValueOrDefault()
+                                                      : t.FromUserId.GetValueOrDefault(),
+                                CounterpartyName = counterparty?.UserName ?? "—"
+                            };
+                        })
+                        .ToList();
 
             // 1) Sum of everything ever credited to this user
             decimal totalReceived = await _db.TblTokenTransactions
@@ -77,6 +85,7 @@ namespace SkillSwap_Platform.Controllers
                 .SingleOrDefaultAsync()) ?? 0m;
 
             var baseQuery = _db.TblTokenTransactions
+                .AsNoTracking()
                 .Where(t => t.FromUserId == currentUserId || t.ToUserId == currentUserId);
 
             // total rows for pager

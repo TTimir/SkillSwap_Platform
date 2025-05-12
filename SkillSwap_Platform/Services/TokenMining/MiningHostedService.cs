@@ -91,7 +91,7 @@ namespace SkillSwap_Platform.Services.TokenMining
                     if (minsElapsed < 5) continue;
 
                     // total tokens to credit = minsElapsed × rate
-                    decimal toCredit = Math.Floor(minsElapsed) * rate;
+                    decimal toCredit = minsElapsed * rate;
 
                     // enforce daily cap
                     var availableCap = settings.DailyCap - prog.EmittedToday;

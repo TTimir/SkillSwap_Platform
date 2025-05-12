@@ -1,0 +1,672 @@
+﻿@using SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch
+@model UserDetailVM
+
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    string fmt(DateTime? d) =>
+      d.HasValue
+        ? d.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+        : "-";
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2>@ViewData["Title"] — #@Model.User.UserId (@Model.User.UserName)</h2>
+        <p class="text-muted">
+            Created on @fmt(Model.User.CreatedDate)
+        </p>
+    </div>
+</div>
+</div>
+
+<div class="row mb-4">
+    <!-- Profile & Security -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Profile & Security</strong></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">@Model.User.Email</dd>
+
+                    <dt class="col-sm-4">Last Login</dt>
+                    <dd class="col-sm-8">@fmt(Model.User.LastLoginDate)</dd>
+
+                    <dt class="col-sm-4">Held?</dt>
+                    <dd class="col-sm-8">@(Model.User.IsHeld ? "Yes" : "No")</dd>
+
+                    <dt class="col-sm-4">Held At</dt>
+                    <dd class="col-sm-8">@fmt(Model.User.HeldAt)</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.User.IsActive ? "bg-success" : "bg-danger")">
+                            @(Model.User.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.User.IsVerified ? "bg-success" : "bg-danger")">
+                            @(Model.User.IsVerified ? "Verified" : "Unverified")
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flags & Pending -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Flags & Pending Items</strong></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Total User Flags</dt>
+                    <dd class="col-sm-6">@Model.User.TotalUserFlags</dd>
+
+                    <dt class="col-sm-6">Last User Flag</dt>
+                    <dd class="col-sm-6">@fmt(Model.User.LastUserFlagDate)</dd>
+
+                    <dt class="col-sm-6">Pending Flag Reviews</dt>
+                    <dd class="col-sm-6">@Model.User.PendingFlagReviewsCount</dd>
+
+                    <dt class="col-sm-6">Pending Certificates</dt>
+                    <dd class="col-sm-6">@Model.User.PendingCertificatesCount</dd>
+
+                    <dt class="col-sm-6">Total Review Flags</dt>
+                    <dd class="col-sm-6">@Model.User.TotalReviewFlags</dd>
+
+                    <dt class="col-sm-6">Total Reply Flags</dt>
+                    <dd class="col-sm-6">@Model.User.TotalReplyFlags</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Activity Overview -->
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Offers Created</strong></div>
+            <div class="card-body">
+                <h3>@Model.User.TotalOffersCreated</h3>
+                <small class="text-muted">
+                    Total Swap Offers
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Exchanges In / Out</strong></div>
+            <div class="card-body">
+                <h3>
+                    <span class="text-success">@Model.User.TotalExchangesInitiated</span>
+                    <span class="flaticon-refresh" style="font-size:75%"></span>
+                    <span class="text-primary">@Model.User.TotalExchangesReceived</span>
+                </h3>
+                <small class="text-muted">
+                    Initiated &rarr; Received
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Avg. Rating Received</strong></div>
+            <div class="card-body">
+                <h3>@Model.User.AverageRatingReceived.ToString("F1") ★</h3>
+                <small class="text-muted">
+                    Avg. Rating/ Recommendation
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Financial Summary -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Tokens Earned</strong></div>
+            <div class="card-body">
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.TokensEarned.ToString("F2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Tokens Spent</strong></div>
+            <div class="card-body">
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.TokensSpent.ToString("F2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Current Balance</strong></div>
+            <div class="card-body">
+                <h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.User.CurrentTokenBalance.ToString("F2")</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reviews & Replies -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Reviews & Replies (@Model.User.Reviews.Count)</strong></div>
+    <div class="card-body">
+        @if (!Model.User.Reviews.Any())
+        {
+            <p>No reviews.</p>
+        }
+        else
+        {
+            @foreach (var review in Model.User.Reviews)
+            {
+                <div class="mb-3">
+                    <h5>
+                        Review #@review.ReviewId by @review.ReviewerName
+                        (<small>@fmt(review.CreatedDate)</small>)
+                    </h5>
+                    <p>
+                        Rating: @review.Rating
+                        @if (review.IsFlagged)
+                        {
+                            <span class="badge bg-danger">Flagged</span>
+                        }
+                    </p>
+                    <p>@review.Comments</p>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Recent Exchanges -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Recent Exchanges</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Exchanges.Any())
+        {
+            <p class="p-3">No exchanges.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Exchange ID</th>
+                        <th>Offer</th>
+                        <th>Status</th>
+                        <th>Mode</th>
+                        <th>Skills</th>
+                        <th>Requested</th>
+                        <th>Last Status Change Date</th>
+                        <th>Last Status Change By</th>
+                        <th>Completed</th>
+                        <th>Tokens Released?</th>
+                        <th>Tokens Held/Released</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ex in Model.User.Exchanges)
+                    {
+                        <tr>
+                            <td>@ex.ExchangeId</td>
+                            <td>@ex.OfferTitle</td>
+                            <td>@ex.Status</td>
+                            <td>@ex.Mode</td>
+                            <td>
+                                Requester: @ex.SkillRequester <br />
+                                Owner: @ex.SkillOwner
+                            </td>
+                            <td>@(ex.RequestDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")</td>
+                            <td>@ex.LastStatusChangeDate?.ToString("dd MMM yyyy hh:mm tt")</td>
+                            <td>@ex.LastStatusChangeBy</td>
+                            <td>@(ex.CompletionDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")</td>
+                            <td>@(ex.TokensSettled ? "Yes" : "No")</td>
+                            <td>
+                                Held: @(ex.TokenHoldDate?.ToString("dd MMM, yyyy hh:mm tt") ?? "No") <br />
+                                Released: @(ex.TokenReleaseDate?.ToString("dd MMM, yyyy hh:mm tt") ?? "No")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Flagged Messages (@Model.User.FlaggedMessages.Count)</strong>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.User.FlaggedMessages.Any())
+        {
+            <p class="p-3 mb-0">No flagged messages.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Msg ID</th>
+                        <th>Sender</th>
+                        <th>Content</th>
+                        <th>Sent</th>
+                        <th>Approve?</th>
+                        <th>Admin Approved By</th>
+                        <th>Approved On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.User.FlaggedMessages)
+                    {
+                        <tr>
+                            <td>@f.MessageId</td>
+                            <td>@f.SenderUserName</td>
+                            <td>@Html.Raw(Html.Encode(f.Content))</td>
+                            <td>@fmt(f.SentDate)</td>
+                            <td>@(f.IsApproved ? "Yes" : "No")</td>
+                            <td>@(f.ApprovedByAdminName ?? "—")</td>
+                            <td>@fmt(f.ApprovedDate)</td>
+                            <td>
+                                @if (!f.ApprovedDate.HasValue)
+                                {
+                                    <a asp-controller="AdminSearch"
+                                       asp-action="ApproveMessage"
+                                       asp-route-messageId="@f.MessageId"
+                                       class="btn btn-sm btn-success">
+                                        Approve
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Education -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Education (@Model.User.Education.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Education.Any())
+        {
+            <p class="p-3">No education records.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @{
+                    var sr = 1;
+                }
+                @foreach (var edu in Model.User.Education)
+                {
+                    <li class="list-group-item">@(sr++). &nbsp; @edu.Degree from @edu.InstitutionName (@edu.StartDate?.ToLocalTime().ToString("MMMM yyyy") – @edu.EndDate?.ToLocalTime().ToString("MMMM yyyy")) <br /> <small>@edu.Description</small></li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<!-- Experiences -->
+<div class="card mb-4">
+    @{
+        int totalMonths = 0;
+
+        foreach (var exp in Model.User.Experiences)
+        {
+            var start = exp.StartDate ?? DateTime.UtcNow;
+            var end = exp.EndDate ?? DateTime.UtcNow;
+            totalMonths += ((end.Year - start.Year) * 12 + end.Month - start.Month);
+        }
+
+        int totalYears = totalMonths / 12;
+        int remainingMonths = totalMonths % 12;
+        var expLabel = $"{totalYears} year{(totalYears != 1 ? "s" : "")}, {remainingMonths} month{(remainingMonths != 1 ? "s" : "")}";
+    }
+    <div class="card-header"><strong>Experiences (@Model.User.Experiences.Count)  — @expLabel</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Experiences.Any())
+        {
+            <p class="p-3">No experience records.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @{
+                    var sr = 1;
+                }
+                @foreach (var exp in Model.User.Experiences)
+                {
+                    <li class="list-group-item">
+                        @(sr++). &nbsp;<strong>@exp.Position</strong> at <strong>@exp.Company</strong>
+                        <br />
+                        @{
+                            var start = exp.StartDate ?? DateTime.UtcNow;
+                            var end = exp.EndDate ?? DateTime.UtcNow;
+
+                            int months = (end.Year - start.Year) * 12 + end.Month - start.Month;
+                            int years = months / 12;
+                            int remainingsMonth = months % 12;
+
+                            var duration = years > 0
+                            ? $"{years} year{(years > 1 ? "s" : "")}" + (remainingsMonth > 0 ? $", {remainingsMonth} month{(remainingMonths > 1 ? "s" : "")}" : "")
+                            : $"{remainingsMonth} month{(remainingsMonth > 1 ? "s" : "")}";
+                        }
+                        <small class="text-muted">
+                            @((exp.StartDate?.ToString("MMMM yyyy") ?? "N/A") + " – " + (exp.EndDate?.ToString("MMMM yyyy") ?? "Present"))
+                            &nbsp; • @duration
+                        </small>
+                        @if (!string.IsNullOrEmpty(exp.Description))
+                        {
+                            <p class="mb-0 mt-1">@exp.Description</p>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<!-- Languages -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Languages (@Model.User.Languages.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Languages.Any())
+        {
+            <p class="p-3">No language records.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Language</th>
+                        <th>Proficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var lang in Model.User.Languages)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@lang.Language</td>
+                            <td>@lang.Proficiency</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Certificates -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Certificates (@Model.User.Certificates.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Certificates.Any())
+        {
+            <p class="p-3">No certificates.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Certificate ID</th>
+                        <th>Requested</th>
+                        <th>Approved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.User.Certificates)
+                    {
+                        <tr>
+                            <td>@c.CertificateId</td>
+                            <td>@fmt(c.RequestedDate)</td>
+                            <td>@fmt(c.ApprovedDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- KYC -->
+<div class="card mb-4">
+    <div class="card-header"><strong>KYC Details (@Model.User.KycDetails.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.KycDetails.Any())
+        {
+            <p class="p-3">No KYC uploaded.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Document</th>
+                        <th>Number</th>
+                        <th>Status</th>
+                        <th>Uploaded Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var doc in Model.User.KycDetails)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@doc.DocumentName</td>
+                            <td>@doc.DocumentNumber</td>
+                            <td>@doc.UploadedDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                            <td>@(doc.IsVerified ? "Verified" : "Not Verified")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Token Transaction History -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Token Transaction History (@Model.User.TokenTransactions.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.TokenTransactions.Any())
+        {
+            <p class="p-3">No transactions.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.User.TokenTransactions)
+                    {
+                        var sr = 1;
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@fmt(t.CreatedAt)</td>
+                            <td>@t.Type</td>
+                            <td>@t.Amount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Offers Created -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Offers Created (@Model.User.OffersCreated.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.OffersCreated.Any())
+        {
+            <p class="p-3">No offers created.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Created</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var o in Model.User.OffersCreated)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@o.Title</td>
+                            <td>@o.Category</td>
+                            <td>@fmt(o.CreatedDate)</td>
+                            <td>@o.TokenCost</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Offers Flagged by User (@Model.User.OfferFlags.Count)</strong>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.User.OfferFlags.Any())
+        {
+            <p class="p-3 mb-0">This user hasn’t flagged any offers.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Flag ID</th>
+                        <th>Offer ID</th>
+                        <th>Title</th>
+                        <th>Flagged On</th>
+                        <th>Admin Action</th>
+                        <th>Action Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.User.OfferFlags)
+                    {
+                        <tr>
+                            <td>@f.FlagId</td>
+                            <td>
+                                <a asp-controller="AdminSearch"
+                                   asp-action="OfferDetails"
+                                   asp-route-offerId="@f.OfferId">
+                                    @f.OfferId
+                                </a>
+                            </td>
+                            <td>@f.OfferTitle</td>
+                            <td>@fmt(f.FlaggedDate)</td>
+                            <td>@(string.IsNullOrEmpty(f.AdminAction) ? "Pending" : f.AdminAction)</td>
+                            <td>@fmt(f.AdminActionDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+
+<!-- Skills -->
+<div class="card mb-5">
+    <div class="card-header"><strong>Skills (@Model.User.Skills.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.User.Skills.Any())
+        {
+            <p class="p-3">No skills listed.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Proficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var s in Model.User.Skills)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@s.SkillName</td>
+                            <td>@s.SkillCategory</td>
+                            <td>
+                                @{
+                                    var level = s.Proficiency;
+                                    string label = level switch
+                                    {
+                                        1 => "Basic",
+                                        2 => "Intermediate",
+                                        3 => "Proficient",
+                                        _ => "Unknown"
+                                    };
+                                }
+                                @label
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="mb-5">
+    <a asp-action="Users" class="ud-btn btn-light-thm">
+        <i class="fas fa-angle-left me-1" style="transform:rotate(0deg)"></i> Back to Search
+    </a>
+</div>

@@ -1,0 +1,180 @@
+﻿@model SkillSwap_Platform.Models.TblEscrow
+
+@{
+    ViewData["Title"] = "Escrow Details";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h4>@ViewData["Title"]</h4>
+        <h3>
+            Escrow @("#")@Model.EscrowId
+            &ndash;
+            Offer @("#")@Model.Exchange.OfferId:
+            @Model.Exchange.Offer.Title
+        </h3>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Index","Escrow")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow Details</a>
+                    </div>
+                </nav>  
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">Exchange</th>
+                                        <th scope="col">Buyer (Other user)</th>
+                                        <th scope="col">Seller (Offer Owner)</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Admin Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    <tr>
+                                        <td class="vam"><span class="fz15 fw400">@Model.ExchangeId</span></td>
+                                        <td class="vam"><span class="fz15 fw400">@Model.Buyer.UserName</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.Seller.UserName</span></td>
+                                        <td class="vam"><span class="fz14 fw400"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="24" height="24"> @Model.Amount.ToString("0.00")</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.Status</span></td>
+                                        <td class="vam"><span class="fz14 fw400">@Model.CreatedAt.ToString("dd MMMM, yyyy hh:mm:ss tt")</span></td>
+                                        @if (Model.ReleasedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.ReleasedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (Model.RefundedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.RefundedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (Model.DisputedAt.HasValue)
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@(Model.DisputedAt?.ToString("dd MMMM, yyyy hh:mm:ss tt") ?? "-")</span></td>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(Model.AdminNotes))
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">@Model.AdminNotes</span></td>
+                                        }
+                                        else
+                                        {
+                                            <td class="vam"><span class="fz14 fw400">N/A</span></td>
+                                        }
+                                    </tr>
+                                </tbody>
+
+                                @if (Model.Status == "Pending")
+                                {
+                                    <div class="row g-3 mb-4">
+                                        <!-- Release Funds Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 border-success shadow-sm">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title text-success">Release Funds</h5>
+                                                    <form asp-action="Release" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesRelease" style="height: 100px"></textarea>
+                                                            <label for="notesRelease">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-thm">
+                                                            Release <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Refund Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 shadow-sm" style="border-color:#111;">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title">Refund</h5>
+                                                    <form asp-action="Refund" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesRefund" style="height: 100px"></textarea>
+                                                            <label for="notesRefund">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-dark">
+                                                            Refund <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Dispute Card -->
+                                        <div class="col-md-4">
+                                            <div class="card h-100 shadow-sm">
+                                                <div class="card-body d-flex flex-column">
+                                                    <h5 class="card-title">Open Dispute</h5>
+                                                    <form asp-action="Dispute" method="post" class="flex-grow-1 d-flex flex-column">
+                                                        <input type="hidden" name="id" value="@Model.EscrowId" />
+                                                        <div class="form-floating mb-3 flex-grow-1">
+                                                            <textarea name="notes" class="form-control" placeholder="Notes (optional)" id="notesDispute" style="height: 100px"></textarea>
+                                                            <label for="notesDispute">Notes (optional)</label>
+                                                        </div>
+                                                        <button type="submit" class="ud-btn btn-light-thm" style="border:0;">
+                                                            Dispute  <i class="fal fa-arrow-right-long me-1"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+
+
+

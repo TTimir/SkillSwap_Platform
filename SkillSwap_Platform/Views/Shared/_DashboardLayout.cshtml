@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
 
 @{
@@ -43,7 +44,7 @@
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
     @{
-        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png"); 
+        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
         .token-balance {
@@ -135,24 +136,60 @@
                                 <li class="user_setting">
                                     <div class="dropdown">
                                         <a class="btn" href="#" data-bs-toggle="dropdown">
-                                            @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
-                                            {
-                                                <div>
-                                                    <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="circle-rounded" width="100" style="max-width:50%;" />
-                                                </div>
+                                            @{
+                                                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                string src = "~/template_assets/images/No_Profile_img.png";
+
+                                                if (int.TryParse(idClaim, out var uid))
+                                                {
+                                                    try
+                                                    {
+                                                        var url = _db.TblUsers
+                                                        .Where(u => u.UserId == uid)
+                                                        .Select(u => u.ProfileImageUrl)
+                                                        .FirstOrDefault();
+                                                        if (!string.IsNullOrEmpty(url))
+                                                        {
+                                                            src = url;
+                                                        }
+                                                    }
+                                                    catch
+                                                    {
+                                                        // DB was unreachable—just leave the fallback image
+                                                    }
+                                                }
                                             }
-                                            else
-                                            {
-                                                <div>
-                                                    <img src="/template_assets/images/No_Profile_img.png" class="circle-rounded" alt="anonymous_image.png" width="100" style="max-width:50%;">
-                                                </div>
-                                            }
+                                            <div>
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                            </div>
                                         </a>
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
-                                                <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Skill-Swap</a>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Logout","Home")"><i class="flaticon-logout mr10"></i>Logout</a>
+                                                <p class="fz15 fw400 ff-heading mb10 pl30">Quick Start</p>
+                                                @if (User.IsInRole("Admin"))
+                                                {
+                                                    <a class="dropdown-item"
+                                                       asp-area="Admin"
+                                                       asp-controller="AdminDashboard"
+                                                       asp-action="Index">
+                                                        <i class="flaticon-goal mr10"></i> Admin Panel
+                                                    </a>
+                                                }
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                <a class="dropdown-item" href="@Url.Action("Create","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Create Swap Offer</a>
+                                                <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
+                                                <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
+                                                <a class="dropdown-item" href="@Url.Action("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr15"></i>Exchange Records</a>
+                                                <a class="dropdown-item" href="@Url.Action("Selectoffer","ExchangeDashboard")"><i class="flaticon-refresh mr15"></i> Share Resource</a>
+                                                <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
+                                                <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
+                                                <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                        <i class="flaticon-logout mr10"></i> Logout
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     </div>
@@ -204,20 +241,34 @@
         <!-- /.mobile-menu -->
         <nav id="menu" class="">
             <ul>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="list-item"
+                           asp-area="Admin"
+                           asp-controller="AdminDashboard"
+                           asp-action="Index">
+                            <span class="title">Admin Panel</span>
+                        </a>
+                    </li>
+                }
                 <li>
-                    <a class="list-item" href="#"><span class="title">Home</span></a>
+                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Back to Skill-Swap</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Service</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">About</span></a>
+                    <a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Contact</span></a>
+                    <a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About</span></a>
+                </li>
+                <li>
+                    <a class="list-item" href="@Url.ActionLink("Contact","Home")"><span class="title">Contact</span></a>
                 </li>
                 <!-- Only for Mobile View -->
             </ul>
@@ -230,10 +281,13 @@
                 <div class="dashboard_sidebar_list">
                     <p class="fz15 fw400 ff-heading pl30">Start</p>
                     <div class="sidebar_list_item">
-                        <a href="page-dashboard.html" class="items-center"><i class="flaticon-home mr15"></i>Dashboard</a>
+                        <a href="@Url.ActionLink("Index","UserDashboard")" class="items-center @(currentController == "UserDashboard" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-home mr15"></i>Dashboard</a>
                     </div>
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("Index","TrackNotifications")" class="items-center @(currentController == "TrackNotifications" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-document mr15"></i>My Activity</a>
+                    </div>
+                    <div class="sidebar_list_item">
+                        <a href="@Url.ActionLink("Index","GoogleCalendar")" class="items-center @(currentController == "GoogleCalendar" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-30-days mr15"></i>My Calendar</a>
                     </div>
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("Index","UserWishlist")" class="items-center @(currentController == "UserWishlist" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-like mr15"></i>Saved</a>
@@ -243,12 +297,6 @@
                     </div>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("MyOffers","UserReview")" class="items-center @(currentController == "UserReview" && currentAction == "MyOffers" ? "-is-active" : "")"><i class="flaticon-review-1 mr15"></i>Reviews</a>
-                    </div>
-                    <div class="sidebar_list_item">
-                        <a href="page-dashboard-invoice.html" class="items-center"><i class="flaticon-receipt mr15"></i>Invoice</a>
-                    </div>
-                    <div class="sidebar_list_item">
-                        <a href="page-dashboard-payouts.html" class="items-center"><i class="flaticon-dollar mr15"></i>Payouts</a>
                     </div>
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("DigitalTokenStatements","UserDigitalToken")" class="items-center @(currentController == "UserDigitalToken" && currentAction == "DigitalTokenStatements" ? "-is-active" : "")"><i class="flaticon-web mr15"></i>Token Transactions</a>
@@ -265,20 +313,25 @@
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Exchanges and History</p>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("Index","ExchangeDashboard")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-presentation mr15"></i>Active Exchange</a>
+                        <a href="@Url.ActionLink("Index","ExchangeDashboard")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
                     </div>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "ExchangeHistory" ? "-is-active" : "")"><i class="flaticon-content mr15"></i>Exchange Records</a>
                     </div>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("Selectoffer", "ResourceSharing")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Selectoffer" ? "-is-active" : "")"><i class="flaticon-refresh mr15"></i>Resource Exchanges</a>
+                        <a href="@Url.ActionLink("Selectoffer", "ResourceSharing")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Selectoffer" ? "-is-active" : "")"><i class="flaticon-refresh mr15"></i>Share Resource</a>
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>My Profile</a>
                     </div>
                     <div class="sidebar_list_item ">
-                        <a href="page-login.html" class="items-center"><i class="flaticon-logout mr15"></i>Logout</a>
+                        <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                <i class="flaticon-logout mr10"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -291,21 +344,30 @@
                                     <button onclick="myFunction()" class="dropbtn"><i class="fa fa-bars pr10"></i> Dashboard Navigation</button>
                                     <ul id="myDropdown" class="dropdown-content">
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Start</p></li>
-                                        <li><a href="page-dashboard.html"><i class="flaticon-home mr10"></i>Dashboard</a></li>
-                                        <li><a href="page-dashboard-proposal.html"><i class="flaticon-document mr10"></i>My Proposals</a></li>
-                                        <li><a href="page-dashboard-save.html"><i class="flaticon-like mr10"></i>Saved</a></li>
-                                        <li><a href="page-dashboard-message.html"><i class="flaticon-chat mr10"></i>Message</a></li>
-                                        <li><a href="page-dashboard-reviews.html"><i class="flaticon-review-1 mr10"></i>Reviews</a></li>
-                                        <li><a href="page-dashboard-invoice.html"><i class="flaticon-receipt mr10"></i>Invoice</a></li>
-                                        <li><a href="page-dashboard-payouts.html"><i class="flaticon-dollar mr10"></i>Payouts</a></li>
-                                        <li><a href="page-dashboard-statement.html"><i class="flaticon-web mr10"></i>Statements</a></li>
-                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p></li>
-                                        <li><a href="page-dashboard-manage-service.html"><i class="flaticon-presentation mr10"></i>Manage Services</a></li>
-                                        <li><a href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a></li>
-                                        <li><a href="page-dashboard-manage-project.html"><i class="flaticon-content mr10"></i>Manage Project</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserWishlist")"><i class="flaticon-like mr10"></i>Saved</a></li>
+                                        <li><a href="@Url.ActionLink("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a></li>
+                                        <li><a href="@Url.ActionLink("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a></li>
+                                        <li><a href="@Url.ActionLink("DigitalTokenStatements","UserDigitalToken")"><i class="flaticon-web mr10"></i>Token Transactions</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Swap Offers and Manage</p></li>
+                                        <li><a href="@Url.ActionLink("ActiveOffers","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Active Swap Offers</a></li>
+                                        <li><a href="@Url.ActionLink("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a></li>
+                                        <li><a href="@Url.ActionLink("Create","UserOfferManage")"><i class="flaticon-document mr10"></i>Create Swap Offer</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Exchanges and History</p></li>
+                                        <li><a href="@Url.ActionLink("Index","ExchangeDashboard")"><i class="flaticon-presentation mr10"></i>Active Exchanges</a></li>
+                                        <li><a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr10"></i>Exchange Records</a></li>
+                                        <li><a href="@Url.ActionLink("Selectoffer", "ResourceSharing")"><i class="flaticon-refresh mr10"></i>Share Resource</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
-                                        <li class="active"><a href="page-dashboard-profile.html"><i class="flaticon-photo mr10"></i>My Profile</a></li>
-                                        <li><a href="page-login.html"><i class="flaticon-logout mr10"></i>Logout</a></li>
+                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a></li>
+                                        <li>
+                                            <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                    <i class="flaticon-logout mr10"></i> Logout
+                                                </button>
+                                            </form>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -370,7 +432,7 @@
         @if (User.Identity.IsAuthenticated)
         {
             <script src="~/js/Tokenminer.js" asp-append-version="true"></script>
-        }        
+        }
         @RenderSection("DynamicScript", required: false)
 </body>
 </html>

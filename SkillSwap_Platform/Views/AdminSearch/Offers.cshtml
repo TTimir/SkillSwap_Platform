@@ -1,0 +1,161 @@
+﻿@using SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch
+@model OfferSearchVM
+
+@{
+    ViewData["Title"] = "Search Offers";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    // Pagination helpers
+    var page = Model.Results.Page;
+    var pageSize = Model.Results.PageSize;
+    var total = Model.Results.TotalCount;
+    var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+    var startItem = (page - 1) * pageSize + 1;
+    var endItem = Math.Min(page * pageSize, total);
+
+    var sr = startItem;
+}
+
+<div class="col-xl-8">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">Lorem ipsum dolor sit amet, consectetur.</p>
+    </div>
+</div>
+<div class="col-xl-4">
+    <div class="dashboard_search_meta">
+        <div class="search_area">
+            <form asp-action="Offers" method="get">
+                <input type="hidden" name="page" value="1" />
+                <input type="text" name="term" value="@Model.Term" class="form-control bdrs4" placeholder="Search by title or category…">
+                <button type="submit"
+                        class="position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent p-3"
+                        style="cursor: pointer;">
+                    <span class="far fa-magnifying-glass"></span>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="packages_table table-responsive">
+                @if (!Model.Results.Items.Any())
+                {
+                    <p class="alert alert-info">
+                        No offers found matching “<strong>@Model.Term</strong>”.
+                    </p>
+                }
+                else
+                {
+                    <table class="table-style3 table at-savesearch">
+                        <thead class="t-head">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Swap Offer</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Owner</th>
+                                <th scope="col">Created On</th>
+                                <th scope="col" class="text-end">Flags</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="t-body">
+                            @foreach (var o in Model.Results.Items)
+                            {
+                                <tr>
+                                    <td>@(sr++)</td>
+                                    <th scope="row">
+                                        <div>
+                                            (@("#")@(o.OfferId)) <span class="ms-3">
+                                                <a asp-action="OfferDetails"
+                                                   asp-controller="UserOfferDetails"
+                                                   asp-route-offerId="@o.OfferId"
+                                                   class="text-decoration-none"
+                                                target="_blank">
+                                                    @o.Title
+                                                </a>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <td class="vam">@o.Category</td>
+                                    <td class="vam">@o.OwnerUserName</td>
+                                    <td class="vam">@o.CreatedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                                    <td class="vam"><span class="pending-style style3">@o.TotalFlags</span></td>
+                                    <td class="vam">
+                                        <a asp-controller="AdminSearch"
+                                           asp-action="OfferDetails"
+                                           asp-route-id="@o.OfferId"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="View Details"
+                                           class="table-action fz15 fw500 text-thm2">
+                                            <span class="flaticon-website me-2 vam"></span> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                @if (total > pageSize)
+                {
+                    <div class="mbp_pagination text-center mt30">
+                        <ul class="page_navigation">
+                            @* Prev *@
+                            <li class="page-item @(page == 1 ? "disabled" : "")">
+                                <a class="page-link"
+                                   asp-action="Offers"
+                                   asp-route-term="@Model.Term"
+                                   asp-route-page="@(page - 1)">
+                                    <span class="fas fa-angle-left"></span>
+                                </a>
+                            </li>
+
+                            @* simple numeric pages *@
+                            @for (var i = 1; i <= totalPages; i++)
+                            {
+                                if (i == page)
+                                {
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else if (i <= 2 || i > totalPages - 2 || (i >= page - 1 && i <= page + 1))
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           asp-action="Offers"
+                                           asp-route-term="@Model.Term"
+                                           asp-route-page="@i">@i</a>
+                                    </li>
+                                }
+                                else if (i == 3 && page > 4)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                }
+                                else if (i == totalPages - 2 && page < totalPages - 3)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                }
+                            }
+
+                            @* Next *@
+                            <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                <a class="page-link"
+                                   asp-action="Offers"
+                                   asp-route-term="@Model.Term"
+                                   asp-route-page="@(page + 1)">
+                                    <span class="fas fa-angle-right"></span>
+                                </a>
+                            </li>
+                        </ul>
+                        <p class="mt10 mb-0 pagination_page_count text-center">
+                            @startItem – @endItem of @total offers
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+</div>

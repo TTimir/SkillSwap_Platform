@@ -49,8 +49,8 @@ public class HomeController : Controller
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
-        _passwordReset = passwordReset;
-        _emailService = emailService;
+        _passwordReset = passwordReset ?? throw new ArgumentNullException(nameof(passwordReset)); ;
+        _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService)); ;
         _newsletter = newsletter;
         _config = config;
         _satisfactionThreshold = config.GetValue<int>("TrustMetrics:SatisfactionThreshold", 4);
@@ -58,34 +58,45 @@ public class HomeController : Controller
         _usv = usv;
     }
 
-    // This runs on every request for views that share the layout
-    public override void OnActionExecuting(ActionExecutingContext ctx)
-    {
-        if (User.Identity.IsAuthenticated)
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var isHeld = _dbcontext.TblUsers
-                          .Where(u => u.UserId == userId)
-                          .Select(u => u.IsHeld)
-                          .FirstOrDefault();
-            if (isHeld)
-            {
-                // force sign-out
-                HttpContext.SignOutAsync("SkillSwapAuth");
-                TempData["ErrorMessage"] = "Your account has been held. Please contact support.";
-                ctx.Result = RedirectToAction("Login", "Home");
-            }
-        }
+    #region Layout Helpers
 
-        // Grab distinct categories
+    public override async Task OnActionExecutionAsync(ActionExecutingContext ctx, ActionExecutionDelegate next)
+    {
+        await EnforceNotHeldAsync(ctx);
+        PopulateFooterCategories();
+        await next();
+    }
+
+    private async Task EnforceNotHeldAsync(ActionExecutingContext ctx)
+    {
+        if (!User.Identity.IsAuthenticated) return;
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid)) return;
+
+        var isHeld = await _dbcontext.TblUsers
+                           .Where(u => u.UserId == uid)
+                           .Select(u => u.IsHeld)
+                           .FirstOrDefaultAsync();
+
+        if (isHeld)
+        {
+            await HttpContext.SignOutAsync("SkillSwapAuth");
+            TempData["ErrorMessage"] = "Your account has been held. Please contact support.";
+            ctx.Result = RedirectToAction(nameof(Login), "Home");
+        }
+    }
+
+    private void PopulateFooterCategories()
+    {
         var cats = _dbcontext.TblOffers
+            .AsNoTracking()
             .Select(o => o.Category)
             .Distinct()
             .OrderBy(c => c)
             .ToList();
         ViewData["FooterCategories"] = cats;
-        base.OnActionExecuting(ctx);
     }
+
+    #endregion
 
     #region Subscribe Newsletter
     // GET /Footer/UnsubscribeNewsletter?email=foo@bar.com
@@ -100,14 +111,29 @@ public class HomeController : Controller
             return View("UnsubscribeNewsletter");
         }
 
-        //await _newsletter.UnsubscribeAsync(email);
-        ViewBag.Message = $"✅ {email} has been removed from our mailing list.";
+        try
+        {
+            //await _newsletter.UnsubscribeAsync(email);
+            ViewBag.Message = $"✅ {email} has been removed from our mailing list.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to unsubscribe {Email}", email);
+            return RedirectToAction("EP500", "EP");
+        }
         return View("UnsubscribeNewsletter");
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> SubscribeNewsletter(string email)
+    public async Task<IActionResult> SubscribeNewsletter([EmailAddress] string email)
     {
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid newsletter signup attempt: '{Email}'", email);
+            TempData["NewsletterError"] = "🔴 Please enter a valid email.";
+            return RedirectToReferrer();
+        }
+
         if (string.IsNullOrWhiteSpace(email) || !new EmailAddressAttribute().IsValid(email))
         {
             TempData["NewsletterError"] = "🔴 Please enter a valid email.";
@@ -147,7 +173,6 @@ public class HomeController : Controller
     #endregion
 
     #region Menu Pages
-
     public async Task<IActionResult> Index()
     {
         try
@@ -709,38 +734,41 @@ public class HomeController : Controller
         if (!ModelState.IsValid)
             return View(form);
 
-        // 1) Save to DB
-        var msg = new TblUserContactRequest
+        using var tx = await _dbcontext.Database.BeginTransactionAsync();
+        try
         {
-            Name = form.Name,
-            Email = form.Email,
-            Phone = form.Phone,
-            Subject = form.Subject,
-            Category = form.Category,
-            Message = form.Message,
-            IsResolved = false,
-            HasSupportContacted = false,
-            CreatedAt = DateTime.UtcNow
-        };
-        _dbcontext.TblUserContactRequests.Add(msg);
-        await _dbcontext.SaveChangesAsync();
-
-        if (form.Attachment != null && form.Attachment.Length > 0)
-        {
-            using var ms = new MemoryStream();
-            await form.Attachment.CopyToAsync(ms);
-
-            msg.AttachmentData = ms.ToArray();
-            msg.AttachmentFilename = form.Attachment.FileName;
-            msg.AttachmentContentType = form.Attachment.ContentType;
-
-            // Update the record
-            _dbcontext.TblUserContactRequests.Update(msg);
+            // 1) Save to DB
+            var msg = new TblUserContactRequest
+            {
+                Name = form.Name,
+                Email = form.Email,
+                Phone = form.Phone,
+                Subject = form.Subject,
+                Category = form.Category,
+                Message = form.Message,
+                IsResolved = false,
+                HasSupportContacted = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbcontext.TblUserContactRequests.Add(msg);
             await _dbcontext.SaveChangesAsync();
-        }
 
-        // 2) Send confirmation to user
-        var userBody = $@"
+            if (form.Attachment != null && form.Attachment.Length > 0)
+            {
+                using var ms = new MemoryStream();
+                await form.Attachment.CopyToAsync(ms);
+
+                msg.AttachmentData = ms.ToArray();
+                msg.AttachmentFilename = form.Attachment.FileName;
+                msg.AttachmentContentType = form.Attachment.ContentType;
+
+                // Update the record
+                _dbcontext.TblUserContactRequests.Update(msg);
+                await _dbcontext.SaveChangesAsync();
+            }
+
+            // 2) Send confirmation to user
+            var userBody = $@"
             <p>Hi {form.Name},</p>
 
             <p>Thanks for reaching out to SkillSwap! We’ve received your message about “<b>{form.Subject}</b>” in the {form.Category} category:</p>
@@ -755,15 +783,23 @@ public class HomeController : Controller
             The SkillSwap Team</p>";
 
 
-        await _emailService.SendEmailAsync(
-            to: form.Email,
-            subject: "We’ve received your support request",
-            body: userBody,
-            isBodyHtml: true
-        );
+            await _emailService.SendEmailAsync(
+                to: form.Email,
+                subject: "We’ve received your support request",
+                body: userBody,
+                isBodyHtml: true
+            );
 
-        TempData["ContactSuccess"] = "Thank you! Your message has been sent.";
-        return RedirectToAction(nameof(Contact));
+            TempData["ContactSuccess"] = "Thank you! Your message has been sent.";
+            return RedirectToAction(nameof(Contact));
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            TempData["ContactError"] = "⚠️ An error occurred while sending your message.";
+            _logger.LogError(ex, "Failed to send contact form");
+            return RedirectToAction("EP500", "EP");
+        }
     }
 
     #endregion
@@ -1045,6 +1081,28 @@ public class HomeController : Controller
                       || !DateTimeOffset.TryParse(expiresString, out var exp)
                       || DateTimeOffset.UtcNow >= exp;
 
+        // read the raw string from session
+        var rawNext = HttpContext.Session.GetString("NextResendAt");
+
+        DateTimeOffset? nextAllowed = null;
+        if (!string.IsNullOrEmpty(rawNext)
+            && DateTimeOffset.TryParse(rawNext, out var parsed))
+        {
+            nextAllowed = parsed;
+        }
+
+        int retryAfter = 0;
+        if (nextAllowed.HasValue && nextAllowed.Value > DateTimeOffset.UtcNow)
+        {
+            retryAfter = (int)(nextAllowed.Value - DateTimeOffset.UtcNow).TotalSeconds;
+        }
+
+        ViewBag.ResendRetryAfter = retryAfter;
+        ViewBag.ResendAttemptsLeft = Math.Max(
+            0,
+            3 - (HttpContext.Session.GetInt32("ResendCount") ?? 0)
+        );
+
         if (needsNewOtp)
         {
             // generate & email OTP
@@ -1098,6 +1156,25 @@ public class HomeController : Controller
             return RedirectToAction("Login");
         }
 
+        if (user.LockoutEndTime.HasValue && user.LockoutEndTime.Value <= DateTime.UtcNow)
+        {
+            user.LockoutEndTime = null;
+            user.FailedOtpAttempts = 0;
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        if (user.LockoutEndTime.HasValue && user.LockoutEndTime.Value > DateTime.UtcNow)
+        {
+            // convert to local/IST for display
+            var localEnd = TimeZoneInfo.ConvertTimeFromUtc(
+                              DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc),
+                              TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata")
+                           );
+            TempData["ErrorMessage"] =
+                $"🚫 Too many failed OTP attempts. Try again at {localEnd:dd MMM yyyy hh:mm tt} IST.";
+            return RedirectToAction(nameof(LoginOtp), new { returnUrl });
+        }
+
         // 1) Gather context
         string ip;
         // 1a) First check for X-Forwarded-For (may be a comma-separated list; take the first)
@@ -1125,7 +1202,7 @@ public class HomeController : Controller
             ip = "unknown";
         }
 
-        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp);
+        bool isTotpOk = TotpHelper.VerifyTotpCode(loginUser.TotpSecret, otp, out string totpFailure);
         var emailOtp = HttpContext.Session.GetString("LoginEmailOtp");
         bool isEmailOk = emailOtp != null && emailOtp == otp;
         var method = isTotpOk ? "TOTP" : "Email";
@@ -1155,12 +1232,17 @@ public class HomeController : Controller
                 {
                     user.LockoutEndTime = DateTime.UtcNow.AddMinutes(15);
 
+                    // Convert for the email body
+                    var utcLock = DateTime.SpecifyKind(user.LockoutEndTime.Value, DateTimeKind.Utc);
+                    var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
+                    var localLockEnd = TimeZoneInfo.ConvertTimeFromUtc(utcLock, istZone);
+
                     // Notify by email
                     var lockSubject = "Your SkillSwap Login Temporarily Locked";
                     var lockBody = $@"
                         <p>Hi {user.FirstName},</p>
                         <p>Due to multiple unsuccessful login attempts, your account is locked for 15 minutes from now.</p>
-                        <p>Please wait until <strong>{user.LockoutEndTime:dd MMM yyyy HH:mm} UTC</strong> before trying again.</p>
+                        <p>Please wait until <strong>{localLockEnd:dd MMM yyyy HH:mm tt} IST</strong> before trying again.</p>
                         <p>If this wasn’t you, contact us at <a href=""mailto:support@skillswap.com"">support@skillswap.com</a>.</p>
                         <p>— The SkillSwap Team</p>";
                     await _emailService.SendEmailAsync(user.Email, lockSubject, lockBody, isBodyHtml: true);
@@ -1176,7 +1258,7 @@ public class HomeController : Controller
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "❌ Invalid code. Please try again.";
+                    TempData["ErrorMessage"] = "❌ The email code you entered is incorrect.";
                 }
 
                 ModelState.AddModelError(
@@ -1291,7 +1373,8 @@ public class HomeController : Controller
             var emailOtp = HttpContext.Session.GetString("EmailOtp");
 
             // check Google Auth TOTP
-            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp);
+            string totpFailure;
+            bool isTotpValid = TotpHelper.VerifyTotpCode(tempUser.TotpSecret, otp, out totpFailure);
             // check email‐OTP
             bool isEmailValid = emailOtp != null && emailOtp == otp;
 
@@ -1359,6 +1442,83 @@ public class HomeController : Controller
         }
     }
     #endregion
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendOtp()
+    {
+        const int MaxResends = 5;
+        const int cooldownSeconds = 30;
+
+        // retrieve the pending-login user
+        var loginUser = HttpContext.Session.GetObjectFromJson<TblUser>("LoginUser");
+        if (loginUser == null)
+            return Json(new { success = false, message = "Session expired" });
+
+        // 1) how many times we've already resent
+        int sentCount = HttpContext.Session.GetInt32("ResendCount") ?? 0;
+
+        // 2) when we're next allowed to resend
+        var nextRaw = HttpContext.Session.GetString("NextResendAt");
+        DateTimeOffset? nextAllowed = null;
+        if (!string.IsNullOrEmpty(nextRaw)
+            && DateTimeOffset.TryParse(nextRaw, out var parsed))
+        {
+            nextAllowed = parsed;
+        }
+
+        // 3) check cooldown
+        if (nextAllowed.HasValue && nextAllowed.Value > DateTimeOffset.UtcNow)
+        {
+            var retryAfter = (int)(nextAllowed.Value - DateTimeOffset.UtcNow).TotalSeconds;
+            return Json(new
+            {
+                success = false,
+                retryAfter = retryAfter,
+                message = $"Please wait {retryAfter}s before requesting another code."
+            });
+        }
+
+        // 4) check total attempts
+        if (sentCount >= MaxResends)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "You've reached the maximum number of resend attempts. Please try again later."
+            });
+        }
+
+        // generate a new email OTP
+        var emailOtp = new Random().Next(100000, 999999).ToString();
+        HttpContext.Session.SetString("LoginEmailOtp", emailOtp);
+        HttpContext.Session.SetString("LoginEmailOtp_Expires",
+            DateTimeOffset.UtcNow.AddMinutes(5).ToString("o"));
+
+        // increment and set a new cooldown
+        HttpContext.Session.SetInt32("ResendCount", ++sentCount);
+        HttpContext.Session.SetString("NextResendAt",
+            DateTimeOffset.UtcNow.AddSeconds(cooldownSeconds).ToString());
+
+        // send it
+        var htmlBody = $@"
+            <p>Hi {loginUser.UserName},</p>
+            <p>Your new login code is: <strong>{emailOtp}</strong></p>
+            <p>It’s valid for the next 05 minutes.</p>
+            <p>If you didn’t request this, ignore this email.</p>";
+
+        await _emailService.SendEmailAsync(
+            loginUser.Email,
+            "Your new SkillSwap login code",
+            htmlBody,
+            isBodyHtml: true);
+
+        return Json(new
+        {
+            success = true,
+            retryAfter = cooldownSeconds
+        });
+    }
 
     #region Logout
     // POST: /Home/Logout
@@ -1543,6 +1703,15 @@ public class HomeController : Controller
         // You can pass the returnUrl into the view if you want to show it.
         ViewBag.ReturnUrl = returnUrl;
         return View();
+    }
+
+    private IActionResult RedirectToReferrer()
+    {
+        var referer = Request.Headers["Referer"].ToString();
+        if (Uri.TryCreate(referer, UriKind.Absolute, out _))
+            return Redirect(referer);
+
+        return RedirectToAction(nameof(Index));
     }
 
 }

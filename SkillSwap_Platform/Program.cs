@@ -13,6 +13,12 @@ using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.AdminControls;
 using SkillSwap_Platform.Services.AdminControls.Certificate;
+using SkillSwap_Platform.Services.AdminControls.Escrow;
+using SkillSwap_Platform.Services.AdminControls.Offer_and_Review;
+using SkillSwap_Platform.Services.AdminControls.OfferFlag;
+using SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository;
+using SkillSwap_Platform.Services.AdminControls.UserFlag.Repository;
+using SkillSwap_Platform.Services.AdminControls.UserFlag;
 using SkillSwap_Platform.Services.AdminControls.UserManagement;
 using SkillSwap_Platform.Services.Contracts;
 using SkillSwap_Platform.Services.DigitalToken;
@@ -28,6 +34,11 @@ using SkillSwap_Platform.Services.TokenMining;
 using SkillSwap_Platform.Services.Wishlist;
 using System.Diagnostics;
 using System.Security.Claims;
+using SkillSwap_Platform.Services.AdminControls.Message;
+using SkillSwap_Platform.Services.AdminControls.PrivacyWord;
+using SkillSwap_Platform.Services.AdminControls.Faqs;
+using SkillSwap_Platform.Services.AdminControls.PlatformMetrics;
+using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +90,7 @@ builder.Services
        .AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
+builder.Services.AddScoped<GoogleCalendarService>();
 
 
 // Admin Services
@@ -86,6 +98,27 @@ builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<ICertificateReviewService, CertificateReviewService>();
 builder.Services.AddScoped<IUserManagmentService, UserManagmentService>();
 builder.Services.AddHostedService<ExpiredHoldCleanupService>();
+builder.Services.AddScoped<IEscrowService, EscrowService>();
+builder.Services.AddScoped<IOfferReviewService, OfferReviewService>();
+// Repository registrations
+builder.Services.AddScoped<IOfferFlagRepository, OfferFlagRepository>();
+builder.Services.AddScoped<IOfferRepository, OfferRepository>();
+builder.Services.AddScoped<IUserFlagRepository, UserFlagRepository>();
+// Service registrations
+builder.Services.AddScoped<IOfferFlagService, OfferFlagService>();
+builder.Services.AddScoped<IUserFlagService, UserFlagService>();
+
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<
+    SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.ISensitiveWordService,
+    SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord.SensitiveWordService>();
+builder.Services.AddScoped<IPrivacySensitiveWordService, PrivacySensitiveWordService>();
+builder.Services.AddScoped<IFaqService, FaqService>();
+builder.Services.AddScoped<IPerformanceService, PerformanceService>();
+builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
+builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
+
+
 
 builder.Services.AddControllersWithViews(options =>
 {

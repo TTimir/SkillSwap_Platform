@@ -65,11 +65,15 @@ public partial class TblOffer
 
     public string? Address { get; set; }
 
+    public bool IsFlagged { get; set; }
+
     public virtual ICollection<TblContract> TblContracts { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblExchange> TblExchanges { get; set; } = new List<TblExchange>();
 
     public virtual ICollection<TblMessage> TblMessages { get; set; } = new List<TblMessage>();
+
+    public virtual ICollection<TblOfferFaq> TblOfferFaqs { get; set; } = new List<TblOfferFaq>();
 
     public virtual ICollection<TblOfferFlag> TblOfferFlags { get; set; } = new List<TblOfferFlag>();
 

@@ -58,7 +58,7 @@
                             <th scope="row">
                                 <div>@("#")@Model.Exchange.ExchangeId <span class="ms-3">@Model.Offer.Title</span></div>
                             </th>
-                            <td class="vam">@Model.Exchange.LastStatusChangeDate.ToString("dd MMMM, yyyy hh:mm tt")</td>
+                            <td class="vam">@Model.Exchange.LastStatusChangeDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
                             <td class="vam">@Model.Contract.TokenOffer</td>
                             <td class="vam">
                                 <span class="@(Model.Exchange.Status == "Finalized"
@@ -148,7 +148,7 @@
                                                 {
                                                     <tr>
                                                         <td>@ev.SrNo</td>
-                                                        <td>@ev.EventDate.ToString("dd MMM yyyy, HH:mm")</td>
+                                                        <td>@ev.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
                                                         @if (isOnline)
                                                         {
                                                             <td>

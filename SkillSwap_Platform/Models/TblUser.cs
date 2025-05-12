@@ -118,6 +118,10 @@ public partial class TblUser
 
     public bool IsEscrowAccount { get; set; }
 
+    public bool IsSupportAgent { get; set; }
+
+    public bool IsFlagged { get; set; }
+
     public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
 
     public virtual ICollection<OtpAttempt> OtpAttempts { get; set; } = new List<OtpAttempt>();
@@ -127,6 +131,12 @@ public partial class TblUser
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblEducation> TblEducations { get; set; } = new List<TblEducation>();
+
+    public virtual ICollection<TblEscrow> TblEscrowBuyers { get; set; } = new List<TblEscrow>();
+
+    public virtual ICollection<TblEscrow> TblEscrowHandledByAdmins { get; set; } = new List<TblEscrow>();
+
+    public virtual ICollection<TblEscrow> TblEscrowSellers { get; set; } = new List<TblEscrow>();
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();
 
@@ -138,15 +148,23 @@ public partial class TblUser
 
     public virtual ICollection<TblLanguage> TblLanguages { get; set; } = new List<TblLanguage>();
 
+    public virtual ICollection<TblMessage> TblMessageApprovedByAdmins { get; set; } = new List<TblMessage>();
+
     public virtual ICollection<TblMessage> TblMessageReceiverUsers { get; set; } = new List<TblMessage>();
 
     public virtual ICollection<TblMessage> TblMessageSenderUsers { get; set; } = new List<TblMessage>();
 
-    public virtual ICollection<TblOfferFlag> TblOfferFlags { get; set; } = new List<TblOfferFlag>();
+    public virtual ICollection<TblOfferFlag> TblOfferFlagAdminUsers { get; set; } = new List<TblOfferFlag>();
+
+    public virtual ICollection<TblOfferFlag> TblOfferFlagFlaggedByUsers { get; set; } = new List<TblOfferFlag>();
 
     public virtual ICollection<TblOffer> TblOffers { get; set; } = new List<TblOffer>();
 
     public virtual ICollection<TblPasswordResetToken> TblPasswordResetTokens { get; set; } = new List<TblPasswordResetToken>();
+
+    public virtual ICollection<TblReview> TblReviewDeletedByAdmins { get; set; } = new List<TblReview>();
+
+    public virtual ICollection<TblReviewModerationHistory> TblReviewModerationHistories { get; set; } = new List<TblReviewModerationHistory>();
 
     public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
 
@@ -156,7 +174,9 @@ public partial class TblUser
 
     public virtual ICollection<TblReview> TblReviewUsers { get; set; } = new List<TblReview>();
 
-    public virtual ICollection<TblSupportTicket> TblSupportTickets { get; set; } = new List<TblSupportTicket>();
+    public virtual ICollection<TblSupportTicket> TblSupportTicketAssignedAdmins { get; set; } = new List<TblSupportTicket>();
+
+    public virtual ICollection<TblSupportTicket> TblSupportTicketUsers { get; set; } = new List<TblSupportTicket>();
 
     public virtual ICollection<TblTokenTransaction> TblTokenTransactionFromUsers { get; set; } = new List<TblTokenTransaction>();
 
@@ -165,6 +185,12 @@ public partial class TblUser
     public virtual ICollection<TblUserCertificate> TblUserCertificateApprovedByAdmins { get; set; } = new List<TblUserCertificate>();
 
     public virtual ICollection<TblUserCertificate> TblUserCertificateUsers { get; set; } = new List<TblUserCertificate>();
+
+    public virtual ICollection<TblUserFlag> TblUserFlagAdminUsers { get; set; } = new List<TblUserFlag>();
+
+    public virtual ICollection<TblUserFlag> TblUserFlagFlaggedByUsers { get; set; } = new List<TblUserFlag>();
+
+    public virtual ICollection<TblUserFlag> TblUserFlagFlaggedUsers { get; set; } = new List<TblUserFlag>();
 
     public virtual ICollection<TblUserHoldHistory> TblUserHoldHistoryReleasedByAdminNavigations { get; set; } = new List<TblUserHoldHistory>();
 

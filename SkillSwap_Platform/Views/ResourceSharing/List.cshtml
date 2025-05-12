@@ -86,7 +86,7 @@
                                                     </div>
                                                 </th>
                                                 <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
-                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToString("MMMM dd, yyyy")</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
                                                 <td class="align-top">
                                                     <div class="d-flex">
                                                         @if (resource.ResourceType.ToLower() == "link")
@@ -198,7 +198,7 @@
                                                     </div>
                                                 </th>
                                                 <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
-                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToString("MMMM dd, yyyy")</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
                                                 <td class="align-top">
                                                     <div class="d-flex">
                                                         @if (resource.ResourceType.ToLower() == "link")

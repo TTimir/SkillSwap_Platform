@@ -34,18 +34,27 @@ namespace SkillSwap_Platform.Controllers
                 var clientId = _configuration["Authentication:Google:ClientId"];
                 var redirectUri = Url.Action("OAuth2Callback", "GoogleAuth", null, Request.Scheme);
                 var state = $"{exchangeId}|{otherUserId}";
+                var scope = "https://www.googleapis.com/auth/calendar.events.readonly";
 
-                var authorizationUrl =
-                    "https://accounts.google.com/o/oauth2/v2/auth" +
-                    $"?response_type=code" +
-                    $"&client_id={Uri.EscapeDataString(clientId)}" +
-                    $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
-                    $"&scope={Uri.EscapeDataString(string.Join(" ", Scopes))}" +
-                    $"&access_type=offline" +
-                    $"&prompt=consent" +
-                    $"&state={Uri.EscapeDataString(state)}";
+                //var authorizationUrl =
+                //    "https://accounts.google.com/o/oauth2/v2/auth" +
+                //    $"?response_type=code" +
+                //    $"&client_id={Uri.EscapeDataString(clientId)}" +
+                //    $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+                //    $"&scope={Uri.EscapeDataString(string.Join(" ", Scopes))}" +
+                //    $"&access_type=offline" +
+                //    $"&prompt=consent" +
+                //    $"&state={Uri.EscapeDataString(state)}";
 
-                return Redirect(authorizationUrl);
+                var url = "https://accounts.google.com/o/oauth2/v2/auth"
+                    + "?response_type=code"
+                    + $"&client_id={Uri.EscapeDataString(clientId)}"
+                    + $"&redirect_uri={Uri.EscapeDataString(redirectUri)}"
+                    + $"&scope={Uri.EscapeDataString(scope)}"
+                    + "&access_type=offline"
+                    + "&prompt=consent"
+                    + $"&state={Uri.EscapeDataString(state)}";
+                return Redirect(url);
             }
             catch (Exception ex)
             {
@@ -151,6 +160,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Redirect to the action that creates the calendar event.
                 return RedirectToAction("CreateEvent", "GoogleCalendar", new { exchangeId, otherUserId });
+                //return RedirectToAction("Index", "GoogleCalendar");
             }
             catch (Exception ex)
             {

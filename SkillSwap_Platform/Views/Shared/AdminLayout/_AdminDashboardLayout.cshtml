@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject ILogger<Views_Shared_AdminLayout__AdminDashboardLayout> Logger
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
 @inject SkillSwap_Platform.Services.AdminControls.IAdminDashboardService AdminService
@@ -12,8 +13,14 @@
     bool isAdmin = User.IsInRole("Admin");
 
     // Pending-work counters, with safe fallbacks
-    int pendingCertificates = 0, otpFailures = 0, escrowPending = 0, flaggedOffers = 0;
-    int heldUsersCount = 0;
+    int pendingCertificates = 0,
+    otpFailures = 0,
+    escrowPending = 0,
+    flaggedOffers = 0,
+    heldUsersCount = 0,
+    flaggedReviews = 0,
+    flaggedProfiles = 0,
+    flaggedMessages = 0;
     if (isAdmin)
     {
         try
@@ -36,7 +43,7 @@
 
         try
         {
-            otpFailures = await AdminService.GetOtpFailureCountAsync();
+            otpFailures = await AdminService.GetUsersWithFailedOtpCountAsync();
         }
         catch (Exception ex)
         {
@@ -59,6 +66,33 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load flagged offers count");
+        }
+
+        try
+        {
+            flaggedReviews = await AdminService.GetFlaggedReviewsCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged reviews count");
+        }
+
+        try
+        {
+            flaggedProfiles = await AdminService.GetActiveFlaggedUsersCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged profile count");
+        }
+
+        try
+        {
+            flaggedMessages = await AdminService.GetFlaggedMessagesCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load flagged profile count");
         }
     }
 }
@@ -99,7 +133,7 @@
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
     @{
-        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png"); 
+        var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
         .token-balance {
@@ -198,24 +232,43 @@
                                 <li class="user_setting">
                                     <div class="dropdown">
                                         <a class="btn" href="#" data-bs-toggle="dropdown">
-                                            @if (!string.IsNullOrEmpty(ViewData["UserProfileImage"] as string))
-                                            {
-                                                <div>
-                                                    <img src="@ViewData["UserProfileImage"]" alt="Freelancer Photo" class="circle-rounded" width="100" style="max-width:50%;" />
-                                                </div>
+                                            @{
+                                                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                string src = "~/template_assets/images/No_Profile_img.png";
+
+                                                if (int.TryParse(idClaim, out var uid))
+                                                {
+                                                    try
+                                                    {
+                                                        var url = _db.TblUsers
+                                                        .Where(u => u.UserId == uid)
+                                                        .Select(u => u.ProfileImageUrl)
+                                                        .FirstOrDefault();
+                                                        if (!string.IsNullOrEmpty(url))
+                                                        {
+                                                            src = url;
+                                                        }
+                                                    }
+                                                    catch
+                                                    {
+                                                        // DB was unreachable—just leave the fallback image
+                                                    }
+                                                }
                                             }
-                                            else
-                                            {
-                                                <div>
-                                                    <img src="/template_assets/images/No_Profile_img.png" class="circle-rounded" alt="anonymous_image.png" width="100" style="max-width:50%;">
-                                                </div>
-                                            }
+                                            <div>
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                            </div>
                                         </a>
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
                                                 <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Skill-Swap</a>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Logout","Home")"><i class="flaticon-logout mr10"></i>Logout</a>
+                                                <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                        <i class="flaticon-logout mr10"></i> Logout
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     </div>
@@ -267,20 +320,34 @@
         <!-- /.mobile-menu -->
         <nav id="menu" class="">
             <ul>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="list-item"
+                           asp-area="Admin"
+                           asp-controller="AdminDashboard"
+                           asp-action="Index">
+                            <span class="title">Admin Panel</span>
+                        </a>
+                    </li>
+                }
                 <li>
-                    <a class="list-item" href="#"><span class="title">Home</span></a>
+                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Service</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">How It Works</span></a>
+                    <a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">About</span></a>
+                    <a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a>
                 </li>
                 <li>
-                    <a class="list-item" href="#"><span class="title">Contact</span></a>
+                    <a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About</span></a>
+                </li>
+                <li>
+                    <a class="list-item" href="@Url.ActionLink("Contact","Home")"><span class="title">Contact</span></a>
                 </li>
                 <!-- Only for Mobile View -->
             </ul>
@@ -293,13 +360,40 @@
                 <div class="dashboard_sidebar_list">
                     @if (isAdmin)
                     {
-                        <p class="fz15 fw400 ff-heading pl30">Admin Panel</p>
-
+                        <p class="fz15 fw400 ff-heading pl30">Start</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","Metrics", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Metrics" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-home-1 mr15"></i>
+                                Matrix Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminDashboard", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminDashboard" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-house mr15"></i>
+                                Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","AdminMining", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminMining" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-money mr15"></i>
+                                Token Emit Setting
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","FaqAdmin", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="FaqAdmin" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-chat mr15"></i>
+                                Manage FAQs
+                            </a>
+                        </div>
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","CertificateReview", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="CertificateReview" ? "-is-active" : "")">
+                               class="d-flex items-center @(currentController=="CertificateReview" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-document mr15"></i>
-                                Certificates
+                                Review Certificates
                                 @if (pendingCertificates > 0)
                                 {
                                     <span class="badge badge-pill bg-danger ms-auto">@pendingCertificates</span>
@@ -308,13 +402,13 @@
                         </div>
 
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Index","UserManagement", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="UserManagement" ? "-is-active" : "")">
-                                <i class="flaticon-user mr15"></i>
-                                Manage Users
-                                @if (heldUsersCount > 0)
+                            <a href="@Url.ActionLink("Index","MessageReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="MessageReview" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-review-1 mr15"></i>
+                                Review Messages
+                                @if (flaggedMessages > 0)
                                 {
-                                    <span class="badge badge-pill bg-danger ms-auto">@heldUsersCount</span>
+                                    <span class="badge badge-pill bg-info ms-auto">@flaggedMessages</span>
                                 }
                             </a>
                         </div>
@@ -322,7 +416,7 @@
                         <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","OtpLogs", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="OtpLogs" && currentAction=="Index" ? "-is-active" : "")">
-                                <i class="flaticon-lock mr15"></i>
+                                <i class="flaticon-antivirus mr15"></i>
                                 OTP Failures
                                 @if (otpFailures > 0)
                                 {
@@ -331,11 +425,58 @@
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Search Terms</p>
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Index","Escrow","Admin")"
-                               class="d-flex items-center @(currentController=="Escrow" ? "-is-active" : "")">
+                            <a href="@Url.ActionLink("Users","AdminSearch", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminSearch" && currentAction=="Users" ? "-is-active" : "")">
+                                <i class="flaticon-photo mr15"></i>
+                                User Profile
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Offers","AdminSearch", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminSearch" && currentAction=="Offers" ? "-is-active" : "")">
+                                <i class="flaticon-briefcase mr15"></i>
+                                Swap Offers
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Email & Manage</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("SendNewsletter","Newsletter", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Newsletter" && currentAction=="SendNewsletter" ? "-is-active" : "")">
+                                <i class="flaticon-rocket mr15"></i>
+                                Send Newsletter
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","Newsletter", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Newsletter" && currentAction=="History" ? "-is-active" : "")">
+                                <i class="flaticon-mail mr15"></i>
+                                Newsletter History
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("SendToUser","Newsletter", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Newsletter" && currentAction=="SendToUser" ? "-is-active" : "")">
+                                <i class="flaticon-notification mr15"></i>
+                                Send To User
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Escrow & Transactions</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","Escrow", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Escrow" && currentAction=="InDashboarddex" ? "-is-active" : "")">
+                                <i class="flaticon-pay-day mr15"></i>
+                                Escrow Statement
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","Escrow", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="Escrow" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-dollar mr15"></i>
-                                Escrow Management
+                                Escrow Counters
                                 @if (escrowPending > 0)
                                 {
                                     <span class="badge badge-pill bg-info ms-auto">@escrowPending</span>
@@ -343,23 +484,119 @@
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offer & Reports</p>
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("ModerationQueue","Offers", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Offers" ? "-is-active" : "")">
-                                <i class="flaticon-review-1 mr15"></i>
-                                Offers & Reviews
+                            <a href="@Url.ActionLink("Dashboard","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-home mr15"></i>
+                                Reports Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-presentation mr15"></i>
+                                Active Reports
                                 @if (flaggedOffers > 0)
                                 {
                                     <span class="badge badge-pill bg-danger ms-auto">@flaggedOffers</span>
                                 }
                             </a>
                         </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","OfferFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferFlag" && currentAction=="History" ? "-is-active" : "")">
+                                <i class="flaticon-briefcase mr15"></i>
+                                Reported Offers
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Offer's Review & Reports</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("ActiveFlags","OfferReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferReview" && currentAction=="ActiveFlags" ? "-is-active" : "")">
+                                <i class="flaticon-review mr15"></i>
+                                Active Reports
+                                @if (flaggedReviews > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedReviews</span>
+                                }
+                            </a>
+                        </div>
 
                         <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Reports","Admin", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="Admin" && currentAction=="Reports" ? "-is-active" : "")">
+                            <a href="@Url.ActionLink("Reviews","OfferReview", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="OfferReview" && currentAction=="Reviews" ? "-is-active" : "")">
+                                <i class="flaticon-review-1 mr15"></i>
+                                Reported Offer's Reviews
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">User Profile & Reports</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Dashboard" ? "-is-active" : "")">
+                                <i class="flaticon-home mr15"></i>
+                                Reports Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-working mr15"></i>
+                                Active Reports
+                                @if (flaggedProfiles > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@flaggedProfiles</span>
+                                }
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","UserFlag", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserFlag" && currentAction=="History" ? "-is-active" : "")">
                                 <i class="flaticon-flag mr15"></i>
-                                User Reports
+                                Reported Users
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","UserManagement", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="UserManagement" ? "-is-active" : "")">
+                                <i class="flaticon-sand-clock mr15"></i>
+                                Held Users
+                                @if (heldUsersCount > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@heldUsersCount</span>
+                                }
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Privacy & Manage</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","SensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="SensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-secure mr15"></i>
+                                Sensitive Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Create","SensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="SensitiveWords" && currentAction=="Create" ? "-is-active" : "")">
+                                <i class="flaticon-add mr15"></i>
+                                Add Sensitive Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","PrivacySensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="PrivacySensitiveWords" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-antivirus mr15"></i>
+                                Privacy Words
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Create","PrivacySensitiveWords", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="PrivacySensitiveWords" && currentAction=="Create" ? "-is-active" : "")">
+                                <i class="flaticon-add mr15"></i>
+                                Add Privacy Words
                             </a>
                         </div>
                     }
@@ -374,21 +611,40 @@
                                     <button onclick="myFunction()" class="dropbtn"><i class="fa fa-bars pr10"></i> Dashboard Navigation</button>
                                     <ul id="myDropdown" class="dropdown-content">
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Start</p></li>
-                                        <li><a href="page-dashboard.html"><i class="flaticon-home mr10"></i>Dashboard</a></li>
-                                        <li><a href="page-dashboard-proposal.html"><i class="flaticon-document mr10"></i>My Proposals</a></li>
-                                        <li><a href="page-dashboard-save.html"><i class="flaticon-like mr10"></i>Saved</a></li>
-                                        <li><a href="page-dashboard-message.html"><i class="flaticon-chat mr10"></i>Message</a></li>
-                                        <li><a href="page-dashboard-reviews.html"><i class="flaticon-review-1 mr10"></i>Reviews</a></li>
-                                        <li><a href="page-dashboard-invoice.html"><i class="flaticon-receipt mr10"></i>Invoice</a></li>
-                                        <li><a href="page-dashboard-payouts.html"><i class="flaticon-dollar mr10"></i>Payouts</a></li>
-                                        <li><a href="page-dashboard-statement.html"><i class="flaticon-web mr10"></i>Statements</a></li>
-                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p></li>
-                                        <li><a href="page-dashboard-manage-service.html"><i class="flaticon-presentation mr10"></i>Manage Services</a></li>
-                                        <li><a href="page-dashboard-manage-jobs.html"><i class="flaticon-briefcase mr10"></i>Manage Jobs</a></li>
-                                        <li><a href="page-dashboard-manage-project.html"><i class="flaticon-content mr10"></i>Manage Project</a></li>
+                                        <li><a href="@Url.ActionLink("Index","AdminDashboard")"><i class="flaticon-house mr10"></i>Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","FaqAdmin")"><i class="flaticon-chat mr10"></i>Manage FAQs</a></li>
+                                        <li><a href="@Url.ActionLink("Index","CertificateReview")"><i class="flaticon-document mr10"></i>Review Certificates</a></li>
+                                        <li><a href="@Url.ActionLink("Index","MessageReview")"><i class="flaticon-review-1 mr10"></i>Review Messages</a></li>
+                                        <li><a href="@Url.ActionLink("Index","OtpLogs")"><i class="flaticon-antivirus mr10"></i>OTP Failures</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Escrow & Transactions</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","Escrow")"><i class="flaticon-pay-day mr10"></i>Escrow Statement</a></li>
+                                        <li><a href="@Url.ActionLink("Index","Escrow")"><i class="flaticon-dollar mr10"></i>Escrow Counters</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Swap Offer & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","OfferFlag")"><i class="flaticon-home mr10"></i>Reports Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","OfferFlag")"><i class="flaticon-presentation mr10"></i>Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("History","OfferFlag")"><i class="flaticon-briefcase mr10"></i> Reported Offers</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Offer's Review & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("ActiveFlags","OfferReview")"><i class="flaticon-review mr10"></i>Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("Reviews","OfferReview")"><i class="flaticon-review-1 mr10"></i> Reported Offer's Reviews</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">User Profile & Reports</p></li>
+                                        <li><a href="@Url.ActionLink("Dashboard","UserFlag")"><i class="flaticon-home mr10"></i>Reports Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserFlag")"><i class="flaticon-working mr10"></i> Active Reports</a></li>
+                                        <li><a href="@Url.ActionLink("History","UserFlag")"><i class="flaticon-flag mr10"></i> Reported Users</a></li>
+                                        <li><a href="@Url.ActionLink("Index","UserManagement")"><i class="flaticon-sand-clock mr10"></i>Held Users</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Privacy & Manage</p></li>
+                                        <li><a href="@Url.ActionLink("Index","SensitiveWords")"><i class="flaticon-secure mr10"></i>Sensitive Words</a></li>
+                                        <li><a href="@Url.ActionLink("Create","SensitiveWords")"><i class="flaticon-add mr10"></i>Add Sensitive Words</a></li>
+                                        <li><a href="@Url.ActionLink("Index","PrivacySensitiveWords")"><i class="flaticon-antivirus mr10"></i>Privacy Words</a></li>
+                                        <li><a href="@Url.ActionLink("Create","PrivacySensitiveWords")"><i class="flaticon-add mr10"></i>Add Privacy Words</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
-                                        <li class="active"><a href="page-dashboard-profile.html"><i class="flaticon-photo mr10"></i>My Profile</a></li>
-                                        <li><a href="page-login.html"><i class="flaticon-logout mr10"></i>Logout</a></li>
+                                        <li>
+                                            <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
+                                                    <i class="flaticon-logout mr10"></i> Logout
+                                                </button>
+                                            </form>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -453,7 +709,7 @@
         @if (User.Identity.IsAuthenticated)
         {
             <script src="~/js/Tokenminer.js" asp-append-version="true"></script>
-        }        
+        }
         @RenderSection("DynamicAdminScript", required: false)
 </body>
 </html>

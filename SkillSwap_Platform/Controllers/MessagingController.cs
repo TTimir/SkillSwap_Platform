@@ -40,7 +40,7 @@ namespace SkillSwap_Platform.Controllers
         /// <param name="otherUserId">The ID of the other participant.</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> Conversation(int? otherUserId, int? offerId)
+        public async Task<IActionResult> Conversation(int? otherUserId, int? offerId, string searchTerm)
         {
             try
             {
@@ -86,8 +86,12 @@ namespace SkillSwap_Platform.Controllers
 
                 // 1. Get all distinct conversation partner IDs for the current user
                 var partnerIds = await _context.TblMessages
-                    .Where(m => m.SenderUserId == currentUserId || m.ReceiverUserId == currentUserId)
-                    .Select(m => m.SenderUserId == currentUserId ? m.ReceiverUserId : m.SenderUserId)
+                    .Where(m => !m.IsDeleted
+                             && (m.SenderUserId == currentUserId
+                              || m.ReceiverUserId == currentUserId))
+                    .Select(m => m.SenderUserId == currentUserId
+                                  ? m.ReceiverUserId
+                                  : m.SenderUserId)
                     .Distinct()
                     .ToListAsync();
 
@@ -124,6 +128,16 @@ namespace SkillSwap_Platform.Controllers
                     }
                 }
 
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var term = searchTerm.Trim();
+                    chatMembers = chatMembers
+                        .Where(c =>
+                            c.UserName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                         || c.Designation.Contains(term, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
                 // sort the chat members by last message time (most recent first)
                 chatMembers = chatMembers.OrderByDescending(cm =>
                     DateTime.TryParse(cm.LastMessageTime, out DateTime dt) ? dt : DateTime.MinValue)
@@ -158,6 +172,7 @@ namespace SkillSwap_Platform.Controllers
                     if (otherUserId.Value != currentUserId)
                     {
                         messages = await _context.TblMessages
+                            .Include(m => m.ApprovedByAdmin)
                             .Include(m => m.SenderUser)
                             .Include(m => m.TblMessageAttachments)
                             .Where(m =>
@@ -364,7 +379,10 @@ namespace SkillSwap_Platform.Controllers
                         Exchange = exchangeEntity,
                         InPersonMeeting = meeting,
                         ExchangeOfferOwnerName = exchangeOfferOwnerName,
-                        ExchangeOtherUserName = exchangeOtherUserName
+                        ExchangeOtherUserName = exchangeOtherUserName,
+                        ApprovedByAdminId = msg.ApprovedByAdminId,
+                        ApprovedDate = msg.ApprovedDate,
+                        ApprovedByAdminName = msg.ApprovedByAdmin?.UserName
                     });
                 }
 
@@ -385,7 +403,67 @@ namespace SkillSwap_Platform.Controllers
                     ChatMembers = chatMembers,
                     Messages = messageViewModels,
                     OfferId = offerId,
+                    SearchTerm = searchTerm
                 };
+
+                // 1️⃣ Fetch all contract records between the two users, ordered newest first:
+                var allContracts = await _context.TblContracts
+                    .Where(c =>
+                        (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
+                        (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
+                    .Include(c => c.Offer)
+                    .OrderByDescending(c => c.CreatedDate)
+                    .ToListAsync();
+
+                // 2️⃣ Count distinct offers:
+                viewModel.TotalSwapOffersCount = allContracts
+                    .Select(c => c.OfferId)
+                    .Distinct()
+                    .Count();
+
+                // 3️⃣ For each offer, pick the very first record (latest date):
+                viewModel.SwapOffers = allContracts
+                    .GroupBy(c => c.OfferId)
+                    .Select(g => {
+                        var newest = g.First();  // because we ordered Descending
+                        return new OfferInviteVM
+                        {
+                            OfferId = g.Key,
+                            Title = newest.Offer.Title,
+                            LatestStatus = newest.Status,
+                            LatestDate = newest.CreatedDate
+                        };
+                    })
+                    .OrderByDescending(o => o.LatestDate)
+                    .Take(3)
+                    .ToList();
+
+                // After viewModel is mostly built...
+                var latestContract = await _context.TblContracts
+                    .Include(c => c.Offer)
+                    .Where(c =>
+                        (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
+                        (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
+                    .Where(c => c.Status != "Declined")           // only “active” ones
+                    .OrderByDescending(c => c.UpdatedDate)        // or CreatedDate if you prefer
+                    .FirstOrDefaultAsync();
+
+                if (latestContract != null)
+                {
+                    viewModel.LatestActiveOffer = new LatestOfferVM
+                    {
+                        OfferId = latestContract.OfferId,
+                        Title = latestContract.Offer.Title,
+                        ContractUniqueId = latestContract.ContractUniqueId,
+                        CurrentStagePdfUrl = latestContract.ContractDocument,
+                        // assume you have a PDF URL stored in the contract record
+                        Status = latestContract.Status
+                    };
+                }
+                else
+                {
+                    viewModel.LatestActiveOffer = null;
+                }
 
                 return View(viewModel);
             }
@@ -409,7 +487,7 @@ namespace SkillSwap_Platform.Controllers
         /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessage(int receiverUserId, string content, IFormFileCollection attachments, string replyPreview, int? replyMessageId, int? offerId)
+        public async Task<IActionResult> SendMessage(int receiverUserId, string content, IFormFileCollection attachments, string replyPreview, int? replyMessageId)
         {
             // Begin transaction for atomicity.
             using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -421,8 +499,29 @@ namespace SkillSwap_Platform.Controllers
                     // Normalize content: if null or whitespace, set to an empty string.
                     content = content?.Trim() ?? string.Empty;
 
+                    // Check for sensitive words in the content.
+                    var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
+                    bool isFlagged = sensitiveWarnings.Any();
+
+                    //if (isFlagged)
+                    //{
+                    //    TempData["ErrorMessage"] = "Your message has been held for review due to inappropriate content.";
+                    //    return Request.Headers["X-Requested-With"] == "XMLHttpRequest"
+                    //        ? Json(new { success = false, error = TempData["ErrorMessage"] })
+                    //        : RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                    //}
+
+                    // pull it only from the form…
+                    int? usedOfferId = null;
+                    if (Request.Form.ContainsKey("offerId")
+                        && int.TryParse(Request.Form["offerId"], out var oid))
+                    {
+                        usedOfferId = oid;
+                    }
+
+
                     // enforce that either content or attachments must be provided.
-                    if (string.IsNullOrEmpty(content) && (attachments == null || !attachments.Any()))
+                    if (string.IsNullOrEmpty(content) && (attachments == null || !attachments.Any()) && !usedOfferId.HasValue)
                     {
                         string errorMsg = "Please enter a message or attach a file.";
                         // If the request is AJAX, return a JSON error result.
@@ -449,39 +548,37 @@ namespace SkillSwap_Platform.Controllers
                         return Json(new { success = false, error = errorMsg });
                     }
 
-                    // Check for sensitive words in the content.
-                    var sensitiveWarnings = await _sensitiveWordService.CheckSensitiveWordsAsync(content);
-                    bool isFlagged = sensitiveWarnings.Any();
+                    // only enforce “no duplicate” when it’s a true offer‐only invite
+                    bool isOfferInvite = usedOfferId.HasValue
+                                         && string.IsNullOrWhiteSpace(content)
+                                         && (attachments == null || !attachments.Any());
 
-                    // Check for duplicate offer: if an offer is attached, ensure no message from this sender
-                    // to the receiver already has it.
-                    int? usedOfferId = null;
-                    if (int.TryParse((Request.Form["offerId"].FirstOrDefault() ?? "").Trim(), out var parsedOfferId) && parsedOfferId > 0)
-                        usedOfferId = parsedOfferId;
-
-                    // Figure out messageType
-                    string messageType = "";
-                    if (usedOfferId.HasValue
-                        && string.IsNullOrWhiteSpace(content)
-                        && (attachments == null || !attachments.Any()))
-                    {
-                        messageType = "OfferInvite";
-                    }
-                    else if (string.IsNullOrEmpty(content) && attachments?.Any() == true)
-                    {
-                        // image vs. file
-                        messageType = (attachments.Count == 1 && attachments.First().ContentType.StartsWith("image/"))
-                                      ? "Image"
-                                      : "File";
-                    }
-                    else
-                    {
-                        messageType = "Normal";
-                    }
+                    string messageType = isOfferInvite
+                        ? "OfferInvite"
+                        : string.IsNullOrEmpty(content) && attachments.Any()
+                            ? (attachments.Count == 1 && attachments.First().ContentType.StartsWith("image/")
+                                ? "Image"
+                                : "File")
+                            : "Normal";
 
                     // ONLY for real offer invites do we enforce “no duplicate contract”
-                    if (messageType == "OfferInvite")
+                    if (isOfferInvite)
                     {
+                        // ⬇︎ NEW: block duplicate invite messages
+                        bool alreadyInvited = await _context.TblMessages.AnyAsync(m =>
+                            m.SenderUserId == senderUserId &&
+                            m.ReceiverUserId == receiverUserId &&
+                            m.OfferId == usedOfferId.Value);
+
+                        if (alreadyInvited)
+                        {
+                            string errorMsg = "You have already invited this user to that offer.";
+                            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                return Json(new { success = false, error = errorMsg });
+                            TempData["ErrorMessage"] = errorMsg;
+                            return RedirectToAction("Conversation", new { otherUserId = receiverUserId });
+                        }
+
                         var existingContract = await _context.TblContracts
                             .Where(c =>
                                 c.OfferId == usedOfferId.Value &&
@@ -528,7 +625,8 @@ namespace SkillSwap_Platform.Controllers
                         ReplyToMessageId = (replyMessageId.HasValue && replyMessageId.Value > 0) ? replyMessageId : null,
                         SentDate = DateTime.UtcNow,
                         IsRead = false,
-                        IsFlagged = false,
+                        IsFlagged = isFlagged,
+                        IsApproved = !isFlagged,
                         OfferId = usedOfferId,
                         MessageType = messageType
                     };
@@ -555,7 +653,7 @@ namespace SkillSwap_Platform.Controllers
                         <p>You have a new message from <strong>{User.Identity.Name}</strong>:</p>
                         <blockquote>{System.Net.WebUtility.HtmlEncode(content)}</blockquote>
                         <p>
-                          <a href=""{conversationUrl}"">View full conversation</a>
+                          <a href=""{conversationUrl}"">View it on SkillSwap</a>
                         </p>
                         <p>— SkillSwap Team</p>
                     ";
@@ -654,9 +752,9 @@ namespace SkillSwap_Platform.Controllers
                     // Commit the transaction after successful operations.
                     await transaction.CommitAsync();
 
-                    // Load offer details if an offerId is provided
-                    OfferDisplayVM offerDisplay = null;
-                    if (usedOfferId.HasValue)
+                    // 4) Build offerDisplay only for a real invite
+                    OfferDisplayVM? offerDisplay = null;
+                    if (isOfferInvite)
                     {
                         var tblOffer = await _context.TblOffers
                             .Include(o => o.User)
@@ -714,6 +812,9 @@ namespace SkillSwap_Platform.Controllers
                             IsApproved = message.IsApproved,
                             OfferDetails = offerDisplay,
                             MessageType = messageType,
+                            ApprovedByAdminId = message.ApprovedByAdminId,
+                            ApprovedDate = message.ApprovedDate,
+                            ApprovedByAdminName = message.ApprovedByAdmin?.UserName
                         };
 
                         return PartialView("_MessageItem", messageVm);
@@ -734,6 +835,51 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
         }
+        #endregion
+
+        #region Delete Conversation
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConversation(int otherUserId)
+        {
+            int currentUserId = GetUserId();
+
+            // ❶ Load the other user’s info
+            var otherUser = await _context.TblUsers
+                .Where(u => u.UserId == otherUserId)
+                .Select(u => new { u.UserName })
+                .FirstOrDefaultAsync();
+
+            // ❷ Fetch all messages
+            var msgs = await _context.TblMessages
+                .Where(m =>
+                    (m.SenderUserId == currentUserId && m.ReceiverUserId == otherUserId) ||
+                    (m.SenderUserId == otherUserId && m.ReceiverUserId == currentUserId))
+                .ToListAsync();
+
+            if (!msgs.Any())
+            {
+                TempData["ErrorMessage"] = "No conversation found to delete.";
+                return RedirectToAction("Conversation", new { otherUserId });
+            }
+
+            // ❸ Soft-delete
+            foreach (var m in msgs)
+            {
+                m.IsDeleted = true;
+                m.DeletedOn = DateTime.UtcNow;
+                m.DeletedByUserId = currentUserId;
+            }
+            await _context.SaveChangesAsync();
+
+            // ❹ Use their actual name in your confirmation
+            var name = otherUser?.UserName ?? "that user";
+            TempData["SuccessMessage"] = $"Your conversation with {name} has been deleted.";
+
+            return RedirectToAction("Conversation", new { otherUserId = (int?)null });
+        }
+
         #endregion
 
         #region Helper Class

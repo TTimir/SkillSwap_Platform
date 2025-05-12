@@ -7,7 +7,21 @@
 
 <div class="body_content">
     <!-- Breadcumb Sections -->
-    <section class="breadcumb-section wow fadeInUp mt40">
+    <section class="breadcumb-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcumb-style1">
+                        <div class="breadcumb-list">
+                            <a href="@Url.Action("Index", "Home")">Home</a>
+                            <span>@ViewData["Title"]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="breadcumb-section wow fadeInUp">
         <div class="cta-commmon-v1 cta-banner bgc-thm2 mx-auto maxw1700 pt120 pb120 bdrs16 position-relative overflow-hidden d-flex align-items-center mx20-lg">
             <img class="left-top-img wow zoomIn" src="/template_assets/images/vector-img/left-top.png" alt="">
             <img class="right-bottom-img wow zoomIn" src="/template_assets/images/vector-img/right-bottom.png" alt="">
@@ -176,56 +190,7 @@
                 <div class="col-lg-8 mx-auto">
                     <div class="ui-content">
                         <div class="accordion-style1 faq-page">
-                            <div class="accordion" id="accordionExample">
-                                <div class="accordion-item active">
-                                    <h2 class="accordion-header" id="headingOne">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">How do I create an account and post my first swap?</button>
-                                    </h2>
-                                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
-                                        <div class="accordion-body">Click “Sign Up” at the top of the page, confirm your email, then head to Dashboard → Create Offer. Write a clear description of what you’re offering and what you need in return. Hit “Publish” and you’re live!</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingTwo">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"> What payment methods and tokens are supported?</button>
-                                    </h2>
-                                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
-                                        <div class="accordion-body">We use SkillSwap tokens as our “currency.” You can buy tokens via credit card (Visa, MasterCard, AMEX) or PayPal. Each token equals $1 USD. Your balance shows in the top-right of every page.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingThree">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">Can I cancel a swap or request a refund?</button>
-                                    </h2>
-                                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
-                                        <div class="accordion-body">Yes if the swap hasn’t started, cancel within 24 hours for an automatic refund of tokens. After work begins, reach out to support so we can mediate and ensure a fair outcome.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFour">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">What if the work delivered isn’t what I expected?</button>
-                                    </h2>
-                                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-parent="#accordionExample">
-                                        <div class="accordion-body">First, discuss revisions directly in the chat. If you still disagree, open a dispute within 7 days of delivery (Dashboard → Help → Dispute). We’ll review everything and help you both reach a resolution.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFive">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">How do I attach files or images to my request?</button>
-                                    </h2>
-                                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-parent="#accordionExample">
-                                        <div class="accordion-body">Click the “Upload Attachment” button when composing your message. Supported formats: JPG, PNG, PDF (max 2 MB). Your attachments appear directly in the support chat for easy review.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingSix">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">How soon will someone from support get back to me?</button>
-                                    </h2>
-                                    <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-parent="#accordionExample">
-                                        <div class="accordion-body">We monitor incoming requests around the clock. Expect an acknowledgment within 4 hours and a full response within 24 hours. For urgent issues, mark your subject line with “URGENT.”</div>
-                                    </div>
-                                </div>
-                            </div>
+                            @await Component.InvokeAsync("Faq", new { section = "ContactUs" })
                         </div>
                     </div>
                 </div>

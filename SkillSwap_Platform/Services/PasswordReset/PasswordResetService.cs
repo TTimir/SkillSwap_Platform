@@ -92,8 +92,8 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
             if (user == null)
                 return (false, "User not found.");
-            
-            using var trx = await _db.Database.BeginTransactionAsync();
+
+            await using var trx = await _db.Database.BeginTransactionAsync();
             try
             {
                 // 3) update password (hash+salt, etc.)
@@ -108,6 +108,9 @@ namespace SkillSwap_Platform.Services.PasswordReset
                 if (!updated)
                     throw new Exception("Password update failed.");
 
+                user.Salt = PasswordHelper.GenerateSalt();
+                user.PasswordHash = PasswordHelper.HashPassword(newPassword, user.Salt);
+                resetEntry.IsUsed = true;
                 await _db.SaveChangesAsync();
 
                 // log notification:

@@ -23,10 +23,11 @@ namespace SkillSwap_Platform.Models.ViewModels
         public int AssistanceRounds { get; set; }
         public double UserRating { get; set; }
         public int ReviewCount { get; set; }
-        public string RecommendedPercentage { get; set; }
+        public double RecommendedPercentage { get; set; }
         public double JobSuccessRate { get; set; }
         public List<string> WillingSkills { get; set; }
         public bool IsOnline { get; set; }
+        public bool IsFlagged { get; set; }
 
         public List<UserLanguageVM> UserLanguages { get; set; }
         public List<UserDetailsVM> UserDetails { get; set; }
@@ -43,6 +44,8 @@ namespace SkillSwap_Platform.Models.ViewModels
         // Nest a review view model (if you want to handle review inputs here)
         public OfferExchangeReviewVM Review { get; set; }
         public IEnumerable<TblReview> Reviews { get; set; }
+
+        public List<OfferFaqVM> Faqs { get; set; } = new List<OfferFaqVM>();
 
     }
 

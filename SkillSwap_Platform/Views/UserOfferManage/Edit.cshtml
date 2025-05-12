@@ -140,8 +140,8 @@
                     <label asp-for="Category" class="heading-color ff-heading fw500 mb10">Swap Category</label>
                     <div class="bootselect-multiselect">
                         <select asp-for="Category" asp-items="Model.CategoryOptions" class="selectpicker" data-live-search="true">
-                        <option value="">Select Category</option>
-                    </select>
+                            <option value="">Select Category</option>
+                        </select>
                     </div>
                     <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
@@ -212,6 +212,43 @@
             </div>
         </div>
     </div>
+    <div class="ps-widget bgc-white bdrs12 p30 mb30">
+        <h5 class="list-title mb20">Frequently Asked Questions</h5>
+        <div id="faq-items">
+            @for (int i = 0; i < Model.Faqs.Count; i++)
+            {
+                <div class="faq-item" data-index="@i">
+                    <input type="hidden"
+                           name="Faqs[@i].FaqId"
+                           value="@Model.Faqs[i].FaqId" />
+
+                    <div class="mb40">
+                        <label>🔥 Ask a Thought-Provoking Question <span class="text-danger">*</span></label>
+                        <input name="Faqs[@i].Question"
+                               class="form-control faq-question"
+                               value="@Model.Faqs[i].Question" />
+                    </div>
+                    <div class="mb20">
+                        <label>💡 Provide a Clear, Concise Answer <span class="text-danger">*</span></label>
+                        <textarea name="Faqs[@i].Answer"
+                                  class="faq-answer"
+                                  rows="3">@Model.Faqs[i].Answer</textarea>
+                    </div>
+                    <button type="button"
+                            class="ud-btn btn-light-thm remove-faq"
+                            style="border:0;">
+                        Remove
+                    </button>
+                    <hr />
+                </div>
+            }
+        </div>
+
+        <div id="faq-global-error" class="text-danger small mb-2"></div>
+        <button type="button" id="add-faq" class="ud-btn btn-thm mb25">
+            <i class="fas fa-plus me-1" style="transform:rotate(0deg)"></i> Add FAQ
+        </button>
+    </div>
     <div class="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative">
         <div class="bdrb1 pb15 mb25">
             <h5 class="list-title">Upload Attachments</h5>
@@ -225,7 +262,7 @@
                         try
                         {
                             var portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(Model.Portfolio)
-                                        ?? new List<string>();
+                            ?? new List<string>();
                             foreach (var imageUrl in portfolioImages)
                             {
                                 <img src="@imageUrl" alt="Portfolio Image" class="card-img-top existing-preview"
@@ -501,6 +538,73 @@
               },
               { timeout: 10000 }
             );
+          });
+        });
+    </script>
+    <script>
+        $(function(){
+          const maxFaqs = 5;
+          let faqIndex = $('#faq-items .faq-item').length;
+
+          const $addBtn   = $('#add-faq');
+          const $errorBox = $('#faq-global-error');
+
+          function clearError() {
+            $errorBox.text('');
+          }
+
+          function showError(msg) {
+            $errorBox.text(msg);
+          }
+
+          function lastFilled() {
+            const $last = $('#faq-items .faq-item').last();
+            if (!$last.length) return true;
+            const q = $last.find('.faq-question').val().trim();
+            const a = $last.find('.faq-answer').val().trim();
+            return q !== '' && a !== '';
+          }
+
+          // When they click “Add FAQ”
+          $addBtn.click(function(){
+            clearError();
+            const count = $('#faq-items .faq-item').length;
+
+            if (count >= maxFaqs) {
+              return showError(`You can only add up to ${maxFaqs} FAQs.`);
+            }
+            if (!lastFilled()) {
+              return showError('Please fill the previous question & answer before adding a new one.');
+            }
+
+            const idx = faqIndex++;
+            const html = `
+              <div class="faq-item" data-index="${idx}">
+                <input type="hidden" name="Faqs[${idx}].FaqId" value="0" />
+                <div class="mb40">
+                  <label>🔥 Ask a Thought-Provoking Question <span class="text-danger">*</span></label>
+                  <input name="Faqs[${idx}].Question" class="form-control faq-question" />
+                </div>
+                <div class="mb20">
+                  <label>💡 Provide a Clear, Concise Answer <span class="text-danger">*</span></label>
+                  <textarea name="Faqs[${idx}].Answer" class="faq-answer" rows="3"></textarea>
+                </div>
+                <div class="faq-error text-danger small mb20"></div>
+                <button type="button" class="ud-btn btn-light-thm remove-faq" style="border:0">Remove</button>
+                <hr/>
+              </div>`;
+            $('#faq-items').append(html);
+          });
+
+          // Removing an FAQ simply takes it out and clears any global error
+          $(document).on('click', '.remove-faq', function(){
+            $(this).closest('.faq-item').remove();
+            clearError();
+          });
+
+          // While they're typing, if they fix the last FAQ, clear the error
+          $(document).on('input', '.faq-question, .faq-answer', function(){
+            if (lastFilled()) clearError();
           });
         });
     </script>

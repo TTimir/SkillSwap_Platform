@@ -37,6 +37,8 @@
         public string Category { get; set; }
         public decimal? Token { get; set; }
 
+        public bool OfferIsDeleted { get; set; }
+
         public bool IsOnlineMeetingCompleted { get; set; }
         public bool IsMeetingEnded { get; set; }
         public DateTime? MeetingScheduledDateTime { get; set; }

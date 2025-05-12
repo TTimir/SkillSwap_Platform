@@ -1,6 +1,7 @@
 ﻿@model SkillSwap_Platform.Services.AdminControls.Certificate.CertificateDetailDto
 @{
-    ViewData["Title"] = "Review Certificate";
+    ViewData["Title"] = "Certificate Review";
+    ViewData["SubTitle"] = "Verify details and approve or reject this submission.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -60,10 +61,10 @@
                                     <div class="row align-items-center mb-3">
                                         <div class="col-sm">
                                             <h6 class="mb-1">Submitted by: @Model.UserName <i>(@Model.LoginName)</i></h6>
-                                            <small class="text-muted">Submitted On: @Model.SubmittedDate:g</small><br />
+                                            <small class="text-muted">Submitted On: @Model.SubmittedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</small><br />
                                             <small class="text-muted">From: @Model.CertificateFrom</small><br />
                                             <small class="text-muted">
-                                                Completion Date: @(Model.CompleteDate?.ToString("d") ?? "—")
+                                                Completion Date: @(Model.CompleteDate?.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt") ?? "—")
                                             </small><br />
                                             <small class="text-muted">
                                                 Verification ID: @Model.VerificationId

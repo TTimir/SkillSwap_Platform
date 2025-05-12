@@ -54,7 +54,7 @@
                 <div class="breadcumb-style1">
                     <div class="breadcumb-list">
                         <a href="@Url.Action("Index", "Home")">Home</a>
-                        <a href="#!swappers">@ViewData["Title"]</a>
+                        <span>@ViewData["Title"]</span>
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                                                 <input class="form-control" type="text" name="keyword" value="@Model.Keyword" placeholder="What are you looking for?">
                                                 <div class="search-suggestions">
                                                     <h6 class="fz14 ml30 mt25 mb-3">Popular Search</h6>
-                                                    <div class="box-suggestions">
+                                                    @* <div class="box-suggestions">
                                                         <ul class="px-0 m-0 pb-4">
                                                             <li>
                                                                 <div class="info-product">
@@ -113,7 +113,7 @@
                                                                 </div>
                                                             </li>
                                                         </ul>
-                                                    </div>
+                                                    </div> *@
                                                 </div>
                                             </div>
                                         </div>
@@ -152,20 +152,21 @@
                             <div class="list-thumb">
                                 <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
                                     <img class="rounded-circle mx-auto" src="@profile.ProfileImage" alt="@profile.UserName" style="max-width:100%;" />
-                                    @{
-                                        // Check if ViewData contains the online status.
-                                        bool isOnline = ViewData["IsOnline"] != null && (bool)ViewData["IsOnline"];
-                                    }
-                                    @if (isOnline)
-                                    {
-                                        <span class="online"></span>
-                                    }
+                                    <vc:online-indicator user-id="@profile.UserId" />
                                 </div>
                             </div>
                             <div class="list-content">
                                 <h5 class="title mb-1">@profile.UserName</h5>
                                 <p class="mb-0">@profile.Designation</p>
-                                <div class="review"><p><i class="fas fa-star fz10 review-color pr10"></i><span class="dark-color fw500">4.9</span> (595 reviews)</p></div>
+                                <div class="review">
+                                    <p>
+                                        <i class="fas fa-star fz10 review-color pr10"></i>
+                                        <span class="dark-color fw500">
+                                            @profile.AverageRating.ToString("0.0")
+                                        </span>
+                                        (@profile.ReviewCount reviews)
+                                    </p>
+                                </div>
                                 <div class="skill-tags d-flex align-items-center justify-content-center mb5">
                                     @{
                                         var skillList = profile.OfferedSkillAreas ?? new List<string>();
@@ -184,7 +185,7 @@
                                     <a class="meta fw500 text-start">Job Success<br><span class="fz14 fw400">@("%")@(profile.JobSuccessRate?.ToString("N1") ?? "0%")</span></a>
                                 </div>
                                 <div class="d-grid mt15">
-                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90" target="_blank">View Profile<i class="fal fa-arrow-right-long"></i></a>
+                                    <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = profile.UserName })" class="ud-btn btn-white2 bdrs90">View Profile<i class="fal fa-arrow-right-long"></i></a>
                                 </div>
                             </div>
                         </div>

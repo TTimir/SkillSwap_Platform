@@ -1,0 +1,252 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.AdminControl.TokenMining.AdminMiningDashboardVM
+
+@{
+    ViewData["Title"] = "Mining Admin Dashboard";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+</div>
+<div class="container py-4">
+    <h2>Mining Admin Dashboard</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary shadow">
+                <div class="card-body">
+                    <h5>Total Users Allowed</h5>
+                    <h3>@Model.MiningSummary.TotalUsersMiningAllowed</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger shadow">
+                <div class="card-body">
+                    <h5>Total Users Blocked</h5>
+                    <h3>@Model.MiningSummary.TotalUsersMiningBlocked</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body">
+                    <h5>Tokens Emitted Today</h5>
+                    <h3>@Model.MiningSummary.TotalTokensEmittedToday</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h4>Current Token Emission Settings</h4>
+            @if (Model.CurrentEmissionSettings != null)
+            {
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Total Pool:</strong> @Model.CurrentEmissionSettings.TotalPool</li>
+                            <li class="list-group-item"><strong>Start Date:</strong> @Model.CurrentEmissionSettings.StartDateUtc.ToLocalTime().ToString("d MMM yyyy")</li>
+                            <li class="list-group-item"><strong>Drip Days:</strong> @Model.CurrentEmissionSettings.DripDays</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Halving Period (Days):</strong> @Model.CurrentEmissionSettings.HalvingPeriodDays</li>
+                            <li class="list-group-item"><strong>Daily Cap:</strong> @Model.CurrentEmissionSettings.DailyCap</li>
+                            <li class="list-group-item">
+                                <strong>Status:</strong>
+                                @if (Model.CurrentEmissionSettings.IsEnabled)
+                                {
+                                    <span class="badge bg-success">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Disabled</span>
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+
+                <hr />
+
+                <form asp-action="UpdateEmissionSettings" method="post" class="mt-3 form-style1">
+                    <input type="hidden" name="Id" value="@Model.CurrentEmissionSettings.Id" />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label>Total Pool</label>
+                            <input class="form-control" type="number" step="0.01" name="TotalPool" value="@Model.CurrentEmissionSettings.TotalPool" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Drip Days</label>
+                            <input class="form-control" type="number" name="DripDays" value="@Model.CurrentEmissionSettings.DripDays" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Halving Period (Days)</label>
+                            <input class="form-control" type="number" name="HalvingPeriodDays" value="@Model.CurrentEmissionSettings.HalvingPeriodDays" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Daily Cap</label>
+                            <input class="form-control" type="number" step="0.01" name="DailyCap" value="@Model.CurrentEmissionSettings.DailyCap" required />
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bootselect-multiselect">
+                                <div class="dropdown bootstrap-select show-tick dropup">
+                                    <label>Status</label>
+                                    <select class="selectpicker" name="IsEnabled">
+                                        <option value="true" selected="@Model.CurrentEmissionSettings.IsEnabled">Enabled</option>
+                                        <option value="false" selected="@(!Model.CurrentEmissionSettings.IsEnabled)">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="ud-btn btn-thm w-100">Update Settings</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <p>No active token emission settings found.</p>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4>Today's Top Miners (by Amount)</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Mined Amount</th>
+                        <th>Last Emitted (UTC)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentTopMiners != null && Model.RecentTopMiners.Any())
+                    {
+                        @foreach (var miner in Model.RecentTopMiners)
+                        {
+                            <tr>
+                                <td>@miner.UserId</td>
+                                <td>@miner.TotalMinedAmount</td>
+                                <td>@miner.LastEmittedUtc.ToString("g")</td>
+                                <td>
+                                    <form asp-action="ToggleUserMining" method="post" class="d-inline-block form-style1">
+                                        <input type="hidden" name="userId" value="@miner.UserId" />
+                                        <input type="hidden" name="allowMining" value="true" />
+                                        <button class="btn btn-sm btn-success">✅ Allow</button>
+                                    </form>
+                                    <form asp-action="ToggleUserMining" method="post" class="d-inline-block">
+                                        <input type="hidden" name="userId" value="@miner.UserId" />
+                                        <input type="hidden" name="allowMining" value="false" />
+                                        <button class="btn btn-sm btn-danger">🚫 Block</button>
+                                    </form>
+                                    <a asp-action="UserMiningLogs" asp-route-userId="@miner.UserId" class="btn btn-sm btn-info">📖 Logs</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                <span class="badge bg-secondary">No mining data available. Mining may be disabled.</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @{
+                var isEnabled = Model.CurrentEmissionSettings?.IsEnabled ?? false;
+                var enableMiningNext = !isEnabled;
+            }
+            <form asp-action="ToggleMiningGlobal" method="post" class="mt-3 text-end">
+                <input type="hidden" name="enableMining" value="@enableMiningNext.ToString().ToLower()" />
+                <button class="ud-btn btn-thm2 shadow">
+                    @(isEnabled ? "⛔ Disable Mining Globally" : "▶️ Enable Mining Globally")
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="card shadow-sm mt-5">
+    <div class="card-body">
+        <h4>🧑‍💻 All Users Mining Status</h4>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Mining Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.UserMiningStatusList)
+                {
+                    <tr>
+                        <td>
+                            @user.UserId
+                        </td>
+                        <td>
+                            <a asp-action="UserMiningLogs" asp-route-userId="@user.UserId">
+                                <strong>@user.FullName</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <p class="text-muted">@user.Email</p>
+                        </td>
+                        <td>
+                            @if (user.IsMiningAllowed)
+                            {
+                                <span class="badge bg-success">Allowed</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Blocked</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.IsMiningAllowed)
+                            {
+                                <form asp-action="ToggleUserMining" method="post" class="d-inline-block">
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <input type="hidden" name="allowMining" value="false" />
+                                    <button class="btn btn-sm btn-danger">🚫 Block</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="ToggleUserMining" method="post" class="d-inline-block">
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <input type="hidden" name="allowMining" value="true" />
+                                    <button class="btn btn-sm btn-success">✅ Allow</button>
+                                </form>
+                            }
+                            <a asp-action="UserMiningLogs" asp-route-userId="@user.UserId" class="btn btn-sm btn-info">📖 View Logs</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+

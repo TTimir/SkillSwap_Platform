@@ -45,6 +45,15 @@ namespace SkillSwap_Platform.Models.ViewModels.MessagesVM
         public TblContract? ContractDetails { get; set; }
         public bool IsContractPending => ContractDetails?.Status == "Pending";
 
+        /// <summary>Who (if anyone) approved this held message</summary>
+        public int? ApprovedByAdminId { get; set; }
+
+        /// <summary>When they approved it</summary>
+        public DateTime? ApprovedDate { get; set; }
+
+        /// <summary>The approving admin’s username (optional nav)</summary>
+        public string? ApprovedByAdminName { get; set; }
+
     }
 
     public enum MessageStatus

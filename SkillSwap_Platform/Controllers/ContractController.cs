@@ -19,6 +19,9 @@ using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.DigitalToken;
 using Microsoft.CodeAnalysis.Text;
+using SkillSwap_Platform.Services.AdminControls.Escrow;
+using Microsoft.AspNetCore.Routing;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -39,7 +42,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly IPdfGenerator _pdfGenerator;
         private readonly INotificationService _notif;
         private readonly IDigitalTokenService _tokenService;
-
+        private readonly IEscrowService _escrowService;
         public ContractController(
             IContractPreparationService contractPreparation,
             IContractHandlerService contractHandler,
@@ -48,7 +51,8 @@ namespace SkillSwap_Platform.Controllers
             IViewRenderService viewRenderService,
             IPdfGenerator pdfGenerator,
             INotificationService notif,
-            IDigitalTokenService tokenService)
+            IDigitalTokenService tokenService,
+            IEscrowService escrowService)
         {
             _contractPreparation = contractPreparation;
             _contractHandler = contractHandler;
@@ -58,6 +62,7 @@ namespace SkillSwap_Platform.Controllers
             _pdfGenerator = pdfGenerator;
             _notif = notif;
             _tokenService = tokenService;
+            _escrowService = escrowService;
         }
 
         #region Create Contract
@@ -84,7 +89,7 @@ namespace SkillSwap_Platform.Controllers
             {
                 _logger.LogError(ex, "Error preparing contract creation for messageId={MessageId}", messageId);
                 TempData["ErrorMessage"] = "An error occurred while loading the contract creation page.";
-                return RedirectToAction("Conversation", "Messaging");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -93,66 +98,79 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ContractCreationVM model)
         {
-            ModelState.Remove(nameof(model.ReceiverPlace));
-            ModelState.Remove(nameof(model.ReceiverSignature));
-            ModelState.Remove(nameof(model.ContractUniqueId));
-            ModelState.Remove(nameof(model.LearningDays));
-
-            if (!await _tokenService.HasSufficientBalanceAsync(GetUserId(), model.TokenOffer ?? 0m))
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                ModelState.AddModelError(nameof(model.TokenOffer),
-                     $"You only have {model.CurrentUserTokenBalance:F2} tokens—insufficient to offer {model.TokenOffer:F2}.");
-            }
+                ModelState.Remove(nameof(model.ReceiverPlace));
+                ModelState.Remove(nameof(model.ReceiverSignature));
+                ModelState.Remove(nameof(model.ContractUniqueId));
+                ModelState.Remove(nameof(model.LearningDays));
 
-            if (!ModelState.IsValid)
-            {
-                LogModelErrors();
-                return View(model);
-            }
-
-            var receiverUser = await _context.TblUsers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserId == model.ReceiverUserId);
-            if (receiverUser != null)
-            {
-                // Override the placeholder values with the actual data.
-                model.ReceiverEmail = receiverUser.Email;
-                model.ReceiverAddress = $"{receiverUser.Address}, {receiverUser.City}, {receiverUser.Country}";
-            }
-
-            // Generate the unique contract identifier
-            // Format: SkillSwap-CT-<yyyyMMddHHmmss>-<6charHexToken>
-            if (string.IsNullOrWhiteSpace(model.ContractUniqueId))
-            {
-                string dateTimePart = DateTime.Now.ToString("yyyyMMddHHmmss");
-                string token = UniqueIdGenerator.GenerateSixCharHexToken();
-                model.ContractUniqueId = $"SkillSwap-CT-{dateTimePart}-{token}";
-            }
-
-            var result = await _contractHandler.CreateContractAsync(model);
-
-            if (!result.Success)
-            {
-                if (result.ErrorMessage.Contains("already been sent"))
+                if (!await _tokenService.HasSufficientBalanceAsync(GetUserId(), model.TokenOffer ?? 0m))
                 {
-                    TempData["ErrorMessage"] = result.ErrorMessage;
-                    return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
+                    ModelState.AddModelError(nameof(model.TokenOffer),
+                         $"You only have {model.CurrentUserTokenBalance:F2} tokens—insufficient to offer {model.TokenOffer:F2}.");
                 }
+
+                if (!ModelState.IsValid)
+                {
+                    LogModelErrors();
+                    return View(model);
+                }
+
+                var receiverUser = await _context.TblUsers
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserId == model.ReceiverUserId);
+                if (receiverUser != null)
+                {
+                    // Override the placeholder values with the actual data.
+                    model.ReceiverEmail = receiverUser.Email;
+                    model.ReceiverAddress = $"{receiverUser.Address}, {receiverUser.City}, {receiverUser.Country}";
+                }
+
+                // Generate the unique contract identifier
+                // Format: SkillSwap-CT-<yyyyMMddHHmmss>-<6charHexToken>
+                if (string.IsNullOrWhiteSpace(model.ContractUniqueId))
+                {
+                    string dateTimePart = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    string token = UniqueIdGenerator.GenerateSixCharHexToken();
+                    model.ContractUniqueId = $"SkillSwap-CT-{dateTimePart}-{token}";
+                }
+
+                var result = await _contractHandler.CreateContractAsync(model);
+
+                if (!result.Success)
+                {
+                    if (result.ErrorMessage.Contains("already been sent"))
+                    {
+                        TempData["ErrorMessage"] = result.ErrorMessage;
+                        return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
+                    }
+                }
+
+                await tx.CommitAsync();
+
+                // log notification:
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = GetUserId(),
+                    Title = "Aggreement Created",
+                    Message = "You successfully cretaed and send the aggreement of your exchange.",
+                    Url = Url.Action("Index", "ExchangeDashboard"),
+                });
+
+                model.Mode = MODE_CREATE;
+                model.ActionContext = ACTION_CREATEONLY;
+                TempData["SuccessMessage"] = "The Agreement/ Contract created and send successfully.";
+                return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
             }
-
-            // log notification:
-            await _notif.AddAsync(new TblNotification
+            catch (Exception ex)
             {
-                UserId = GetUserId(),
-                Title = "Aggreement Created",
-                Message = "You successfully cretaed and send the aggreement of your exchange.",
-                Url = Url.Action("Index", "ExchangeDashboard"),
-            });
-
-            model.Mode = MODE_CREATE;
-            model.ActionContext = ACTION_CREATEONLY;
-            TempData["SuccessMessage"] = "The Agreement/ Contract created and send successfully.";
-            return RedirectToAction("Conversation", "Messaging", new { otherUserId = model.ReceiverUserId });
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Error creating contract for messageId={MessageId}", model.MessageId);
+                TempData["ErrorMessage"] = "An error occurred while creating the contract.";
+                return RedirectToAction("EP500", "EP");
+            }
         }
 
         #endregion
@@ -714,53 +732,129 @@ namespace SkillSwap_Platform.Controllers
                         ContractUniqueId = UpdateContractUniqueId(originalContract.ContractUniqueId)
                     };
 
-                    // Determine the signing timestamps for request and response.
-                    if (originalContract.RequestDate == default(DateTime))
-                    {
-                        // This is the first party signing:
-                        newFinalContract.RequestDate = DateTime.UtcNow; // Record first signature.
-                        newFinalContract.ResponseDate = null;           // No response yet.
-                    }
-                    else
-                    {
-                        // A signing has already occurred.
-                        // Copy the first party's signing time.
-                        newFinalContract.RequestDate = originalContract.RequestDate;
-                        // Record the second party's signing time as the response.
-                        newFinalContract.ResponseDate = DateTime.UtcNow;
-                    }
+                    //// Determine the signing timestamps for request and response.
+                    //if (!originalContract.RequestDate.HasValue)
+                    //{
+                    //    // ──────────────── FIRST SIGNATURE ────────────────
+                    //    // No one has signed yet: record the first signature as RequestDate.
+                    //    newFinalContract.RequestDate = DateTime.UtcNow;
+                    //    newFinalContract.ResponseDate = null;
+                    //}
+                    //else if (!originalContract.ResponseDate.HasValue)
+                    //{
+                    //    // ────────────── SECOND SIGNATURE ───────────────
+                    //    // First signature is already there, but no response yet:
+                    //    // carry forward the original RequestDate and record ResponseDate.
+                    //    newFinalContract.RequestDate = originalContract.RequestDate.Value;
+                    //    newFinalContract.ResponseDate = DateTime.UtcNow;
+                    //}
+                    //else
+                    //{
+                    //    // ────────────── ALREADY FULLY SIGNED ────────────
+                    //    // Both dates exist – you can choose to throw, ignore, or log here.
+                    //    throw new InvalidOperationException("Contract has already been fully signed.");
+                    //}
 
-                    // Role-based assignment:
-                    if (isReceiver)
+                    //// Role-based assignment:
+                    //if (isReceiver)
+                    //{
+                    //    // Receiver signing: preserve sender’s acceptance and update receiver’s.
+                    //    newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
+                    //    newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
+                    //    newFinalContract.SenderSignature = originalContract.SenderSignature;
+                    //    newFinalContract.SenderPlace = originalContract.SenderPlace;
+                    //    newFinalContract.SignedBySender = originalContract.SignedBySender;
+
+                    //    newFinalContract.ReceiverAgreementAccepted = true;
+                    //    newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
+                    //    newFinalContract.AcceptedDate = DateTime.UtcNow;
+                    //    newFinalContract.ReceiverSignature = partySignature.Trim();
+                    //    newFinalContract.ReceiverPlace = partyPlace.Trim();
+                    //    newFinalContract.SignedByReceiver = true;
+                    //}
+                    //else if (isSender)
+                    //{
+                    //    // Sender signing: preserve receiver’s acceptance and update sender’s.
+                    //    newFinalContract.ReceiverAgreementAccepted = originalContract.SignedByReceiver;
+                    //    newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
+                    //    newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
+                    //    newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
+                    //    newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
+
+                    //    newFinalContract.SenderAgreementAccepted = true;
+                    //    newFinalContract.SenderAcceptanceDate = DateTime.Now;
+                    //    newFinalContract.SenderSignature = partySignature.Trim();
+                    //    newFinalContract.SenderPlace = partyPlace.Trim();
+                    //    newFinalContract.SignedBySender = true;
+                    //}
+
+                    if (!originalContract.RequestDate.HasValue)
                     {
-                        // Receiver signing: preserve sender’s acceptance and update receiver’s.
+                        // Nobody has signed yet → this is the *first* signature
+                        // Record RequestDate = now, and clear ResponseDate so it can be set later.
+                        newFinalContract.RequestDate = DateTime.UtcNow;
+                        newFinalContract.ResponseDate = null;
+
+                        // Mark the agreement accepted and signature fields on the signer’s side:
+                        if (isSender)
+                        {
+                            newFinalContract.SenderAgreementAccepted = true;
+                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.SenderSignature = partySignature.Trim();
+                            newFinalContract.SenderPlace = partyPlace.Trim();
+                            newFinalContract.SignedBySender = true;
+                        }
+                        else // receiver is first‐signing
+                        {
+                            newFinalContract.ReceiverAgreementAccepted = true;
+                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.ReceiverSignature = partySignature.Trim();
+                            newFinalContract.ReceiverPlace = partyPlace.Trim();
+                            newFinalContract.SignedByReceiver = true;
+                        }
+                    }
+                    else if (!originalContract.ResponseDate.HasValue)
+                    {
+                        // First signature already recorded → this is the *second* signature
+                        // Carry forward RequestDate, set ResponseDate = now.
+                        newFinalContract.RequestDate = originalContract.RequestDate.Value;
+                        newFinalContract.ResponseDate = DateTime.UtcNow;
+
+                        // Preserve the first signer’s fields, and now set the second signer’s:
                         newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
                         newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
                         newFinalContract.SenderSignature = originalContract.SenderSignature;
                         newFinalContract.SenderPlace = originalContract.SenderPlace;
                         newFinalContract.SignedBySender = originalContract.SignedBySender;
 
-                        newFinalContract.ReceiverAgreementAccepted = true;
-                        newFinalContract.ReceiverAcceptanceDate = DateTime.Now;
-                        newFinalContract.AcceptedDate = DateTime.UtcNow;
-                        newFinalContract.ReceiverSignature = partySignature.Trim();
-                        newFinalContract.ReceiverPlace = partyPlace.Trim();
-                        newFinalContract.SignedByReceiver = true;
-                    }
-                    else if (isSender)
-                    {
-                        // Sender signing: preserve receiver’s acceptance and update sender’s.
-                        newFinalContract.ReceiverAgreementAccepted = originalContract.SignedByReceiver;
+                        newFinalContract.ReceiverAgreementAccepted = originalContract.ReceiverAgreementAccepted;
                         newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
                         newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
                         newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
                         newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
 
-                        newFinalContract.SenderAgreementAccepted = true;
-                        newFinalContract.SenderAcceptanceDate = DateTime.Now;
-                        newFinalContract.SenderSignature = partySignature.Trim();
-                        newFinalContract.SenderPlace = partyPlace.Trim();
-                        newFinalContract.SignedBySender = true;
+                        // Now apply the new signature
+                        if (isSender)
+                        {
+                            newFinalContract.SenderAgreementAccepted = true;
+                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.SenderSignature = partySignature.Trim();
+                            newFinalContract.SenderPlace = partyPlace.Trim();
+                            newFinalContract.SignedBySender = true;
+                        }
+                        else
+                        {
+                            newFinalContract.ReceiverAgreementAccepted = true;
+                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.ReceiverSignature = partySignature.Trim();
+                            newFinalContract.ReceiverPlace = partyPlace.Trim();
+                            newFinalContract.SignedByReceiver = true;
+                        }
+                    }
+                    else
+                    {
+                        // Both timestamps are already set → contract is fully signed
+                        throw new InvalidOperationException("Contract has already been fully signed.");
                     }
 
                     newFinalContract.Status = "Accepted";
@@ -805,12 +899,21 @@ namespace SkillSwap_Platform.Controllers
                         if (exchange != null)
                             await _tokenService.HoldTokensAsync(exchange.ExchangeId);
 
+                        // 4) Create the actual escrow record
+                        await _escrowService.CreateAsync(
+                            exchange.ExchangeId,    // link back to your newly-created exchange
+                            exchange.OfferOwnerId ?? 0,  // buyer
+                            exchange.OtherUserId ?? 0,   // seller
+                            exchange.TokensPaid     // amount
+                        );
+
                         var openerId = isReceiver
                             ? originalContract.SenderUserId
                             : originalContract.ReceiverUserId;
 
                         if (!await _tokenService.HasSufficientBalanceAsync(openerId, newFinalContract.TokenOffer ?? 0m))
                         {
+                            TempData["ErrorMessage"] = $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.";
                             ModelState.AddModelError("",
                               $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
                             return View("PreviewContract", new { contractId });

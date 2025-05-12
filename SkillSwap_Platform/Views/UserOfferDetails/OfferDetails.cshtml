@@ -1,6 +1,8 @@
 ﻿@using System.Security.Claims
+@using System.Linq
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
 @inject IHttpContextAccessor HttpContextAccessor
+@model SkillSwap_Platform.Models.ViewModels.OfferDisplayVM
 
 @{
     ViewData["Title"] = "Swap Details";
@@ -34,6 +36,10 @@
     int userId = 0;
     if (int.TryParse(userIdString, out var tmp)) userId = tmp;
 
+    // pull the offer-owner’s ID out of your UserDetails VM
+    var ownerId = Model.UserDetails?.FirstOrDefault()?.UserId ?? 0;
+    bool isOwnerView = userId > 0 && userId == ownerId;
+
     // check if already in wishlist
     bool isSaved = userId > 0
         && await WishlistService.ExistsAsync(userId, Model.OfferId);
@@ -45,10 +51,29 @@
         <div class="row">
             <div class="col-sm-8 col-lg-10">
                 <div class="breadcumb-style1 mb10-xs">
+                    @{
+                        // Build a URL‐friendly slug from your Category
+                        var categorySlug = (Model.Category ?? "")
+                        .Trim()
+                        .Replace(" ", "-")
+                        .ToLowerInvariant();
+                    }
                     <div class="breadcumb-list">
-                        <a href="">Home</a>
-                        <a href="">Services</a>
-                        <a href="">Design & Creative</a>
+                        <a asp-controller="Home" asp-action="Index">Home</a>
+                        <a asp-controller="UserOfferDetails" asp-action="PublicOfferList">Swap Offers</a>
+
+                        @* If you have a category filter page, link back to it *@
+                        @if (!string.IsNullOrWhiteSpace(Model.Category))
+                        {
+                            <a asp-controller="UserOfferDetails"
+                               asp-action="PublicOfferList"
+                               asp-route-category="@categorySlug">
+                                @Model.Category
+                            </a>
+                        }
+
+                        @* Current page: plain text *@
+                        <span>@Model.Title</span>
                     </div>
                 </div>
             </div>
@@ -58,28 +83,79 @@
                         <span class="icon flaticon-share dark-color fz12 mr10"></span>
                         <div class="h6 mb-0">Share</div>
                     </div>
-                    <div class="share-save-widget d-flex align-items-center ml15">
-                        <form asp-controller="UserWishlist"
-                              asp-action="@(isSaved ? "Remove" : "Add")"
-                              method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="offerId" value="@Model.OfferId" />
+                    @if (!isOwnerView)
+                    {
+                        <div class="share-save-widget d-flex align-items-center ml15">
+                            <form asp-controller="UserWishlist"
+                                  asp-action="@(isSaved ? "Remove" : "Add")"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="offerId" value="@Model.OfferId" />
 
-                            <button type="submit"
-                                    class="border-0 bg-transparent listing-fav fz12"
-                                    data-bs-toggle="tooltip"
-                                    title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
-                                <span class="icon dark-color fz12 mr10 @(isSaved
+                                <button type="submit"
+                                        class="border-0 bg-transparent listing-fav fz12"
+                                        data-bs-toggle="tooltip"
+                                        title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                    <span class="icon dark-color fz12 mr10 @(isSaved
                                     ? "fas fa-heart text-danger"
                                     : "far fa-heart")"></span>
-                            </button>
-                        </form>
-                    </div>
+                                </button>
+                            </form>
+                        </div>
+                        @if (!Model.IsFlagged)
+                        {
+                            <div data-bs-toggle="tooltip"
+                                 data-bs-placement="top"
+                                 title="Report this swap offer">
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#flagModal">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10"></span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div data-bs-toggle="tooltip"
+                                 data-bs-placement="top"
+                                 title="You’ve already reported this swap offer">
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10 text-danger"></span>
+                                </div>
+                            </div>
+                        }
+                    }
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Flag Modal -->
+<div class="modal fade" id="flagModal" tabindex="-1" aria-labelledby="flagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form asp-controller="UserOfferDetails" asp-action="Flag" method="post" class="form-style3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="offerId" value="@Model.OfferId" />
+
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="flagModalLabel">Report Swap Offer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for reporting</label>
+                        <textarea id="reason" name="reason" rows="2" placeholder="Please explain the issue with this swap offer…" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="ud-btn btn-light-thm mb25 me-4" data-bs-dismiss="modal" style="border:0;">Cancel</button>
+                    <button type="submit" class="ud-btn btn-thm mb25 me-4">Submit Report <i class="fal fa-arrow-right-long"></i></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Share overlay markup (can be placed near the bottom of your view) -->
 <div id="shareOverlay" class="share-overlay">
@@ -420,18 +496,18 @@
                                         </tr>
                                         <tr>
                                             <th scope="row">Recommandation</th>
-                                            <td>@("%")@Model.RecommendedPercentage</td>
+                                            <td>@("%")@Model.RecommendedPercentage.ToString("F2")</td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
-                                                <td>@("%")@compareOffer.RecommendedPercentage</td>
+                                                <td>@("%")@compareOffer.RecommendedPercentage.ToString("F2")</td>
                                             }
                                         </tr>
                                         <tr class="bgc-thm3">
                                             <th scope="row">Exchange Success</th>
-                                            <td>@("%")@Model.JobSuccessRate</td>
+                                            <td>@("%")@Model.JobSuccessRate.ToString("F2")</td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
-                                                <td>@("%")@compareOffer.JobSuccessRate</td>
+                                                <td>@("%")@compareOffer.JobSuccessRate.ToString("F2")</td>
                                             }
                                         </tr>
                                         <tr>
@@ -452,10 +528,13 @@
                                         </tr>
                                         <tr>
                                             <th scope="row"></th>
-                                            <td><a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId, otherUserId = Model.OfferOwnerId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
-                                            @foreach (var compareOffer in Model.CompareOffers)
+                                            @if (!isOwnerView)
                                             {
-                                                <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = compareOffer.OfferId })" class="ud-btn btn-thm">Select<i class="fal fa-arrow-right-long"></i></a></td>
+                                                <td><a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId, otherUserId = Model.OfferOwnerId })" class="ud-btn btn-thm">Message<i class="fal fa-arrow-right-long"></i></a></td>
+                                                @foreach (var compareOffer in Model.CompareOffers)
+                                                {
+                                                    <td><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = compareOffer.OfferId })" class="ud-btn btn-thm">Select<i class="fal fa-arrow-right-long"></i></a></td>
+                                                }
                                             }
                                         </tr>
                                     </tbody>
@@ -466,46 +545,27 @@
                         <h4>Frequently Asked Questions</h4>
                         <div class="accordion-style1 faq-page mb-4 mb-lg-5 mt30">
                             <div class="accordion" id="accordionExample">
-                                <div class="accordion-item active">
-                                    <h2 class="accordion-header" id="headingOne">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">What methods of payments are supported?</button>
-                                    </h2>
-                                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body">Cras vitae ac nunc orci. Purus amet tortor non at phasellus ultricies hendrerit. Eget a, sit morbi nunc sit id massa. Metus, scelerisque volutpat nec sit vel donec. Sagittis, id volutpat erat vel.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingTwo">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">Can I cancel at anytime?</button>
-                                    </h2>
-                                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body">Cras vitae ac nunc orci. Purus amet tortor non at phasellus ultricies hendrerit. Eget a, sit morbi nunc sit id massa. Metus, scelerisque volutpat nec sit vel donec. Sagittis, id volutpat erat vel.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingThree">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">How do I get a receipt for my purchase?</button>
-                                    </h2>
-                                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body">Cras vitae ac nunc orci. Purus amet tortor non at phasellus ultricies hendrerit. Eget a, sit morbi nunc sit id massa. Metus, scelerisque volutpat nec sit vel donec. Sagittis, id volutpat erat vel.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFour">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">Which license do I need?</button>
-                                    </h2>
-                                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body">Cras vitae ac nunc orci. Purus amet tortor non at phasellus ultricies hendrerit. Eget a, sit morbi nunc sit id massa. Metus, scelerisque volutpat nec sit vel donec. Sagittis, id volutpat erat vel.</div>
-                                    </div>
-                                </div>
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingFive">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">How do I get access to a theme I purchased?</button>
-                                    </h2>
-                                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body">Cras vitae ac nunc orci. Purus amet tortor non at phasellus ultricies hendrerit. Eget a, sit morbi nunc sit id massa. Metus, scelerisque volutpat nec sit vel donec. Sagittis, id volutpat erat vel.</div>
-                                    </div>
-                                </div>
+                                @if (Model.Faqs == null || Model.Faqs.Count == 0)
+                                {
+                                    <p class="text-muted">No FAQs have been added for this swap yet.</p>
+                                }
+                                else
+                                {
+                                    @for (int i = 0; i < Model.Faqs.Count; i++)
+                                    {
+                                        var faq = Model.Faqs[i];
+                                        var headingId = $"faqHeading{i}";
+                                        var collapseId = $"faqCollapse{i}";
+                                        <div class="accordion-item active">
+                                            <h2 class="accordion-header" id="headingOne">
+                                                <button class="accordion-button @((i>0? "collapsed":""))" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@(i==0? "true":"false")" aria-controls="@collapseId">@faq.Question</button>
+                                            </h2>
+                                            <div id="@collapseId" class="accordion-collapse collapse @((i==0? "show":""))" aria-labelledby="@headingId" data-bs-parent="#offerFaqAccordion">
+                                                <div class="accordion-body">@faq.Answer</div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
                             </div>
                         </div>
 
@@ -564,7 +624,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    @if (Model.Reviews != null && Model.Reviews.Count > 0)
+                                    @if (Model.Reviews != null && Model.Reviews.Any())
                                     {
                                         <div id="reviews-container">
                                             @for (int i = 0; i < reviewCount; i++)
@@ -573,53 +633,89 @@
                                                 var displayStyle = i < 2 ? "" : "display:none;";
                                                 var review = reviewList[i];
                                                 <div class="col-md-12 mt20 review-item" data-review-id="@review.ReviewId" style="@displayStyle">
-                                                    <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
-                                                        <img src="@(
+                                                    @if (review.IsDeleted)
+                                                    {
+                                                        <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
+                                                            <div class="alert alert-warning mb-4 p-3">
+                                                                <strong>This review has been hidden by our moderation team</strong>
+                                                                <h6 class="mt-0 mb-0">
+                                                                    It was found to be in violation of our Community Guidelines:
+                                                                    <em>@review.DeletionReason</em>
+                                                                </h6>
+                                                                <small class="text-muted">
+                                                                    Please keep discussions respectful and on-topic.
+                                                                    <a href="/help/community-guidelines" target="_blank">Read the full guidelines</a>.
+                                                                </small>
+                                                                <div>
+                                                                    <span class="fz14">
+                                                                        <small class="text-muted">
+                                                                            on @review.DeletedAt?.ToLocalTime().ToString("dd MMM, yyyy")
+                                                                        </small>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
+                                                            <img src="@(
                                                             !string.IsNullOrEmpty(review.Reviewer?.ProfileImageUrl)
                                                             ? review.Reviewer.ProfileImageUrl
                                                             : "~/template_assets/images/No_Profile_img.png"
                                                         )" class="mr-3" alt="Reviewer Photo" style="max-width:100%; width: 7%; border-radius: 100%" />
-                                                        <div class="ml20">
-                                                            <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
-                                                            <div><span class="fz14">@review.CreatedDate.ToString("dd MMM yyyy")</span></div>
+                                                            <div class="ml20">
+                                                                <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
+                                                                <div><span class="fz14">@review.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</span></div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <!-- Star Rating Display -->
-                                                    <div class="star-rating-display mt10">
-                                                        @for (int j = 1; j <= 5; j++)
-                                                        {
-                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                                 style="width:16px; height:16px; fill:@(j <= review.Rating ? "gold" : "#cccccc"); transition: fill 0.3s;">
-                                                                <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.786
+                                                        <!-- Star Rating Display -->
+                                                        <div class="star-rating-display mt10">
+                                                            @for (int j = 1; j <= 5; j++)
+                                                            {
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                                     style="width:16px; height:16px; fill:@(j <= review.Rating ? "gold" : "#cccccc"); transition: fill 0.3s;">
+                                                                    <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.786
                                                                 1.404 8.186L12 18.896l-7.338 3.887
                                                                 1.404-8.186L.132 9.211l8.2-1.193z" />
-                                                            </svg>
-                                                        }
-                                                    </div>
-                                                    <p class="text mt20 mb20">@review.Comments</p>
-                                                    <div class="review_cansel_btns d-flex">
-                                                        <a href="#" class="vote" data-vote="helpful"><i class="fas fa-thumbs-up"></i>Helpful <span class="vote-count helpful-count">( <span>@review.HelpfulCount</span> )</span></a>
-                                                        <a href="#" class="vote" data-vote="not_helpful"><i class="fas fa-thumbs-down"></i>Not helpful <span class="vote-count not-helpful-count">( <span>@review.NotHelpfulCount</span> )</span></a>
-                                                    </div>
+                                                                </svg>
+                                                            }
+                                                        </div>
+                                                        <p class="text mt20 mb20">@review.Comments</p>
+                                                        <div class="review_cansel_btns d-flex">
+                                                            <a href="#" class="vote" data-vote="helpful"><i class="fas fa-thumbs-up"></i>Helpful <span class="vote-count helpful-count">( <span>@review.HelpfulCount</span> )</span></a>
+                                                            <a href="#" class="vote" data-vote="not_helpful"><i class="fas fa-thumbs-down"></i>Not helpful <span class="vote-count not-helpful-count">( <span>@review.NotHelpfulCount</span> )</span></a>
+                                                        </div>
+                                                    }
                                                     @if (review.TblReviewReplies?.Any() == true)
                                                     {
                                                         <div class="replies ps-4 mb-3 mt20">
                                                             @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
                                                             {
-                                                                var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
-                                                                .FindFirst(ClaimTypes.NameIdentifier).Value);
+                                                                // Safely resolve current user ID once
+                                                                int currentUserId = 0;
+                                                                if (User?.Identity?.IsAuthenticated == true)
+                                                                {
+                                                                    var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                                                                    if (idClaim != null)
+                                                                    {
+                                                                        int.TryParse(idClaim.Value, out currentUserId);
+                                                                    }
+                                                                }
                                                                 <div class="reply-item mb-2">
                                                                     <div class="d-flex align-items-center">
                                                                         <strong>@reply.ReplierUser.UserName</strong>
                                                                         <small class="text-muted ms-2 me-5">
-                                                                            @reply.CreatedDate.ToString("MMM d, yyyy")
+                                                                            @reply.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
                                                                         </small>
                                                                         @if (!reply.IsFlagged && reply.ReplierUserId != currentUserId)
                                                                         {
                                                                             <form asp-action="FlagReply" asp-controller="UserReview" method="post" class="m-0 p-0">
                                                                                 <input type="hidden" name="replyId" value="@reply.ReplyId" />
                                                                                 <button type="submit"
-                                                                                        title="Flag this reply"
+                                                                                        data-bs-toggle="tooltip"
+                                                                                        data-bs-placement="right"
+                                                                                        title="Report this reply answer"
                                                                                         class="btn btn-link p-0 text-muted">
                                                                                     <span class="flaticon-flag"></span>
                                                                                 </button>
@@ -627,7 +723,8 @@
                                                                         }
                                                                         else
                                                                         {
-                                                                            <span class="text-danger" title="Reply flagged">
+                                                                            <span class="text-danger" data-bs-toggle="tooltip"
+                                                                                  data-bs-placement="right" title="You’ve already reported this reply answer">
                                                                                 <span class="flaticon-flag"></span>
                                                                             </span>
                                                                         }
@@ -775,11 +872,20 @@
                                                     <a class="badge bg-secondary">No skills added</a>
                                                 }
                                             </div>
-                                            <div class="d-grid">
-                                                <a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId})" class="ud-btn btn-thm">
-                                                    Message about this Swap <i class="fal fa-arrow-right-long"></i>
-                                                </a>
-                                            </div>
+                                            @if (!isOwnerView)
+                                            {
+                                                <div class="d-grid">
+                                                    <a href="@Url.Action("Conversation", "Messaging", new { offerId = Model.OfferId})" class="ud-btn btn-thm">
+                                                        Message about this Swap <i class="fal fa-arrow-right-long"></i>
+                                                    </a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-info">
+                                                    This is a preview of your own swap—no actions are available.
+                                                </div>
+                                            }
                                         </div>
                                     </div>
 
@@ -830,7 +936,7 @@
                                     </a>
                                     <a class="meta fw500 text-start">
                                         Recomm.<br><span class="fz14 fw400">
-                                            @if (!string.IsNullOrEmpty(Model.RecommendedPercentage))
+                                            @if (Model.RecommendedPercentage > 0)
                                             {
                                                 <span>@("%")@Model.RecommendedPercentage</span>
                                             }
@@ -838,7 +944,6 @@
                                             {
                                                 <span>Promising!</span>
                                             }
-
                                         </span>
                                     </a>
                                     <a class="meta fw500 text-start">Exchange Success<br><span class="fz14 fw400">%@Model.JobSuccessRate.ToString("0.00")</span></a>
@@ -1250,10 +1355,9 @@
 
         .review_cansel_btns a.vote:hover {
             /* This hover color will be applied only if no custom color override is set,
-                                       but our script will override these values as needed */
+                                                                                           but our script will override these values as needed */
             color: #007bff;
         }
-
 </style>
 @section ProfileScript {
     <script>

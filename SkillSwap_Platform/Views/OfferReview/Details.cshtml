@@ -1,0 +1,276 @@
+﻿@model SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels.FlaggedReviewDetailsVm
+
+@{
+    var mode = (string)ViewData["Mode"] ?? "Reviews";
+    var isReply = mode == "Replies";
+    ViewData["Title"] = isReply ? "Reply Flag Details" : "Review Flag Details";
+    ViewData["SubTitle"] = "Review user reports and decide on the next steps.";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("ActiveFlags","OfferReview")" class="ud-btn btn-dark default-box-shadow2">Back to List<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Review Details</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            @if (!isReply)
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Review ID</th>
+                                            <th scope="col">Offer</th>
+                                            <th scope="col">Rating</th>
+                                            <th scope="col">Comment</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        <tr>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ReviewId</span></td>
+                                            <td class="vam">
+                                                <a asp-controller="UserOfferDetails"
+                                                   asp-action="OfferDetails"
+                                                   asp-route-offerId="@Model.OfferId"
+                                                   target="_blank"
+                                                   class="fz15 fw400 text-decoration-none">
+                                                    @Model.OfferTitle
+                                                    <small class="text-muted">(ID @Model.OfferId)</small>
+                                                </a>
+                                            </td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <span class="badge badge-pill bg-@(Model.Rating >= 4 ? "success" : "warning")">
+                                                        @Model.Rating <i class="fas fa-star vam fz10 review-color ml-2"></i>
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.Comment</span></td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <button class="ud-btn btn-light-thm"
+                                                            style="border:0;"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#mod-collapse">
+                                                        Remove & Warn
+                                                    </button>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div class="collapse mt-3" id="mod-collapse">
+                                    <form asp-action="Moderate" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.ReviewId" />
+                                        <input type="hidden" name="mode" value="@(isReply ? "Replies" : "Reviews")" />
+
+                                        <div class="mb-2">
+                                            <label>Reason for removal:</label>
+                                            <textarea name="note" class="form-control" rows="2" required></textarea>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="warning-@Model.ReviewId">Warning message to user:</label>
+                                            <textarea id="warning-@Model.ReviewId" name="warning" rows="4" required>@($"Your review on '{Model.OfferTitle}' (Offer ID {Model.OfferId}) has been removed. Please do not post abusive content and follow our community guidelines.")</textarea>
+                                        </div>
+
+                                        <button type="submit" class="ud-btn btn-thm mb25 me-4" style="border:0;">Confirm</button>
+                                        <button type="button" class="ud-btn btn-white mb25 me-4"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#mod-collapse">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Reply ID</th>
+                                            <th scope="col">Parent Review By</th>
+                                            <th scope="col">Parent Review</th>
+                                            <th scope="col">Replier</th>
+                                            <th scope="col">Reply Text</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        <tr>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ReplyId</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ParentReviewUserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ParentReviewComment (<small>ID @Model.ParentReviewId</small>)</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.ReviewerUserName</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@Model.Comment</span></td>
+                                            <td class="vam">
+                                                <span class="fz15 fw400">
+                                                    <button class="ud-btn btn-light-thm"
+                                                            style="border:0;"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#mod-collapse">
+                                                        Remove & Warn
+                                                    </button>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div class="collapse mt-3" id="mod-collapse">
+                                    <form asp-action="Moderate" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.ReviewId" />
+                                        <input type="hidden" name="mode" value="@(isReply ? "Replies" : "Reviews")" />
+
+                                        <div class="mb-2">
+                                            <label>Reason for removal:</label>
+                                            <textarea name="note" class="form-control" rows="2" required></textarea>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="warning-@Model.ReviewId">Warning message to user:</label>
+                                            <textarea id="warning-@Model.ReviewId" name="warning" rows="4" required>@($"Your reply of review on '{Model.OfferTitle}' (Offer ID {Model.OfferId}) has been removed. Please do not post abusive content and follow our community guidelines.")</textarea>
+                                        </div>
+
+                                        <button type="submit" class="ud-btn btn-thm mb25 me-4" style="border:0;">Confirm</button>
+                                        <button type="button" class="ud-btn btn-white mb25 me-4"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#mod-collapse">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <strong>Flag Details</strong>
+                                </div>
+                                <table class="table-style3 table at-savesearch mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Reporter ID</th>
+                                            <th>Reporter Name</th>
+                                            <th>Flagged At</th>
+                                            <th>Reason</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var flag in Model.Flags)
+                                        {
+                                            var collapseId = $"dismiss-{flag.FlagId}";
+                                            <tr>
+                                                <td>@flag.ReporterUserId</td>
+                                                <td>@flag.ReporterUserName</td>
+                                                <td>@flag.FlaggedAt.ToLocalTime().ToString("dd MMMM, yyyy HH:mm tt")</td>
+                                                <td>@(string.IsNullOrEmpty(flag.Reason) ? "—" : flag.Reason)</td>
+                                                <td>
+                                                    <button class="icon me-2"
+                                                            style="border:0"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#@collapseId"
+                                                            aria-expanded="false"
+                                                            aria-controls="@collapseId">
+                                                        <span class="flaticon-like-1"></span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+
+                                            <tr class="collapse bg-light" id="@collapseId">
+                                                <td colspan="5" class="p-3">
+                                                    <form asp-action="@(isReply ? "DismissReply" : "DismissReview")" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        @if (mode == "Reviews")
+                                                        {
+                                                            <input type="hidden" name="reviewId" value="@Model.ReviewId" />
+                                                        }
+                                                        @if (mode == "Replies")
+                                                        {
+                                                            <input type="hidden" name="replyId" value="@Model.ReplyId" />
+                                                        }
+                                                        <input type="hidden" name="flagId" value="@flag.FlagId" />
+
+                                                        <div class="mb-2">
+                                                            <label for="notes-@flag.FlagId" class="form-label">
+                                                                Admin note (why dismiss):
+                                                            </label>
+                                                            <textarea id="notes-@flag.FlagId"
+                                                                      name="notes"
+                                                                      rows="4"
+                                                                      placeholder="Enter a brief explanation…"
+                                                                      required></textarea>
+                                                        </div>
+
+                                                        <button type="submit" class="ud-btn btn-thm">
+                                                            Confirm Dismiss
+                                                        </button>
+                                                        <button type="button"
+                                                                class="ud-btn btn-white ms-2"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#@collapseId">
+                                                            Cancel
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

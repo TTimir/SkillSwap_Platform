@@ -15,6 +15,14 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<OnboardingController> _logger;
         private readonly IEmailService _emailService;
 
+        // Per-step rewards (sum = 2.0m)
+        private const decimal ROLE_STEP_REWARD = 0.25m;
+        private const decimal PROFILE_STEP_REWARD = 0.25m;
+        private const decimal SKILLEXP_STEP_REWARD = 0.50m;
+        private const decimal SKILLPREF_STEP_REWARD = 0.50m;
+        private const decimal CERT_STEP_REWARD = 0.25m;
+        private const decimal SOCKYC_STEP_REWARD = 0.25m;
+
         public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -41,6 +49,11 @@ namespace SkillSwap_Platform.Controllers
             // CHANGE: Check for user id using GetUserId()
             if (GetUserId() == null)
                 return RedirectToAction("Login", "Home");
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = ROLE_STEP_REWARD;
             return View(new SelectRoleVM());
         }
 
@@ -51,6 +64,7 @@ namespace SkillSwap_Platform.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.ErrorMessage = "Please correct the errors in your role.";
+                ViewBag.StepReward = ROLE_STEP_REWARD;
                 return View(model);
             }
 
@@ -87,10 +101,19 @@ namespace SkillSwap_Platform.Controllers
                     if (user != null)
                         user.Description = "Referral: " + model.ReferralSource;
 
+                    // mark progress flag (no token credit yet)
+                    var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                               ?? new TblOnboardingProgress { UserId = userId };
+                    prog.RoleSelected = true;
+                    if (_context.Entry(prog).State == EntityState.Detached)
+                        _context.TblOnboardingProgresses.Add(prog);
+
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return RedirectToAction(nameof(ProfileCompletion));
+                    TempData["ShowCreditSuccess"] = true;
+                    ViewBag.StepReward = ROLE_STEP_REWARD;
+                    return View(model);
                 }
                 catch (Exception ex)
                 {
@@ -113,6 +136,7 @@ namespace SkillSwap_Platform.Controllers
             if (tempUserId == null)
             {
                 ViewBag.ErrorMessage = "User not found. Please try to login again.";
+                ViewBag.StepReward = PROFILE_STEP_REWARD;
                 return RedirectToAction("Login", "Home");
             }
             int userId = tempUserId.Value; // CHANGE
@@ -129,6 +153,11 @@ namespace SkillSwap_Platform.Controllers
                 model.Designation = user.Designation;
                 model.Zip = user.Zip;
             }
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = PROFILE_STEP_REWARD;
             return View(model);
         }
 
@@ -141,6 +170,8 @@ namespace SkillSwap_Platform.Controllers
                 ViewBag.ErrorMessage = "Please correct the errors in your profile.";
                 return View(model);
             }
+
+            ViewBag.StepReward = PROFILE_STEP_REWARD;
 
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
@@ -174,6 +205,13 @@ namespace SkillSwap_Platform.Controllers
 
             try
             {
+                // mark progress
+                var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                           ?? new TblOnboardingProgress { UserId = userId };
+                prog.ProfileCompleted = true;
+                if (_context.Entry(prog).State == EntityState.Detached)
+                    _context.TblOnboardingProgresses.Add(prog);
+
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -181,7 +219,9 @@ namespace SkillSwap_Platform.Controllers
                 _logger.LogError(ex, "Error saving profile for user {UserId}", userId);
                 ViewBag.ErrorMessage = "An error occurred while saving your profile."; return View(model);
             }
-            return RedirectToAction(nameof(SkillsExperience));
+
+            TempData["ShowCreditSuccess"] = true;
+            return View(model);
         }
 
         #endregion
@@ -214,6 +254,11 @@ namespace SkillSwap_Platform.Controllers
                 model.DesiredSkillAreas = user.DesiredSkillAreas;
                 model.OfferedSkillAreas = user.OfferedSkillAreas;
             }
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = SKILLEXP_STEP_REWARD;
             return View(model);
         }
 
@@ -224,8 +269,11 @@ namespace SkillSwap_Platform.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.ErrorMessage = "Please correct the errors in your skills and experience.";
+                ViewBag.StepReward = SKILLEXP_STEP_REWARD;
                 return View(model);
             }
+
+            ViewBag.StepReward = SKILLEXP_STEP_REWARD;
 
             int? userId = GetUserId();
             if (userId == null)
@@ -262,6 +310,13 @@ namespace SkillSwap_Platform.Controllers
 
             try
             {
+                // mark progress
+                var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                           ?? new TblOnboardingProgress { UserId = userId.Value };
+                prog.SkillsFilled = true;
+                if (_context.Entry(prog).State == EntityState.Detached)
+                    _context.TblOnboardingProgresses.Add(prog);
+
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -270,7 +325,8 @@ namespace SkillSwap_Platform.Controllers
                 ViewBag.ErrorMessage = "An error occurred while saving your skills and experience.";
                 return View(model);
             }
-            return RedirectToAction(nameof(SkillPreference));
+            TempData["ShowCreditSuccess"] = true;
+            return View(model);
 
             //    #region Process Education Entries (Required)
 
@@ -533,6 +589,11 @@ namespace SkillSwap_Platform.Controllers
                 model.DesiredSkillAreas = user.DesiredSkillAreas;
                 model.OfferedSkillAreas = user.OfferedSkillAreas;
             }
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = SKILLPREF_STEP_REWARD;
             return View(model);
         }
 
@@ -543,9 +604,12 @@ namespace SkillSwap_Platform.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.ErrorMessage = "Please correct the errors in your skill preferences.";
+                ViewBag.StepReward = SKILLPREF_STEP_REWARD;
                 return View(model);
             }
 
+            ViewBag.StepReward = SKILLPREF_STEP_REWARD;
+            
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -683,6 +747,13 @@ namespace SkillSwap_Platform.Controllers
 
             try
             {
+                // mark progress
+                var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                           ?? new TblOnboardingProgress { UserId = userId };
+                prog.SkillPreferencesSet = true;
+                if (_context.Entry(prog).State == EntityState.Detached)
+                    _context.TblOnboardingProgresses.Add(prog);
+
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -691,7 +762,8 @@ namespace SkillSwap_Platform.Controllers
                 ViewBag.ErrorMessage = "Error saving skill preferences: " + ex.Message;
                 return View(model);
             }
-            return RedirectToAction(nameof(CertificateDetails));
+            TempData["ShowCreditSuccess"] = true;
+            return View(model);
         }
 
         #endregion
@@ -699,7 +771,18 @@ namespace SkillSwap_Platform.Controllers
         #region STEP 5: Certificate Details
 
         [HttpGet]
-        public IActionResult CertificateDetails() => View(new CertificateDetailsVM());
+        public IActionResult CertificateDetails()
+        {
+            // CHANGE: Check for user id using GetUserId()
+            if (GetUserId() == null)
+                return RedirectToAction("Login", "Home");
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = CERT_STEP_REWARD;
+            return View(new CertificateDetailsVM());
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -710,9 +793,12 @@ namespace SkillSwap_Platform.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.ErrorMessage = "There was an error in your submission. Please correct and try again.";
+                ViewBag.StepReward = CERT_STEP_REWARD;
                 return View(model);
             }
 
+            ViewBag.StepReward = CERT_STEP_REWARD;
+            
             var certificateNames = form["certification[certificate_name][]"];
             var certifiedFrom = form["certification[certified_from][]"];
             var completionDate = form["certification[completion_date][]"];
@@ -774,6 +860,13 @@ namespace SkillSwap_Platform.Controllers
 
             try
             {
+                // mark progress
+                var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                           ?? new TblOnboardingProgress { UserId = userId };
+                prog.CertificateUploaded = true;
+                if (_context.Entry(prog).State == EntityState.Detached)
+                    _context.TblOnboardingProgresses.Add(prog);
+
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -781,7 +874,9 @@ namespace SkillSwap_Platform.Controllers
                 ViewBag.ErrorMessage = "Error saving certificate details: " + ex.Message;
                 return View(model);
             }
-            return RedirectToAction(nameof(AdditionalInfo));
+
+            TempData["ShowCreditSuccess"] = true;
+            return View(model);
         }
 
         #endregion
@@ -802,6 +897,11 @@ namespace SkillSwap_Platform.Controllers
             var model = new AdditionalInfoVM();
             if (user != null)
                 model.SocialMediaLinks = user.SocialMediaLinks;
+
+            if (TempData.ContainsKey("ShowCreditSuccess"))
+                TempData.Remove("ShowCreditSuccess");
+
+            ViewBag.StepReward = SOCKYC_STEP_REWARD;
             return View(model);
         }
 
@@ -812,9 +912,12 @@ namespace SkillSwap_Platform.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.ErrorMessage = "Please correct the errors in your additional information.";
+                ViewBag.StepReward = SOCKYC_STEP_REWARD;
                 return View(model);
             }
 
+            ViewBag.StepReward = SOCKYC_STEP_REWARD;
+            
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -876,6 +979,16 @@ namespace SkillSwap_Platform.Controllers
 
             // 🚀 Mark onboarding as completed
             user.IsOnboardingCompleted = true;
+            var progress = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId);
+            progress.SocialAndKycCompleted = true;
+
+            decimal totalEarned = 0;
+            if (progress.RoleSelected) totalEarned += ROLE_STEP_REWARD;
+            if (progress.ProfileCompleted) totalEarned += PROFILE_STEP_REWARD;
+            if (progress.SkillsFilled) totalEarned += SKILLEXP_STEP_REWARD;
+            if (progress.SkillPreferencesSet) totalEarned += SKILLPREF_STEP_REWARD;
+            if (progress.CertificateUploaded) totalEarned += CERT_STEP_REWARD;
+            if (progress.SocialAndKycCompleted) totalEarned += SOCKYC_STEP_REWARD;
 
             HttpContext.Session.Remove("TempUserId");
             try
@@ -938,6 +1051,7 @@ namespace SkillSwap_Platform.Controllers
                     IsVerified = false
                 };
                 _context.TblKycUploads.Add(kycRecord);
+
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -948,8 +1062,10 @@ namespace SkillSwap_Platform.Controllers
                     return View(model);
                 }
             }
-
-            return RedirectToAction(nameof(ApprovalPending));
+            await CreditAllOnboardingRewards(userId, progress);
+            TempData["ShowCreditSuccess"] = true;
+            TempData["TotalEarned"] = totalEarned;
+            return View(model);
         }
 
         #endregion
@@ -978,6 +1094,37 @@ namespace SkillSwap_Platform.Controllers
         }
 
         #endregion
+
+        //— CREDIT ALL REWARDS AT ONBOARD COMPLETE ——————————————————————————————————
+        private async Task CreditAllOnboardingRewards(int userId, TblOnboardingProgress progress)
+        {
+            decimal total = 0;
+            if (progress.RoleSelected) total += ROLE_STEP_REWARD;
+            if (progress.ProfileCompleted) total += PROFILE_STEP_REWARD;
+            if (progress.SkillsFilled) total += SKILLEXP_STEP_REWARD;
+            if (progress.SkillPreferencesSet) total += SKILLPREF_STEP_REWARD;
+            if (progress.CertificateUploaded) total += CERT_STEP_REWARD;
+            if (progress.SocialAndKycCompleted) total += SOCKYC_STEP_REWARD;
+
+            if (total <= 0) return;  // nothing to credit
+
+            var user = await _context.TblUsers.FindAsync(userId);
+            user.DigitalTokenBalance += total;
+
+            _context.TblTokenTransactions.Add(new TblTokenTransaction
+            {
+                FromUserId = null,
+                ToUserId = userId,
+                Amount = total,
+                TxType = "Reward-Onboarding",
+                CreatedAt = DateTime.UtcNow,
+                Description = "Onboarding completed: all steps rewarded"
+            });
+
+            // record it so it won’t run again
+            progress.TotalTokensGiven = total;
+            await _context.SaveChangesAsync();
+        }
 
         #region Helper Methods
         private int? GetUserId()
@@ -1267,5 +1414,6 @@ namespace SkillSwap_Platform.Controllers
         }
 
         #endregion
+
     }
 }

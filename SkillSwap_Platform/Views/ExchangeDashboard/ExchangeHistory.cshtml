@@ -64,67 +64,85 @@
                                     <tbody class="t-body">
                                         @foreach (var item in Model.CompletedExchangeItems)
                                         {
-                                            <tr>
-                                                <th class="ps-0" scope="row">
-                                                    <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
-                                                        <div class="d-lg-flex align-items-lg-center">
-                                                            <div class="thumb w60 position-relative rounded-circle mb15-md">
-                                                                @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
-                                                                @if (!string.IsNullOrEmpty(item.OfferImageUrl))
-                                                                {
-                                                                    <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
-                                                                }
-                                                                else
-                                                                {
-                                                                    <span>N/A</span>
-                                                                }
-                                                            </div>
-                                                            <div class="details ml15 ml0-md mb15-md">
-                                                                <small class="text-muted">@item.Category</small>
-                                                                <h5 class="title mb-2">
-                                                                    <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
-                                                                        @item.OfferTitle
-                                                                    </a>
-                                                                </h5>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                            @if (item.OfferIsDeleted)
+                                            {
+                                                <tr>
+                                                    <td colspan="5">
+                                                        <div class="alert alert-warning mb-2">
+                                                            <strong>Notice:</strong>
+                                                            The offer <em>“@item.OfferTitle”</em> was removed by an administrator.
+                                                            If you haven’t yet completed or closed this exchange, please
+                                                            <a href="mailto:skillswap360@gmail.com">contact our support team</a>.
+                                                            Otherwise, you can manage your remaining listings in
+                                                            <a href="@Url.Action("Index", "ExchangeDashboard")">My Exchanges</a>.
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <th class="ps-0" scope="row">
+                                                        <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                                            <div class="d-lg-flex align-items-lg-center">
+                                                                <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                                    @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
+                                                                    @if (!string.IsNullOrEmpty(item.OfferImageUrl))
+                                                                    {
+                                                                        <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span>N/A</span>
+                                                                    }
+                                                                </div>
+                                                                <div class="details ml15 ml0-md mb15-md">
+                                                                    <small class="text-muted">@item.Category</small>
+                                                                    <h5 class="title mb-2">
+                                                                        <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
+                                                                            @item.OfferTitle
+                                                                        </a>
+                                                                    </h5>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </th>
-                                                <td>
-                                                    <h5 class="@(item.Status == "Finalized"
+                                                    </th>
+                                                    <td>
+                                                        <h5 class="@(item.Status == "Finalized"
                                                     ? "pending-style style1"
                                                     : item.Status == "Completed"
                                                         ? "pending-style style2"
                                                         : item.Status == "Declined"
                                                             ? "pending-style style3"
                                                             : "")">
-                                                        @item.Status
-                                                    </h5>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex">
-                                                        @if (item.LastStatusChangedByName != null)
-                                                        {
-                                                            @("@")
+                                                            @item.Status
+                                                        </h5>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex">
+                                                            @if (item.LastStatusChangedByName != null)
+                                                            {
+                                                                @("@")
 
-                                                            @item.LastStatusChangedByName
-                                                        }
-                                                        else
-                                                        {
-                                                            <span>N/A</span>
-                                                        }
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <!-- For completed exchanges, you might display just the details or a "Completed" label -->
-                                                    <span class="pending-style style4" data-bs-toggle="tooltip" title="Exchange Completed">
-                                                        Completed <i class="fal fa-check"></i>
-                                                    </span>
-                                                </td>
-                                            </tr>
+                                                                @item.LastStatusChangedByName
+                                                            }
+                                                            else
+                                                            {
+                                                                <span>N/A</span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <!-- For completed exchanges, you might display just the details or a "Completed" label -->
+                                                        <span class="pending-style style4" data-bs-toggle="tooltip" title="Exchange Completed">
+                                                            Completed <i class="fal fa-check"></i>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
                                         }
                                     </tbody>
                                 </table>
@@ -206,67 +224,85 @@
                                     <tbody class="t-body">
                                         @foreach (var item in Model.DeclinedExchangeItems)
                                         {
-                                            <tr>
-                                                <th class="ps-0" scope="row">
-                                                    <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
-                                                        <div class="d-lg-flex align-items-lg-center">
-                                                            <div class="thumb w60 position-relative rounded-circle mb15-md">
-                                                                @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
-                                                                @if (!string.IsNullOrEmpty(item.OfferImageUrl))
-                                                                {
-                                                                    <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
-                                                                }
-                                                                else
-                                                                {
-                                                                    <span>N/A</span>
-                                                                }
-                                                            </div>
-                                                            <div class="details ml15 ml0-md mb15-md">
-                                                                <small class="text-muted">@item.Category</small>
-                                                                <h5 class="title mb-2">
-                                                                    <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
-                                                                        @item.OfferTitle
-                                                                    </a>
-                                                                </h5>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
-                                                                <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                            @if (item.OfferIsDeleted)
+                                            {
+                                                <tr>
+                                                    <td colspan="5">
+                                                        <div class="alert alert-warning mb-2">
+                                                            <strong>Notice:</strong>
+                                                            The offer <em>“@item.OfferTitle”</em> was removed by an administrator.
+                                                            If you haven’t yet completed or closed this exchange, please
+                                                            <a href="mailto:skillswap360@gmail.com">contact our support team</a>.
+                                                            Otherwise, you can manage your remaining listings in
+                                                            <a href="@Url.Action("Index", "ExchangeDashboard")">My Exchanges</a>.
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <th class="ps-0" scope="row">
+                                                        <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
+                                                            <div class="d-lg-flex align-items-lg-center">
+                                                                <div class="thumb w60 position-relative rounded-circle mb15-md">
+                                                                    @* <img class="rounded-circle mx-auto" src="@if (!string.IsNullOrEmpty(item.OfferImageUrl)) *@
+                                                                    @if (!string.IsNullOrEmpty(item.OfferImageUrl))
+                                                                    {
+                                                                        <img src="@Url.Content(item.OfferImageUrl)" alt="Offer Thumbnail" class="mx-auto" style="max-width:100%" />
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span>N/A</span>
+                                                                    }
+                                                                </div>
+                                                                <div class="details ml15 ml0-md mb15-md">
+                                                                    <small class="text-muted">@item.Category</small>
+                                                                    <h5 class="title mb-2">
+                                                                        <a href="@Url.Action("Details", "ExchangeDashboard", new { id = item.Exchange.ExchangeId })">
+                                                                            @item.OfferTitle
+                                                                        </a>
+                                                                    </h5>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm" title="Token Cost"><i class="flaticon-income fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.Token Tokens</p>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Exchange initiated Date"><i class="flaticon-30-days fz16 vam text-thm2 me-1 bdrl1 pl15 pl0-xs bdrn-xs"></i> @item.ExchangeStartDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                                                    <p class="mb-0 fz14 list-inline-item mb5-sm pe-1" title="Mode Of Learning"><i class="flaticon-place fz16 vam text-thm2 me-1"></i> @item.ExchangeMode</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </th>
-                                                <td>
-                                                    <h5 class="@(item.Status == "Finalized"
+                                                    </th>
+                                                    <td>
+                                                        <h5 class="@(item.Status == "Finalized"
                                                     ? "pending-style style1"
                                                     : item.Status == "Completed"
                                                         ? "pending-style style2"
                                                         : item.Status == "Declined"
                                                             ? "pending-style style3"
                                                             : "")">
-                                                        @item.Status
-                                                    </h5>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex">
-                                                        @if (item.LastStatusChangedByName != null)
-                                                        {
-                                                            @("@")
+                                                            @item.Status
+                                                        </h5>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex">
+                                                            @if (item.LastStatusChangedByName != null)
+                                                            {
+                                                                @("@")
 
-                                                            @item.LastStatusChangedByName
-                                                        }
-                                                        else
-                                                        {
-                                                            <span>N/A</span>
-                                                        }
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <!-- For completed exchanges, you might display just the details or a "Completed" label -->
-                                                    <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Completed">
-                                                        Declined <i class="fal fa-check"></i>
-                                                    </span>
-                                                </td>
-                                            </tr>
+                                                                @item.LastStatusChangedByName
+                                                            }
+                                                            else
+                                                            {
+                                                                <span>N/A</span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <!-- For completed exchanges, you might display just the details or a "Completed" label -->
+                                                        <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Completed">
+                                                            Declined <i class="fal fa-check"></i>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
                                         }
                                     </tbody>
                                 </table>

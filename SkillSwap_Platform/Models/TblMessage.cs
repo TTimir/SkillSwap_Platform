@@ -29,6 +29,10 @@ public partial class TblMessage
 
     public bool IsApproved { get; set; }
 
+    public int? ApprovedByAdminId { get; set; }
+
+    public DateTime? ApprovedDate { get; set; }
+
     public int? OfferId { get; set; }
 
     public string MessageType { get; set; } = null!;
@@ -37,8 +41,16 @@ public partial class TblMessage
 
     public int? ExchangeId { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedOn { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
     [NotMapped]
     public OfferDisplayVM OfferPreview { get; set; }
+    public virtual TblUser? ApprovedByAdmin { get; set; }
+
     public virtual TblOffer? Offer { get; set; }
 
     public virtual TblUser ReceiverUser { get; set; } = null!;

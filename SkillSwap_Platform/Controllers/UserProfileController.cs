@@ -14,6 +14,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SkillSwap_Platform.Services.Email;
 using NuGet.Protocol.Plugins;
+using SkillSwap_Platform.Services.AdminControls.UserFlag;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -24,12 +25,15 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<UserProfileController> _logger;
         private readonly INotificationService _notif;
         private readonly IEmailService _emailService;
-        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService)
+        private readonly IUserFlagService _svc;
+
+        public UserProfileController(SkillSwapDbContext context, ILogger<UserProfileController> logger, INotificationService notif, IEmailService emailService, IUserFlagService svc)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
             _notif = notif;
             _emailService = emailService;
+            _svc = svc;
         }
 
         #region Public Profile
@@ -53,8 +57,10 @@ namespace SkillSwap_Platform.Controllers
                     .Include(u => u.TblUserSkills)
                         .ThenInclude(us => us.Skill)
                     .Include(u => u.TblReviewReviewees)
+                        .ThenInclude(r => r.Reviewer)
+                    .Include(u => u.TblReviewReviewees)
                         .ThenInclude(r => r.TblReviewReplies)
-                        .ThenInclude(rep => rep.ReplierUser)
+                            .ThenInclude(rep => rep.ReplierUser)
                     .FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower());
 
                 if (user == null)
@@ -188,6 +194,26 @@ namespace SkillSwap_Platform.Controllers
                 int totalReviewsUser = user.TblReviewReviewees.Count();
                 double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
+                var certificateVMs = user.TblUserCertificateUsers
+                    .Select(c => new CertificateVM
+                    {
+                        CertificateId = c.CertificateId,
+                        CertificateName = c.CertificateName,
+                        CertificateFrom = c.CertificateFrom,
+                        CertificateFilePath = c.CertificateFilePath,
+                        IsApproved = c.IsApproved,
+                        ApprovedDate = c.ApprovedDate,
+                        RejectionDate = c.RejectDate,
+                        RejectionReason = c.RejectionReason,
+                        CertificateDate = c.CompleteDate
+                    })
+                    .ToList();
+
+                var currentUser = User.Identity.IsAuthenticated
+                    ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
+                    : -1;
+                bool isOwnProfile = currentUser == user.UserId;
+
                 // Build the public user profile view model.
                 var model = new UserProfileVM
                 {
@@ -195,7 +221,6 @@ namespace SkillSwap_Platform.Controllers
                     Educations = user.TblEducations.OrderByDescending(e => e.StartDate).ToList(),
                     Experiences = user.TblExperiences.OrderByDescending(e => e.StartDate).ToList(),
                     Languages = user.TblLanguages.ToList(),
-                    Certificates = user.TblUserCertificateUsers.ToList(),
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
@@ -205,8 +230,20 @@ namespace SkillSwap_Platform.Controllers
                     ActiveExchangeCount = activeExchangeCount,
                     Reviews = user.TblReviewReviewees,
                     ReviewCount = totalReviewsUser,
-                    AverageRating = avgRatingUser
+                    AverageRating = avgRatingUser,
+                    IsFlagged = false,
+                    Certificates = certificateVMs,
+                    IsOwnProfile = isOwnProfile,
                 };
+
+                if (User.Identity.IsAuthenticated)
+                {
+                    var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    model.IsFlagged = await _svc.HasPendingFlagAsync(
+                        flaggedUserId: user.UserId,
+                        flaggedByUserId: currentUserId
+                    );
+                }
 
                 return View("PublicProfile", model);
             }
@@ -380,6 +417,27 @@ namespace SkillSwap_Platform.Controllers
                 int totalReviewsUser = user.TblReviewReviewees.Count();
                 double avgRatingUser = totalReviewsUser > 0 ? user.TblReviewReviewees.Average(r => r.Rating) : 0;
 
+                var certificateVMs = user.TblUserCertificateUsers
+                    .Select(c => new CertificateVM
+                    {
+                        CertificateId = c.CertificateId,
+                        CertificateName = c.CertificateName,
+                        CertificateFrom = c.CertificateFrom,
+                        CertificateFilePath = c.CertificateFilePath,
+                        IsApproved = c.IsApproved,
+                        ApprovedDate = c.ApprovedDate,
+                        RejectionDate = c.RejectDate,
+                        RejectionReason = c.RejectionReason,
+                        CertificateDate = c.CompleteDate
+                    })
+                    .ToList();
+
+                // detect owner vs. visitor
+                var currentUserId = User.Identity.IsAuthenticated
+                    ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
+                    : -1;
+                bool isOwnProfile = currentUserId == user.UserId;
+
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
                 {
@@ -387,7 +445,7 @@ namespace SkillSwap_Platform.Controllers
                     Educations = user.TblEducations.OrderByDescending(e => e.StartDate).ToList(),
                     Experiences = user.TblExperiences.OrderByDescending(e => e.StartDate).ToList(),
                     Languages = user.TblLanguages.ToList(),
-                    Certificates = user.TblUserCertificateUsers.ToList(),
+                    Certificates = certificateVMs,
                     LastExchangeDays = lastDeliveryDays,
                     RecommendedPercentage = recommendedPercentage,
                     Skills = skillList,
@@ -397,7 +455,8 @@ namespace SkillSwap_Platform.Controllers
                     ActiveExchangeCount = activeExchangeCount,
                     Reviews = user.TblReviewReviewees,
                     ReviewCount = totalReviewsUser,
-                    AverageRating = avgRatingUser
+                    AverageRating = avgRatingUser,
+                    IsOwnProfile = isOwnProfile,
                 };
 
                 return View(model);
@@ -1234,6 +1293,28 @@ namespace SkillSwap_Platform.Controllers
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Flag(int flaggedUserId, string reason)
+        {
+            var byIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(byIdStr, out var byUserId))
+                return Forbid();
+
+            await _svc.FlagUserAsync(flaggedUserId, byUserId, reason);
+
+            // look up the flagged user so we can grab their username
+            var flaggedUser = await _context.TblUsers
+              .Where(u => u.UserId == flaggedUserId)
+              .Select(u => new { u.UserName })
+              .FirstOrDefaultAsync();
+            if (flaggedUser == null)
+                return NotFound();
+
+            TempData["Success"] = "Thanks for letting us know! Your report has been submitted and our team will review it shortly.";
+            return RedirectToAction("PublicProfileByUsername", "UserProfile", new { username = flaggedUser.UserName });
         }
 
         private int GetUserId()

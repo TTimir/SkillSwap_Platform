@@ -98,7 +98,7 @@ namespace SkillSwap_Platform.Services
                 throw new UnauthorizedAccessException("Too many failed attempts. Try again later.");
             }
 
-            bool isValid = TotpHelper.VerifyTotpCode(user.TotpSecret, otp);
+            bool isValid = TotpHelper.VerifyTotpCode(user.TotpSecret, otp, out string totpFailure);
             if (!isValid)
             {
                 user.FailedOtpAttempts++;

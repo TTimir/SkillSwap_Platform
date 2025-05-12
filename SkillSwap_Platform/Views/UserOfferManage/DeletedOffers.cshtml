@@ -104,13 +104,13 @@
                                                         <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                             <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
                                                             <li>Availability Set: @offer.FreelanceType</li>
-                                                            <li>Created Date: @offer.CreatedDate?.ToString("MMMM dd,yyyy")</li>
+                                                            <li>Created Date: @offer.CreatedDate?.ToLocalTime().ToString("MMMM dd,yyyy")</li>
                                                         </ul>
                                                     </div>
                                                 </div>
                                             </th>
                                             <td class="align-top"><span class="fz15 fw400">@offer.Category</span></td>
-                                            <td class="align-top"><span class="fz15 fw400">@offer.DeletedDate?.ToString("MMMM dd, yyyy")</span></td>
+                                            <td class="align-top"><span class="fz15 fw400">@offer.DeletedDate?.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
                                             <td class="align-top"><span class="fz14 fw400">@(daysLeft > 0 ? daysLeft.ToString() : "Expired")</span></td>
                                             <td class="align-top">
                                                 @using (Html.BeginForm("Restore", "UserOfferManage", new { offerId = offer.OfferId }, FormMethod.Post))

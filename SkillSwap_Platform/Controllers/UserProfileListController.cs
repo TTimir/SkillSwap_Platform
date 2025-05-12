@@ -23,7 +23,7 @@ namespace SkillSwap_Platform.Controllers
         // GET: /UserProfileList/PublicProfileList
         [HttpGet]
         public async Task<IActionResult> PublicProfileList(
-            string keyword, string location, int page = 1, int pageSize = 20)
+            string keyword, string location, int page = 1, int pageSize = 10)
         {
             try
             {
@@ -44,23 +44,24 @@ namespace SkillSwap_Platform.Controllers
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
                     usersQuery = usersQuery.Where(u =>
-                        u.UserName.Contains(keyword) ||
-                        u.FirstName.Contains(keyword) ||
-                        u.LastName.Contains(keyword));
+                        EF.Functions.Like(u.UserName, $"%{keyword}%") ||
+                        EF.Functions.Like(u.FirstName, $"%{keyword}%") ||
+                        EF.Functions.Like(u.LastName, $"%{keyword}%"));
                 }
 
                 // Apply location filter on city or country.
                 if (!string.IsNullOrWhiteSpace(location))
                 {
                     usersQuery = usersQuery.Where(u =>
-                        u.City.Contains(location) ||
-                        u.Country.Contains(location));
+                        EF.Functions.Like(u.City, $"%{location}%") ||
+                        EF.Functions.Like(u.Country, $"%{location}%"));
                 }
 
                 int totalUsers = await usersQuery.CountAsync();
 
                 var users = await usersQuery
                     .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
+                    .Include(u => u.TblReviewReviewees)
                     .OrderByDescending(u => u.LastActive) // You might sort by LastActive or CreatedDate
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -87,8 +88,13 @@ namespace SkillSwap_Platform.Controllers
                             .Select(us => us.Skill.SkillName)
                             .ToList()
                         : new List<string>(),
+                    AverageRating = u.TblReviewReviewees.Any()
+                        ? Math.Round(u.TblReviewReviewees.Average(r => r.Rating), 1)
+                        : 0.0,
+                    ReviewCount = u.TblReviewReviewees.Count(),
                     Recommendation = u.RecommendedPercentage ?? 0.0,
                     JobSuccessRate = u.JobSuccessRate ?? 0.0,
+                    LastActive = u.LastActive
                 }).ToList();
 
                 var vm = new UserProfileListVM

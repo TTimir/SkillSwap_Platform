@@ -11,6 +11,8 @@ using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Services;
+using SkillSwap_Platform.Services.AdminControls.OfferFlag;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -20,31 +22,36 @@ namespace SkillSwap_Platform.Controllers
     [AllowAnonymous]
     public class UserOfferDetailsController : Controller
     {
-        private const string RecentCookie = "RecentlyViewedOffers"; 
+        private const string RecentCookie = "RecentlyViewedOffers";
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<UserOfferManageController> _logger;
+        private readonly IOfferFlagService _svc;
 
-        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger)
+        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc)
         {
             _context = context;
             _logger = logger;
+            _svc = svc;
         }
 
         #region Offer Details
         // GET: /UserOffer/Details/{offerId}
         [HttpGet]
-        public async Task<IActionResult> OfferDetails(int offerId)
+        public async Task<IActionResult> OfferDetails(int offerId, CancellationToken ct)
         {
+            using var tx = _context.Database.BeginTransaction();
             try
             {
                 // Fetch the offer including its portfolio items.
                 var offer = await _context.TblOffers
                     .Include(o => o.TblOfferPortfolios)
                     .Include(o => o.User)
+                    .Include(o => o.TblReviews)
+                        .ThenInclude(r => r.TblReviewReplies)
                     .FirstOrDefaultAsync(o => o.OfferId == offerId);
                 if (offer == null)
                 {
-                    return NotFound("Offer not found.");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // 2. Retrieve reviews related to the offer.
@@ -206,18 +213,20 @@ namespace SkillSwap_Platform.Controllers
                             RequiredSkillLevel = o.RequiredSkillLevel,
                             CollaborationMethod = o.CollaborationMethod ?? "Not Provided",
                             AssistanceRounds = o.AssistanceRounds ?? 0,
-                            RecommendedPercentage = compareRecommendedPercentage.ToString("N2"),
+                            RecommendedPercentage = compareRecommendedPercentage,
                             JobSuccessRate = compareJobSuccessRate,
                             CompareWillingSkills = o.WillingSkill?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>(),
                             Username = o.User?.UserName,
-                            ProfileImage = portfolioUrls.FirstOrDefault()
+                            ProfileImage = o.User.ProfileImageUrl ?? "/template_assets/images/No_Profile_img.png"
                         };
                     }).ToList();
 
                 }
                 catch (Exception ex)
                 {
+                    await tx.RollbackAsync(ct);
                     _logger.LogError(ex, "Error fetching comparable offers for Offer {OfferId}", offerId);
+                    return RedirectToAction("EP500", "EP");
                 }
 
                 // ***************** NEW LOGIC FOR REVIEW ************************
@@ -283,10 +292,12 @@ namespace SkillSwap_Platform.Controllers
                         {
                             offer.Views++;  // Increment the view count (make sure your model includes a Views property)
                             await _context.SaveChangesAsync();
+                            await tx.CommitAsync(ct);
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error updating view count for offer {OfferId}", offerId);
+                            await tx.RollbackAsync(ct);
                         }
                     });
                     // Set the session flag so that subsequent refreshes in the same session won't increment the count.
@@ -304,6 +315,16 @@ namespace SkillSwap_Platform.Controllers
                     .OrderByDescending(o => o.Views)
                     .Take(4)
                     .ToListAsync();
+
+                bool isFlaggedByMe = false;
+                if (User.Identity.IsAuthenticated
+                    && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var me))
+                {
+                    isFlaggedByMe = await _svc.HasPendingFlagAsync(
+                        offerId: offerId,
+                        flaggedByUserId: currentUserId.Value
+                    );
+                }
 
                 var model = new OfferDisplayVM
                 {
@@ -327,7 +348,7 @@ namespace SkillSwap_Platform.Controllers
                     Tools = offer.Tools,
                     UserRating = userRating,
                     ReviewCount = reviewCount,
-                    RecommendedPercentage = recommendedPercentage.ToString("N2"),  // e.g., "75.00"
+                    RecommendedPercentage = recommendedPercentage,  // e.g., "75.00"
                     JobSuccessRate = userJobSuccessRate, // e.g., 75.00 (you can format in the view)
                     CompareOffers = comparableOffers,
                     IsOnline = isOnline,
@@ -339,8 +360,24 @@ namespace SkillSwap_Platform.Controllers
                     Reviews = reviews,
                     ActiveExchangeCount = activeExchangeCount,
                     Views = offer.Views,
-                    RelatedOffers = relatedOffers
+                    RelatedOffers = relatedOffers,
+                    IsFlagged = isFlaggedByMe
                 };
+
+                // load FAQs for this offer
+                var faqs = await _context.TblOfferFaqs
+                    .Where(f => f.OfferId == offerId && !f.IsDeleted)
+                    .OrderBy(f => f.CreatedDate)
+                    .Select(f => new OfferFaqVM
+                    {
+                        FaqId = f.FaqId,
+                        OfferId = f.OfferId,
+                        Question = f.Question,
+                        Answer = f.Answer
+                    })
+                    .ToListAsync();
+
+                model.Faqs = faqs;
 
                 // at the bottom of OfferDetails, before `return View(model);`
                 const string sessionsKey = "RecentOfferSummaries";
@@ -378,6 +415,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Error fetching details for offer {OfferId}", offerId);
                 TempData["ErrorMessage"] = "An error occurred while loading offer details.";
                 return RedirectToAction("EP500", "EP");
@@ -393,6 +431,7 @@ namespace SkillSwap_Platform.Controllers
             int? maxTimeCommitment, string skillLevel, string designTool,
             string freelanceType, string interactionMode, int page = 1, int pageSize = 20)
         {
+            using var tx = _context.Database.BeginTransaction();
             try
             {
                 var currentUserId = User.Identity.IsAuthenticated
@@ -574,10 +613,11 @@ namespace SkillSwap_Platform.Controllers
                      .Skip((page - 1) * pageSize)
                      .Take(pageSize)
                     .ToListAsync();
-                
+
                 var reviewAggregates = await _context.TblReviews
                     .GroupBy(r => r.OfferId)
-                    .Select(g => new {
+                    .Select(g => new
+                    {
                         OfferId = g.Key,
                         ReviewCount = g.Count(),
                         AverageRating = g.Average(r => r.Rating)
@@ -588,7 +628,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     var portfolio = string.IsNullOrWhiteSpace(o.Portfolio)
                         ? new List<string>()
-                        : Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>();
+                        : JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>();
 
                     // Default values if no reviews are available.
                     int reviewCount = 0;
@@ -687,6 +727,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error loading public offer list");
                 TempData["ErrorMessage"] = "An error occurred while loading offers.";
                 return RedirectToAction("EP500", "EP");
@@ -704,6 +745,7 @@ namespace SkillSwap_Platform.Controllers
             //    and that have valid offer‐level coords
             var candidates = await _context.TblOffers
                 .Include(o => o.User)
+                .Include(o => o.TblOfferPortfolios)
                 .Where(o => o.IsActive
                          && !o.IsDeleted
                          && o.UserId != userId
@@ -726,7 +768,8 @@ namespace SkillSwap_Platform.Controllers
             }
 
             var nearest = candidates
-                .Select(o => new {
+                .Select(o => new
+                {
                     Offer = o,
                     Dist = Distance(lat, lng, o.Latitude.Value, o.Longitude.Value)
                 })
@@ -736,24 +779,27 @@ namespace SkillSwap_Platform.Controllers
                 .ToList();
 
             // 3) pull one GROUP BY over the entire review set
-            var allAgg = await _context.TblReviews
+            var aggDict = (await _context.TblReviews
                 .GroupBy(r => r.OfferId)
-                .Select(g => new {
+                .Select(g => new
+                {
                     OfferId = g.Key,
                     ReviewCount = g.Count(),
                     AvgRating = g.Average(r => (double)r.Rating)
                 })
-                .ToListAsync();
-
-            var aggDict = allAgg.ToDictionary(a => a.OfferId);
+                .ToListAsync())
+                .ToDictionary(x => x.OfferId);
 
             // 4) project to your OfferCardVM
             var cards = nearest.Select(o =>
             {
+                var imgs = o.TblOfferPortfolios?.Any() == true
+                                   ? o.TblOfferPortfolios.Select(p => p.FileUrl).ToList()
+                                   : (!string.IsNullOrWhiteSpace(o.Portfolio)
+                                        ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>()
+                                        : new List<string>());
+                
                 aggDict.TryGetValue(o.OfferId, out var a);
-                var imgs = string.IsNullOrWhiteSpace(o.Portfolio)
-                           ? new List<string>()
-                           : JsonConvert.DeserializeObject<List<string>>(o.Portfolio);
 
                 return new OfferCardVM
                 {
@@ -772,6 +818,40 @@ namespace SkillSwap_Platform.Controllers
             }).ToList();
 
             return PartialView("_NearbyOfferCards", cards);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Flag(int offerId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return BadRequest("Reason is required.");
+
+
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out var userIdInt))
+                return StatusCode(500, "Unable to determine your user ID.");
+
+
+            bool alreadyFlagged = await _context.TblOfferFlags
+                .AnyAsync(f => f.OfferId == offerId && f.FlaggedByUserId == userIdInt);
+
+            if (alreadyFlagged)
+            {
+                TempData["ErrorMessage"] = "You’ve already reported this swap offer.";
+                return RedirectToAction("OfferDetails", new { offerId = offerId });
+            }
+
+            try
+            {
+                await _svc.FlagOfferAsync(offerId, userIdInt, reason);
+                TempData["SuccessMessage"] = "Thank you, we’ve received your report and will review it to find the best solution.";
+                return RedirectToAction("OfferDetails", new { offerId = offerId });
+            }
+            catch
+            {
+                return StatusCode(500, "Something went wrong while submitting your report. Please try again later.");
+            }
         }
 
         #region Helper Class

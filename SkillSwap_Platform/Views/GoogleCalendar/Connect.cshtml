@@ -1,0 +1,15 @@
+﻿
+@{
+    ViewData["Title"] = "Connect Your Google Calendar";
+    Layout = null;
+}
+
+<div class="alert alert-info text-center">
+    <h4>@ViewData["Title"]</h4>
+    <p>SkillSwap needs permission to read your Google Calendar events.</p>
+    <a class="btn btn-primary"
+       href="@Url.Action("Authorize", "GoogleAuth")">
+        Connect Google Calendar
+    </a>
+</div>
+

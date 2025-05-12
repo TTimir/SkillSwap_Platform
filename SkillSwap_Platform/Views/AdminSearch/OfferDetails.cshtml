@@ -1,0 +1,461 @@
+﻿@model OfferDetailVM
+@using System.Text.RegularExpressions
+@using SkillSwap_Platform.Models.ViewModels.AdminControl.AdminSearch
+
+@{
+    ViewData["Title"] = "Offer Details";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+    // Helper to format nullable DateTimes
+    string fmtDate(DateTime? dt) =>
+        dt.HasValue
+            ? dt.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+            : "-";
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2>@ViewData["Title"] — #@Model.offer.OfferId (@Model.offer.Title)</h2>
+        <p class="text-muted">Created on @fmtDate(Model.offer.CreatedDate)</p>
+    </div>
+</div>
+</div>
+
+<div class="row mb-4">
+    <!-- Offer Overview -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Overview</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Offer ID</dt>
+                    <dd class="col-sm-8">@Model.offer.OfferId</dd>
+
+                    <dt class="col-sm-4">Offer Title</dt>
+                    <dd class="col-sm-8">@Model.offer.Title</dd>
+
+                    <dt class="col-sm-4">Category</dt>
+                    <dd class="col-sm-8">@Model.offer.Category</dd>
+
+                    <dt class="col-sm-4">Token Cost</dt>
+                    <dd class="col-sm-8">@Model.offer.TokenCost</dd>
+
+                    <dt class="col-sm-4">Created</dt>
+                    <dd class="col-sm-8">@Model.offer.CreatedDate.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.offer.IsDeleted ? "bg-danger" : "bg-success")">
+                            @(Model.offer.IsDeleted ? "Deleted" : "Active")
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Details -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Owner</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Username</dt>
+                    <dd class="col-sm-8">@Model.offer.OwnerUserName</dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">@Model.offer.OwnerEmail</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Engagement Metrics -->
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Views</strong></div>
+            <div class="card-body"><h3>@Model.offer.ViewCount</h3></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Bookmarks</strong></div>
+            <div class="card-body"><h3>@Model.offer.BookmarkCount</h3></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Pending Requests</strong></div>
+            <div class="card-body"><h3>@Model.offer.PendingRequestsCount</h3></div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Conversion & Performance -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Conversion Rate</strong></div>
+            <div class="card-body">
+                <h3>@Model.offer.ConversionRate.ToString("F1") %</h3>
+                <small class="text-muted">
+                    Completed Exchanges ÷ Max(Views, Pending Requests)
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Average Rating</strong></div>
+            <div class="card-body">
+                <h3>@Model.offer.AverageRating.ToString("F1") ★</h3> <small class="text-muted">
+                    Avg. Rating
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Disputes & Refunds -->
+    <div class="col-md-4">
+        <div class="card text-center mb-4">
+            <div class="card-header"><strong>Open Disputes</strong></div>
+            <div class="card-body"><h3>@Model.offer.OpenDisputes</h3></div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header"><strong>Total Refunded</strong></div>
+            <div class="card-body"><h3><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @Model.offer.RefundedAmount.ToString("F2")</h3></div>
+        </div>
+    </div>
+</div>
+
+<!-- Flags -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Flags (@Model.offer.Flags.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.Flags.Any())
+        {
+            <p class="p-3">No flags.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>By</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                        <th>Action Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.offer.Flags)
+                    {
+                        <tr>
+                            <td>@f.FlagId</td>
+                            <td>@f.FlaggedByUserName</td>
+                            <td>@fmtDate(f.FlaggedDate)</td>
+                            <td>@(string.IsNullOrEmpty(f.AdminAction) ? "Pending" : f.AdminAction)</td>
+                            <td>@fmtDate(f.AdminActionDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Chat History -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Chat History (@Model.offer.ChatHistory.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.ChatHistory.Any())
+        {
+            <p class="p-3">No messages.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sender</th>
+                        <th>Type</th>
+                        <th>Content</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var sr = 1;
+                    }
+                    @foreach (var m in Model.offer.ChatHistory)
+                    {
+                        <tr>
+                            <td>@(sr++)</td>
+                            <td>@m.SenderUserName</td>
+                            <td>@m.MessageType</td>
+                            <td>@Regex.Replace(m.Content, "<.*?>", "")</td>
+                            <td>@fmtDate(m.SentDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Exchanges -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Exchanges (@Model.offer.Exchanges.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.Exchanges.Any())
+        {
+            <p class="p-3">No exchanges.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Mode</th>
+                        <th>Status</th>
+                        <th>Requested</th>
+                        <th>Last Change</th>
+                        <th>Paid</th>
+                        <th>Settled</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ex in Model.offer.Exchanges)
+                    {
+                        <tr>
+                            <td>@ex.ExchangeId</td>
+                            <td>@ex.Mode</td>
+                            <td>@ex.Status</td>
+                            <td>@fmtDate(ex.ExchangeDate)</td>
+                            <td>@fmtDate(ex.LastStatusChangeDate)</td>
+                            <td>@ex.TokensPaid</td>
+                            <td>@(ex.TokensSettled ? "Yes" : "No")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Exchange History -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Exchange History (@Model.offer.ExchangeHistory.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.ExchangeHistory.Any())
+        {
+            <p class="p-3">No history.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Hist ID</th>
+                        <th>Exch ID</th>
+                        <th>New Status</th>
+                        <th>By</th>
+                        <th>Date</th>
+                        <th>Reason</th>
+                        <th>Action</th>
+                        <th>Verified On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.offer.ExchangeHistory)
+                    {
+                        <tr>
+                            <td>@h.HistoryId</td>
+                            <td>@h.ExchangeId</td>
+                            <td>@h.ChangedStatus</td>
+                            <td>@h.ChangedBy</td>
+                            <td>@fmtDate(h.ChangeDate)</td>
+                            <td>@h.Reason</td>
+                            <td>@h.ActionType</td>
+                            <td>@fmtDate(h.MeetingVerifiedDate)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Contracts -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Contracts (@Model.offer.Contracts.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.Contracts.Any())
+        {
+            <p class="p-3">No contracts.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Unique ID</th>
+                        <th>Req’d</th>
+                        <th>Accepted</th>
+                        <th>Declined</th>
+                        <th>Sender Signed</th>
+                        <th>Receiver Signed</th>
+                        <th>Download</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.offer.Contracts)
+                    {
+                        <tr>
+                            <td>@c.ContractId</td>
+                            <td>@c.ContractUniqueId</td>
+                            <td>@fmtDate(c.RequestDate)</td>
+                            <td>@fmtDate(c.AcceptedDate)</td>
+                            <td>@fmtDate(c.DeclinedDate)</td>
+                            <td>@(c.SignedBySender ? "Yes" : "No")</td>
+                            <td>@(c.SignedByReceiver ? "Yes" : "No")</td>
+                            <td>
+                                <a href="@Url.Content(c.DocumentPath)" target="_blank">@c.FileName</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Meetings -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Meetings (@Model.offer.Meetings.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.Meetings.Any())
+        {
+            <p class="p-3">No meetings.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Sched Start</th>
+                        <th>Sched End</th>
+                        <th>Duration</th>
+                        <th>Link</th>
+                        <th>Actual Start</th>
+                        <th>Actual End</th>
+                        <th>Notes</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.offer.Meetings)
+                    {
+                        <tr>
+                            <td>@m.MeetingId</td>
+                            <td>@m.Status</td>
+                            <td>@fmtDate(m.MeetingStartTime)</td>
+                            <td>@fmtDate(m.MeetingEndTime)</td>
+                            <td>@m.DurationMinutes</td>
+                            <td>@m.MeetingLink</td>
+                            <td>@fmtDate(m.ActualStartTime)</td>
+                            <td>@fmtDate(m.ActualEndTime)</td>
+                            <td>@m.MeetingNotes</td>
+                            <td>@(m.MeetingRating?.ToString() ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Resource Shares -->
+<div class="card mb-4">
+    <div class="card-header"><strong>Resource Shares (@Model.offer.ResourceShares.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.ResourceShares.Any())
+        {
+            <p class="p-3">No resources shared.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.offer.ResourceShares)
+                    {
+                        <tr>
+                            <td>@r.ShareId</td>
+                            <td>@r.ShareType</td>
+                            <td>@fmtDate(r.OccurredAt)</td>
+                            <td>@r.Details</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<!-- Token Transactions -->
+<div class="card mb-5">
+    <div class="card-header"><strong>Token Transactions (@Model.offer.TokenTransactions.Count)</strong></div>
+    <div class="card-body p-0">
+        @if (!Model.offer.TokenTransactions.Any())
+        {
+            <p class="p-3">No token transactions.</p>
+        }
+        else
+        {
+            <table class="table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.offer.TokenTransactions)
+                    {
+                        <tr>
+                            <td>@t.TransactionId</td>
+                            <td>@t.Type</td>
+                            <td>@t.Amount.ToString("F2")</td>
+                            <td>@fmtDate(t.CreatedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="mb-5">
+    <a asp-action="Offers" class="ud-btn btn-light-thm">
+        <i class="fas fa-angle-left me-1" style="transform:rotate(0deg)"></i> Back to Search
+    </a>
+</div>

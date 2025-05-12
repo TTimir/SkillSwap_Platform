@@ -5,15 +5,20 @@ namespace SkillSwap_Platform.Services.PDF
 {
     public class PuppeteerPdfGenerator : IPdfGenerator
     {
+        // Ensure Chromium is downloaded exactly once
+        private static readonly Task _browserFetcherInit = new BrowserFetcher().DownloadAsync();
+        // Shared launch options
+        private static readonly LaunchOptions _launchOptions = new LaunchOptions
+        {
+            Headless = true,
+            Args = new[] { "--no-sandbox" },
+            Timeout = 60000
+        };
         public async Task<byte[]> GeneratePdfFromHtmlAsync(string htmlContent, int contractVersion)
         {
             await new BrowserFetcher().DownloadAsync();
-            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions 
-            {
-                Headless = true, 
-                Args = new[] { "--no-sandbox" } 
-            });
-            using var page = await browser.NewPageAsync();
+            await using var browser = await Puppeteer.LaunchAsync(_launchOptions);
+            await using var page = await browser.NewPageAsync();
 
             await page.SetContentAsync(htmlContent, new NavigationOptions
             {
@@ -73,9 +78,15 @@ namespace SkillSwap_Platform.Services.PDF
                     </script>"
             };
 
-            var pdfBytes = await page.PdfDataAsync(pdfOptions);
-
-            return pdfBytes;
+            try
+            {
+                return await page.PdfDataAsync(pdfOptions);
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions (e.g., logging)
+                throw new Exception("Error generating PDF", ex);
+            }
         }
 
         public async Task<string> SavePdfToDiskAsync(string htmlContent, string fileName)

@@ -1,4 +1,5 @@
 ﻿@using Humanizer
+@using SkillSwap_Platform.Models.ViewModels
 @model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
 
 @{
@@ -58,7 +59,7 @@
                     <div class="chat_user_search">
                         <form class="d-flex align-items-center" method="get" action="@Url.Action("Conversation", "Messaging")">
                             <button class="btn" type="submit"><span class="far fa-magnifying-glass"></span></button>
-                            <input class="form-control" type="search" name="searchTerm" placeholder="Search" aria-label="Search" />
+                            <input class="form-control" type="search" name="searchTerm" value"@(Model.SearchTerm)" placeholder=" by name or designation" aria-label="Search" />
                         </form>
                     </div>
                 </div>
@@ -68,6 +69,7 @@
                         <div class="list-item pt5">
                             <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
                                 <div class="d-flex align-items-center position-relative">
+                                     <vc:online-indicator user-id="@contact.UserID" />
                                     <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
                                     <div class="d-sm-flex">
                                         <div class="d-inline-block">
@@ -76,10 +78,8 @@
                                         </div>
                                         <div class="iul_notific">
                                             @{
-                                                // Parse the stored value
-                                                var dt = DateTime.Parse(contact.LastMessageTime);
                                                 // Explicitly specify that it’s local time
-                                                dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                                                var dt = DateTime.Parse(contact.LastMessageTime).ToLocalTime();
                                             }
                                             <small>@dt.Humanize()</small>
                                             @if (contact.UnreadCount > 0)
@@ -125,9 +125,79 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="conversationOptionsBtn">
                                         <li>
-                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Meeting", new { otherUserId = Model.OtherUserId })" title="Start an online meeting">
-                                                <i class="fa fa-video-camera"></i> Online Meeting
+                                            @if (Model.LatestActiveOffer != null)
+                                            {
+                                                <div class="dropdown-item d-flex flex-column">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                       Active: <strong class="line-clamp2">@Model.LatestActiveOffer.Title</strong>
+                                                    </div>
+                                                    <a href="@Url.Content(Model.LatestActiveOffer.CurrentStagePdfUrl)"
+                                                       class="btn btn-sm btn-outline-primary mb-2"
+                                                       target="_blank">
+                                                        <i class="fa fa-file-pdf"></i> View Stage PDF
+                                                    </a>
+                                                    <small class="text-muted">
+                                                        Contract ID: <code>@Model.LatestActiveOffer.ContractUniqueId</code> —
+                                                        Status: <em>
+                                                            <span class="badge
+                                                                @(Model.LatestActiveOffer.Status=="Completed" ? "bg-success"
+                                                                : Model.LatestActiveOffer.Status=="In Progress" ? "bg-warning"
+                                                                : "bg-secondary")">
+                                                                @Model.LatestActiveOffer.Status
+                                                            </span>
+                                                        </em>
+                                                    </small>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="dropdown-item text-muted">
+                                                    <i class="fa fa-exchange-alt"></i> No active offers
+                                                </span>
+                                            }
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               data-bs-toggle="collapse"
+                                               href="#swapOffersCollapse"
+                                               role="button"
+                                               aria-expanded="false"
+                                               aria-controls="swapOffersCollapse">
+                                                <i class="fa fa-exchange-alt"></i> Swap Offers
                                             </a>
+                                        </li>
+                                        <li class="collapse" id="swapOffersCollapse">
+                                            <div class="px-3 py-2">
+                                                @if (Model.SwapOffers.Any())
+                                                {
+                                                    <small class="text-muted d-block mb-2">
+                                                        Showing latest @Model.SwapOffers.Count of @Model.TotalSwapOffersCount swap offers
+                                                    </small>
+                                                    <ul class="list-unstyled mb-0">
+                                                        @foreach (var offer in Model.SwapOffers)
+                                                        {
+                                                            <li class="d-flex justify-content-between align-items-center mb-2">
+                                                                <div>
+                                                                    <strong class="line-clamp2">@offer.Title</strong><br />
+                                                                    <small class="text-muted">@offer.LatestDate.ToString("MMMM dd, yyyy")</small>
+                                                                </div>
+                                                                <span class="badge
+                                                                    @(offer.LatestStatus=="Accepted" ? "bg-success"
+                                                                    : offer.LatestStatus=="Declined"   ? "bg-danger"
+                                                                    : "bg-warning")">
+                                                                    @offer.LatestStatus
+                                                                </span>
+                                                            </li>
+                                                            <hr class="opacity-100 mt-0">
+                                                        }
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    <div class="text-center text-muted">No swap offers yet.</div>
+                                                    <hr class="opacity-100 mt-0">
+                                                }
+                                            </div>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="@Url.Action("Schedule", "Calendar")" title="Schedule a meeting on your calendar">
@@ -135,23 +205,16 @@
                                             </a>
                                         </li>
                                         <li>
-                                            @if (contractDetails == null)
-                                            {
-                                                <a class="dropdown-item" href="@Url.Action("Create", "Contract", new { messageId = Model.OtherUserId })" title="Send a contract invitation">
-                                                    <i class="fa fa-file-contract"></i> Contract Exchange
-                                                </a>
-                                            }
-                                            else
-                                            {
-                                                <span class="dropdown-item text-muted" title="Contract invitation already sent">
-                                                    <i class="fa fa-file-contract"></i> Contract invite sent
-                                                </span>
-                                            }
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="@Url.Action("DeleteConversation", "Messaging", new { otherUserId = Model.OtherUserId })" onclick="return confirm('Are you sure you want to delete this conversation?');">
-                                                <i class="fa fa-trash"></i> Delete Conversation
-                                            </a>
+                                            <form asp-action="DeleteConversation"
+                                                  asp-controller="Messaging"
+                                                  method="post"
+                                                  onsubmit="return confirm('Are you sure you want to delete your conversation with @Model.OtherUserName?');" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="otherUserId" value="@Model.OtherUserId" />
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fa fa-trash"></i> Delete Conversation
+                                                </button>
+                                            </form>
                                         </li>
                                     </ul>
                                 </div>
@@ -242,9 +305,9 @@
                                 <input type="hidden" id="replyPreview" name="replyPreview" value="" />
                                 <input type="hidden" id="replyMessageId" name="replyMessageId" value="" />
                                 @* If messaging relates to an offer, include it as a hidden field *@
-                                @if (Model.OfferId.HasValue && Model.OfferId > 0)
+                                @if (ViewBag.OfferDetails != null)
                                 {
-                                    <input type="hidden" name="offerId" value="@Model.OfferId" />
+                                    <input type="hidden" name="offerId" value="@((OfferDisplayVM)ViewBag.OfferDetails).OfferId" />
                                 }
                                 <!-- Preview area for selected attachments -->
                                 <div id="filePreview" style="margin-bottom:10px;"></div>
@@ -428,10 +491,10 @@
             // Bind form submission once.
             $('#messageForm').off('submit').on('submit', function(e){
                 e.preventDefault();
-                
+
                 var $submitButton = $(this).find('button[type="submit"]');
                 $submitButton.prop('disabled', true);
-                
+
                 var formData = new FormData(this);
                 var $form = $(this);
                 $form.find('button[type="submit"]').prop('disabled', true);
@@ -451,13 +514,16 @@
                         } else {
                             $('#errorContainer').hide().html('');
                             $('#chatContainer').append(result);
-                            $form[0].reset();
+                            // 1️⃣ reset only your user‐editable fields, not the entire form
+                            $('#messageInput').val('');
                             $('#filePreview').empty();
                             $('#replyPreviewContainer').hide();
                             $('#replyPreview').val('');
                             $('#replyMessageId').val('');
+
+                            // 2️⃣ hide & remove the offer preview AND the hidden input
                             $("#offerPreviewWindow").hide();
-                            $("input[name='offerId']").val("");
+                            $("input[name='offerId']").remove();
                             // Update the URL: remove "offerId" parameter while preserving "otherUserId"
                             try {
                                 var currentUrl = new URL(window.location.href);
@@ -480,8 +546,8 @@
 
             // 1) Load your keywords from the server
             var privacyKeywords = @Html.Raw(
-              Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
-            );
+          Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
+        );
 
             // 2) Declare the timer variable
             let debounceTimer;
@@ -572,21 +638,21 @@
                 console.error("Error restoring URL:", error);
             }
 
-                const urlParams = new URLSearchParams(window.location.search);
-        const offerIdParam = urlParams.get("offerId");
-        if (offerIdParam) {
-            // Update the hidden input field for the offer ID
-            $("input[name='offerId']").val(offerIdParam);
-            // Show the offer preview window (assumes an element with id "offerPreviewWindow" exists)
-            $("#offerPreviewWindow").show();
-        }
+            const urlParams = new URLSearchParams(window.location.search);
+            const offerIdParam = urlParams.get("offerId");
+            if (offerIdParam) {
+                // Update the hidden input field for the offer ID
+                $("input[name='offerId']").val(offerIdParam);
+                // Show the offer preview window (assumes an element with id "offerPreviewWindow" exists)
+                $("#offerPreviewWindow").show();
+            }
 
             // When the user clicks "Remove Offer", hide the offer preview,
             // clear the hidden offer field, and update the URL.
             $("#btnRemoveOfferPreview").on("click", function () {
                 // Hide the offer preview window and clear the offer field.
                 $("#offerPreviewWindow").hide();
-                $("input[name='offerId']").val("");
+                $("input[name='offerId']").remove();
 
                 try {
                     const currentUrl = new URL(window.location.href);

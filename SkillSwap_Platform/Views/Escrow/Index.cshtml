@@ -1,0 +1,157 @@
+﻿@using SkillSwap_Platform.Services.AdminControls
+@model PagedResult<SkillSwap_Platform.Models.TblEscrow>
+
+@{
+    ViewData["Title"] = "Escrow Transactions";
+    ViewData["SubTitle"] = "Monitor and manage all current escrow operations.";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+    var newIds = ViewBag.NewEscrowIds as List<int> ?? new List<int>();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("Index","Escrow")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow Counters</a>
+                        <a href="@Url.ActionLink("History","Escrow")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Escrow History</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Exchange</th>
+                                        <th scope="col">Buyer (Other user)</th>
+                                        <th scope="col">Seller (Offer Owner)</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        var e = Model.Items[i];
+                                        var sr = (Model.Page - 1) * Model.PageSize + i + 1;
+                                        bool isNew = newIds.Contains(e.EscrowId);
+                                        // use Bootstrap's .table-info for a pale-blue highlight
+                                        var rowClass = isNew ? "table-info" : "";
+
+                                        <tr class="@rowClass">
+                                            <td class="vam"><span class="fz15 fw400">@sr</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@e.ExchangeId</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@e.Buyer.UserName</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@e.Seller.UserName</span></td>
+                                            <td class="vam">
+                                                <span class="fz14 fw400">
+                                                    <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="24" height="24"> @e.Amount.ToString("0.00")
+                                                    @if (isNew)
+                                                    {
+                                                        <span class="badge bg-info ms-2">New</span>
+                                                    }
+                                                </span>
+                                            </td>
+                                            <td class="vam"><span class="fz14 fw400">@e.Status</span></td>
+                                            <td class="vam"><span class="fz14 fw400">@e.CreatedAt.ToString("dd MMMM, yyyy hh:mm:ss tt")</span></td>
+                                            <td class="vam">
+                                                <span class="fz14 fw400">
+                                                    <a asp-action="Details" asp-route-id="@e.EscrowId" class="ud-btn btn-thm">
+                                                        View Details
+                                                    </a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Index"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+

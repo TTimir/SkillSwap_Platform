@@ -1,0 +1,178 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.NewsletterHistoryVm
+@using System.IO
+
+@{
+    ViewData["Title"] = "Newsletter History";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a href="@Url.ActionLink("History","Newsletter")" class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Newsletter History</a>
+                        <a href="@Url.ActionLink("UserHistory","Newsletter")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">User History</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Sent At (IST)</th>
+                                        <th scope="col">Admin</th>
+                                        <th scope="col">Recipient</th>
+                                        <th scope="col">Subject</th>
+                                        @* <th scope="col">Content</th> *@
+                                        <th scope="col">Attachments</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @for (int i = 0; i < Model.Logs.Count; i++)
+                                    {
+                                        var h = Model.Logs[i];
+                                        // compute serial across all pages
+                                        var serial = (Model.Page - 1) * Model.PageSize + i + 1;
+                                        <tr>
+                                            <td class="vam">@serial</td>
+                                            <td class="vam">@h.SentAtUtc.ToLocalTime().ToString("dd MMM, yyyy hh:mm:ss tt")</td>
+                                            <td class="vam">@h.SentByAdmin</td>
+                                            <td class="vam">@h.RecipientEmail</td>
+                                            <td class="vam">@h.Subject</td>
+                                            @* <td class="vam">
+                                                @Html.Raw(h.Content ?? "<em>(no content)</em>")
+                                            </td> *@
+                                            <td class="vam">
+                                                @if (h.Attachments != null && h.Attachments.Any())
+                                                {
+                                                    <ol class="list-group list-group-numbered">
+                                                        @foreach (var file in h.Attachments)
+                                                        {
+                                                                var name = System.IO.Path.GetFileName(file);
+                                                                var display = name.Length > 20
+                                                                ? name.Substring(0, 17) + "..."
+                                                                : name;
+                                                            <li class="list-group-item px-0 border-0">
+                                                                <a asp-action="ViewAttachment"
+                                                                   asp-route-logId="@h.NewsletterLogId"
+                                                                   asp-route-file="@file"
+                                                                   title="@name"
+                                                                   target="_blank">
+                                                                    @display
+                                                                </a>
+                                                            </li>
+                                                        }
+                                                    </ol>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">(no attachments)</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="History"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="History"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="History"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+    .attachment-list {
+        /* restore decimal numbering */
+        list-style-type: decimal;
+        /* put the numbers inside the flow */
+        list-style-position: inside;
+        margin: 0;
+        /* a little indent so the numbers don’t butt up against the cell border */
+        padding-left: 1.2em;
+    }
+
+        .attachment-list li {
+            margin-bottom: 0.25em;
+        }
+</style>

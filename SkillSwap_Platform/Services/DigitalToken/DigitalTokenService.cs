@@ -140,8 +140,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
             try
             {
                 var ex = await _db.TblExchanges
-                .Include(e => e.Offer).ThenInclude(o => o.User)
-                .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+                    .Include(e => e.Offer).ThenInclude(o => o.User)
+                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
                 if (ex == null) throw new KeyNotFoundException($"Exchange #{exchangeId} not found.");
 
                 if (!ex.TokensHeld)
@@ -173,8 +173,21 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblUsers.Update(seller);
 
                 // mark hold as released
+                // 1) Mark the original hold as released
                 holdTx.IsReleased = true;
                 _db.TblTokenTransactions.Update(holdTx);
+
+                // 2) **Add a new “Release” Tx row:**
+                _db.TblTokenTransactions.Add(new TblTokenTransaction
+                {
+                    ExchangeId = exchangeId,
+                    FromUserId = escrow.UserId,
+                    ToUserId = seller.UserId,
+                    Amount = cost,
+                    TxType = "Release",
+                    Description = $"Release for exchange #{exchangeId}",
+                    CreatedAt = DateTime.UtcNow
+                });
 
                 ex.TokensHeld = false;
                 ex.TokensSettled = true;

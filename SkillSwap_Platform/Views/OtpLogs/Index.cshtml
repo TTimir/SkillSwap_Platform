@@ -1,7 +1,8 @@
 ﻿@using SkillSwap_Platform.Services.AdminControls
 @model PagedResult<OtpUserSummaryVm>
 @{
-    ViewData["Title"] = "Users with Failed OTP Attempts";
+    ViewData["Title"] = "OTP Failure Logs";
+    ViewData["SubTitle"] = "Monitor and manage users with unsuccessful verification attempts.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
 }
 
@@ -45,7 +46,7 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("Index","OtpLogs")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">All Attempt Failed Users</a>
+                        <a href="@Url.ActionLink("Index","OtpLogs")" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Users</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -71,11 +72,17 @@
                                             <td class="vam"><span class="fz15 fw400">@u.UserName (ID @u.UserId)</span></td>
                                             <td class="vam">
                                                 @u.FailedCount
+                                                @if (u.HasRecentFailure)
+                                                {
+                                                    <span class="badge bg-success ms-2">New</span>
+                                                }
                                             </td>
-                                            <td class="vam"><span class="fz14 fw400">@u.LastAttemptAt.ToString("yyyy-MM-dd HH:mm tt") UTC</span></td>
+                                            <td class="vam">
+                                                <span class="fz14 fw400">@u.LastAttemptAt.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</span>
+                                            </td>
                                             <td class="vam">
                                                 <a asp-action="Details" asp-route-userId="@u.UserId" class="ud-btn btn-thm">
-                                                    View full log
+                                                    View logs
                                                 </a>
                                             </td>
                                         </tr>
@@ -91,7 +98,7 @@
                                             @if (Model.Page > 1)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Index"
                                                    asp-route-page="@(Model.Page - 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-left"></span>
@@ -114,7 +121,7 @@
                                                 else
                                                 {
                                                     <a class="page-link"
-                                                       asp-action="Manage"
+                                                       asp-action="Index"
                                                        asp-route-page="@p"
                                                        asp-route-pageSize="@Model.PageSize">@p</a>
                                                 }
@@ -126,7 +133,7 @@
                                             @if (Model.Page < Model.TotalPages)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Index"
                                                    asp-route-page="@(Model.Page + 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-right"></span>

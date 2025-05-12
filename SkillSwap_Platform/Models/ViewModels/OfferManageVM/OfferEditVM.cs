@@ -85,6 +85,7 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
             }
         }
 
+        public List<OfferFaqVM> Faqs { get; set; } = new List<OfferFaqVM>();
 
         // Collections for dropdowns
         [BindNever] 

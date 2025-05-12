@@ -599,7 +599,8 @@
                                             <input asp-for="CertificateEntries[i].CertificateDate"
                                                    type="date"
                                                    class="form-control"
-                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate.ToString("yyyy-MM-dd"))" />                                            <span asp-validation-for="CertificateEntries[@i].CertificateDate" class="text-danger"></span>
+                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate.Value.ToLocalTime().ToString("yyyy-MM-dd"))" />                                            
+                                                   <span asp-validation-for="CertificateEntries[@i].CertificateDate" class="text-danger"></span>
                                             <span asp-validation-for="CertificateEntries[i].CertificateDate" class="text-danger"></span>
                                         </div>
                                     </div>

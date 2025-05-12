@@ -40,10 +40,10 @@
 
 <style>
     .offered-skill {
-        background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
-        color: #2ecc71 !important;
-        border: 1px solid rgba(46, 204, 113, 0.3) !important;
-        backdrop-filter: blur(5px);
+    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+    color: #2ecc71 !important;
+    border: 1px solid rgba(46, 204, 113, 0.3) !important;
+    backdrop-filter: blur(5px);
     }
 </style>
 
@@ -52,8 +52,8 @@
         @if (!Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-start mr10"
-                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-                 alt="Profile" style="width:50px;" />
+            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+            alt="Profile" style="width:50px;" />
         }
         <div class="title fz15">
             @if (Model.IsSentByCurrent)
@@ -70,8 +70,8 @@
         @if (Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-end ml10"
-                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-                 alt="Profile" style="width:50px;" />
+            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+            alt="Profile" style="width:50px;" />
         }
     </div>
     @if (!string.IsNullOrEmpty(Model.ReplyPreview) && Model.ReplyMessageId.HasValue)
@@ -108,7 +108,7 @@
                                     if (Model.ContractDetails == null)
                                     {
                                         <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
-                                           class="nav-link fw500 dark-color">
+                                        class="nav-link fw500 dark-color">
                                             Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
                                         </a>
                                     }
@@ -146,7 +146,7 @@
                                     : fallbackImage;
                                 }
                                 <img src="@imgSrc"
-                                     class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
+                                class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
                                 <div>
                                     <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
                                     <small class="text-muted d-block mb-1">
@@ -178,7 +178,7 @@
                             <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
                             <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
                             <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
-                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                             <p>
                                 <strong>Status:</strong>
                                 <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
@@ -189,26 +189,26 @@
 
                         <div class="contract-actions">
                             <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                               class="btn btn-outline-primary" target="_blank">
+                            class="btn btn-outline-primary" target="_blank">
                                 <i class="fa fa-file-pdf"></i> Download PDF
                             </a>
 
 
                             @if ((Model.ContractDetails != null) &&
-                           (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                          (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
+                          (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                          (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                   class="btn btn-sm btn-primary" style="color:#fff">
+                                class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Contract
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                      asp-controller="Contract"
-                                      method="post"
-                                      class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                asp-controller="Contract"
+                                method="post"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Contract
@@ -218,15 +218,15 @@
                             else if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                   class="btn btn-sm btn-primary" style="color:#fff">
+                                class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Contract
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                      asp-controller="Contract"
-                                      method="post"
-                                      class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                asp-controller="Contract"
+                                method="post"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Invite
@@ -238,9 +238,9 @@
                 }
                 @* Example: Show a custom message divider after the invite card *@
                 @if (Model.ContractDetails != null &&
-               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
-               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
-               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+              (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+              Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+              Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
                 {
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
@@ -272,7 +272,7 @@
                         <div class="exchange-verification-info">
                             <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
                             <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
-                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            <strong>Date:</strong> @Model.SentDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")
                             @if (meetingEnd.HasValue)
                             {
                                 <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />
@@ -282,8 +282,8 @@
                         {
                             <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
                             <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
-                                    class="ud-btn btn-light-thm mb25 me-4"
-                                    style="border:none;" disabled>
+                            class="ud-btn btn-light-thm mb25 me-4"
+                            style="border:none;" disabled>
                                 Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
                             </button>
                         }
@@ -433,7 +433,7 @@
                                     if (Model.ContractDetails == null)
                                     {
                                         <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
-                                           class="nav-link fw500 dark-color">
+                                        class="nav-link fw500 dark-color">
                                             Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
                                         </a>
                                     }
@@ -481,7 +481,7 @@
                                     : fallbackImage;
                                 }   
                                 <img src="@imgSrc"
-                                     class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
+                                class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
                                 <div>
                                     <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
                                     <small class="text-muted d-block mb-1">
@@ -513,7 +513,7 @@
                             <p><strong>Offered Skill:</strong> @Model.OfferedSkillName</p>
                             <p><strong>Exchange Skill:</strong> @Model.ReceiverSkillName</p>
                             <p><strong>Tokens:</strong> @Model.ContractDetails.TokenOffer</p>
-                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToString("dd MMMM, yyyy")</p>
+                            <p><strong>Created:</strong> @Model.ContractDetails.CreatedDate.ToLocalTime().ToString("dd MMMM, yyyy")</p>
                             <p>
                                 <strong>Status:</strong>
                                 <span class="badge badge-@(Model.ContractDetails.Status.ToLower())">
@@ -524,24 +524,24 @@
 
                         <div class="contract-actions">
                             <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                               class="btn btn-outline-primary" target="_blank">
+                            class="btn btn-outline-primary" target="_blank">
                                 <i class="fa fa-file-pdf"></i> Download PDF
                             </a>
 
                             @if ((Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                          (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                          (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                   class="btn btn-sm btn-primary" style="color:#fff">
+                                class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Contract
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                      asp-controller="Contract"
-                                      method="post"
-                                      class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                asp-controller="Contract"
+                                method="post"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Contract
@@ -551,15 +551,15 @@
                             else if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                   class="btn btn-sm btn-primary" style="color:#fff">
+                                class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Contract
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                      asp-controller="Contract"
-                                      method="post"
-                                      class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                asp-controller="Contract"
+                                method="post"
+                                class="d-inline"
+                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Invite
@@ -571,9 +571,9 @@
                 }
                 @* Example: Show a custom message divider after the invite card *@
                 @if (Model.ContractDetails != null &&
-               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
-               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
-               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+              (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+              Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+              Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
                 {
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
@@ -605,7 +605,7 @@
                         <div class="exchange-verification-info">
                             <strong>Exchange:</strong> @("#")@Model.Exchange.ExchangeId <br />
                             <strong>Exchange Mode:</strong> @(Model.Exchange?.ExchangeMode ?? "N/A") <br />
-                            <strong>Date:</strong> @Model.SentDate.ToString("dd MMMM, yyyy HH:mm")
+                            <strong>Date:</strong> @Model.SentDate.ToLocalTime().ToString("dd MMMM, yyyy HH:mm")
                             @if (meetingEnd.HasValue)
                             {
                                 <strong>Meeting End Time:</strong> @meetingEnd.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm") <br />
@@ -615,8 +615,8 @@
                         {
                             <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
                             <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
-                                    class="ud-btn btn-light-thm mb25 me-4"
-                                    style="border:none;" disabled>
+                            class="ud-btn btn-light-thm mb25 me-4"
+                            style="border:none;" disabled>
                                 Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
                             </button>
                         }
@@ -758,7 +758,7 @@
     <!-- Payment warning: if message content contains "pay" or "payment" -->
     @if (Model.Content.ToLower().Contains("pay") || Model.Content.ToLower().Contains("payment"))
     {
-        <div class="payment-warning" style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 5px; margin-top: 5px;">
+        <div class="payment-warning" style="background-color: #fff3cd; color: #856404; font-size:0.8em; border: 1px solid #ffeeba; padding: 5px; margin-top: 5px;">
             <i class="fa fa-info-circle"></i> Be aware: Payment-related messages may be associated with fraud.
         </div>
     }
@@ -767,7 +767,10 @@
         <div class="read-receipt" style="text-align:right; font-size:0.8em; color:gray;">
             @if (Model.IsFlagged && !Model.IsApproved)
             {
-                <span style="color: orange; font-style: italic;"><i class="fa fa-exclamation-triangle me-1"></i>Pending Approval</span>
+                <span style="color: orange; font-style: italic;">
+                    <i class="fa fa-exclamation-triangle me-1"></i><strong>Your message is pending approval.</strong><br />
+                    It will appear once reviewed, so long as it doesn’t violate our guidelines.
+                </span>
             }
             else
             {

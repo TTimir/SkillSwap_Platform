@@ -1,0 +1,79 @@
+﻿@model List<SkillSwap_Platform.Models.ViewModels.AdminControl.TokenMining.MiningLogVM>
+
+@{
+    ViewData["Title"] = "User Mining Logs";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+}
+
+</div>
+<div class="container py-4">
+    <h3>Mining Logs for @ViewBag.Username (User ID: #@ViewBag.UserId)</h3>
+
+    @if (!Model.Any())
+    {
+        <p>No logs found for this user.</p>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Amount</th>
+                    <th>Emitted Date (IST)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@log.Id</td>
+                        <td>@log.Amount</td>
+                        <td>@log.EmittedUtc.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (totalPages > 1)
+        {
+            <div class="mbp_pagination text-center mt30">
+                <ul class="page_navigation">
+                    <!-- Previous -->
+                    <li class="page-item @(currentPage  == 1 ? "disabled" : "")">
+                        <a class="page-link"
+                           asp-action="UserMiningLogs"
+                           asp-route-page="@(currentPage  - 1)">
+                            <span class="fas fa-angle-left"></span>
+                        </a>
+                    </li>
+
+                    <!-- Page links -->
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        <li class="page-item @(p == currentPage  ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="UserMiningLogs"
+                               asp-route-page="@p">@p</a>
+                        </li>
+                    }
+
+                    <!-- Next -->
+                    <li class="page-item @(currentPage  == totalPages ? "disabled" : "")">
+                        <a class="page-link"
+                           asp-action="UserMiningLogs"
+                           asp-route-page="@(currentPage  + 1)">
+                            <span class="fas fa-angle-right"></span>
+                        </a>
+                    </li>
+                </ul>
+                <p class="mt10 mb-0 pagination_page_count text-center">
+                    Page @(currentPage) of @totalPages
+                </p>
+            </div>
+        }
+    }
+</div>
+</div>

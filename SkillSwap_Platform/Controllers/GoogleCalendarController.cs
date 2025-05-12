@@ -10,20 +10,25 @@ using Google.Apis.Auth.OAuth2.Responses;
 using SkillSwap_Platform.Models.ViewModels.MeetingVM;
 using Newtonsoft.Json.Linq;
 using SkillSwap_Platform.Services.NotificationTrack;
+using SkillSwap_Platform.Services;
+using Hangfire.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkillSwap_Platform.Controllers
 {
     public class GoogleCalendarController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly GoogleCalendarService _cal;
         private readonly ILogger<GoogleCalendarController> _logger;
         private readonly SkillSwapDbContext _dbContext;
         private readonly TimeSpan _reuseThreshold = TimeSpan.FromHours(1);
         private readonly INotificationService _notif;
 
-        public GoogleCalendarController(IConfiguration configuration, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext, INotificationService notif)
+        public GoogleCalendarController(IConfiguration configuration, GoogleCalendarService cal, ILogger<GoogleCalendarController> logger, SkillSwapDbContext dbContext, INotificationService notif)
         {
             _configuration = configuration;
+            _cal = cal;
             _logger = logger;
             _dbContext = dbContext;
             _notif = notif;
@@ -33,6 +38,7 @@ namespace SkillSwap_Platform.Controllers
         [Obsolete]
         public async Task<IActionResult> CreateEvent(int? exchangeId, int otherUserId)
         {
+            using var tx = await _dbContext.Database.BeginTransactionAsync();
             try
             {
                 // Get current user id
@@ -54,19 +60,19 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
                 if (exchange == null)
                 {
-                    _logger.LogError("Exchange with id {ExchangeId} not found.", exchangeId);
-                    return NotFound("Exchange not found.");
+                    TempData["ErrorMessage"] = "Exchange not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 var offer = exchange.Offer;
                 if (offer == null)
                 {
-                    _logger.LogError("Associated offer for exchange id {ExchangeId} is null.", exchangeId);
-                    return NotFound("Offer not found.");
+                    TempData["ErrorMessage"] = "Offer not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
-            exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
+                    exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
                 {
                     exchange.IsInOnlineExchange = true;
                 }
@@ -101,8 +107,7 @@ namespace SkillSwap_Platform.Controllers
                 var userToken = await _dbContext.UserGoogleTokens.FirstOrDefaultAsync(t => t.UserId == userId);
                 if (userToken == null)
                 {
-                    // No token stored – must re-authorize.
-                    return RedirectToAction("Authorize", "GoogleAuth");
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // If token is expired, refresh it.
@@ -111,8 +116,7 @@ namespace SkillSwap_Platform.Controllers
                     userToken = await RefreshAccessTokenAsync(userToken);
                     if (userToken == null)
                     {
-                        // Refresh failed; redirect to reauthorize.
-                        return RedirectToAction("Authorize", "GoogleAuth");
+                        return RedirectToAction("EP404", "EP");
                     }
                 }
 
@@ -232,7 +236,8 @@ namespace SkillSwap_Platform.Controllers
 
                 if (exchange == null)
                 {
-                    return NotFound("Exchange record not found.");
+                    TempData["ErrorMessage"] = "Exchange not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Store Exchange history record.
@@ -248,6 +253,7 @@ namespace SkillSwap_Platform.Controllers
                 };
                 _dbContext.TblExchangeHistories.Add(historyRecord);
                 await _dbContext.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 // log notification:
                 await _notif.AddAsync(new TblNotification
@@ -269,8 +275,112 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error creating Google Calendar event.");
-                return StatusCode(500, "Internal Server Error");
+                return RedirectToAction("EP500", "EP");
+            }
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var uidClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(uidClaim, out var userId))
+                return Challenge(); // not logged in
+
+            try
+            {
+                var events = await _cal.GetUpcomingEventsAsync(userId);
+                return View(events);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("not connected"))
+            {
+                // No valid token—send them to Connect page
+                return RedirectToAction(nameof(Connect));
+            }
+        }
+
+        // GET /GoogleCalendar/Connect
+        [HttpGet]
+        public IActionResult Connect()
+        {
+            // Simple view with a “Connect Calendar” button
+            return View();
+        }
+
+
+        // JSON endpoint for FullCalendar
+        [HttpGet]
+        public async Task<IActionResult> EventsJson()
+        {
+            var uid = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var events = await _cal.GetUpcomingEventsAsync(uid);
+
+            var fcEvents = events.Select(ev =>
+            {
+                // coalesce into a non-nullable DateTime, then ISO‐format:
+                var startDt = ev.Start?.DateTime ?? DateTime.Parse(ev.Start.Date);
+                var endDt = ev.End?.DateTime ?? DateTime.Parse(ev.End.Date);
+
+                // identify a SkillSwap event by your summary or description convention
+                bool isSwap = ev.Summary?.StartsWith("SkillSwap Exchange #") == true
+                           || ev.Description?.Contains("Your upcoming SkillSwap session") == true;
+
+                return new
+                {
+                    id = ev.Id,
+                    title = ev.Summary,
+                    start = startDt.ToString("o"),
+                    end = endDt.ToString("o"),
+                    url = ev.HtmlLink,
+                    classNames = isSwap ? new[] { "skillswap-event" } : Array.Empty<string>()
+                };
+            });
+
+            return Json(fcEvents);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateCalEvent(int exchangeId)
+        {
+            var uid = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // Load exchange
+            var exch = await _dbContext.TblExchanges.FindAsync(exchangeId);
+            if (exch == null)
+                return NotFound();
+
+            // Guard: ensure RequestDate is set
+            if (!exch.RequestDate.HasValue)
+            {
+                TempData["CalendarError"] = "Cannot sync to calendar: no scheduled date.";
+                return RedirectToAction("Details", "Exchange", new { id = exchangeId });
+            }
+
+            // Convert to non-nullable UTC DateTime
+            var startUtc = exch.RequestDate.Value.ToUniversalTime();
+            var endUtc = startUtc.AddHours(1);            // assume 1h duration
+
+            try
+            {
+                var link = await _cal.CreateSwapEventAsync(
+                    uid,
+                    exchangeId,
+                    startUtc,
+                    endUtc
+                );
+
+                // Optionally mark in DB that we’ve synced
+                //exch.GoogleEventLink = link;
+                _dbContext.TblExchanges.Update(exch);
+                await _dbContext.SaveChangesAsync();
+
+                return Redirect(link);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create calendar event");
+                TempData["CalendarError"] = "Could not sync with Google Calendar.";
+                return RedirectToAction("Details", "Exchange", new { id = exchangeId });
             }
         }
 
@@ -306,8 +416,8 @@ namespace SkillSwap_Platform.Controllers
                 var meeting = await _dbContext.TblMeetings.FirstOrDefaultAsync(m => m.MeetingId == meetingId);
                 if (meeting == null)
                 {
-                    _logger.LogError("Meeting with id {MeetingId} not found.", meetingId);
-                    return NotFound("Meeting not found.");
+                    TempData["ErrorMessage"] = "Meeting not found.";
+                    return RedirectToAction("EP404", "EP");
                 }
 
                 // Update the meeting record with the provided notes, and mark the meeting as 'Completed'.
@@ -347,8 +457,7 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving meeting notes for meeting id {MeetingId}.", meetingId);
-                return StatusCode(500, "Internal Server Error");
+                return RedirectToAction("EP500", "EP");
             }
         }
 
@@ -408,7 +517,8 @@ namespace SkillSwap_Platform.Controllers
             var meeting = await _dbContext.TblMeetings.FirstOrDefaultAsync(m => m.MeetingId == meetingId);
             if (meeting == null)
             {
-                return NotFound("Meeting record not found.");
+                TempData["ErrorMessage"] = "Meeting record not found.";
+                return RedirectToAction("EP404", "EP");
             }
 
             // Use the meetingStartTime passed from the client instead of the one stored in the DB.

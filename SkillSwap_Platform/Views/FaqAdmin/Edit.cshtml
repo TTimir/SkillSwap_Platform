@@ -1,0 +1,111 @@
+﻿@model SkillSwap_Platform.Models.TblSkillSwapFaq
+
+@{
+    ViewData["Title"] = "Update FAQ";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"] for “@Model.Section”</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="" class="ud-btn btn-dark">Save & Publish<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        @using (Html.BeginForm("Edit", "FaqAdmin", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="FaqId" />
+            <input type="hidden" asp-for="Section" />
+            <input type="hidden" asp-for="SortOrder" />
+            <input type="hidden" asp-for="IsActive" />
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Basic Information</h5>
+                </div>
+                <div class="col-xl-8">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="mb20">
+                                <label asp-for="Question" class="heading-color ff-heading fw500 mb10">Swap Title <span class="text-danger">*</span></label>
+                                <input asp-for="Question" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="Question" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Answer" class="heading-color ff-heading fw500 mb10">Scope Of Work <span class="text-danger">*</span></label>
+                                <textarea asp-for="Answer" cols="20" rows="3" placeholder="Describe what is included in this swap"></textarea>
+                                <span asp-validation-for="Answer" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                            <a asp-action="Index" class="ud-btn btn-white">Index</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* <h1>@ViewData["Title"]</h1>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="FaqId" />
+    <input type="hidden" asp-for="Section" />
+    <input type="hidden" asp-for="SortOrder" />
+    <input type="hidden" asp-for="IsActive" />
+
+    <div class="form-group mb-3">
+        <label asp-for="Question"></label>
+        <input asp-for="Question" class="form-control" />
+        <span asp-validation-for="Question" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Answer"></label>
+        <textarea asp-for="Answer" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="Answer" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form> *@
+
+@section DynamicAdminScript {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

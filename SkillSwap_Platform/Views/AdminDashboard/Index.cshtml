@@ -1,0 +1,491 @@
+﻿@model SkillSwap_Platform.Services.AdminControls.AdminDashboardMetricsDto
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    ViewData["SubTitle"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+<!-- User Metrics -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Users</div>
+                <div class="title">@Model.TotalUsers</div>
+                <div class="text fz14">Total number of user accounts registered</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-photo"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">New Users Today</div>
+                <div class="title">@Model.NewUsersToday</div>
+                <div class="text fz14">Users who registered in the last 24 hours</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-calendar"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">New Users This Week</div>
+                <div class="title">@Model.NewUsersThisWeek</div>
+                <div class="text fz14">Users who registered in the past 7 days</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-goal"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">New Users This Month</div>
+                <div class="title">@Model.NewUsersThisMonth</div>
+                <div class="text fz14">Users who registered in the past 30 days</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-30-days"></i></div>
+        </div>
+    </div>
+</div>
+<!-- More Metrics: Active / Held -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Active (Last 7d)</div>
+                <div class="title">@Model.ActiveUsersLast7Days</div>
+                <div class="text fz14">Users active (last login) in the past 7 days</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-photo"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Held Accounts</div>
+                <div class="title">@Model.HeldAccounts</div>
+                <div class="text fz14">Number of accounts currently marked “held”</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-delete"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Offers</div>
+                <div class="title">@Model.TotalOffers</div>
+                <div class="text fz14">Total offers created on the platform</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-briefcase"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">New Offers Today</div>
+                <div class="title">@Model.NewOffersToday</div>
+                <div class="text fz14">Offers created in the last 24 hours</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-calendar"></i></div>
+        </div>
+    </div>
+</div>
+<!-- Offer & Swap Metrics -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">New Offers This Week</div>
+                <div class="title">@Model.NewOffersThisWeek</div>
+                <div class="text fz14">Offers created in the past 7 days</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-target"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Completed Swaps</div>
+                <div class="title">@Model.CompletedSwaps</div>
+                <div class="text fz14">Exchanges marked successful</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-tick"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Canceled Swaps</div>
+                <div class="title">@Model.CanceledSwaps</div>
+                <div class="text fz14">Exchanges marked canceled</div>
+            </div>
+            <div class="icon text-center" style="transform:rotate(45deg)"><i class="flaticon-add"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Pending Offers</div>
+                <div class="title">@Model.PendingOffers</div>
+                <div class="text fz14">Offers with no accepted exchange yet</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review-1"></i></div>
+        </div>
+    </div>
+</div>
+<!-- Escrow Metrics -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Active Escrows</div>
+                <div class="title">@Model.ActiveEscrows</div>
+                <div class="text fz14">Escrows not yet released, refunded or disputed</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-wallet"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Released Escrows</div>
+                <div class="title">@Model.ReleasedEscrows</div>
+                <div class="text fz14">Escrows that have been released</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-review"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Refunded Escrows</div>
+                <div class="title">@Model.RefundedEscrows</div>
+                <div class="text fz14">Escrows that have been refunded</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Disputed Escrows</div>
+                <div class="title">@Model.DisputedEscrows</div>
+                <div class="text fz14">Escrows that are  currently in dispute</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-flag"></i></div>
+        </div>
+    </div>
+</div>
+<!-- Tokens & Settlement -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Digital Tokens</div>
+                <div class="title">@Model.TotalTokensInCirculation.ToString("F2")</div>
+                <div class="text fz14">	Total Digital Tokens in Circulation</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Tokens Held</div>
+                <div class="title">@Model.TotalTokensHeld</div>
+                <div class="text fz14">	Sum of tokens currently held in escrow</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-button"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Tokens Released</div>
+                <div class="title">@Model.TotalTokensReleased</div>
+                <div class="text fz14">	Sum of tokens released from escrow</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-rocket"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Avg. Settlement (hrs)</div>
+                <div class="title">@Model.AverageSettlementHours.ToString("F2")</div>
+                <div class="text fz14">	Average hours between escrow creation & release</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-ruler"></i></div>
+        </div>
+    </div>
+</div>
+<!-- Moderation Summary -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Pending Offer Reports</div>
+                <div class="title">@Model.PendingOfferFlags</div>
+                <div class="text fz14">	Offers reported and awaiting review</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-flag"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Pending User Reports</div>
+                <div class="title">@Model.PendingUserFlags</div>
+                <div class="text fz14">User‐reports awaiting admin action</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-flag"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Resolved Offer Reports</div>
+                <div class="title">@Model.ResolvedOfferFlags</div>
+                <div class="text fz14">Total offer‐reports already handled</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-success"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Resolved User Reports</div>
+                <div class="title">@Model.ResolvedUserFlags</div>
+                <div class="text fz14">	Total user‐reports already handled</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-success"></i></div>
+        </div>
+    </div>
+</div>
+<!-- Swap Activity & Revenue -->
+<div class="row">
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Total Swaps Executed</div>
+                <div class="title">@Model.TotalSwapsExecuted</div>
+                <div class="text fz14">	Total number of successful swaps</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-briefcase"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Swap Success Rate</div>
+                <div class="title">@($"{Model.SwapSuccessRate:0.##}%")</div>
+                <div class="text fz14">	Success Rate = (Successful / Total) × 100%</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-success"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Avg. Swap Value</div>
+                <div class="title">@Model.AverageSwapValue.ToString("F2")</div>
+                <div class="text fz14">	Average token value per successful swap</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-income"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3">
+        <div class="d-flex align-items-center justify-content-between statistics_funfact">
+            <div class="details">
+                <div class="fz15">Monthly Recurring Revenue</div>
+                <div class="title">@Model.MonthlyRecurringRevenue.ToString("F2")</div>
+                <div class="text fz14">Sum of all “Hold” transactions this month</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-money"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <div class="d-sm-flex align-items-center justify-content-between">
+                    <h4 class="title fz17 mb20">Reports Over Time</h4>
+                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+                        <select class="selectpicker show-tick">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>This Year</option>
+                        </select>
+                    </div> *@
+                </div>
+                <canvas id="flagTrendsChart" style="height:230px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb50">
+                <h5 class="title">Resolution by Action</h5>
+            </div>
+            <canvas id="resolutionBreakdownChart" height="260px"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 col-xxl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="d-flex justify-content-between bdrb1 pb15 mb20">
+                <h5 class="title">Most Viewed Swaps</h5>
+                <a class="text-decoration-underline text-thm6" href="">View All</a>
+            </div>
+            <div class="dashboard-img-service">
+                @foreach (var svc in Model.MostViewedServices)
+                {
+                    <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
+                        <div class="list-thumb flex-shrink-0 bdrs4">
+                            <img class="w-100" src="@svc.ImageUrl" alt="@svc.Title">
+                        </div>
+                        <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
+                            <h6 class="list-title mb-2"><a asp-area="Admin" asp-controller="OfferFlag" asp-action="FlaggedOfferSummary" asp-route-offerId="@svc.OfferId">@svc.Title</a></h6>
+                            <div class="list-meta d-flex justify-content-between align-items-center">
+                                <div class="review-meta d-flex align-items-center">
+                                    <i class="fas fa-eye fz10 text-thm me-2"></i>
+                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@svc.ViewCount</span> Views</p>
+                                </div>
+                                @* <div class="budget">
+                                    <p class="mb-0 body-color">Starting at<span class="fz17 fw500 dark-color ms-1">@svc.ViewCount</span></p>
+                                </div> *@
+                            </div>
+                        </div>
+                    </div>
+                    @if (svc != Model.MostViewedServices.Last())
+                    {
+                        <hr class="opacity-100 mt-0" />
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xxl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="d-flex justify-content-between bdrb1 pb15 mb30">
+                <h5 class="title">Recent Swap Exchanges</h5>
+                <a class="text-decoration-underline text-thm6" href="">View All</a>
+            </div>
+            <div class="dashboard-img-service">
+                @foreach (var buy in Model.RecentPurchasedServices)
+                {
+                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb10">
+                        <div class="list-thumb wa flex-shrink-0 bdrs4 mb15-lg">
+                            <i class="flaticon-refresh fz24 text-thm"></i>
+                        </div>
+                        <div class="list-content flex-grow-1 py-0 pb10 pl15 pl0-lg">
+                            <h6 class="list-title mb-2">
+                                @buy.BuyerName <span class="text-thm">completed a swap for</span> @buy.OfferTitle
+                            </h6>
+                            <div class="list-meta d-flex justify-content-between align-items-center">
+                                <div class="review-meta d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Exchange Date">
+                                    <p class="mb-0 body-color fz14">@buy.Date.ToLocalTime().ToString("dd MMMM, yyyy")</p>
+                                </div>
+                                <div class="budget" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Tokens Exchanged">
+                                    <p class="mb-0"><span class="fz15 fw500 dark-color"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> @buy.Amount.ToString("F2")</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (buy != Model.RecentPurchasedServices.Last())
+                    {
+                        <hr class="opacity-100 mt-0" />
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xxl-4">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="bdrb1 pb15 mb30">
+                <h5 class="title">Recent Activity</h5>
+            </div>
+            @foreach (var act in Model.RecentActivities)
+            {
+                <div class="dashboard-timeline-label">
+                    <div class="timeline-item pb15">
+                        <!--begin::Label-->
+                        <div class="child-timeline-label">@act.Timestamp.ToLocalTime().ToString("HH:mm")</div>
+                        <!--end::Label-->
+                        <!--begin::Badge-->
+                        <div class="timeline-badge d-flex align-items-center">
+                            <i class="fas fa-genderless"></i>
+                        </div>
+                        <!--end::Badge-->
+                        <!--begin::Text-->
+                        <div class="ra_pcontent pl10"><span class="title">@act.Description</span></div>
+                        <!--end::Text-->
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+</div>
+
+@section DynamicAdminScript {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+                    // serialize flag trends
+                    const flagTrendData = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(
+            Model.FlagTrends.Select(d => new { date = d.Date.ToLocalTime().ToString("yyyy-MM-dd"), count = d.Count })
+        )
+    );
+                    // serialize resolution breakdown
+                    const resolutionData = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(
+            Model.ResolutionBreakdown
+                 .Select(r => new { action = r.Label, count = r.Count })
+        )
+    );
+
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Flag Trends Line Chart
+                            const trendCtx = document.getElementById('flagTrendsChart').getContext('2d');
+                            new Chart(trendCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: flagTrendData.map(d => d.date),
+                                    datasets: [{
+                                        label: 'Reports Trend',
+                                        data: flagTrendData.map(d => d.count),
+                                        fill: false,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: { responsive: true }
+                            });
+
+                            // Resolution Breakdown Doughnut Chart
+                            const resCtx = document.getElementById('resolutionBreakdownChart').getContext('2d');
+                            new Chart(resCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: resolutionData.map(r => r.action),
+                                    datasets: [{
+                                        data: resolutionData.map(r => r.count)
+                                    }]
+                                },
+                                options: { responsive: true }
+                            });
+                        });
+    </script>
+}

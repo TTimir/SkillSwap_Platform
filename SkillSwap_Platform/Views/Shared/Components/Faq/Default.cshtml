@@ -1,0 +1,19 @@
+﻿@model List<SkillSwap_Platform.Models.TblSkillSwapFaq>
+
+<div class="accordion" id="accordionExample">
+    @for (var i = 0; i < Model.Count; i++)
+    {
+        var faq = Model[i];
+        var headingId = $"heading{faq.FaqId}";
+        var collapseId = $"collapse{faq.FaqId}";
+        var isFirst = (i == 0);
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="@headingId">
+                <button class="accordion-button @(isFirst ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@(isFirst.ToString().ToLower())" aria-controls="@collapseId">@faq.Question</button>
+            </h2>
+            <div id="@collapseId" class="accordion-collapse collapse @(isFirst ? "show" : "")" aria-labelledby="@headingId" data-parent="#faqAccordion">
+                <div class="accordion-body">@Html.Raw(faq.Answer)</div>
+            </div>
+        </div>
+    }
+</div>

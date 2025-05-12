@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
@@ -203,6 +204,8 @@
     border-radius: 4px;
     }
 </style>
+
+
 <div class="body_content bgc-thm3">
     <!-- Breadcumb Sections -->
     <section class="breadcumb-section">
@@ -211,9 +214,9 @@
                 <div class="col-sm-8 col-lg-10">
                     <div class="breadcumb-style1 mb10-xs">
                         <div class="breadcumb-list">
-                            <a href="">Home</a>
-                            <a href="">Services</a>
-                            <a href="">Design & Creative</a>
+                            <a asp-controller="Home" asp-action="Index">Home</a>
+                            <a asp-controller="UserProfile" asp-action="PublicProfileList">Swappers</a>
+                            <span>@Model.User.UserName</span>
                         </div>
                     </div>
                 </div>
@@ -223,15 +226,93 @@
                             <span class="icon flaticon-share dark-color fz12 mr10"></span>
                             <div class="h6 mb-0">Share</div>
                         </div>
-@*                         <div class="share-save-widget d-flex align-items-center ml15">
+                        @* <div class="share-save-widget d-flex align-items-center ml15">
                             <span class="icon flaticon-like dark-color fz12 mr10"></span>
                             <div class="h6 mb-0">Save</div>
                         </div> *@
+                        @if (!Model.IsFlagged)
+                        {
+                            <div data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Report this user"
+                            class="ml15">
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center" style="cursor:pointer;"
+                                data-bs-toggle="modal" data-bs-target="#flagUserModal">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10"></span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="You’ve already reported this user"
+                            class="ml15">
+                                <div id="flagBtn" class="share-save-widget d-flex align-items-center">
+                                    <span class="icon flaticon-flag dark-color fz12 mr10 text-danger"></span>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Flag Modal -->
+    <div class="modal fade" id="flagUserModal" tabindex="-1" aria-labelledby="flagUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-controller="UserProfile" asp-action="Flag" method="post" class="form-style3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="flaggedUserId" value="@Model.User.UserId" />
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="flagUserModalLabel">Report @Model.User.UserName</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for reporting</label>
+                            <textarea id="reason" name="reason" rows="2" placeholder="Please explain why you’re reporting this profile…" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="ud-btn btn-light-thm mb25 me-4" data-bs-dismiss="modal" style="border:0;">Cancel</button>
+                        <button type="submit" class="ud-btn btn-thm mb25 me-4">Submit Report <i class="fal fa-arrow-right-long"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                        @TempData["Success"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="col-lg-12">
+            <div class="ui-content">
+                <div class="message-alart-style1">
+                    <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                        @TempData["Error"]
+                        <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Overlay Modal -->
     <div id="shareOverlay" class="share-overlay">
         <div class="share-modal">
@@ -258,15 +339,15 @@
                                                 <a class="position-relative freelancer-single-style" href="#!profileimage">
                                                     <!-- Profile Image -->
                                                     @{
-                                                        // var profileUrl = ViewData["UserProfileImage"] as string;
-                                                        var isOnline = (ViewData["IsOnline"] as bool?) ?? false;
+                                                        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+// if the profile has no image, show fallback:
+    var src = string.IsNullOrWhiteSpace(Model.User.ProfileImageUrl)
+        ? "~/template_assets/images/No_Profile_img.png"
+        : Model.User.ProfileImageUrl;
                                                     }
                                                     <div>
-                                                        @if (isOnline)
-                                                        {
-                                                            <span class="online" style="top: -6%; right: -8%;"></span>
-                                                        }
-                                                        <img src="@(!string.IsNullOrEmpty(Model.User.ProfileImageUrl) ? Url.Content(Model.User.ProfileImageUrl) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="Freelancer Photo" class="rounded" width="100" style="max-width:100%;" />
+                                                        <vc:online-indicator user-id="@Model.UserId" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:100%;" />
                                                     </div>
                                                     @*<span class="online"></span>
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
@@ -286,7 +367,7 @@
                                                             <i class="fas fa-star vam fz10 review-color me-2"></i> 0 reviews
                                                         </p>
                                                     }                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-place vam fz20 me-2"></i> @Model.User.City, @Model.User.Country</p>
-                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToString("MMMM d, yyyy")</p>
+                                                    <p class="mb-0 dark-color fz15 fw500 list-inline-item ml15 mb5-sm ml0-xs"><i class="flaticon-30-days vam fz20 me-2"></i> Member since @Model.User.CreatedDate.ToLocalTime().ToString("MMMM d, yyyy")</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -321,7 +402,7 @@
                                             @{
                                                 // Assume AverageResponseTime in your model is in hours.
                                                 double avgResponseHours = 0;
-                                                double.TryParse(Model.AverageResponseTime, out avgResponseHours);; 
+                                                double.TryParse(Model.AverageResponseTime, out avgResponseHours);
                                                 string avgResponseDisplay = "";
 
                                                 if (avgResponseHours <= 0)
@@ -391,7 +472,7 @@
                                     {
                                         <div class="m-circle text-thm">M</div>
                                         <div class="wrapper mb40">
-                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToString("yyyy")</span>
+                                            <span class="tag">@education.StartDate.ToString("yyyy") - @education.EndDate?.ToLocalTime().ToString("yyyy")</span>
                                             <h5 class="mt15">@education.DegreeName</h5>
                                             <h6 class="text-thm">@education.InstitutionName</h6>
                                             <p>@(string.IsNullOrWhiteSpace(education.Description) ? "No description available." : education.Description)</p>
@@ -406,7 +487,7 @@
                                     {
                                         <div class="m-circle text-thm">M</div>
                                         <div class="wrapper mb40">
-                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToString("MM/yyyy")</span>
+                                            <span class="tag">@experience.StartDate?.ToString("MM/yyyy") - @experience.EndDate?.ToLocalTime().ToString("MM/yyyy")</span>
                                             <h5 class="mt15">@experience.Position</h5>
                                             <h6 class="text-thm">@experience.CompanyName</h6>
                                             <p>@(string.IsNullOrWhiteSpace(experience.Description) ? "No description available." : experience.Description)</p>
@@ -434,20 +515,32 @@
                                                         <span class="tag @(certificate.IsApproved ? "approved-tag" : "not-approved-tag")">
                                                             @if (certificate.IsApproved)
                                                             {
-                                                                <span><i class="fas fa-check-circle"></i> Approved on @certificate.ApprovedDate?.ToString("MMMM dd, yyyy")</span>
+                                                                <span><i class="fas fa-check-circle"></i> Approved on @(certificate.ApprovedDate?.ToLocalTime().ToString("MMMM dd, yyyy") ?? "-")</span>
                                                             }
                                                             else
                                                             {
-                                                                <span><i class="fas fa-times-circle"></i> Not Approved</span>
+                                                                if (certificate.IsApproved)
+                                                                {
+                                                                    <span><i class="fas fa-times-circle"></i> Not Approved on @(certificate.RejectionDate.ToLocalTime().ToString("MMMM dd, yyyy") ?? "-")</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span> Not reviewed yet</span>
+
+                                                                }
                                                             }
                                                         </span>
                                                         <h5 class="mt15">
                                                             @certificate.CertificateName
-                                                            @if (certificate.CompleteDate != DateTime.MinValue)
-                                                            {
-                                                                <small>(Completed on @certificate.CompleteDate.ToString("MMMM d, yyyy"))</small>
-                                                            }
-                                                        </h5>
+<small>
+  (Completed on
+    @(certificate.CompleteDate > DateTime.MinValue
+        ? certificate.CompleteDate.ToLocalTime().ToString("MMMM d, yyyy")
+        : ""
+     )
+  )
+</small>
+</h5>
                                                         <h6 class="text-thm">@certificate.CertificateFrom</h6>
                                                         <div class="certificate-preview">
                                                             @if (!string.IsNullOrEmpty(certificate.CertificateFilePath))
@@ -458,7 +551,7 @@
                                                                     <!-- PDF Preview wrapped with preview container -->
                                                                     <div class="preview-container" data-preview-type="pdf" data-src="@certificate.CertificateFilePath">
                                                                         <iframe src="@certificate.CertificateFilePath#toolbar=0" class="pdf-preview"></iframe>
-                                                                        <div class="preview-overlay"><i class="fas fa-search-plus" style="color:#5BBB7B"></i></div>
+                                                                        <div class="preview-overlay"><i class="flaticon-search" style="color:#5BBB7B"></i></div>
                                                                     </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
@@ -470,7 +563,7 @@
                                                                     <!-- Image Preview wrapped with preview container -->
                                                                     <div class="preview-container" data-preview-type="image" data-src="@certificate.CertificateFilePath">
                                                                         <img src="@certificate.CertificateFilePath" alt="Certificate Preview" class="img-preview">
-                                                                        <div class="preview-overlay"><i class="flaticon-search " style="color:#5BBB7B"></i></div>
+                                                                        <div class="preview-overlay"><i class="flaticon-search" style="color:#5BBB7B"></i></div>
                                                                     </div>
                                                                     <br />
                                                                     <a href="@certificate.CertificateFilePath" class="ud-btn btn-light-thm mb-2" target="_blank">
@@ -479,6 +572,14 @@
                                                                 }
                                                             }
                                                         </div>
+                                                        @if (!certificate.IsApproved && (certificate.RejectionDate != null || certificate.RejectionReason != null) && Model.IsOwnProfile)
+                                                        {
+                                                          <p class="mt-2 text-danger">
+                                                            <strong>Reason:</strong> @certificate.RejectionReason<br />
+                                                            You may delete and re-upload for re-evaluation.<br />
+                                                            <em>This message is only visible to you.</em>
+                                                          </p>
+                                                        }
                                                     </div>
                                                 </div>
                                             }
@@ -514,7 +615,7 @@
                                                                 var defaultImages = new List<string>
                                                                 {
                                                                     Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
-                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                                                 };
 
                                                                 // Use a deterministic approach:
@@ -649,11 +750,15 @@
 
                                                         <div class="col-md-12 mb20 review-item" data-review-id="@review.ReviewId" style="@displayStyle">
                                                             <div class="mbp_first position-relative d-flex align-items-center justify-content-start mb30-sm">
-                                                                <img src="@(!string.IsNullOrEmpty(review.Reviewer?.ProfileImageUrl) ? review.Reviewer.ProfileImageUrl : "/template_assets/images/No_Profile_img.png")" 
-                                                                     alt="Reviewer Photo" class="rounded-circle mr10" style="width:40px; height:40px;" />
+                                                                <img src="@Url.Content(
+                                                                          string.IsNullOrWhiteSpace(review.Reviewer?.ProfileImageUrl)
+                                                                            ? "~/template_assets/images/No_Profile_img.png"
+                                                                            : review.Reviewer.ProfileImageUrl
+                                                                        )" 
+                                                                     alt="Reviewer Photo" class="rounded-circle" style="width:50px; height:50px; max-width:100%" />
                                                                 <div class="ml20">
                                                                     <h6 class="mt-0 mb-0">@review.ReviewerName</h6>
-                                                                    <small class="text-muted">@review.CreatedDate.ToString("dd MMM, yyyy")</small>
+                                                                    <small class="text-muted">@review.CreatedDate.ToLocalTime().ToString("dd MMM, yyyy")</small>
                                                                 </div>
                                                             </div>
                                                             <div class="review-rating my10">
@@ -678,9 +783,16 @@
                                                                 <div class="replies ps-4 mb-3 mt20 mb20">
                                                                     @foreach (var reply in review.TblReviewReplies.OrderBy(r => r.CreatedDate))
                                                                     {
-                                                                        var currentUserId = int.Parse(HttpContextAccessor.HttpContext.User
-                                                                        .FindFirst(ClaimTypes.NameIdentifier).Value);
-                                                                        <div class="reply-item mb-2">
+// Try to pull your user-id claim safely
+    int currentUserId = -1;
+    
+    if (!string.IsNullOrEmpty(idClaim))
+    {
+        // Now it’s safe to parse
+        currentUserId = int.Parse(idClaim);
+    }
+
+    <div class="reply-item mb-2">
                                                                             <div class="d-flex align-items-center">
                                                                                 <strong>@reply.ReplierUser.UserName</strong>
                                                                                 <small class="text-muted ms-2 me-5">
@@ -855,7 +967,7 @@
                                         <span class="text"><i class="flaticon-place text-thm2 pe-2 vam"></i>Location</span> <span class="">@Model.User.City, @Model.User.Country</span>
                                     </a>
                                     <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
-                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToString("MMMM dd, yyyy")</span>
+                                        <span class="text"><i class="flaticon-30-days text-thm2 pe-2 vam"></i>Member since</span> <span class="">@Model.User.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span>
                                     </a>
                                     <a class="d-flex align-items-center justify-content-between bdrb1 pb-2" href="">
                                         <span class="text"><i class="flaticon-calendar text-thm2 pe-2 vam"></i>Last Exchange</span> 

@@ -1,4 +1,5 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.DashboardVM
+@using Humanizer
 @using Newtonsoft.Json
 
 @{
@@ -192,7 +193,9 @@
                     <div class="dashboard-timeline-label">
                         <div class="timeline-item @(isLast ? "" : "pb15")">
                             <!--begin::Label-->
-                            <div class="child-timeline-label">@item.Timestamp.ToString("hh:mm tt")</div>
+                            <div class="child-timeline-label">
+                                @item.Timestamp.ToLocalTime().ToString("hh:mm tt") (@item.Timestamp.ToLocalTime().Humanize())
+                            </div>
                             <!--end::Label-->
                             <!--begin::Badge-->
                             <div class="timeline-badge d-flex align-items-center @item.BadgeColorClass">
@@ -226,8 +229,8 @@
                 ? label.slice(0, 20) + '…'
                 : label
             );
-          const data   = @Html.Raw(JsonConvert.SerializeObject(Model.OfferViewData));
-          const ctx    = document.getElementById('profileViewsChart').getContext('2d');
+            const data = @Html.Raw(Json.Serialize(Model.OfferViewData));
+            const ctx    = document.getElementById('profileViewsChart').getContext('2d');
 
           new Chart(ctx, {
             type: 'bar',
