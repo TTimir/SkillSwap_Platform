@@ -5,6 +5,7 @@ using SkillSwap_Platform.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Services.BadgeTire;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -13,11 +14,13 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<ExchangeReviewController> _logger;
+        private readonly BadgeService _badgeService;
 
-        public ExchangeReviewController(SkillSwapDbContext context, ILogger<ExchangeReviewController> logger)
+        public ExchangeReviewController(SkillSwapDbContext context, ILogger<ExchangeReviewController> logger, BadgeService badgeService)
         {
             _context = context;
             _logger = logger;
+            _badgeService = badgeService;
         }
 
         #region Helper Method to Update User Aggregates
@@ -192,6 +195,9 @@ namespace SkillSwap_Platform.Controllers
                 // Update aggregates for the reviewed user.
                 await UpdateUserAggregatesAsync(newReview.UserId);
 
+                // Award 5-Star Mentor for  participants:
+                _badgeService.EvaluateAndAward(newReview.UserId);
+
                 SetRememberMeCookies(model);
 
                 TempData["SuccessMessage"] = "Thank you for your review!";
@@ -247,7 +253,7 @@ namespace SkillSwap_Platform.Controllers
         }
         #endregion
 
-        #region Vote Action for Review Voting
+        #region Vote Action(Helpful or not) for Review Voting
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Vote(int reviewId, string vote)
@@ -281,6 +287,9 @@ namespace SkillSwap_Platform.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Helpful Reviewer badge evaluation
+            _badgeService.EvaluateAndAward(review.ReviewerId);
 
             // Mark this review as voted in the session.
             HttpContext.Session.SetString(voteSessionKey, "voted");

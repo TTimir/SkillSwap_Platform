@@ -39,6 +39,7 @@ using SkillSwap_Platform.Services.AdminControls.PrivacyWord;
 using SkillSwap_Platform.Services.AdminControls.Faqs;
 using SkillSwap_Platform.Services.AdminControls.PlatformMetrics;
 using SkillSwap_Platform.Services.AdminControls.AdminSearch;
+using SkillSwap_Platform.Services.BadgeTire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,8 @@ builder.Services
 builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
 builder.Services.AddScoped<GoogleCalendarService>();
+builder.Services.AddScoped<BadgeService>();
+
 
 
 // Admin Services

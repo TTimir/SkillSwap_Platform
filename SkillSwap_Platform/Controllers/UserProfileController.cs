@@ -214,6 +214,12 @@ namespace SkillSwap_Platform.Controllers
                     : -1;
                 bool isOwnProfile = currentUser == user.UserId;
 
+                var badgeAwards = await _context.TblBadgeAwards
+                        .Include(a => a.Badge)
+                        .Where(a => a.UserId == user.UserId)
+                        .OrderBy(a => a.AwardedAt)
+                        .ToListAsync();
+
                 // Build the public user profile view model.
                 var model = new UserProfileVM
                 {
@@ -235,6 +241,16 @@ namespace SkillSwap_Platform.Controllers
                     Certificates = certificateVMs,
                     IsOwnProfile = isOwnProfile,
                 };
+
+                model.Badges = badgeAwards
+                    .Select(a => new BadgeAwardVM
+                    {
+                        BadgeId = a.BadgeId,
+                        Name = a.Badge.Name,
+                        IconUrl = a.Badge.IconUrl,
+                        AwardedAt = a.AwardedAt
+                    })
+                    .ToList();
 
                 if (User.Identity.IsAuthenticated)
                 {
@@ -438,6 +454,18 @@ namespace SkillSwap_Platform.Controllers
                     : -1;
                 bool isOwnProfile = currentUserId == user.UserId;
 
+                var myBadgeAwards = await _context.TblBadgeAwards
+                                          .Include(a => a.Badge)
+                                          .Where(a => a.UserId == userId)
+                                          .OrderBy(a => a.AwardedAt)
+                                          .ToListAsync();
+
+                // 1) Load the “awarded” badges from the database (adjust to your schema)
+                var awardedBadges = await _context.TblBadgeAwards
+                    .Where(ub => ub.UserId == userId)
+                    .Include(ub => ub.Badge)              // assuming Badge holds Name, Description, IconUrl, etc
+                    .ToListAsync();
+
                 // Build the UserProfile view model.
                 var model = new UserProfileVM
                 {
@@ -458,6 +486,18 @@ namespace SkillSwap_Platform.Controllers
                     AverageRating = avgRatingUser,
                     IsOwnProfile = isOwnProfile,
                 };
+
+                model.Badges = awardedBadges
+                    .Select(a => new BadgeAwardVM
+                    {
+                        BadgeId = a.BadgeId,
+                        Name = a.Badge.Name,
+                        Description = a.Badge.Description,
+                        IconUrl = a.Badge.IconUrl,
+                        Level = int.TryParse(a.Badge.Tier, out var tierVal) ? tierVal : 0,
+                        AwardedAt = a.AwardedAt
+                    })
+                    .ToList();
 
                 return View(model);
             }

@@ -68,6 +68,55 @@
                 color: #fff;
                 cursor: url('@cursorUrl') 16 16;
             }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+        .header-logo.logo1 img {
+            border-radius: 14px;
+            width: 40px;
+            height: auto;
+        }
+
+        .header-logo.logo1 .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* footer logos: center image + text */
+        .footer-widget .footer-logo,
+        .footer-widget .logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            gap: 8px; /* space between logo and text */
+            text-decoration: none;
+        }
+
+            .footer-widget .footer-logo img,
+            .footer-widget .logo1 img {
+                width: 40px; /* match your header size (or whatever you prefer) */
+                height: auto;
+                border-radius: 14px; /* optional */
+            }
+
+        .footer-widget .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            color: #fff; /* ensure it’s white in your footer */
+            white-space: nowrap;
+        }
     </style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -88,7 +137,12 @@
                     <div class="col-6 col-lg-auto">
                         <div class="text-center text-lg-start d-flex align-items-center">
                             <div class="dashboard_header_logo position-relative me-2 me-xl-5">
-                                <a href="index.html" class="logo"><img src="/template_assets/images/header-logo-dark.svg" alt=""></a>
+                                <a class="header-logo logo1" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                    </span>
+                                </a>
                             </div>
                             <div class="fz20 ml90">
                                 <a href="#" class="dashboard_sidebar_toggle_icon vam"><img src="/template_assets/images/dashboard-navicon.svg" alt=""></a>
@@ -325,13 +379,23 @@
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>My Profile</a>
                     </div>
-                    <div class="sidebar_list_item ">
-                        <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
+                    <div class="sidebar_list_item">
+                        <!-- hidden logout form -->
+                        <form id="logoutForm"
+                              asp-controller="Home"
+                              asp-action="Logout"
+                              method="post"
+                              class="d-none">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
-                                <i class="flaticon-logout mr10"></i> Logout
-                            </button>
                         </form>
+
+                        <!-- visible link that submits the form -->
+                        <a href="javascript:document.getElementById('logoutForm').submit();"
+                           class="items-center"
+                           title="Logout">
+                            <i class="flaticon-logout mr15"></i>
+                            Logout
+                        </a>
                     </div>
                 </div>
             </div>
@@ -385,7 +449,7 @@
                     <div class="row align-items-center justify-content-center justify-content-md-between">
                         <div class="col-auto">
                             <div class="copyright-widget">
-                                <p class="mb-md-0">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                                <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         <div class="col-auto">

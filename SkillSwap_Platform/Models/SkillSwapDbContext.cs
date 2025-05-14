@@ -8,19 +8,13 @@ namespace SkillSwap_Platform.Models;
 
 public partial class SkillSwapDbContext : DbContext
 {
-    private readonly bool _isAdminContext;
-
     public SkillSwapDbContext()
     {
     }
 
-    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options, IHttpContextAccessor http)
+    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options)
         : base(options)
     {
-        var user = http.HttpContext?.User;
-        // If the user is authenticated AND in the "Admin" role, allow full visibility
-        _isAdminContext = user?.Identity?.IsAuthenticated == true
-                       && user.IsInRole("Admin");
     }
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
@@ -34,6 +28,10 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
 
     public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
+
+    public virtual DbSet<TblBadge> TblBadges { get; set; }
+
+    public virtual DbSet<TblBadgeAward> TblBadgeAwards { get; set; }
 
     public virtual DbSet<TblContract> TblContracts { get; set; }
 
@@ -204,6 +202,35 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.WarningMessage).HasMaxLength(500);
             entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TblBadge>(entity =>
+        {
+            entity.HasKey(e => e.BadgeId).HasName("PK__TblBadge__1918235C1482CF0D");
+
+            entity.Property(e => e.BadgeId).ValueGeneratedNever();
+            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.IconUrl).HasMaxLength(512);
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Tier)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<TblBadgeAward>(entity =>
+        {
+            entity.HasKey(e => e.AwardId).HasName("PK__TblBadge__B08935FEC0617756");
+
+            entity.Property(e => e.AwardedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Badge).WithMany(p => p.TblBadgeAwards)
+                .HasForeignKey(d => d.BadgeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TblBadgeA__Badge__68A8708A");
         });
 
         modelBuilder.Entity<TblContract>(entity =>
@@ -1333,14 +1360,8 @@ public partial class SkillSwapDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        // Apply the conditional filter to TblUser
         modelBuilder.Entity<TblUser>()
-            .HasQueryFilter(u =>
-                // Always hide escrow accounts
-                !u.IsEscrowAccount
-             // And hide Admin-role users if NOT in an admin context
-             && (_isAdminContext || !u.Role.Equals("Admin"))
-            );
+           .HasQueryFilter(u => !u.IsEscrowAccount);
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

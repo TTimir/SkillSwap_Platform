@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Skill_Swap.Models;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.OnBoardVM;
+using SkillSwap_Platform.Services.BadgeTire;
 using SkillSwap_Platform.Services.Email;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -14,6 +15,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<OnboardingController> _logger;
         private readonly IEmailService _emailService;
+        private readonly BadgeService _badgeService;
 
         // Per-step rewards (sum = 2.0m)
         private const decimal ROLE_STEP_REWARD = 0.25m;
@@ -23,11 +25,12 @@ namespace SkillSwap_Platform.Controllers
         private const decimal CERT_STEP_REWARD = 0.25m;
         private const decimal SOCKYC_STEP_REWARD = 0.25m;
 
-        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService)
+        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService, BadgeService badgeService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _badgeService = badgeService ?? throw new ArgumentNullException(nameof(badgeService));
         }
 
         #region STEP 1: Select Role
@@ -609,7 +612,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = SKILLPREF_STEP_REWARD;
-            
+
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -798,7 +801,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = CERT_STEP_REWARD;
-            
+
             var certificateNames = form["certification[certificate_name][]"];
             var certifiedFrom = form["certification[certified_from][]"];
             var completionDate = form["certification[completion_date][]"];
@@ -917,7 +920,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = SOCKYC_STEP_REWARD;
-            
+
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -994,6 +997,17 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                if (progress.RoleSelected
+                && progress.ProfileCompleted
+                && progress.SkillsFilled
+                && progress.SkillPreferencesSet
+                && progress.CertificateUploaded
+                && progress.SocialAndKycCompleted)
+                {
+                    // Award Onboard Complete for  participants:
+                    _badgeService.EvaluateAndAward(userId);
+                }
 
                 // 🎉 Fire off the "onboarding complete" email
                 var htmlBody = $@"

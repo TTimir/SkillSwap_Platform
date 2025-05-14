@@ -177,7 +177,12 @@
                     <div class="col-6 col-lg-auto">
                         <div class="text-center text-lg-start d-flex align-items-center">
                             <div class="dashboard_header_logo position-relative me-2 me-xl-5">
-                                <a href="index.html" class="logo"><img src="/template_assets/images/header-logo-dark.svg" alt=""></a>
+                                <a class="header-logo logo1" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                    </span>
+                                </a>
                             </div>
                             <div class="fz20 ml90">
                                 <a href="#" class="dashboard_sidebar_toggle_icon vam"><img src="/template_assets/images/dashboard-navicon.svg" alt=""></a>
@@ -599,6 +604,26 @@
                                 Add Privacy Words
                             </a>
                         </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
+                        <div class="sidebar_list_item">
+                            <!-- hidden logout form -->
+                            <form id="logoutForm"
+                                  asp-controller="Home"
+                                  asp-action="Logout"
+                                  method="post"
+                                  class="d-none">
+                                @Html.AntiForgeryToken()
+                            </form>
+
+                            <!-- visible link that submits the form -->
+                            <a href="javascript:document.getElementById('logoutForm').submit();"
+                               class="items-center"
+                               title="Logout">
+                                <i class="flaticon-logout mr15"></i>
+                                Logout
+                            </a>
+                        </div>
                     }
                 </div>
             </div>
@@ -662,7 +687,7 @@
                     <div class="row align-items-center justify-content-center justify-content-md-between">
                         <div class="col-auto">
                             <div class="copyright-widget">
-                                <p class="mb-md-0">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                                <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         <div class="col-auto">
