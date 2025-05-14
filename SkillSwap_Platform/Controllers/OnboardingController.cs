@@ -1138,6 +1138,34 @@ namespace SkillSwap_Platform.Controllers
             // record it so it won’t run again
             progress.TotalTokensGiven = total;
             await _context.SaveChangesAsync();
+
+            var subject = $"🎉 You’ve just earned {total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}!";
+            var htmlBody = $@"
+                <div style=""font-family:sans-serif;line-height:1.4;color:#333;"">
+                  <h2>Congrats, {user.FirstName}! 🥳</h2>
+                  <p>Because you completed every onboarding step, we’ve just deposited <strong>{total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}</strong> into your account.</p>
+                  <img src=""/template_assets/images/SSDToken.png"" 
+                       alt=""SkillSwap Token"" 
+                       style=""width:100px;height:100px;object-fit:contain;"" />
+                  <p>
+                    Your new balance is now <strong>{user.DigitalTokenBalance:0.##}</strong> tokens.
+                    Use them to post offers, request help, or explore the community—your next big swap is just a click away!
+                  </p>
+                  <blockquote style=""border-left:4px solid #5BBB7B;padding-left:1em;color:#444;margin:1em 0;"">
+                    “Tokens aren’t just currency—they’re the fuel for your next achievement!”  
+                  </blockquote>
+                  <p>
+                    <a href=""{Url.Action("Profile", "User")}"">View your profile</a> to see them in action.
+                  </p>
+                  <p style=""margin-top:2em;"">— Happy swapping,<br/>The SkillSwap Team</p>
+                </div>";
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                subject,
+                htmlBody,
+                isBodyHtml: true
+            );
         }
 
         #region Helper Methods

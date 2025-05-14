@@ -8,14 +8,22 @@ namespace SkillSwap_Platform.Models;
 
 public partial class SkillSwapDbContext : DbContext
 {
+    private readonly IHttpContextAccessor _http;
+    // expose a read-only flag for EF’s query filter
+    public bool IsAdminUser { get; }
+
     public SkillSwapDbContext()
     {
     }
 
-    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options)
+    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options, IHttpContextAccessor httpContextAccessor)
         : base(options)
     {
+        _http = httpContextAccessor;
+        // guard against non-HTTP contexts (e.g. design-time tooling)
+        IsAdminUser = _http.HttpContext?.User?.IsInRole("Admin") == true;
     }
+
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
 
@@ -1361,7 +1369,10 @@ public partial class SkillSwapDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<TblUser>()
-           .HasQueryFilter(u => !u.IsEscrowAccount);
+             .HasQueryFilter(u =>
+                 IsAdminUser
+                 || !u.IsEscrowAccount
+             );
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

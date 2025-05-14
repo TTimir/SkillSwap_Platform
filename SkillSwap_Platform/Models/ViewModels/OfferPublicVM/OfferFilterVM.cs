@@ -38,5 +38,8 @@ namespace SkillSwap_Platform.Models.ViewModels.OfferFilterVM
         public List<SelectListItem> SkillLevelOptions { get; set; } = new();
         public List<SelectListItem> TimeCommitmentOptions { get; set; } = new();
         public List<SelectListItem> FreelanceTypeOptions { get; set; } = new();
+
+        public IReadOnlyList<OfferCardVM> SuggestedOffers { get; set; }
+             = new List<OfferCardVM>();
     }
 }

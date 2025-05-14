@@ -9,7 +9,7 @@ namespace SkillSwap_Platform.Models.ViewModels.BadgeTire
         public string Description { get; }
         public BadgeTier Tier { get; }
         public Func<SkillSwapDbContext, int, bool> Criteria { get; }
-         public string IconPath  { get; }
+        public string IconPath  { get; }
 
         public BadgeDefinition(
             int badgeId,

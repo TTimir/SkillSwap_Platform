@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@using System.Linq
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Serialization
 @inject SkillSwap_Platform.Models.SkillSwapDbContext _db
@@ -230,7 +231,23 @@
       width: 60px !important;
       height: 60px !important;
     }
+     /* Shared pill styling */
+.badge-level {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
 
+/* Tier colors */
+.badge-tier-Common     { color: #95a5a6; background: #95a5a611; } /* gray */
+.badge-tier-Uncommon   { color: #2ecc71; background: #2ecc7111; } /* green */
+.badge-tier-Rare       { color: #3498db; background: #3498db11; } /* blue */
+.badge-tier-Epic       { color: #9b59b6; background: #9b59b611; } /* purple */
+.badge-tier-Legendary  { color: #f39c12; background: #f39c1211; } /* gold */
+.badge-tier-Mythic     { color: #e74c3c; background: #e74c3c11; } /* red */
 </style>
 
 
@@ -539,7 +556,7 @@
                                      style="width:96px; height:96px; object-fit:cover;  
                                             border:4px solid rgba(91, 187, 123,0.3);" />
                         
-                                <p id="badgeModalLevel" class="small text-muted mb-2"></p>
+                                <p id="badgeModalLevel" class="small badge-level mb-2"></p>
                                 <h5 id="badgeModalTitle" class="fw-bold mb-2 text-dark"></h5>
                                 <p id="badgeModalDesc" class="small text-secondary mb-3 px-2"></p>
                         
@@ -1364,7 +1381,9 @@
         // Populate modal
         document.getElementById('badgeModalIcon').src        = IconUrl;
         document.getElementById('badgeModalIcon').alt        = Name;
-        document.getElementById('badgeModalLevel').innerText = LevelName;
+        const lvlEl = document.getElementById('badgeModalLevel');
+        lvlEl.innerText = LevelName;
+        lvlEl.className = 'small badge-level badge-tier-' + LevelName;
         document.getElementById('badgeModalTitle').innerText = Name;
         document.getElementById('badgeModalDesc').innerText  = Description || "No description provided.";
         document.getElementById('badgeModalQuote').innerText = quote;

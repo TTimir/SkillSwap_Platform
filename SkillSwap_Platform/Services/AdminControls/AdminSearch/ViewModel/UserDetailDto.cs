@@ -75,6 +75,8 @@
         public List<UserExperienceDto> Experiences { get; set; } = new();
         public List<LanguageDto> Languages { get; set; }
         public List<KycDto> KycDetails { get; set; }
+        public IList<BadgeDto> Badges { get; set; } = new List<BadgeDto>();
+
     }
 
     // define each sub-DTO similarly:
@@ -155,4 +157,12 @@
         public DateTime UploadedDate { get; set; }
         public bool IsVerified { get; set; }
     }
+    public class BadgeDto
+    {
+        public string IconUrl { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string LevelName { get; set; }
+    }
+
 }

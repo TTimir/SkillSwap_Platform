@@ -341,6 +341,123 @@
             </div>
         </form>
 
+        @if (Model.SuggestedOffers?.Any() == true)
+        {
+            foreach (var offer in Model.SuggestedOffers)
+            {
+                <div class="col-sm-6 col-xl-3">
+                    <div class="listing-style1 style3 offer-card">
+                        <div class="list-thumb">
+                            @if (offer.PortfolioImages != null && offer.PortfolioImages.Count > 0)
+                            {
+                                <div class="list-thumb">
+                                    <div class="listing-thumbIn-slider position-relative navi_pagi_bottom_center slider-1-grid owl-carousel owl-theme">
+
+                                        @foreach (var image in offer.PortfolioImages)
+                                        {
+                                            <div class="item">
+                                                <img class="w-100" src="@image" alt="@offer.Title" />
+                                                @{
+                                                    // get current user ID
+                                                    var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                                    int userId = 0;
+                                                    if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                                    var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                                    bool isSaved = userId > 0
+                                                    && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                                    var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                                    var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                                }
+                                                <form asp-controller="UserWishlist"
+                                                      asp-action="@(isSaved ? "Remove" : "Add")"
+                                                      method="post"
+                                                      class="position-absolute"
+                                                      style="top:8px; right:8px;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                                    <button type="submit"
+                                                            class="border-0 listing-fav fz12"
+                                                            data-bs-toggle="tooltip"
+                                                            title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                        <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                // List of default images.
+                                var defaultImages = new List<string>
+                    {
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                    };
+
+                                // Use a deterministic approach:
+                                int index = offer.OfferId % defaultImages.Count;
+                                var selectedImage = defaultImages[index];
+
+                                <div class="list-thumb">
+                                    <img class="w-100" src="@selectedImage" alt="@offer.Title" />
+                                    @{
+                                        // get current user ID
+                                        var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                                        int userId = 0;
+                                        if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
+                                        var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
+                                        bool isSaved = userId > 0
+                                        && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                        var addUrl = Url.Action("AddToWishlist", "Wishlist");
+                                        var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
+                                    }
+                                    <form asp-controller="UserWishlist"
+                                          asp-action="@(isSaved ? "Remove" : "Add")"
+                                          method="post"
+                                          class="position-absolute"
+                                          style="top:8px; right:8px;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="offerId" value="@offer.OfferId" />
+
+                                        <button type="submit"
+                                                class="border-0 listing-fav fz12"
+                                                data-bs-toggle="tooltip"
+                                                title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                            <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                        <div class="list-content">
+                            <p class="list-text body-color fz14 mb-1">@offer.Category</p>
+                            <h5 class="list-title line-clamp2"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId  })">@offer.Title</a></h5>
+                            <div class="review-meta d-flex align-items-center">
+                                <i class="fas fa-star fz10 review-color me-2"></i>
+                                <p class="mb-0 body-color fz14"><span class="dark-color me-2">@offer.AverageRating.ToString("0.00")</span>@offer.ReviewCount reviews</p>
+                            </div>
+                            <hr class="my-2">
+                            <div class="list-meta d-flex justify-content-between align-items-center mt15">
+                                <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
+                                    <span class="position-relative mr10">
+                                        <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
+                                        <span class="online-badge"></span>
+                                    </span>
+                                    <span class="fz14">@offer.UserName</span>
+                                </a>
+                                <div class="budget">
+                                    <p class="mb-0 body-color">Time<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
         @if (User.Identity.IsAuthenticated)
         {
             <section class="mb-1">

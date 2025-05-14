@@ -574,6 +574,26 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                 })
                 .ToListAsync();
 
+            dto.Badges = await _db.TblBadgeAwards
+                .AsNoTracking()
+                .Where(a => a.UserId == userId)
+                .Include(a => a.Badge)
+                .Select(a => new BadgeDto
+                {
+                    IconUrl = a.Badge.IconUrl,
+                    Name = a.Badge.Name,
+                    Description = a.Badge.Description,
+                    LevelName =
+                        a.Badge.Tier == "1" ? "Common" :
+                        a.Badge.Tier == "2" ? "Uncommon" :
+                        a.Badge.Tier == "3" ? "Rare" :
+                        a.Badge.Tier == "4" ? "Epic" :
+                        a.Badge.Tier == "5" ? "Legendary" :
+                        a.Badge.Tier == "6" ? "Mythic" :
+                        "Level n/a"
+                })
+                .ToListAsync();
+
             // — FLAGGED MESSAGES — 
             dto.FlaggedMessages = await _db.TblMessages.AsNoTracking()
                 .Where(m =>
