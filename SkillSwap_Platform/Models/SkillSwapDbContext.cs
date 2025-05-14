@@ -8,22 +8,14 @@ namespace SkillSwap_Platform.Models;
 
 public partial class SkillSwapDbContext : DbContext
 {
-    private readonly IHttpContextAccessor _http;
-    // expose a read-only flag for EF’s query filter
-    public bool IsAdminUser { get; }
-
     public SkillSwapDbContext()
     {
     }
 
-    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options, IHttpContextAccessor httpContextAccessor)
+    public SkillSwapDbContext(DbContextOptions<SkillSwapDbContext> options)
         : base(options)
     {
-        _http = httpContextAccessor;
-        // guard against non-HTTP contexts (e.g. design-time tooling)
-        IsAdminUser = _http.HttpContext?.User?.IsInRole("Admin") == true;
     }
-
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
 
@@ -986,7 +978,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Description).HasMaxLength(200);
             entity.Property(e => e.TxType)
-                .HasMaxLength(20)
+                .HasMaxLength(50)
                 .IsUnicode(false);
 
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblTokenTransactions)
@@ -1369,10 +1361,10 @@ public partial class SkillSwapDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<TblUser>()
-             .HasQueryFilter(u =>
-                 IsAdminUser
-                 || !u.IsEscrowAccount
-             );
+            .HasQueryFilter(u =>
+               u.Role != "Admin"    // exclude any user whose Role column is Admin
+            && !u.IsEscrowAccount        // exclude any escrow account
+       );
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

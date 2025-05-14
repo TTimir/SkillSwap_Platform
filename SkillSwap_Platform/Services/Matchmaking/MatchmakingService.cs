@@ -42,104 +42,85 @@ namespace SkillSwap_Platform.Services.Matchmaking
                 return Array.Empty<OfferCardVM>();
 
             // 2) Load all “active” offers first (we’ll triage in memory)
-            var rawOffers = await _db.TblOffers
-                .AsNoTracking()
-                .Include(o => o.User)
-                .Where(o =>
-                    o.IsActive &&
-                    !o.IsDeleted &&
-                    o.UserId != userId &&
-                    // Housekeeping #3 (for the offer): must have at least one SkillIdOfferOwner AND one WillingSkill
-                    !string.IsNullOrWhiteSpace(o.SkillIdOfferOwner) &&
-                    !string.IsNullOrWhiteSpace(o.WillingSkill)
-                )
-                .ToListAsync();
+            var query = _db.TblOffers
+        .AsNoTracking()
+        .Where(o =>
+            o.IsActive &&
+            !o.IsDeleted &&
+            o.UserId != userId &&
+            !string.IsNullOrWhiteSpace(o.SkillIdOfferOwner) &&
+            !string.IsNullOrWhiteSpace(o.WillingSkill))
+        .Include(o => o.User)
+        // group‐join to reviews
+        .GroupJoin(_db.TblReviews,
+            offer => offer.OfferId,
+            review => review.OfferId,
+            (offer, reviews) => new { offer, reviews })
+        .Select(x => new
+        {
+            x.offer,
+            // compute the stats server-side
+            AvgRating = x.reviews.Any() ? x.reviews.Average(r => (double?)r.Rating) : 0,
+            ReviewCount = x.reviews.Count()
+        });
 
-            if (!rawOffers.Any())
-                return Array.Empty<OfferCardVM>();
+            // 3) Materialize and filter in memory
+            var raw = await query.ToListAsync();
 
-            // 3) Build a skill-ID → skill-name lookup
             var skillLookup = await _db.TblSkills
                 .AsNoTracking()
                 .ToDictionaryAsync(s => s.SkillId, s => s.SkillName);
 
-            var offerIds = rawOffers.Select(o => o.OfferId).ToList();
-
-            // batch review stats
-            var reviewStats = await _db.TblReviews
-                .AsNoTracking()
-                .Where(r => offerIds.Contains(r.OfferId))
-                .GroupBy(r => r.OfferId)
-                .Select(g => new
+            var matches = raw
+                .Select(x =>
                 {
-                    g.Key,
-                    AvgRating = g.Average(r => (double?)r.Rating) ?? 0,
-                    Count = g.Count()
-                })
-                .ToDictionaryAsync(x => x.Key);
+                    // parse their offered IDs → names
+                    var offeredIds = x.offer.SkillIdOfferOwner
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.TryParse(s, out var i) ? (int?)i : null)
+                        .Where(i => i.HasValue)
+                        .Select(i => i.Value)
+                        .ToList();
 
-            var matches = new List<OfferCardVM>();
-            foreach (var o in rawOffers)
-            {
-                // --- parse their offered skill IDs → names
-                var offeredIds = (o.SkillIdOfferOwner ?? "")
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(id => int.TryParse(id.Trim(), out var x) ? (int?)x : null)
-                    .Where(x => x.HasValue)
-                    .Select(x => x.Value)
-                    .ToList();
+                    var offeredNames = offeredIds
+                        .Where(id => skillLookup.ContainsKey(id))
+                        .Select(id => skillLookup[id])
+                        .ToList();
 
-                var offeredNames = offeredIds
-                    .Where(id => skillLookup.ContainsKey(id))
-                    .Select(id => skillLookup[id])
-                    .ToList();
+                    // parse their willing skills
+                    var wantsMe = x.offer.WillingSkill.ToSkillList();
 
-                // --- parse their willing skills
-                var wantsMe = o.WillingSkill
-                    .ToSkillList();
+                    // checks
+                    var offersSomethingIWant = offeredNames.Intersect(myDesired, StringComparer.OrdinalIgnoreCase).Any();
+                    var wantsSomethingIOffer = wantsMe.Intersect(myOffered, StringComparer.OrdinalIgnoreCase).Any();
 
-                // --- check #1: do they offer any skill in myDesired?
-                bool offersSomethingIWant = offeredNames
-                    .Intersect(myDesired, StringComparer.OrdinalIgnoreCase)
-                    .Any();
-
-                // --- check #2: do they want any skill in myOffered?
-                bool wantsSomethingIOffer = wantsMe
-                    .Intersect(myOffered, StringComparer.OrdinalIgnoreCase)
-                    .Any();
-
-                if (!(offersSomethingIWant && wantsSomethingIOffer))
-                    continue;
-
-                // --- combine
-                bool passesBothChecks = offersSomethingIWant && wantsSomethingIOffer;
-
-                if (!passesBothChecks)
-                    continue;
-
-                if (passesBothChecks)
-                {
-                    var stats = reviewStats.GetValueOrDefault(o.OfferId);
-                    // finally map to your OfferCardVM
-                    matches.Add(new OfferCardVM
+                    return new
                     {
-                        OfferId = o.OfferId,
-                        Title = o.Title,
-                        Category = o.Category,
-                        TimeCommitmentDays = o.TimeCommitmentDays,
-                        PortfolioImages = string.IsNullOrWhiteSpace(o.Portfolio)
-                        ? new List<string>()
-                        : JsonConvert.DeserializeObject<List<string>>(o.Portfolio),
-                        AverageRating = stats?.AvgRating ?? 0,
-                        ReviewCount = stats?.Count ?? 0,
-                        UserName = o.User.UserName,
-                        UserProfileImage = o.User.ProfileImageUrl
-                    });
-                }
-            }
+                        Offer = x.offer,
+                        Passes = offersSomethingIWant && wantsSomethingIOffer,
+                        x.AvgRating,
+                        x.ReviewCount
+                    };
+                })
+                .Where(x => x.Passes)
+                .Select(x => new OfferCardVM
+                {
+                    OfferId = x.Offer.OfferId,
+                    Title = x.Offer.Title,
+                    Category = x.Offer.Category,
+                    TimeCommitmentDays = x.Offer.TimeCommitmentDays,
+                    PortfolioImages = string.IsNullOrWhiteSpace(x.Offer.Portfolio)
+                                          ? new List<string>()
+                                          : JsonConvert.DeserializeObject<List<string>>(x.Offer.Portfolio),
+                    AverageRating = x.AvgRating ?? 0,
+                    ReviewCount = x.ReviewCount,
+                    UserName = x.Offer.User.UserName,
+                    UserProfileImage = x.Offer.User.ProfileImageUrl
+                })
+                .Take(4)
+                .ToList();
 
-            // 4) Return up to 4 suggestions
-            return matches.Take(4).ToList();
+            return matches;
         }
     }
 }

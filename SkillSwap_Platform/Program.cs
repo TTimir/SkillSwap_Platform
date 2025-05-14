@@ -58,7 +58,10 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Logging
+       .ClearProviders()
+       .AddConsole()
+       .AddDebug();
 // Configure DB Context
 var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>

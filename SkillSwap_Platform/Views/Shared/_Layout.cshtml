@@ -191,7 +191,7 @@
                                             <img src="~/template_assets/images/SSDToken.png"
                                                  alt="Tokens"
                                                  width="32" height="32" />
-                                            <span id="token-balance">@balance.ToString("0.0000")</span>
+                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
                                         </li>
                                         <li class="user_setting">
                                             <div class="dropdown">
@@ -337,7 +337,10 @@
 
         <div class="body_content">
             <form id="filterForm" method="get" action="@Url.Action("PublicOfferList","UserOfferDetails")">
-                <input type="hidden" name="category" id="categoryInput" value="@Model.Category" />
+                @{
+                    var currentCategory = ViewContext.HttpContext.Request.Query["category"].ToString();
+                }
+                <input type="hidden" name="category" id="categoryInput" value="@currentCategory" />
                 @await Component.InvokeAsync("CategoryMenu")
             </form>
             @RenderBody()

@@ -325,11 +325,11 @@
                             @{
                                 var sortOption = ViewContext.HttpContext.Request.Query["sortOption"].ToString();
                                 var optionsHtml = new List<string>
-                                {
-                                     $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
-                                     $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
-                                     $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
-                                };
+                            {
+                            $"<option value=\"bestSeller\"{(sortOption == "bestSeller" ? " selected" : "")}>Best Seller</option>",
+                            $"<option value=\"recommended\"{(sortOption == "recommended" ? " selected" : "")}>Recommended</option>",
+                            $"<option value=\"newArrivals\"{(string.IsNullOrEmpty(sortOption) || sortOption == "newArrivals" ? " selected" : "")}>New Arrivals</option>"
+                            };
                             }
                             <span>Sort by</span>
                             <select name="sortOption" class="selectpicker show-tick" onchange="this.form.submit()">
@@ -460,12 +460,15 @@
 
         @if (User.Identity.IsAuthenticated)
         {
-            <section class="mb-1">
-                <h3>Offers Near You</h3>
-                <div id="nearbyOffers">
-                    <p>Hang tight, finding swap offers near you…</p>
-                </div>
-            </section>
+            @if (Model != null)
+            {
+                <section class="mb-1">
+                    <h3>Offers Near You</h3>
+                    <div id="nearbyOffers">
+                        <p>Hang tight, finding swap offers near you…</p>
+                    </div>
+                </section>
+            }
         }
 
         <div class="row equal-height">
@@ -492,7 +495,7 @@
                                                         if (int.TryParse(userIdString, out var tmp)) userId = tmp;                                                        // check if already in wishlist
                                                         var inWishlist = userId > 0 && await WishlistService.ExistsAsync(userId, offer.OfferId);
                                                         bool isSaved = userId > 0
-                                                                && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
+                                                        && WishlistService.ExistsAsync(userId, offer.OfferId).Result; var title = inWishlist ? "Remove from wishlist" : "Add to wishlist";
                                                         var addUrl = Url.Action("AddToWishlist", "Wishlist");
                                                         var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
                                                     }
@@ -520,10 +523,10 @@
                                 {
                                     // List of default images.
                                     var defaultImages = new List<string>
-                                    {
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
-                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
-                                    };
+                        {
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                        };
 
                                     // Use a deterministic approach:
                                     int index = offer.OfferId % defaultImages.Count;

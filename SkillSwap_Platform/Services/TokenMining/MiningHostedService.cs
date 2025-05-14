@@ -26,9 +26,9 @@ namespace SkillSwap_Platform.Services.TokenMining
                 try
                 {
                     await Task.WhenAll(
-                    IssueTokensForActiveUsers(stoppingToken),
-                    ResetDailyCapsIfNeeded(stoppingToken)
-                );
+                        IssueTokensForActiveUsers(stoppingToken),
+                        ResetDailyCapsIfNeeded(stoppingToken)
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -69,21 +69,50 @@ namespace SkillSwap_Platform.Services.TokenMining
             int halvings = (int)(daysSinceStart / settings.HalvingPeriodDays);
             decimal rate = baseRatePerMin / (decimal)Math.Pow(2, halvings);
 
-            _logger.LogDebug("Computed rate={Rate:N6} TK/min after {Halvings} halvings",
-                             rate, halvings);
-
             // only users who haven’t been credited in the last 5 minutes
             var cutoff = nowUtc.AddMinutes(-5);
             var usersToProcess = await db.UserMiningProgresses
+                .AsNoTracking()
                 .Where(p => p.IsMiningAllowed && p.LastEmittedUtc <= cutoff)
+                .Join(db.TblUsers,
+                    prog => prog.UserId,
+                    user => user.UserId,
+                    (prog, user) => new { prog, user })
+                .Where(x => !x.user.IsEscrowAccount
+                            && !x.user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                  .Select(x => x.prog)
                 .ToListAsync(ct);
-
-            _logger.LogDebug("Found {Count} users to process", usersToProcess.Count);
 
             foreach (var prog in usersToProcess)
             {
                 try
                 {
+                    // attach so EF can track updates
+                    db.UserMiningProgresses.Attach(prog);
+
+                    // FIRST-RUN INITIALIZATION
+                    if (prog.LastEmittedUtc == DateTime.MinValue)
+                    {
+                        prog.LastEmittedUtc = nowUtc;
+                        prog.EmittedToday = 0;
+                        _logger.LogInformation("🆕 Initialized start time for user {UserId}", prog.UserId);
+                        continue;
+                    }
+
+                    var user = await db.TblUsers.FindAsync(new object[] { prog.UserId }, ct);
+                    if (user == null)
+                    {
+                        _logger.LogWarning("User {UserId} disappeared—skipping", prog.UserId);
+                        continue;
+                    }
+
+                    if (user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                        || user.IsEscrowAccount)
+                    {
+                        _logger.LogInformation("⏭️ Skipped mining for {UserId}: Admin or Escrow", prog.UserId);
+                        continue;
+                    }
+
                     if (!prog.IsMiningAllowed) continue;
 
                     // how many minutes since last emit?
@@ -102,12 +131,6 @@ namespace SkillSwap_Platform.Services.TokenMining
                     if (toCredit <= 0) continue;
 
                     // 1) update user balance
-                    var user = await db.TblUsers.FindAsync(prog.UserId);
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User {UserId} not found, skipping", prog.UserId);
-                        continue;
-                    }
                     user.DigitalTokenBalance += toCredit;
 
                     // 2) update progress
@@ -134,9 +157,6 @@ namespace SkillSwap_Platform.Services.TokenMining
                         ExchangeId = null,                  // not from an exchange
                         IsReleased = true                   // immediately “released”
                     });
-
-                    _logger.LogInformation("Credited {Amount:N4} TK to user {UserId} → balance now {Bal:N4}",
-                                               toCredit, prog.UserId, user.DigitalTokenBalance);
                 }
                 catch (Exception ex)
                 {
@@ -144,7 +164,18 @@ namespace SkillSwap_Platform.Services.TokenMining
                 }
             }
 
-            await db.SaveChangesAsync(ct);
+            try
+            {
+                var affected = await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx,
+                    "❌ DbUpdateException saving mining changes. Entries:\n{Entries}\nInner: {Inner}",
+                    string.Join(", ", dbEx.Entries.Select(e => e.Entity.GetType().Name)),
+                    dbEx.InnerException?.Message);
+                throw;  // or swallow if you want the service to keep running
+            }
         }
 
         private async Task ResetDailyCapsIfNeeded(CancellationToken ct)
