@@ -1,0 +1,208 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Teaching Resources";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Teacher's Guide | SkillSwap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #16a085;
+            color: #fff;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 2.5rem;
+            }
+
+            header p {
+                margin: 10px 0 0;
+                font-size: 1.1rem;
+            }
+
+        .container {
+            max-width: 1000px;
+            margin: -30px auto 40px;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #ecf0f1;
+            padding: 15px 20px;
+        }
+
+            .card-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: #16a085;
+            }
+
+        .card-body {
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .section-title {
+            font-weight: 600;
+            margin-top: 20px;
+            color: #2c3e50;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+            ul li {
+                margin-bottom: 10px;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+            table th, table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+            }
+
+            table th {
+                background: #ecf0f1;
+                text-align: left;
+            }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Master Teacher’s Guide to Effective Teaching</h1>
+        <p>Simple steps and examples anyone can follow</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header"><h2>1. Core Teaching Principles</h2></div>
+            <div class="card-body">
+                <p class="section-title">Clarity of Purpose</p>
+                <p>Define clear goals. <em>Example:</em> “By the end, you will be able to make a perfect cup of tea.”</p>
+                <p class="section-title">Learner-Centered Approach</p>
+                <p>Adapt to needs. <em>Example:</em> For someone learning to draw, start with simple shapes like circles and squares.</p>
+                <p class="section-title">Active Engagement</p>
+                <p>Include hands-on tasks. <em>Example:</em> After showing how to fold a paper boat, ask the learner to fold one.</p>
+                <p class="section-title">Continuous Feedback</p>
+                <p>Give corrections immediately. <em>Example:</em> If a paper boat leaks, show how to seal the edges right away.</p>
+                <p class="section-title">Reflective Practice</p>
+                <p>Encourage reflection. <em>Example:</em> “What part of folding was the trickiest for you?”</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>2. Lesson Structure Outline</h2></div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr><th>Phase</th><th>% Time</th><th>Everyday Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Opening</td><td>5%</td><td>“Today we’ll bake a simple cake.”</td></tr>
+                        <tr><td>Foundation</td><td>15%</td><td>Explain ingredients: flour, sugar, eggs.</td></tr>
+                        <tr><td>Demonstration</td><td>20%</td><td>Show mixing and baking steps in the kitchen.</td></tr>
+                        <tr><td>Guided Practice</td><td>30%</td><td>Learner mixes batter with your guidance.</td></tr>
+                        <tr><td>Independent Practice</td><td>20%</td><td>Learner bakes their own cake.</td></tr>
+                        <tr><td>Closure</td><td>10%</td><td>Taste and discuss improvements.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>3. Tips &amp; Tricks</h2></div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Tell-Show-Do:</strong> Explain tying shoelaces, show once, then have learner try.</li>
+                    <li><strong>Chunking:</strong> Teach planting seeds first, then watering techniques.</li>
+                    <li><strong>Questions:</strong> Ask “Why do seeds need water?” to spark thinking.</li>
+                    <li><strong>Visual Aids:</strong> Use a photo of a growing plant to illustrate stages.</li>
+                    <li><strong>Self-Explanation:</strong> Have learner describe each step aloud.</li>
+                    <li><strong>Quick Checks:</strong> “Thumbs up if you’re comfortable with measuring ingredients.”</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>4. Common Pitfalls &amp; Solutions</h2></div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr><th>Pitfall</th><th>Solution</th><th>Example</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Too much detail</td><td>Limit to 2–3 steps</td><td>Focus on mixing and baking only.</td></tr>
+                        <tr><td>Lecture-only</td><td>Add activities</td><td>Pause to let learner stir the batter.</td></tr>
+                        <tr><td>Skipping feedback</td><td>Offer quick tips</td><td>“Next time, preheat the oven first.”</td></tr>
+                        <tr><td>No follow-up</td><td>Give homework</td><td>Ask to bake overnight and note differences in texture.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>5. Reflect &amp; Improve</h2></div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Self-Evaluate:</strong> Rate your teaching after each session.</li>
+                    <li><strong>Learner Feedback:</strong> Ask “What helped you most today?”</li>
+                    <li><strong>Peer Observation:</strong> Invite a friend to watch and comment.</li>
+                    <li><strong>Iterate:</strong> Adjust next lesson based on feedback.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>6. Wisdom from Master Educators</h2></div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Bloom’s Taxonomy:</strong> Structure learning objectives from Remember to Create (apply – analyze – evaluate – create). <em>“Tell me and I forget; teach me and I may remember; involve me and I learn.” – Benjamin Franklin</em></li>
+                    <li><strong>Feynman Technique:</strong> Teach a concept in simple language, identify gaps, review, and simplify again. <em>“If you can’t explain it simply, you don’t understand it well enough.” – Richard Feynman</em></li>
+                    <li><strong>Socratic Method:</strong> Use guided questioning to stimulate critical thinking and illuminate ideas. <em>“I cannot teach anybody anything. I can only make them think.” – Socrates</em></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>&copy; 2025 SkillSwap | Master Teacher’s Guide</footer>
+</body>
+</html>
+

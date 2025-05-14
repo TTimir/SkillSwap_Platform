@@ -43,17 +43,17 @@ namespace SkillSwap_Platform.Services.Matchmaking
 
             // 2) Load all “active” offers first (we’ll triage in memory)
             var rawOffers = await _db.TblOffers
-        .AsNoTracking()
-        .Include(o => o.User)
-        .Where(o =>
-            o.IsActive &&
-            !o.IsDeleted &&
-            o.UserId != userId &&
-            // Housekeeping #3 (for the offer): must have at least one SkillIdOfferOwner AND one WillingSkill
-            !string.IsNullOrWhiteSpace(o.SkillIdOfferOwner) &&
-            !string.IsNullOrWhiteSpace(o.WillingSkill)
-        )
-        .ToListAsync();
+                .AsNoTracking()
+                .Include(o => o.User)
+                .Where(o =>
+                    o.IsActive &&
+                    !o.IsDeleted &&
+                    o.UserId != userId &&
+                    // Housekeeping #3 (for the offer): must have at least one SkillIdOfferOwner AND one WillingSkill
+                    !string.IsNullOrWhiteSpace(o.SkillIdOfferOwner) &&
+                    !string.IsNullOrWhiteSpace(o.WillingSkill)
+                )
+                .ToListAsync();
 
             if (!rawOffers.Any())
                 return Array.Empty<OfferCardVM>();
@@ -63,9 +63,12 @@ namespace SkillSwap_Platform.Services.Matchmaking
                 .AsNoTracking()
                 .ToDictionaryAsync(s => s.SkillId, s => s.SkillName);
 
+            var offerIds = rawOffers.Select(o => o.OfferId).ToList();
+
             // batch review stats
             var reviewStats = await _db.TblReviews
-                .Where(r => rawOffers.Select(o => o.OfferId).Contains(r.OfferId))
+                .AsNoTracking()
+                .Where(r => offerIds.Contains(r.OfferId))
                 .GroupBy(r => r.OfferId)
                 .Select(g => new
                 {

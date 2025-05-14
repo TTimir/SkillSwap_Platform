@@ -1,0 +1,228 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap | Help & Support</title>
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter',sans-serif;
+            background: #eef2f7;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(90deg,#059669,#10b981);
+            padding: 2rem;
+            text-align: center;
+            color: #fff;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                letter-spacing: 1px;
+            }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .intro {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+            .intro p {
+                font-size: 1.1rem;
+                margin: 0;
+            }
+
+        h2.section-title {
+            margin-top: 2.5rem;
+            font-size: 1.75rem;
+            color: #059669;
+            border-bottom: 2px solid #e0e7ff;
+            padding-bottom: 0.5rem;
+        }
+
+        ul.steps {
+            list-style: none;
+            padding: 0;
+        }
+
+            ul.steps li {
+                display: flex;
+                margin: 1rem 0;
+            }
+
+                ul.steps li i {
+                    font-size: 1.5rem;
+                    color: #10b981;
+                    margin-right: 1rem;
+                    margin-top: 0.25rem;
+                }
+
+        .steps-content {
+            max-width: 800px;
+        }
+
+            .steps-content strong {
+                color: #111827;
+            }
+
+        .cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+            .card h3 {
+                margin-top: 0;
+                color: #059669;
+            }
+
+            .card p {
+                margin: 0.75rem 0 0;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+            .btn:hover {
+                background: #047857;
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SkillSwap Help & Support</h1>
+    </header>
+
+    <div class="container">
+        <div class="intro">
+            <p>Welcome to SkillSwap Support! We’re here to make your experience smooth and rewarding. If you ever have questions or need assistance, follow the steps below.</p>
+        </div>
+
+        <h2 class="section-title">1. Acknowledgement</h2>
+        <ul class="steps">
+            <li><i class="fas fa-check-circle"></i><div class="steps-content"><strong>We’ve got you!</strong> When you reach out, our team reviews every message carefully—you're not alone.</div></li>
+            <li><i class="fas fa-clock"></i><div class="steps-content"><strong>Timely responses:</strong> Expect a first reply within <strong>24 hours</strong> (business days).</div></li>
+        </ul>
+
+        <h2 class="section-title">2. How to Contact Us</h2>
+        <ul class="steps">
+            <li><i class="fas fa-envelope"></i><div class="steps-content"><strong>Email-only support:</strong> Write to <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>.</div></li>
+            <li><i class="fas fa-lightbulb"></i><div class="steps-content"><strong>Subject tip:</strong> Use clear subjects like “Issue with Token Release” or “Question about KYC” for faster routing.</div></li>
+        </ul>
+
+        <h2 class="section-title">3. Frequently Asked Questions</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>How do I update my profile?</h3>
+                <p>Go to Settings → Edit Profile, update your details, and click "Save".</p>
+            </div>
+            <div class="card">
+                <h3>Forgot Password</h3>
+                <p>Click "Forgot Password" on the login page and follow the email instructions.</p>
+            </div>
+            <div class="card">
+                <h3>Request a Skill Session</h3>
+                <p>Select a skill in the marketplace, click "Request Session", and confirm date/time.</p>
+            </div>
+            <div class="card">
+                <h3>Refund Policy</h3>
+                <p>See Terms & Conditions v5.2: unused tokens within 7 days are refundable upon request.</p>
+            </div>
+            <div class="card">
+                <h3>Calculate TK Rewards</h3>
+                <p>Rewards are based on session duration and skill level. Check your dashboard for details.</p>
+            </div>
+            <div class="card">
+                <h3>Protect My Data</h3>
+                <p>We encrypt all personal information and comply with GDPR/CCPA standards.</p>
+            </div>
+            <div class="card">
+                <h3>Delete My Account</h3>
+                <p>Go to Settings → Account → Delete Account. Note: this action is irreversible.</p>
+            </div>
+            <div class="card">
+                <h3>Missed Session</h3>
+                <p>Reschedule within 24 hours or request token refund per policy.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">4. When to Expect Help</h2>
+        <table>
+            <thead><tr><th>Inquiry Type</th><th>Response Time</th></tr></thead>
+            <tbody>
+                <tr><td>General questions</td><td>≤ 24 hours</td></tr>
+                <tr><td>Account or billing issues</td><td>≤ 24 hours</td></tr>
+                <tr><td>Complex investigations</td><td>1–3 business days</td></tr>
+            </tbody>
+        </table>
+
+        <h2 class="section-title">5. What We Need from You</h2>
+        <ul class="steps">
+            <li><i class="fas fa-user"></i>Your username or registered email</li>
+            <li><i class="fas fa-pencil-alt"></i>Clear description of the issue</li>
+            <li><i class="fas fa-image"></i>Relevant screenshots or links</li>
+        </ul>
+
+        <h2 class="section-title">6. Next Steps</h2>
+        <ul class="steps">
+            <li><i class="fas fa-check"></i>We’ll send a confirmation once we receive your email.</li>
+            <li><i class="fas fa-search"></i>Our team may ask follow-up questions.</li>
+            <li><i class="fas fa-smile"></i>You’ll get a detailed solution or update.</li>
+        </ul>
+
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="mailto:skillswap360@gmail.com" class="btn"><i class="fas fa-paper-plane"></i> Contact Support</a>
+        </div>
+    </div>
+
+</body>
+</html>

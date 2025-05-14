@@ -1696,6 +1696,36 @@ public class HomeController : Controller
 
     #endregion
 
+    public async Task<IActionResult> TutorTeaching()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> PrivacyandPolicy()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> TermsofService()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> CookiePolicy()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> HelpandSupport()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> TrustandSafety()
+    {
+        return View();
+    }
+
     [AllowAnonymous]
     [HttpGet("Home/AccessDenied")]
     public IActionResult AccessDenied(string returnUrl)

@@ -220,14 +220,14 @@
         @if (User?.Identity?.IsAuthenticated == true)
         {
             <a href="@Url.Action("Index", "UserDashboard")"
-               class="ud-btn btn-thm">
+               class="ud-btn btn-thm" style="border-radius: 12px;">
                 Go to Your Dashboard
             </a>
         }
         else
         {
             <a href="@Url.Action("Register", "Home")"
-               class="ud-btn btn-thm">
+               class="ud-btn btn-thm" style="border-radius: 12px;">
                 Sign Up Free
             </a>
         }

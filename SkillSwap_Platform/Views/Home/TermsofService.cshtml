@@ -1,0 +1,194 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkillSwap Terms of Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter',sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #333;
+        }
+
+        header {
+            background: #16a085;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        nav {
+            background: #f9f9f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+            nav ul {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            nav a {
+                padding: 12px 18px;
+                text-decoration: none;
+                color: #555;
+                font-weight: 600;
+            }
+
+                nav a.active, nav a:hover {
+                    color: #16a085;
+                }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: #16a085;
+        }
+
+        h2 {
+            margin-top: 2.5rem;
+            font-size: 1.5rem;
+            color: #16a085;
+        }
+
+        h3 {
+            margin-top: 1.8rem;
+            font-size: 1.2rem;
+            color: #16a085;
+        }
+
+        p, ul, ol {
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+
+        .short-version {
+            background: #f0f4f8;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+            .short-version h2 {
+                margin-top: 0;
+            }
+
+        footer {
+            text-align: center;
+            margin: 50px 0;
+            font-size: 0.9rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Terms of Service</h1>
+        <p>Last updated: May 14, 2025</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#short" class="active">Short Version</a></li>
+            <li><a href="#1">1. Acceptance</a></li>
+            <li><a href="#2">2. Accounts</a></li>
+            <li><a href="#3">3. Tokens & Payments</a></li>
+            <li><a href="#4">4. Cancellations</a></li>
+            <li><a href="#5">5. Conduct</a></li>
+            <li><a href="#6">6. Liability</a></li>
+            <li><a href="#7">7. Governing Law</a></li>
+            <li><a href="#8">8. Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+
+        <!-- Short Version -->
+        <section id="short" class="short-version">
+            <h2>The Short Version</h2>
+            <p><strong>Use of SkillSwap:</strong> By accessing SkillSwap you agree to these Terms—please read them carefully.</p>
+            <p><strong>Accounts:</strong> You’re responsible for your login, activity, and keeping your information accurate.</p>
+            <p><strong>Tokens:</strong> SkillSwap tokens (TK) are required for booking sessions; non-refundable except as specified.</p>
+            <p><strong>Cancellations:</strong> ≥24 hrs notice → full TK refund; < 24 hrs → no refund unless tutor permits.</p>
+            <p><strong>Liability:</strong> Services are “as is”; liability capped at TK spent in prior six months.</p>
+        </section>
+
+        <!-- 1. Acceptance -->
+        <section id="1">
+            <h2>1. Acceptance of Terms</h2>
+            <p>These Terms constitute a binding agreement. If you do not agree, please do not use our services.</p>
+        </section>
+
+        <!-- 2. Accounts -->
+        <section id="2">
+            <h2>2. Accounts</h2>
+            <p>When registering, you must provide accurate information and keep your password secure. You’re responsible for all activity under your account.</p>
+        </section>
+
+        <!-- 3. Tokens & Payments -->
+        <section id="3">
+            <h2>3. Tokens & Payments</h2>
+            <p>SkillSwap tokens (TK) are the only currency. Purchase via credit/debit or supported gateways. Tokens cannot be redeemed for cash except as required by law.</p>
+        </section>
+
+        <!-- 4. Cancellations -->
+        <section id="4">
+            <h2>4. Session Cancellations</h2>
+            <p>If you cancel at least 24 hours before a booked session, you receive a full TK refund. Cancellations within 24 hours are non-refundable unless the tutor agrees otherwise.</p>
+        </section>
+
+        <!-- 5. Conduct -->
+        <section id="5">
+            <h2>5. User Conduct</h2>
+            <p>You agree not to misuse the platform—no unlawful behavior, harassment, or intellectual-property infringement. Violation may result in account suspension.</p>
+        </section>
+
+        <!-- 6. Liability -->
+        <section id="6">
+            <h2>6. Limitation of Liability</h2>
+            <p>SkillSwap is provided “as is.” Our liability for any claim related to the service is limited to the total TK you’ve spent in the past six months.</p>
+        </section>
+
+        <!-- 7. Governing Law -->
+        <section id="7">
+            <h2>7. Governing Law</h2>
+            <p>These Terms are governed by Indian law. Any disputes will be resolved in the courts of Bengaluru, India.</p>
+        </section>
+
+        <!-- 8. Contact -->
+        <section id="8">
+            <h2>8. Contact Information</h2>
+            <p>Questions or concerns? Please email <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>. </p>
+        </section>
+
+        <footer>&copy; 2025 SkillSwap. All rights reserved.</footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('nav a').forEach(link => {
+          link.addEventListener('click', e => {
+            document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+            e.target.classList.add('active');
+          });
+        });
+    </script>
+</body>
+</html>

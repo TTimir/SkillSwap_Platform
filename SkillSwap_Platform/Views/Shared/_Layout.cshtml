@@ -368,11 +368,12 @@
                                         <div class="link-style1 mb-3">
                                             <h6 class="text-white mb25">About</h6>
                                             <div class="link-list">
-                                                <a href="">Press & News</a>
-                                                <a href="">Partnerships</a>
-                                                <a href="">Privacy Policy</a>
-                                                <a href="">Terms of Service</a>
-                                                <a href="">Cookie Policy</a>
+                                                <a href="@Url.ActionLink("TutorTeaching","Home")">Teaching Guide</a>
+                                                @* <a href="">Press & News</a>
+                                                <a href="">Partnerships</a> *@
+                                                <a href="@Url.ActionLink("PrivacyandPolicy","Home")">Privacy Policy</a>
+                                                <a href="@Url.ActionLink("TermsofService","Home")">Terms of Service</a>
+                                                <a href="@Url.ActionLink("CookiePolicy","Home")">Cookie Policy</a>
                                             </div>
                                         </div>
                                     </div>
@@ -386,7 +387,7 @@
                                                 @foreach (var c in cats)
                                                 {
                                                     <li>
-                                                        <a href="@Url.Action("PublicOfferList","UserOfferDetails", new { category = c })">@c</a>
+                                                        <a href="@Url.ActionLink("PublicOfferList","UserOfferDetails", new { category = c })">@c</a>
                                                     </li>
                                                 }
                                             </ul>
@@ -396,10 +397,10 @@
                                         <div class="link-style1 mb-3">
                                             <h6 class="text-white mb25">Support</h6>
                                             <ul class="ps-0">
-                                                <li><a href="">Help & Support</a></li>
-                                                <li><a href="">Trust & Safety</a></li>
-                                                <li><a href="">Swap on Astrix</a></li>
-                                                <li><a href="">Contact Us</a></li>
+                                                <li><a href="@Url.ActionLink("HelpandSupport","Home")">Help & Support</a></li>
+                                                <li><a href="@Url.ActionLink("TrustandSafety","Home")">Trust & Safety</a></li>
+                                                <li><a href="@Url.ActionLink("PublicOfferList","UserOfferDetails")">Swap on Skillswap</a></li>
+                                                <li><a href="@Url.ActionLink("Contact","Home")">Contact Us</a></li>
                                             </ul>
                                         </div>
                                     </div>
