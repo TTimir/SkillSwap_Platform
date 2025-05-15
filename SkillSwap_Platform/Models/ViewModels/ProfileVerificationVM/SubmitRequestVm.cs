@@ -1,4 +1,5 @@
-﻿using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 using System.ComponentModel.DataAnnotations;
 using static SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM.SubmitRequestVm;
 
@@ -22,7 +23,6 @@ namespace SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM
         {
             [Required] public string SkillName { get; set; }
             [Required] public IFormFile CertificateFile { get; set; }
-            public string CertificateFilePath { get; set; }
         }
 
         public class EducationRecord
@@ -30,15 +30,13 @@ namespace SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM
             [Required] public string Degree { get; set; }
             [Required] public string Institution { get; set; }
             [Required] public IFormFile EduProofFile { get; set; }
-            public string EduProofFilePath { get; set; }
         }
 
         public class ExperienceRecord
         {
-            [Required] public string Company { get; set; }
-            [Required] public string Role { get; set; }
-            public IFormFile ExpProofFile { get; set; }
-            public string ExpProofFilePath { get; set; }
+            public string Company { get; set; }
+            public string Role { get; set; }
+            public IFormFile? ExpProofFile { get; set; }
         }
     }
 

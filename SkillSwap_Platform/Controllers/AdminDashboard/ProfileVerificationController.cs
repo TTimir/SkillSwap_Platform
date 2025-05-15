@@ -76,12 +76,17 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 await _svc.ApproveAsync(id, adminId, comments);
-                TempData["Success"] = $"✅ Verification request #{id} approved.";
+                // 2) Reload details to get the submitter’s username
+                var details = await _svc.GetDetailsAsync(id);
+                var submitter = details.SubmittedByUsername;
+
+                // 3) Show username in TempData
+                TempData["Success"] = $"✅ Verification for @{submitter} has been approved.";
                 return RedirectToAction(nameof(Pending));
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Approve failed for request {RequestId}", id);
+                _log.LogError(ex, "Approve failed for request @{submitter}", id);
                 return BadRequest();
             }
         }
@@ -95,12 +100,17 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 await _svc.RejectAsync(id, adminId, comments);
-                TempData["Success"] = $"⚠️ Verification request #{id} rejected.";
+                // 2) Reload details to get the submitter’s username
+                var details = await _svc.GetDetailsAsync(id);
+                var submitter = details.SubmittedByUsername;
+
+                // 3) Show username in TempData
+                TempData["Success"] = $"⚠️ Verification for @{submitter} has been rejected.";
                 return RedirectToAction(nameof(Pending));
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Reject failed for request {RequestId}", id);
+                _log.LogError(ex, "Reject failed for request @{submitter}", id);
                 return BadRequest();
             }
         }
@@ -160,7 +170,12 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 await _svc.RevokeAsync(id, adminId, comments);
-                TempData["Success"] = $"🚫 Verification for request #{id} has been revoked.";
+                // 2) Reload details to get the submitter’s username
+                var details = await _svc.GetDetailsAsync(id);
+                var submitter = details.SubmittedByUsername;
+
+                // 3) Show username in TempData
+                TempData["Success"] = $"🚫 Verification for @{submitter} and with request #{id} has been revoked.";
                 return RedirectToAction(nameof(Pending));
             }
             catch (InvalidOperationException ex)

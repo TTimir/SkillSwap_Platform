@@ -1,5 +1,6 @@
 ﻿@using System.Linq
 @using System.Security.Claims
+@using SkillSwap_Platform.Models.ViewModels.UserProfileMV
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
 @model SkillSwap_Platform.Models.ViewModels.HomePageVM
 
@@ -193,8 +194,8 @@
 </section>
 
 @if (User != null
-  && Model.RecentlyViewedOffers != null
-  && Model.RecentlyViewedOffers.Any())
+ && Model.RecentlyViewedOffers != null
+ && Model.RecentlyViewedOffers.Any())
 {
     <section class="pt-0 pb100">
         <div class="container">
@@ -474,10 +475,10 @@
                                                         {
                                                             // List of default images.
                                                             var defaultImages = new List<string>
-                                                            {
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
-                                                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
-                                                            };
+                                        {
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                        Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                        };
 
                                                             // Use a deterministic approach:
                                                             int index = offer.OfferId % defaultImages.Count;
@@ -656,7 +657,20 @@
                                     </div>
                                 </div>
                                 <div class="list-content">
-                                    <h5 class="title mb-1">@freelancer.Name</h5>
+                                    <h5 class="title mb-1">
+                                        @freelancer.Name
+                                        @if (freelancer.IsVerified)
+                                        {
+                                            <img src="~/template_assets/images/SSVerified.png"
+                                                 alt="Verified"
+                                                 title="This user has been verified by SkillSwap"
+                                                 class="ms-2"
+                                                 style="width:20px; height:20px; cursor:help;"
+                                                 data-bs-toggle="tooltip"
+                                                 data-bs-placement="top" />
+                                        }
+                                        @await Component.InvokeAsync("TopTierBadge", new { userId = freelancer.UserId })
+                                    </h5>
                                     <p class="mb-1">@freelancer.Designation</p>
                                     <div class="skill-tags d-flex align-items-center justify-content-center mb5">
                                         @{

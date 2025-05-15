@@ -42,7 +42,7 @@ namespace SkillSwap_Platform.Controllers
                 var userId = GetCurrentUserId();
                 await _svc.SubmitAsync(userId.ToString(), vm);
                 TempData["SuccessMessage"] = "We’ve received your details and will review them within 48 hours.";
-                return View(vm);
+                return RedirectToAction(nameof(ThankYou));
             }
             catch (Exception ex)
             {
@@ -50,6 +50,13 @@ namespace SkillSwap_Platform.Controllers
                 ModelState.AddModelError("", "An error occurred. Please try again later.");
                 return View(vm);
             }
+        }
+
+        [HttpGet]
+        public IActionResult ThankYou()
+        {
+            ViewData["Title"] = "Thank You";
+            return View();
         }
 
         /// <summary>

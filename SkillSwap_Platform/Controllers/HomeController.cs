@@ -341,6 +341,7 @@ public class HomeController : Controller
                     .Take(3)
                     .Select(us => us.Skill.SkillName)
                     .ToList(),
+                IsVerified = u.IsVerified
             }).ToList();
 
             //// 4) Top skills in the visitor’s country
@@ -364,6 +365,15 @@ public class HomeController : Controller
             //string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
             //string countryName = region.EnglishName;             // e.g. "India"
 
+            bool isVerified = false;
+            if (currentUserId.HasValue)
+            {
+                isVerified = await _dbcontext.TblUsers
+                    .Where(u => u.UserId == currentUserId.Value)
+                    .Select(u => u.IsVerified)
+                    .FirstOrDefaultAsync();
+            }
+
             var vm = new HomePageVM
             {
                 TrendingOffers = trendingOfferVMs,
@@ -380,6 +390,7 @@ public class HomeController : Controller
                 EarlyAdopterCount = displayCount,
                 //UserCountryIso = countryIso,
                 //UserCountryName = countryName,
+                IsVerified = isVerified
             };
 
             // 1) TOP SKILLS overall (by # of offers)

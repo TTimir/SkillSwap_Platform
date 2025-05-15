@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM;
 using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM;
 using SkillSwap_Platform.Services.Email;
+using VerificationStatus = SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM.VerificationStatus;
 
 namespace SkillSwap_Platform.Services.ProfileVerification
 {
@@ -93,7 +94,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
                                   .Select(u => u.UserName)
                                   .FirstOrDefault(),
                     SubmittedAt = r.SubmittedAt,
-                    Status = (VerificationStatus)r.Status
+                    Status = (Models.ViewModels.ProfileVerificationVM.VerificationStatus)r.Status
                 })
                 .ToListAsync();
         }
@@ -104,15 +105,33 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             if (r == null) throw new KeyNotFoundException();
 
             // deserialize JSON back into VM lists
-            var certs = JsonConvert.DeserializeObject<IList<SubmitRequestVm.SkillCertificate>>(
-                r.CertificatesJson.Replace("\"Path\"", "\"CertificateFilePath\"")
-            );
-            var edus = JsonConvert.DeserializeObject<IList<SubmitRequestVm.EducationRecord>>(
-                r.EducationJson.Replace("\"Path\"", "\"EduProofFilePath\"")
-            );
-            var exps = JsonConvert.DeserializeObject<IList<SubmitRequestVm.ExperienceRecord>>(
-                r.ExperienceJson.Replace("\"Path\"", "\"ExpProofFilePath\"")
-            );
+            var certsRaw = JsonConvert.DeserializeObject<
+    IList<dynamic>>(r.CertificatesJson);
+            var edusRaw = JsonConvert.DeserializeObject<
+                IList<dynamic>>(r.EducationJson);
+            var expsRaw = JsonConvert.DeserializeObject<
+                IList<dynamic>>(r.ExperienceJson);
+
+            // now project to AdminDetailsVm.CertificateRecord etc.
+            var certs = certsRaw.Select(c => new AdminDetailsVm.CertificateRecord
+            {
+                SkillName = (string)c.SkillName,
+                CertificateFilePath = (string)c.Path
+            }).ToList();
+
+            var edus = edusRaw.Select(e => new AdminDetailsVm.EducationRecord
+            {
+                Degree = (string)e.Degree,
+                Institution = (string)e.Institution,
+                EduProofFilePath = (string)e.Path
+            }).ToList();
+
+            var exps = expsRaw.Select(e => new AdminDetailsVm.ExperienceRecord
+            {
+                Company = (string)e.Company,
+                Role = (string)e.Role,
+                ExpProofFilePath = (string)e.Path
+            }).ToList();
 
             return new AdminDetailsVm
             {
@@ -126,7 +145,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
                                   .Select(u => u.UserName)
                                   .FirstOrDefault(),
                 SubmittedAt = r.SubmittedAt,
-                Status = (VerificationStatus)r.Status,
+                Status = (Models.ViewModels.ProfileVerificationVM.VerificationStatus)r.Status,
                 ReviewedAt = r.ReviewedAt,
                 ReviewedByUsername = r.ReviewedByUserId,
                 ReviewComments = r.ReviewComments,
@@ -293,9 +312,9 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             }
 
             await _db.SaveChangesAsync();
-            
+
             // 4) send them an email
-            //await SendRevokeEmailAsync(requestId, comments);
+            await SendRevokeEmailAsync(requestId, comments);
         }
 
         private async Task SendApprovalEmailAsync(long requestId)
@@ -394,6 +413,55 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             catch (Exception ex)
             {
                 _log.LogError(ex, "Failed to send rejection email for request {RequestId}", requestId);
+            }
+        }
+
+            private async Task SendRevokeEmailAsync(long requestId, string comments)
+            {
+                // 1) load the request and the user
+                var req = await _db.VerificationRequests.FindAsync(requestId);
+                if (req == null) return;
+
+                var user = await _db.TblUsers
+                    .SingleOrDefaultAsync(u => u.UserId.ToString() == req.UserId);
+                if (user == null || string.IsNullOrEmpty(user.Email))
+                    return;
+
+                // 2) build a thoughtful, motivating message
+                var subject = "Important Update on Your SkillSwap Verification";
+                var commentSection = string.IsNullOrWhiteSpace(comments)
+                    ? ""
+                    : $"<blockquote style='border-left:3px solid #ccc; padding:10px; color:#555;'>" +
+                      $"<em>{comments}</em></blockquote>";
+
+                var body = $@"
+                  <div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.6em;'>
+                    <h2 style='color:#CC3300;'>Hi {user.FirstName},</h2>
+                    <p>We wanted to let you know that your verified status on SkillSwap (request <strong>#{requestId}</strong>) has been <span style='color:#CC3300;'>revoked</span>.</p>
+
+                    {commentSection}
+
+                    <p>Here’s how to get back on track:</p>
+                    <ol>
+                      <li>Review the feedback above to understand why your badge was removed.</li>
+                      <li>Gather any additional or clearer documentation that highlights your credentials.</li>
+                      <li>Re-submit your verification and we’ll fast-track the review.</li>
+                    </ol>
+
+                    <p>Remember: a verified badge sets you apart in our global community. We believe in your expertise and can’t wait to help you regain that trusted status!</p>
+
+                    <p style='margin-top:40px;'>All the best,<br/>
+                    <strong>The SkillSwap Team</strong></p>
+                  </div>
+                ";
+
+            try
+            {
+                await _emailSender.SendEmailAsync(user.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to send revoke email for request {RequestId}", requestId);
             }
         }
     }

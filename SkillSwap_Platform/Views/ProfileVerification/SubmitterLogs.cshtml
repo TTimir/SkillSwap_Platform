@@ -74,7 +74,7 @@
                                         <th scope="col">When</th>
                                         <th scope="col">Event</th>
                                         <th scope="col">User</th>
-                                        <th scope="col">Request #</th>
+                                        <th scope="col">Request Id #</th>
                                         <th scope="col">Comments</th>
                                         <th scope="col">Action</th>
                                     </tr>
@@ -107,11 +107,16 @@
                                                     <form asp-action="Revoke"
                                                           asp-controller="ProfileVerification"
                                                           method="post"
-                                                          class="d-inline">
+                                                          class="d-flex align-items-center">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@h.RequestId" />
-                                                        <input type="hidden" name="comments"
-                                                               value="Verification revoked by admin" />
+
+                                                        <input type="text"
+                                                               name="comments"
+                                                               class="form-control form-control-sm me-2"
+                                                               placeholder="Reason for revoking…"
+                                                               required />
+
                                                         <button type="submit"
                                                                 class="btn btn-sm btn-warning"
                                                                 onclick="return confirm('Are you sure you want to revoke this user’s verification?');">

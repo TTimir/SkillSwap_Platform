@@ -20,7 +20,8 @@
     heldUsersCount = 0,
     flaggedReviews = 0,
     flaggedProfiles = 0,
-    flaggedMessages = 0;
+    flaggedMessages = 0,
+    profileverification = 0;
     if (isAdmin)
     {
         try
@@ -93,6 +94,15 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load flagged profile count");
+        }
+
+        try
+        {
+            profileverification = await AdminService.GetPendingVerificationRequestsCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load pending profile verification count");
         }
     }
 }
@@ -475,6 +485,10 @@
                                class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="Pending" ? "-is-active" : "")">
                                 <i class="flaticon-like-1 mr15"></i>
                                 Profile Verification
+                                @if (profileverification > 0)
+                                {
+                                    <span class="badge badge-pill bg-info ms-auto">@profileverification</span>
+                                }
                             </a>
                         </div>
                         <div class="sidebar_list_item">

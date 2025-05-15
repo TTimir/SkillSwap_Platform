@@ -1,4 +1,5 @@
-﻿@model SkillSwap_Platform.Models.ViewModels.FreelancersVM.UserProfileListVM
+﻿@using SkillSwap_Platform.Models.ViewModels.UserProfileMV
+@model SkillSwap_Platform.Models.ViewModels.FreelancersVM.UserProfileListVM
 
 @{
     ViewData["Title"] = "Skill Swappers";
@@ -164,10 +165,11 @@
                                              alt="Verified"
                                              title="This user has been verified by SkillSwap"
                                              class="ms-2"
-                                             style="width:20px; height:20px; cursor:help;"
+                                             style="width:22px; height:22px; cursor:help;"
                                              data-bs-toggle="tooltip"
                                              data-bs-placement="top" />
                                     }
+                                    @await Component.InvokeAsync("TopTierBadge", new { userId = profile.UserId })
                                 </h5>
                                 <p class="mb-0">@profile.Designation</p>
                                 <div class="review">

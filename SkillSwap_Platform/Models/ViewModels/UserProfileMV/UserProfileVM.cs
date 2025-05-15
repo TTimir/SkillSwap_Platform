@@ -1,4 +1,5 @@
-﻿using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
+﻿using SkillSwap_Platform.Models.ViewModels.BadgeTire;
+using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 
 namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 {
@@ -32,7 +33,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public bool IsVerified { get; set; }
 
         public List<BadgeAwardVM> Badges { get; set; }
-
+        public BadgeVm? TopTierBadge { get; set; }
     }
 
     public class SkillVM

@@ -1,5 +1,6 @@
 ﻿using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
+using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 
 namespace SkillSwap_Platform.Models.ViewModels
 {
@@ -17,6 +18,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public DateTime CreatedDate { get; set; }
         public string Location { get; set; }
         public string Country { get; set; }
+        public bool IsVerified { get; set; }
         public List<OfferCardVM> TrendingOffers { get; set; }
         public List<FreelancerCardVM> HighestRatedFreelancers { get; set; }
         public List<CategoryOffers> TrendingOffersByCategory { get; set; } = new List<CategoryOffers>();
@@ -26,6 +28,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<HowItWorksVM> AboutUsValues { get; set; } = new();
 
         public List<OfferCardVM> RecentlyViewedOffers { get; set; } = new();
+        public List<BadgeAwardVM> Badges { get; set; }
 
 
         public string TalentsDisplayValue { get; set; } = "";
@@ -71,7 +74,9 @@ namespace SkillSwap_Platform.Models.ViewModels
         public double Rating { get; set; }
         public double? JobSuccess { get; set; }
         public double? Recommendation { get; set; }
+        public bool IsVerified { get; set; }
         public List<string> OfferedSkillAreas { get; set; } = new List<string>();
+        public List<BadgeAwardVM> Badges { get; set; }
     }
 
     public class CategoryCardVm

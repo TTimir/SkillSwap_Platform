@@ -1,10 +1,17 @@
 ﻿@using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM
-@using SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM
 @model AdminDetailsVm
 
 @{
     ViewData["Title"] = "Verification Request Details";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    string cssClass = Model.Status switch
+    {
+        VerificationStatus.Pending => "pending-style style1",
+        VerificationStatus.Approved => "pending-style style2",
+        VerificationStatus.Rejected => "pending-style style3",
+        _ => ""
+    };
 }
 
 </div>
@@ -31,16 +38,11 @@
     </dd>
 
     <dt class="col-sm-3">Status</dt>
-    @{
-        string cssClass = Model.Status switch
-        {
-            VerificationStatus.Pending => "pending-style style1",
-            VerificationStatus.Approved => "pending-style style2",
-            VerificationStatus.Rejected => "pending-style style3",
-            _ => ""
-        };
-    }
-    <dd class="col-sm-9">@Model.Status</dd>
+    <dd class="col-sm-9">
+        <span class="@cssClass">
+            @Model.Status
+        </span>
+    </dd>
 </dl>
 
 <h4>Skill Certificates</h4>

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM;
 using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 
 namespace SkillSwap_Platform.Services.AdminControls
@@ -211,6 +212,22 @@ namespace SkillSwap_Platform.Services.AdminControls
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching active flagged-users count");
+                return 0;
+            }
+        }
+
+        public async Task<int> GetPendingVerificationRequestsCountAsync()
+        {
+            try
+            {
+                // Status == 0 means “Pending”
+                return await _db.VerificationRequests
+                                .AsNoTracking()
+                                .CountAsync(r => r.Status == (int)VerificationStatus.Pending);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching pending verification requests count");
                 return 0;
             }
         }

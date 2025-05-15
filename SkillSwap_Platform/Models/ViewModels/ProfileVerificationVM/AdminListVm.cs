@@ -29,11 +29,38 @@ namespace SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM
         public string GovernmentIdNumber { get; internal set; }
         public string GovernmentIdDocumentPath { get; set; }
 
-        public IList<SkillCertificate> Certificates { get; set; } = new List<SkillCertificate>();
+        public IList<CertificateRecord> Certificates { get; set; } = new List<CertificateRecord>();
 
         public IList<EducationRecord> EducationRecords { get; set; } = new List<EducationRecord>();
 
         public IList<ExperienceRecord> ExperienceRecords { get; set; } = new List<ExperienceRecord>();
+
+        public class CertificateRecord
+        {
+            public string SkillName { get; set; }
+            public string CertificateFilePath { get; set; }
+        }
+
+        public class EducationRecord
+        {
+            public string Degree { get; set; }
+            public string Institution { get; set; }
+            public string EduProofFilePath { get; set; }
+        }
+
+        public class ExperienceRecord
+        {
+            public string Company { get; set; }
+            public string Role { get; set; }
+            public string ExpProofFilePath { get; set; }
+        }
+    }
+
+    public enum VerificationStatus
+    {
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2
     }
 
 }

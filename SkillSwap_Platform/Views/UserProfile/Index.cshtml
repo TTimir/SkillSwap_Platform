@@ -6,6 +6,7 @@
 @using Newtonsoft.Json.Serialization
 @inject IHttpContextAccessor HttpContextAccessor
 @using System.Linq
+@using SkillSwap_Platform.Models.ViewModels.UserProfileMV
 
 @{
     ViewData["Title"] = "My Profile";
@@ -366,9 +367,28 @@
                                                                  alt="Verified"
                                                                  title="This user has been verified by SkillSwap"
                                                                  class="ms-2"
-                                                                 style="width:20px; height:20px; cursor:help;"
+                                                                 style="width:22px; height:22px; cursor:help;"
                                                                  data-bs-toggle="tooltip"
                                                                  data-bs-placement="top" />
+                                                        }
+                                                        @{
+                                                             // Cast to BadgeAwardVM, not BadgeDefinition
+                                                             var typedBadges = Model.Badges as IEnumerable<BadgeAwardVM>
+                                                                               ?? Enumerable.Empty<BadgeAwardVM>();
+                                                             var topTierBadge = typedBadges
+                                                                 .Where(b => b.BadgeId is 9 or 10 or 11)
+                                                                 .OrderByDescending(b => b.BadgeId)
+                                                                 .FirstOrDefault();
+                                                        }
+                                                        @if (topTierBadge != null)
+                                                        {
+                                                            <img 
+                                                                src="@Url.Content(topTierBadge.IconUrl)" 
+                                                                alt="@topTierBadge.Name" 
+                                                                title="@($"{topTierBadge.Name} — {topTierBadge.Description}")"
+                                                                style="width:22px; height:22px; cursor:help;"
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top" />
                                                         }
                                                     </h5>
                                                     <p class="mb-0">@Model.User.Designation</p>
