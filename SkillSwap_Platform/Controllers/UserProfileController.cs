@@ -247,6 +247,7 @@ namespace SkillSwap_Platform.Controllers
                     IsFlagged = false,
                     Certificates = certificateVMs,
                     IsOwnProfile = isOwnProfile,
+                    IsVerified = user.IsVerified
                 };
 
                 model.Badges = awardedBadges
@@ -494,6 +495,7 @@ namespace SkillSwap_Platform.Controllers
                     ReviewCount = totalReviewsUser,
                     AverageRating = avgRatingUser,
                     IsOwnProfile = isOwnProfile,
+                    IsVerified = user.IsVerified
                 };
 
                 model.Badges = awardedBadges

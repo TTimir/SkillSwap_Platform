@@ -355,6 +355,9 @@
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("DigitalTokenStatements","UserDigitalToken")" class="items-center @(currentController == "UserDigitalToken" && currentAction == "DigitalTokenStatements" ? "-is-active" : "")"><i class="flaticon-web mr15"></i>Token Transactions</a>
                     </div>
+                    <div class="sidebar_list_item">
+                        <a href="@Url.ActionLink("Submit","Verification")" class="items-center @(currentController == "Verification" && currentAction == "Submit" ? "-is-active" : "")"><i class="flaticon-like-1 mr15"></i>Apply for Verification</a>
+                    </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offers and Manage</p>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="items-center @(currentController == "UserOfferManage" && currentAction == "ActiveOffers" ? "-is-active" : "")"><i class="flaticon-presentation mr15"></i>Active Swap Offers</a>

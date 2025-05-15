@@ -1,9 +1,9 @@
-﻿@using System.Security.Claims
+﻿@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
+@inject IHttpContextAccessor HttpContextAccessor
+@using Newtonsoft.Json.Serialization
+@using System.Security.Claims
 @using System.Linq
 @using Newtonsoft.Json
-@using Newtonsoft.Json.Serialization
-@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
-@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Public Profile";
@@ -398,7 +398,20 @@
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
                                                 </a>
                                                 <div class="ml20 ml0-xs">
-                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName <small>(<i>@("@")@Model.User.UserName</i>)</small></h5>
+                                                    <h5 class="title mb-1">
+                                                        @Model.User.FirstName @Model.User.LastName 
+                                                        <small>(<i>@("@")@Model.User.UserName</i>)</small>
+                                                        @if (Model.IsVerified)
+                                                        {
+                                                            <img src="~/template_assets/images/SSVerified.png"
+                                                                 alt="Verified"
+                                                                 title="This user has been verified by SkillSwap"
+                                                                 class="ms-2"
+                                                                 style="width:20px; height:20px; cursor:help;"
+                                                                 data-bs-toggle="tooltip"
+                                                                 data-bs-placement="top" />
+                                                        }
+                                                    </h5>                                                    
                                                     <p class="mb-0">@Model.User.Designation</p>
                                                     @if(Model.User.ReviewCount > 0)
                                                     {
@@ -504,7 +517,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if (Model.Badges?.Any() == true)
+                        @if (Model.Badges != null && Model.Badges.Count > 0)
                         {
                             <div class="service-about">
                                 <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">

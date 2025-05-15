@@ -1,0 +1,412 @@
+﻿@using SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM
+@model SubmitRequestVm
+
+@{
+    ViewData["Title"] = "Apply for Verification";
+    ViewData["SubTitle"] = "Confirm your identity and credentials to build trust on SkillSwap.";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="#" id="topApplyButton" class="ud-btn btn-dark">
+            Apply for Verification<i class="fal fa-arrow-right-long"></i>
+        </a>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        @using (Html.BeginForm("Submit", "Verification", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Verify Your Identity</h5>
+                    <p class="section-subtitle mb25">Upload a government-issued ID so we know it’s really you.</p>
+                </div>
+                <div class="col-xl-8">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="GovernmentIdType" class="heading-color ff-heading fw500 mb10"> Government Id Type<span class="text-danger">*</span></label>
+                                <input asp-for="GovernmentIdType" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="GovernmentIdType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="GovernmentIdNumber" class="heading-color ff-heading fw500 mb10"> Government Id Number<span class="text-danger">*</span></label>
+                                <input asp-for="GovernmentIdNumber" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="GovernmentIdNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-xl-7">
+                            <div class="profile-box d-sm-flex align-items-center mb30">
+                                <div class="profile-content ml0-xs">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label asp-for="GovernmentIdDocument"
+                                               class="upload-btn ml10"
+                                               style="cursor: pointer;">
+                                            Upload Document
+                                        </label>
+                                        <input asp-for="GovernmentIdDocument"
+                                               type="file"
+                                               accept=".jpg,.jpeg,.png,.pdf"
+                                               style="display: none;" />
+                                    </div>
+                                    <span asp-validation-for="GovernmentIdDocument" class="text-danger"></span>
+                                    <p class="text mb-0 mx-3">
+                                        Max file size is 1MB, Suitable: .png, .jpg & .pdf
+                                    </p>
+
+                                    <!-- Preview container -->
+                                    <div class="preview-container mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Validate Your Certifications</h5>
+                    <p class="section-subtitle mb25">Showcase any certificates that prove your skills.</p>
+                </div>
+                <div class="col-xl-8 ps-widget-body" id="certificates">
+                    @for (int i = 0; i < Model.Certificates.Count; i++)
+                    {
+                        <div class="block mb-3">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb20">
+                                        <label asp-for="Certificates[@i].SkillName" class="heading-color ff-heading fw500 mb10"> Skill you learned<span class="text-danger">*</span></label>
+                                        <input asp-for="Certificates[@i].SkillName" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="Certificates[@i].SkillName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-xl-7">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml0-xs">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label asp-for="Certificates[@i].CertificateFile"
+                                                       class="upload-btn ml10"
+                                                       style="cursor: pointer;">
+                                                    Upload Document
+                                                </label>
+                                                <input asp-for="Certificates[@i].CertificateFile"
+                                                       type="file"
+                                                       accept=".jpg,.jpeg,.png,.pdf"
+                                                       style="display: none;" />
+                                            </div>
+                                            <span asp-validation-for="Certificates[@i].CertificateFile"
+                                                  class="text-danger"></span>
+                                            <p class="text mb-0 mx-3">
+                                                Max 1MB: .png, .jpg & .pdf
+                                            </p>
+
+                                            <!-- Preview -->
+                                            <div class="preview-container mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" id="addCertificate" class="ud-btn btn-light-thm mb25" style="border:0"><i class="far fa-x me-2"></i> Add Certificate</button>
+            </div>
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Share Your Education</h5>
+                    <p class="section-subtitle mb25">List your degrees and institutions to highlight your background.</p>
+                </div>
+                <div class="col-xl-8 ps-widget-body" id="educations">
+                    @for (int i = 0; i < Model.EducationRecords.Count; i++)
+                    {
+                        <div class="block mb-3">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb20">
+                                        <label asp-for="EducationRecords[@i].Degree" class="heading-color ff-heading fw500 mb10"> Degree<span class="text-danger">*</span></label>
+                                        <input asp-for="EducationRecords[@i].Degree" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="EducationRecords[@i].Degree" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb20">
+                                        <label asp-for="EducationRecords[@i].Institution" class="heading-color ff-heading fw500 mb10"> Institution<span class="text-danger">*</span></label>
+                                        <input asp-for="EducationRecords[@i].Institution" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="EducationRecords[@i].Institution" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-xl-7">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml0-xs">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label asp-for="EducationRecords[@i].EduProofFile"
+                                                       class="upload-btn ml10"
+                                                       style="cursor: pointer;">
+                                                    Upload Proof
+                                                </label>
+                                                <input asp-for="EducationRecords[@i].EduProofFile"
+                                                       type="file"
+                                                       accept=".jpg,.jpeg,.png,.pdf"
+                                                       style="display: none;" />
+                                            </div>
+                                            <span asp-validation-for="EducationRecords[@i].EduProofFile"
+                                                  class="text-danger"></span>
+                                            <p class="text mb-0 mx-3">
+                                                Max 1MB: .png, .jpg & .pdf
+                                            </p>
+
+                                            <!-- Preview -->
+                                            <div class="preview-container mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" id="addEducation" class="ud-btn btn-light-thm mb25" style="border:0;"><i class="far fa-x me-2"></i> Add Education</button>
+            </div>
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Detail Your Experience</h5>
+                    <p class="section-subtitle mb25">Tell us about your past roles and what you achieved.</p>
+                </div>
+                <div id="experiences" class="col-xl-8 ps-widget-body">
+                    <p class="section-subtitle mb20"><i><u>If you don't currently working then simply writes N/A.</u></i></p>
+                    @for (int i = 0; i < Model.ExperienceRecords.Count; i++)
+                    {
+                        <div class="block mb-3">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="mb20">
+                                        <label asp-for="ExperienceRecords[@i].Company" class="heading-color ff-heading fw500 mb10"> Company<span class="text-danger">*</span></label>
+                                        <input asp-for="ExperienceRecords[@i].Company" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="ExperienceRecords[@i].Company" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="mb20">
+                                        <label asp-for="ExperienceRecords[@i].Role" class="heading-color ff-heading fw500 mb10"> Designation<span class="text-danger">*</span></label>
+                                        <input asp-for="ExperienceRecords[@i].Role" type="text" class="form-control" placeholder="i will">
+                                        <span asp-validation-for="ExperienceRecords[@i].Role" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-xl-7">
+                                    <div class="profile-box d-sm-flex align-items-center mb30">
+                                        <div class="profile-content ml0-xs">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <label asp-for="ExperienceRecords[@i].ExpProofFile"
+                                                       class="upload-btn ml10"
+                                                       style="cursor: pointer;">
+                                                    Upload Proof
+                                                </label>
+                                                <input asp-for="ExperienceRecords[@i].ExpProofFile"
+                                                       type="file"
+                                                       accept=".jpg,.jpeg,.png,.pdf"
+                                                       style="display: none;" />
+                                            </div>
+                                            <span asp-validation-for="ExperienceRecords[@i].ExpProofFile"
+                                                  class="text-danger"></span>
+                                            <p class="text mb-0 mx-3">
+                                                Max 1MB: .png, .jpg & .pdf
+                                            </p>
+
+                                            <!-- Preview -->
+                                            <div class="preview-container mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" id="addExperience" class="ud-btn btn-light-thm mb25" style="border:0;"><i class="far fa-x me-2"></i> Add Experience</button>
+            </div>
+
+            <button type="submit" class="ud-btn btn-thm">Apply for Verification<i class="fal fa-arrow-right-long"></i></button>
+        }
+    </div>
+</div>
+
+
+@section DynamicScript {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function() {
+            'use strict';
+
+            // Utility to re-index name/id/for strings
+            function reindex(str, newIndex) {
+                return str
+                    .replace(/\[\d+\]/g, '[' + newIndex + ']')
+                    .replace(/_(\d+)__/g, '_' + newIndex + '__');
+            }
+
+            // Clone one block, up to a maximum of 3, only if all previous required fields are filled
+            function cloneSection(containerId) {
+                var container = document.getElementById(containerId);
+                if (!container) return;
+
+                var blocks = container.querySelectorAll('.block');
+                // 1) Validate existing blocks
+                for (var i = 0; i < blocks.length; i++) {
+                    var block = blocks[i];
+                    // find inputs with HTML5 required or data-val-required (unobtrusive)
+                    var reqs = block.querySelectorAll(
+                        'input[required], select[required], textarea[required], input[data-val-required]'
+                    );
+                    for (var j = 0; j < reqs.length; j++) {
+                        var fld = reqs[j];
+                        if (!fld.value.trim()) {
+                            alert('Please fill all required fields before adding another entry.');
+                            fld.focus();
+                            return;
+                        }
+                    }
+                }
+
+                // 2) Enforce max 3 blocks
+                if (blocks.length >= 3) {
+                    alert('You can only add up to 3 entries.');
+                    return;
+                }
+
+                // 3) Clone last block
+                if (blocks.length === 0) return;
+                var lastBlock = blocks[blocks.length - 1];
+                var clone     = lastBlock.cloneNode(true);
+                var newIndex  = blocks.length;
+
+                // 4) Clear values, re-index attributes, and clear previews
+                clone.querySelectorAll('input, select, textarea, label').forEach(function(el) {
+                    if (['INPUT','SELECT','TEXTAREA'].indexOf(el.tagName) !== -1) {
+                        if (el.type !== 'file') el.value = '';
+                        if (el.name) el.name = reindex(el.name, newIndex);
+                        if (el.id)   el.id   = reindex(el.id, newIndex);
+                    }
+                    if (el.tagName === 'LABEL' && el.htmlFor) {
+                        el.htmlFor = reindex(el.htmlFor, newIndex);
+                    }
+                });
+                clone.querySelectorAll('.preview-container').forEach(function(pc) {
+                    pc.innerHTML = '';
+                });
+
+                container.appendChild(clone);
+
+                // 5) Re-apply unobtrusive validation if available
+                if (window.jQuery && jQuery.validator && jQuery.validator.unobtrusive) {
+                    jQuery.validator.unobtrusive.parse($(clone));
+                }
+            }
+
+            // File-preview handler (images, PDFs, text)
+            document.addEventListener('change', function(e) {
+                var input = e.target;
+                if (!input.matches('input[type="file"]')) return;
+
+                var profile = input.closest('.profile-content');
+                if (!profile) return;
+
+                var preview = profile.querySelector('.preview-container');
+                if (!preview) return;
+                preview.innerHTML = '';
+
+                Array.from(input.files).forEach(function(file) {
+                    var url = URL.createObjectURL(file);
+                    if (file.type.startsWith('image/')) {
+                        var img = document.createElement('img');
+                        img.src = url;
+                        img.style.maxWidth  = '200px';
+                        img.style.maxHeight = '200px';
+                        img.classList.add('img-thumbnail','me-2','mb-2');
+                        preview.appendChild(img);
+                    } else if (file.type === 'application/pdf') {
+                        var link = document.createElement('a');
+                        link.href = url;
+                        link.textContent = file.name;
+                        link.target = '_blank';
+                        link.classList.add('d-block','mb-2');
+                        preview.appendChild(link);
+                    } else {
+                        var span = document.createElement('span');
+                        span.textContent = file.name;
+                        span.classList.add('d-block','mb-2');
+                        preview.appendChild(span);
+                    }
+                });
+            });
+
+            // Wire up "+ Add" buttons
+            document.addEventListener('DOMContentLoaded', function() {
+                var mapping = {
+                    addCertificate: 'certificates',
+                    addEducation:  'educations',
+                    addExperience: 'experiences'
+                };
+                Object.keys(mapping).forEach(function(btnId) {
+                    var btn = document.getElementById(btnId);
+                    if (btn) {
+                        btn.addEventListener('click', function(evt) {
+                            evt.preventDefault();
+                            cloneSection(mapping[btnId]);
+                        });
+                    }
+                });
+
+                // HTML5 fallback for pages without jQuery validation
+                var form = document.querySelector('form[enctype*="multipart/form-data"]');
+                if (form && !window.jQuery) {
+                    form.addEventListener('submit', function(evt) {
+                        if (!form.checkValidity()) {
+                            evt.preventDefault();
+                            form.reportValidity();
+                        }
+                    });
+                }
+            });
+        })();
+    </script>
+}
+

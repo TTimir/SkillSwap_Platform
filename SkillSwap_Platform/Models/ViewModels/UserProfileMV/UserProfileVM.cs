@@ -29,6 +29,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public double AverageRating { get; set; }
         public bool IsFlagged { get; set; }
         public bool IsOwnProfile { get; set; }
+        public bool IsVerified { get; set; }
 
         public List<BadgeAwardVM> Badges { get; set; }
 

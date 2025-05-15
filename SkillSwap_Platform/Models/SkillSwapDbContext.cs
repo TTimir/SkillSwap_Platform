@@ -121,6 +121,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<UserMiningProgress> UserMiningProgresses { get; set; }
 
     public virtual DbSet<UserSensitiveWord> UserSensitiveWords { get; set; }
+
+    public virtual DbSet<VerificationRequest> VerificationRequests { get; set; }
     public virtual DbSet<ReviewAggregate> ReviewAggregates { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -1324,6 +1326,17 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserSensitiveWords_User");
+        });
+
+        modelBuilder.Entity<VerificationRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Verifica__3214EC0710FE1CCE");
+
+            entity.Property(e => e.GovernmentIdDocumentPath).HasMaxLength(500);
+            entity.Property(e => e.GovernmentIdNumber).HasMaxLength(100);
+            entity.Property(e => e.GovernmentIdType).HasMaxLength(50);
+            entity.Property(e => e.ReviewedByUserId).HasMaxLength(450);
+            entity.Property(e => e.UserId).HasMaxLength(450);
         });
 
         //modelBuilder.Entity<TblUserRole>(entity =>

@@ -41,6 +41,7 @@ using SkillSwap_Platform.Services.AdminControls.PlatformMetrics;
 using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 using SkillSwap_Platform.Services.BadgeTire;
 using SkillSwap_Platform.Services.Matchmaking;
+using SkillSwap_Platform.Services.ProfileVerification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,6 +91,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<INewsletterService, NewsletterService>();
 builder.Services.AddScoped<IDigitalTokenService, DigitalTokenService>();
 builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
+builder.Services.AddScoped<IVerificationService, VerificationService>();
 
 builder.Services
     .AddTransient<IEmailService, SmtpEmailService>();

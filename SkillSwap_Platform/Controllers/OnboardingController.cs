@@ -1090,21 +1090,22 @@ namespace SkillSwap_Platform.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult ApprovalPending()
         {
-            int? tempUserId = GetUserId(); // CHANGE
-            if (tempUserId == null)
-            {
-                ViewBag.ErrorMessage = "User not found. Please try to login again.";
-                return RedirectToAction("Login", "Home");
-            }
-            int userId = tempUserId.Value; // CHANGE
-            var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            if (user != null && user.IsVerified)
-            {
-                TempData["SuccessMessage"] = "Your account is sent for review! be kind and have patience.";
-                // If approved, redirect to the dashboard.
-                return RedirectToAction("Index", "Home");
-            }
-            return View();
+            //int? tempUserId = GetUserId(); // CHANGE
+            //if (tempUserId == null)
+            //{
+            //    ViewBag.ErrorMessage = "User not found. Please try to login again.";
+            //    return RedirectToAction("Login", "Home");
+            //}
+            //int userId = tempUserId.Value; // CHANGE
+            //var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            //if (user != null && user.IsVerified)
+            //{
+            //    TempData["SuccessMessage"] = "Your account is sent for review! be kind and have patience.";
+            //    // If approved, redirect to the dashboard.
+            //    return RedirectToAction("Index", "Home");
+            //}
+            //return View();
+            return RedirectToAction("Index", "Home");
         }
 
         #endregion

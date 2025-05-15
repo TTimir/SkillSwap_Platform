@@ -1,0 +1,154 @@
+﻿@using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM
+@using SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM
+@model AdminDetailsVm
+
+@{
+    ViewData["Title"] = "Verification Request Details";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+</div>
+<h2>@ViewData["Title"]</h2>
+
+<dl class="row mb-4">
+    <dt class="col-sm-3">Request ID</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Submitted By</dt>
+    <dd class="col-sm-9">@Model.SubmittedByUser <i>(@Model.SubmittedByUsername)</i></dd>
+
+    <dt class="col-sm-3">Submitted At</dt>
+    <dd class="col-sm-9">@Model.SubmittedAt.ToLocalTime().ToString("f")</dd>
+
+    <dt class="col-sm-3">Government ID</dt>
+    <dd class="col-sm-9">
+        @Model.GovernmentIdType – @Model.GovernmentIdNumber<br />
+        <a class="ud-btn btn-white me-4"
+           href="@Url.Content(Model.GovernmentIdDocumentPath)"
+           target="_blank">
+            View Document<i class="fal fa-arrow-right-long"></i>
+        </a>
+    </dd>
+
+    <dt class="col-sm-3">Status</dt>
+    @{
+        string cssClass = Model.Status switch
+        {
+            VerificationStatus.Pending => "pending-style style1",
+            VerificationStatus.Approved => "pending-style style2",
+            VerificationStatus.Rejected => "pending-style style3",
+            _ => ""
+        };
+    }
+    <dd class="col-sm-9">@Model.Status</dd>
+</dl>
+
+<h4>Skill Certificates</h4>
+<ul class="list-group mb-3">
+    @foreach (var cert in Model.Certificates)
+    {
+        <li class="list-group-item">
+            <strong>@cert.SkillName:</strong>
+            <a class="ud-btn btn-white me-4"
+               href="@Url.Content(cert.CertificateFilePath)"
+               target="_blank">
+                View Document <i class="fal fa-arrow-right-long"></i>
+            </a>
+        </li>
+    }
+</ul>
+
+<h4>Education Records</h4>
+<ul class="list-group mb-3">
+    @foreach (var edu in Model.EducationRecords)
+    {
+        <li class="list-group-item">
+            <strong>@edu.Degree</strong> – @edu.Institution
+            <br />
+            <a class="ud-btn btn-white me-4"
+               href="@Url.Content(edu.EduProofFilePath)"
+               target="_blank">
+                View Proof <i class="fal fa-arrow-right-long"></i>
+            </a>
+        </li>
+    }
+</ul>
+
+@if (Model.ExperienceRecords?.Any() == true)
+{
+    <h4>Experience Records</h4>
+    <ul class="list-group mb-4">
+        @foreach (var exp in Model.ExperienceRecords)
+        {
+            <li class="list-group-item">
+                <strong>@exp.Role</strong> at @exp.Company
+                <br />
+                <a class="ud-btn btn-white me-4"
+                   href="@Url.Content(exp.ExpProofFilePath)"
+                   target="_blank">
+                    View Proof <i class="fal fa-arrow-right-long"></i>
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+<div class="mb-5 d-flex align-items-start">
+    <!-- APPROVE FORM -->
+    <form
+          asp-controller="ProfileVerification"
+          asp-action="Approve"
+          method="post"
+          class="d-flex align-items-center me-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <div class="me-2">
+            <label for="approveComments" class="visually-hidden">Comments (optional)</label>
+            <input type="text"
+                   id="approveComments"
+                   name="comments"
+                   class="form-control form-control-sm"
+                   placeholder="Comments (optional)" />
+        </div>
+
+        <button type="submit" class="ud-btn btn-thm" style="border:0;">
+            Approve
+        </button>
+    </form>
+
+    <!-- REJECT FORM -->
+    <form
+          asp-controller="ProfileVerification"
+          asp-action="Reject"
+          method="post"
+          class="d-flex align-items-center">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <div class="me-2">
+            <label for="rejectComments" class="visually-hidden">
+                Reason for Rejection
+            </label>
+            <input type="text"
+                   id="rejectComments"
+                   name="comments"
+                   class="form-control form-control-sm"
+                   placeholder="Rejection reason"
+                   required />
+        </div>
+
+        <button type="submit" class="ud-btn btn-light-thm" style="border:0;">
+            Reject
+        </button>
+    </form>
+</div>
+
+
+<a asp-area="Admin"
+   asp-controller="VerificationAdmin"
+   asp-action="Pending"
+   class="ud-btn btn-thm2">
+    Back to List
+</a>
+</div>

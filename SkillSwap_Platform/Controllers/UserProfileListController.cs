@@ -33,7 +33,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Fetch active and non-deleted users.
                 var usersQuery = _context.TblUsers
-                    .Where(u => u.IsVerified);
+                    .Where(u => u.IsActive);
 
                 if (currentUserId.HasValue)
                 {
@@ -94,7 +94,8 @@ namespace SkillSwap_Platform.Controllers
                     ReviewCount = u.TblReviewReviewees.Count(),
                     Recommendation = u.RecommendedPercentage ?? 0.0,
                     JobSuccessRate = u.JobSuccessRate ?? 0.0,
-                    LastActive = u.LastActive
+                    LastActive = u.LastActive,
+                    IsVerified = u.IsVerified
                 }).ToList();
 
                 var vm = new UserProfileListVM

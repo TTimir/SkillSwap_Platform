@@ -18,5 +18,6 @@
         public double? Recommendation { get; set; }
         public double? JobSuccessRate { get; set; }
         public DateTime? LastActive { get; set; }
+        public bool IsVerified { get; set; }
     }
 }

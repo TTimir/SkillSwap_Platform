@@ -167,19 +167,19 @@
             gap: 6px; /* small space between img and text */
         }
 
-        .header-logo.logo1 img {
-            border-radius: 14px;
-            width: 40px;
-            height: auto;
-        }
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
 
-        .header-logo.logo1 .logo-text {
-            font-family: monospace;
-            font-size: 22px;
-            letter-spacing: 1;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
 
     </style>
 
@@ -467,6 +467,21 @@
                                class="d-flex items-center @(currentController=="AdminSearch" && currentAction=="Offers" ? "-is-active" : "")">
                                 <i class="flaticon-briefcase mr15"></i>
                                 Swap Offers
+                            </a>
+                        </div>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Verification Center</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Pending","ProfileVerification", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="Pending" ? "-is-active" : "")">
+                                <i class="flaticon-like-1 mr15"></i>
+                                Profile Verification
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","ProfileVerification", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="History" ? "-is-active" : "")">
+                                <i class="flaticon-document mr15"></i>
+                                Verification Logs
                             </a>
                         </div>
 
