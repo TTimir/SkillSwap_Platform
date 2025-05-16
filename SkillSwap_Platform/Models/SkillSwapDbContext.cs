@@ -17,6 +17,8 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<CancellationRequest> CancellationRequests { get; set; }
+
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
 
     public virtual DbSet<NewsletterLog> NewsletterLogs { get; set; }
@@ -25,9 +27,13 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<OtpAttempt> OtpAttempts { get; set; }
 
+    public virtual DbSet<PaymentLog> PaymentLogs { get; set; }
+
     public virtual DbSet<PrivacySensitiveWord> PrivacySensitiveWords { get; set; }
 
     public virtual DbSet<SensitiveWord> SensitiveWords { get; set; }
+
+    public virtual DbSet<Subscription> Subscriptions { get; set; }
 
     public virtual DbSet<TblBadge> TblBadges { get; set; }
 
@@ -130,6 +136,15 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CancellationRequest>(entity =>
+        {
+            entity.Property(e => e.RequestedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Subscription).WithMany(p => p.CancellationRequests)
+                .HasForeignKey(d => d.SubscriptionId)
+                .HasConstraintName("FK_CancellationRequests_Subscriptions");
+        });
+
         modelBuilder.Entity<MiningLog>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__MiningLo__3214EC079A9B841C");
@@ -191,6 +206,17 @@ public partial class SkillSwapDbContext : DbContext
                 .HasConstraintName("FK_OtpAttempts_Users");
         });
 
+        modelBuilder.Entity<PaymentLog>(entity =>
+        {
+            entity.Property(e => e.OrderId).HasMaxLength(128);
+            entity.Property(e => e.PaymentId).HasMaxLength(128);
+            entity.Property(e => e.ProcessedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PaymentLogs)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_PaymentLogs_Users");
+        });
+
         modelBuilder.Entity<PrivacySensitiveWord>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__PrivacyS__3214EC0759BCBFB6");
@@ -204,6 +230,17 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.Property(e => e.WarningMessage).HasMaxLength(500);
             entity.Property(e => e.Word).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Subscrip__3214EC076342599A");
+
+            entity.Property(e => e.BillingCycle)
+                .HasMaxLength(10)
+                .HasDefaultValue("monthly");
+            entity.Property(e => e.IsAutoRenew).HasDefaultValue(true);
+            entity.Property(e => e.PlanName).HasMaxLength(50);
         });
 
         modelBuilder.Entity<TblBadge>(entity =>

@@ -1,0 +1,280 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    // base monthly prices
+    var starterMonthly = 0m;
+    var premiumMonthly = 190m;
+    var proMonthly = 490m;
+    var growthMonthly = 990m;
+    // apply 19.6% discount for yearly equivalent monthly rate
+    Func<decimal, decimal> toYearlyMonthly = m => (int)Math.Round(m * (1 - 0.196m), 0);
+}
+
+<section class="our-pricing pb90">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 m-auto wow fadeInUp">
+                <div class="main-title text-center mb30">
+                    <h2 class="title">Membership Plans</h2>
+                    <p class="paragraph mt10">Flexible pricing to supercharge your skill swaps.</p>
+                </div>
+            </div>
+        </div>
+        <div class="row wow fadeInUp" data-wow-delay="200ms">
+            <div class="col-lg-12">
+                <div class="pricing_packages_top d-flex align-items-center justify-content-center mb60">
+                    <div class="toggle-btn">
+                        <span class="pricing_save1 dark-color ff-heading">Billed Monthly</span>
+                        <label class="switch">
+                            <input type="checkbox" id="billingToggle" onchange="togglePricing()" />
+                            <span class="pricing_table_switch_slide round"></span>
+                        </label>
+                        <span class="pricing_save2 dark-color ff-heading">Billed Yearly</span>
+                        <span class="pricing_save3">Save 20%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row wow fadeInUp" data-wow-delay="300ms">
+            <!-- Starter (Free) -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="pricing_packages text-center bdrs16"
+                     data-monthly="@starterMonthly"
+                     data-yearly="@toYearlyMonthly(starterMonthly)">
+                    <div class="heading mb10">
+                        <h1 class="text2">
+                            <span class="price-value">₹@starterMonthly</span>
+                            <small>/ monthly</small>
+                        </h1>
+                        <h4 class="package_title mt-2">Free Plan</h4>
+                    </div>
+                    <div class="details">
+                        <p class="text mb30">Start swapping with zero cost and no limits.</p>
+                        <ul class="pricing-list mb40 px-0 text-left">
+                            <li>Unlimited skill swaps</li>
+                            <li>Global matching</li>
+                            <li>Basic profile listing</li>
+                            <li>Access to shared resources</li>
+                            <li>1 verification request (lifetime)</li>
+                            <li>Email support (5-day SLA)</li>
+                        </ul>
+                        <div class="d-grid">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <a href="@Url.Action("PublicOfferList","UserOfferDetails")" class="ud-btn btn-thm-border bdrs8">
+                                    Swap Now <i class="fal fa-arrow-right-long"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Register","Home")" class="ud-btn btn-thm-border bdrs8">
+                                    Get Started <i class="fal fa-arrow-right-long"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Premium -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="pricing_packages active text-center bdrs16"
+                     data-monthly="@premiumMonthly"
+                     data-yearly="@toYearlyMonthly(premiumMonthly)">
+                    <div class="heading mb10">
+                        <h1 class="text2">
+                            <span class="price-value">₹@premiumMonthly</span>
+                            <small>/ monthly</small>
+                        </h1>
+                        <h4 class="package_title mt-2">Plus Plan</h4>
+                    </div>
+                    <div class="details">
+                        <p class="text mb30">Stand out with local suggestions & featured slots.</p>
+                        <ul class="pricing-list mb40 px-0 text-left">
+                            <li>Everything in Starter, plus:</li>
+                            <li>Nearby & global matching</li>
+                            <li>Activity access</li>
+                            <li>1 verification request/month</li>
+                            <li>1× token boost</li>
+                            <li>Email support (72 hr SLA)</li>
+                            <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
+                        </ul>
+                        <div class="d-grid">
+                            <button type="button"
+                                    class="ud-btn btn-thm-border bdrs8 buy-btn"
+                                    style="border:0"
+                                    data-plan="Premium">
+                                Upgrade to Plus
+                                <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="pricing_packages text-center bdrs16"
+                     data-monthly="@proMonthly"
+                     data-yearly="@toYearlyMonthly(proMonthly)">
+                    <div class="heading mb10">
+                        <h1 class="text2">
+                            <span class="price-value">₹@proMonthly</span>
+                            <small>/ monthly</small>
+                        </h1>
+                        <h4 class="package_title mt-2">Pro Plan</h4>
+                    </div>
+                    <div class="details">
+                        <p class="text mb30">Get priority matching & top-of-feed placement.</p>
+                        <ul class="pricing-list mb40 px-0 text-left">
+                            <li>Everything in Plus, additionally:</li>
+                            <li>Priority matching nearby</li>
+                            <li>Calendar integration</li>
+                            <li>Basic analytics</li>
+                            <li>1.25× token boost</li>
+                            <li>Email support (48 hr SLA)</li>
+                            <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
+                        </ul>
+                        <div class="d-grid">
+                            <button type="button"
+                                    class="ud-btn btn-thm-border bdrs8 buy-btn"
+                                    style="border:0"
+                                    data-plan="Pro">
+                                Go Pro <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growth -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="pricing_packages text-center bdrs16"
+                     data-monthly="@growthMonthly"
+                     data-yearly="@toYearlyMonthly(growthMonthly)">
+                    <div class="heading mb10">
+                        <h1 class="text2">
+                            <span class="price-value">₹@growthMonthly</span>
+                            <small>/ monthly</small>
+                        </h1>
+                        <h4 class="package_title mt-2">Growth Plan</h4>
+                    </div>
+                    <div class="details">
+                        <p class="text mb30">Exports, insights & VIP support, your all-access pass.</p>
+                        <ul class="pricing-list mb40 px-0 text-left">
+                            <li> Everything in Pro, plus:</li>
+                            <li> 2 verification requests/month</li>
+                            <li> 1.5× token boost</li>
+                            <li> Advanced analytics</li>
+                            <li> Data export & custom alerts</li>
+                            <li> Email support  (24 hr SLA)</li>
+                            <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
+                        </ul>
+                        <div class="d-grid">
+                            <button type="button"
+                                    class="ud-btn btn-thm-border bdrs8 buy-btn"
+                                    style="border:0"
+                                    data-plan="Growth">
+                                Grow Now <i class="fal fa-arrow-right-long"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Razorpay Checkout SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    // 1) Toggle Monthly ↔ Yearly Prices (19.5% discount baked in)
+    function togglePricing() {
+      const yearly = document.getElementById('billingToggle').checked;
+      document.querySelectorAll('.pricing_packages').forEach(pkg => {
+        const rate = yearly
+          ? pkg.getAttribute('data-yearly')
+          : pkg.getAttribute('data-monthly');
+        const priceEl = pkg.querySelector('.price-value');
+        const suffix  = pkg.querySelector('small');
+        priceEl.innerText = '₹' + rate;
+        suffix.innerText  = '/ monthly' + (yearly ? ' (billed annually)' : '');
+      });
+    }
+
+    // 2) Kick off Razorpay Checkout for a given plan
+    async function startPayment(plan) {
+        const isYearly = document.getElementById('billingToggle').checked;
+        const clientCycle   = isYearly ? 'yearly' : 'monthly';
+      try {
+        // Create the Razorpay order
+        const res = await fetch('/Billing/Checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan, billingCycle: clientCycle })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          return alert('Error creating order: ' + err);
+        }
+        const { key, orderId, amount, currency, planName, billingCycle: serverCycle } = await res.json();
+
+        // Configure and open the Razorpay modal
+        const options = {
+          key,             // Razorpay Key from server
+          amount,          // in paise
+          currency,
+          name: 'SkillSwap',
+          description: `${planName} Plan (${serverCycle})`,
+          order_id: orderId,
+          handler(response) {
+            // 3) Verify payment server-side
+            const payload = {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_signature:  response.razorpay_signature,
+              planName,
+              billingCycle: serverCycle
+            };
+            fetch('/Billing/Verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(j => {
+              if (j.success) {
+                // on successful verification & subscription update,
+                // you might redirect to the dashboard:
+                window.location.href = '/UserDashboard';
+              } else {
+                alert(j.message);
+              }
+            })
+            .catch(() => alert('Verification failed'));
+          },
+          modal: {
+            ondismiss: () => {
+              console.log('Checkout closed');
+            }
+          }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (e) {
+        console.error(e);
+        alert('Unexpected error, check console');
+      }
+    }
+
+    // 4) Wire up all Buy buttons and the toggle switch
+    document.addEventListener('DOMContentLoaded', () => {
+      // Plan buttons
+      document.querySelectorAll('.buy-btn').forEach(btn => {
+        btn.addEventListener('click', () => startPayment(btn.dataset.plan));
+      });
+      // Pricing toggle
+      document.getElementById('billingToggle')
+              .addEventListener('change', togglePricing);
+    });
+</script>

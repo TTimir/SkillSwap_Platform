@@ -1,19 +1,201 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.DashboardVM
 @using Humanizer
+@using Microsoft.AspNetCore.Authorization
 @using Newtonsoft.Json
+@inject IAuthorizationService AuthZ
 
 @{
     ViewData["Title"] = "Dashboard";
     ViewData["SubTitle"] = "Collaborate, learn, and grow together.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    // Evaluate policies
+    var canBasic = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
+    var canAdvanced = (await AuthZ.AuthorizeAsync(User, "GrowthPlan")).Succeeded;
+
+    var hasAutoRenew = Model.IsAutoRenew;
+    var hasActiveSub = Model.CurrentSubscription?.IsActive == true;
+    // pull the cancelled‐at string (or null)
+    var cancelledAt = TempData["CancelInfo"] as string;
 }
 
+<style>
+    /* blur the background widgets */
+    .blur-section {
+    filter: blur(4px);
+    pointer-events: none;
+    }
+    /* overlay centered message + button */
+    .upgrade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.7);
+    }
+
+    .upgrade-overlay p {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    }
+</style>
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 <div class="col-lg-9">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
         <p class="text">@ViewData["SubTitle"]</p>
     </div>
 </div>
+</div>
+<!-- Subscription & Billing Card -->
+<div class="row">
+    <div class="col-12">
+        @if (!string.IsNullOrEmpty(Model.CancellationDateUtc?.ToString()))
+        {
+            <div class="alert alert-info mt-3 d-flex align-items-start" role="alert" style="gap:.5rem">
+                <i class="fas fa-info-circle mt-1"></i>
+                <div>
+                    <strong>Heads-up:</strong>
+                    You cancelled auto-renew on <strong>@cancelledAt</strong>—your plan won’t renew automatically, but you’ll keep full access until
+                    <strong>
+                        @(Model.CurrentSubscription != null
+                                ? Model.CurrentSubscription.EndDate.ToLocalTime().ToString("MMM d, yyyy hh:mm tt")
+                                : "Never")
+                    </strong>.
+                </div>
+            </div>
+        }
+        @if (hasAutoRenew)
+        {
+            <div class="alert alert-info mt-3 d-flex align-items-start" role="alert" style="gap:0.5rem;">
+                <i class="fas fa-info-circle mt-1"></i>
+                <div>
+                    <strong>Heads-up:</strong> Cancelling auto-renew means your plan won’t renew automatically,
+                    but you’ll keep full access until 
+                    <strong>
+                        @(Model.CurrentSubscription != null
+                            ? Model.CurrentSubscription.EndDate.ToLocalTime().ToString("MMM d, yyyy hh:mm tt")
+                            : "Never"
+                    )
+                </strong>.
+                </div>
+        </div>
+        }
+        <div class="ps-widget bgc-white bdrs4 p30 mb30">
+            <div class="row align-items-start">
+                <!-- Left side: subscription details + optional cancel‐heads-up -->
+                <div class="col-md-7">
+                    <h5 class="title mb-2">Your Subscription &amp; Billing</h5>
+                    <p class="mb-1">
+                        Plan:
+                        <strong>
+                            @(Model.CurrentSubscription?.PlanName ?? "Free")
+                            @if (Model.CurrentSubscription != null)
+                            {
+                                <span class="text-muted">(@Model.BillingCycle)</span>
+                            }
+                        </strong>
+                    </p>
+                    <p class="mb-1">
+                        Expires:
+                        <strong>
+                            @(Model.CurrentSubscription != null
+                                ? Model.CurrentSubscription.EndDate.ToLocalTime().ToString("MMM d, yyyy hh:mm tt")
+                                : "Never")
+                        </strong>
+                    </p>
+                </div>
+
+                <!-- Right side: buttons -->
+                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                    @if (hasActiveSub)
+                    {
+                        <a href="@Url.Action("Manage","Billing")" class="ud-btn btn-thm ms-2">
+                            View Billings <i class="fal fa-arrow-right-long"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Pricing","Billing")" class="ud-btn btn-thm ms-2">
+                            Upgrade Now <i class="fal fa-arrow-right-long"></i>
+                        </a>
+                    }
+                    @if (hasAutoRenew)
+                    {
+                        <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
+                                style="border:0"
+                                data-bs-toggle="modal"
+                                data-bs-target="#cancelModal">
+                            Cancel Auto-Renew
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal markup -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="CancelAutoRenew" asp-controller="Billing" method="post" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Why are you cancelling?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea name="reason"
+                          class="form-control"
+                          rows="4"
+                          placeholder="Let us know why you’re turning off auto-renew…"
+                          required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="ud-btn btn-light-thm"
+                        style="border:0"
+                        data-bs-dismiss="modal">
+                    Back
+                </button>
+                <button type="submit"
+                        class="ud-btn btn-thm"
+                        style="border:0">
+                    Confirm Cancel
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 <div class="row">
     <div class="col-sm-6 col-xxl-3">
@@ -58,228 +240,433 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-xl-8">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="navtab-style1">
-                <div class="d-sm-flex align-items-center justify-content-between">
-                    <h4 class="title fz17 mb20">Swaps Views</h4>
-                    @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
+    @if (canBasic)
+    {
+        <div class="col-xl-8">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="navtab-style1">
+                    <div class="d-sm-flex align-items-center justify-content-between">
+                        <h4 class="title fz17 mb20">Swaps Views</h4>
+                        @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
                         <select class="selectpicker show-tick">
                             <option>This Week</option>
                             <option>This Month</option>
                             <option>This Year</option>
                         </select>
                     </div> *@
+                    </div>
+                    <canvas id="profileViewsChart" style="height:230px;"></canvas>
                 </div>
-                <canvas id="profileViewsChart" style="height:230px;"></canvas>
             </div>
         </div>
-    </div>
-    <div class="col-xl-4">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="bdrb1 pb15 mb50">
-                <h5 class="title">Traffic</h5>
+        <div class="col-xl-4">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb50">
+                    <h5 class="title">Traffic</h5>
+                </div>
+                <canvas id="trafficChart" height="260px"></canvas>
             </div>
-            <canvas id="trafficChart" height="260px"></canvas>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="col-12 position-relative mb30">
+            <div class="row blur-section">
+                <!-- duplicate the two chart columns, so they're present but blurred -->
+                <div class="col-xl-8">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden">
+                        <h4 class="title fz17 mb20">Swaps Views</h4>
+                        <canvas id="profileViewsChart" style="height:230px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-xl-4">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden">
+                        <h5 class="title">Traffic</h5>
+                        <canvas id="trafficChart" height="260px"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="upgrade-overlay">
+                <p>Upgrade to <strong>Pro</strong> to unlock your basic analytics</p>
+                <a href="@Url.Action("Pricing","Billing")" class="ud-btn btn-thm">
+                    Upgrade Now <i class="fal fa-arrow-right-long"></i>
+                </a>
+            </div>
+        </div>
+    }
 </div>
 <div class="row">
-    <div class="col-md-6 col-xxl-4">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="d-flex justify-content-between bdrb1 pb15 mb20">
-                <h5 class="title">Most Viewed Swaps</h5>
-                <a class="text-decoration-underline text-thm6" href="@Url.Action("OfferList","UserOfferManage")">View All</a>
-            </div>
-            <div class="dashboard-img-service">
-                @foreach (var svc in Model.MostViewedServices)
-                {
-                    <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
-                        <div class="list-thumb flex-shrink-0 bdrs4">
-                            @{
-                                // 1) Try to parse the stored JSON
-                                List<string> portfolioImages = new();
-                                if (!string.IsNullOrWhiteSpace(svc.PortfolioJson))
-                                {
-                                    try
+    @if (canAdvanced)
+    {
+        <div class="col-md-6 col-xxl-4">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="d-flex justify-content-between bdrb1 pb15 mb20">
+                    <h5 class="title">Most Viewed Swaps</h5>
+                    <a class="text-decoration-underline text-thm6" href="@Url.Action("OfferList","UserOfferManage")">View All</a>
+                </div>
+                <div class="dashboard-img-service">
+                    @foreach (var svc in Model.MostViewedServices)
+                    {
+                        <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
+                            <div class="list-thumb flex-shrink-0 bdrs4">
+                                @{
+                                    // 1) Try to parse the stored JSON
+                                    List<string> portfolioImages = new();
+                                    if (!string.IsNullOrWhiteSpace(svc.PortfolioJson))
                                     {
-                                        portfolioImages = Newtonsoft.Json.JsonConvert
-                                        .DeserializeObject<List<string>>(svc.PortfolioJson)
-                                        ?? new List<string>();
+                                        try
+                                        {
+                                            portfolioImages = Newtonsoft.Json.JsonConvert
+                                            .DeserializeObject<List<string>>(svc.PortfolioJson)
+                                            ?? new List<string>();
+                                        }
+                                        catch
+                                        {
+                                            // ignore parse errors
+                                        }
                                     }
-                                    catch
-                                    {
-                                        // ignore parse errors
-                                    }
-                                }
 
-                                // 2) Your two “no-offer” defaults
-                                var defaultImages = new[]
-                                {
+                                    // 2) Your two “no-offer” defaults
+                                    var defaultImages = new[]
+                                    {
                         Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
                         Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                         };
 
-                                // 3) Deterministic index from OfferId
-                                var defaultIndex = svc.OfferId % defaultImages.Length;
-                                var fallbackUrl = defaultImages[defaultIndex];
+                                    // 3) Deterministic index from OfferId
+                                    var defaultIndex = svc.OfferId % defaultImages.Length;
+                                    var fallbackUrl = defaultImages[defaultIndex];
 
-                                // 4) Final image choice
-                                var imgUrl = portfolioImages.Any()
-                                ? portfolioImages.First()
-                                : fallbackUrl;
+                                    // 4) Final image choice
+                                    var imgUrl = portfolioImages.Any()
+                                    ? portfolioImages.First()
+                                    : fallbackUrl;
+                                }
+                                <img class="w-100" src="@imgUrl" alt="@svc.Title">
+                            </div>
+                            <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
+                                <h6 class="list-title line-clamp2 mb-2"><a href="@svc.DetailsUrl">@svc.Title</a></h6>
+                                <div class="list-meta d-flex justify-content-between align-items-center">
+                                    <div class="review-meta d-flex align-items-center">
+                                        <i class="fas fa-star fz10 review-color me-2"></i>
+                                        <p class="mb-0 body-color fz14"><span class="dark-color me-2">@svc.Rating</span></p>
+                                    </div>
+                                    <div class="budget">
+                                        <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@svc.Location</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="opacity-100 mt-0">
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xxl-4">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="d-flex justify-content-between bdrb1 pb15 mb30">
+                    <h5 class="title">Your Recent Exchanges</h5>
+                    <a class="text-decoration-underline text-thm6" href="@Url.Action("Index","ExchangeDashboard")">View All</a>
+                </div>
+                <div class="dashboard-img-service">
+                    @foreach (var pur in Model.RecentPurchases)
+                    {
+                        <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb10">
+                            <div class="list-thumb wa flex-shrink-0 bdrs4 mb15-lg">
+                                <img class="wa img-2" src="@pur.OtherUserAvatarUrl" style="width:48px; height:48px; border-radius:50%;" alt="">
+                            </div>
+                            <div class="list-content flex-grow-1 py-0 pb10 pl15 pl0-lg">
+                                <h6 class="list-title mb-2">@pur.OtherUser. <span class="text-thm">has accepted the swap for, </span> @pur.ServiceTitle</h6>
+                                <div class="list-meta d-flex justify-content-between align-items-center">
+                                    <div class="review-meta d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Exchange Date">
+                                        <p class="mb-0 body-color fz14">@pur.InitiatedDate.ToString("MMM d, yyyy")</p>
+                                    </div>
+                                    <div class="budget">
+                                        <p class="mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Token Cost"><span class="icon flaticon-income fz15 fw500 dark-color">&nbsp;@pur.Amount</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="opacity-100 mt-0">
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xxl-4">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb30">
+                    <h5 class="title">Recent Activity</h5>
+                </div>
+                @if (Model.RecentActivity?.Any() == true)
+                {
+                    @foreach (var item in Model.RecentActivity)
+                    {
+                        // Add bottom padding on all but the last item
+                        var isLast = item == Model.RecentActivity.Last();
+                        <div class="dashboard-timeline-label">
+                            <div class="timeline-item @(isLast ? "" : "pb15")">
+                                <!--begin::Label-->
+                                <div class="child-timeline-label">
+                                    @item.Timestamp.ToLocalTime().ToString("hh:mm tt") (@item.Timestamp.ToLocalTime().Humanize())
+                                </div>
+                                <!--end::Label-->
+                                <!--begin::Badge-->
+                                <div class="timeline-badge d-flex align-items-center @item.BadgeColorClass">
+                                    <i class="fas fa-genderless"></i>
+                                </div>
+                                <!--end::Badge-->
+                                <!--begin::Text-->
+                                <div class="ra_pcontent pl10"><span class="title">@item.Title</span> <br> <span class="subtitle">@item.Subtitle</span></div>
+                                <!--end::Text-->
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No recent activity.</p>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="col-12 position-relative">
+            <!-- 1) Blurred copy of the three history columns -->
+            <div class="blur-section row">
+                <!-- Most Viewed Swaps -->
+                <div class="col-md-6 col-xxl-4">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                        <div class="d-flex justify-content-between bdrb1 pb15 mb20">
+                            <h5 class="title">Most Viewed Swaps</h5>
+                            <a class="text-decoration-underline text-thm6"
+                               href="@Url.Action("OfferList","UserOfferManage")">View All</a>
+                        </div>
+                        <div class="dashboard-img-service">
+                            @foreach (var svc in Model.MostViewedServices)
+                            {
+                                <div class="listing-style1 list-style d-block d-xl-flex align-items-center border-0 mb10">
+                                    <div class="list-thumb flex-shrink-0 bdrs4">
+                                        @{
+                                            List<string> portfolioImages = new();
+                                            if (!string.IsNullOrWhiteSpace(svc.PortfolioJson))
+                                            {
+                                                try
+                                                {
+                                                    portfolioImages = JsonConvert
+                                                    .DeserializeObject<List<string>>(svc.PortfolioJson)
+                                                    ?? new List<string>();
+                                                }
+                                                catch { }
+                                            }
+
+                                            var defaultImgs = new[]
+                                            {
+                                Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                };
+                                            var idx = svc.OfferId % defaultImgs.Length;
+                                            var imgUrl = portfolioImages.Any()
+                                            ? portfolioImages.First()
+                                            : defaultImgs[idx];
+                                        }
+                                        <img class="w-100" src="@imgUrl" alt="@svc.Title">
+                                    </div>
+                                    <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
+                                        <h6 class="list-title line-clamp2 mb-2">
+                                            <a href="@svc.DetailsUrl">@svc.Title</a>
+                                        </h6>
+                                        <div class="list-meta d-flex justify-content-between align-items-center">
+                                            <div class="review-meta d-flex align-items-center">
+                                                <i class="fas fa-star fz10 review-color me-2"></i>
+                                                <p class="mb-0 body-color fz14">
+                                                    <span class="dark-color me-2">@svc.Rating</span>
+                                                </p>
+                                            </div>
+                                            <div class="budget">
+                                                <p class="mb-0 body-color">
+                                                    Location
+                                                    <span class="fz17 fw500 dark-color ms-1">
+                                                        @svc.Location
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="opacity-100 mt-0" />
                             }
-                            <img class="w-100" src="@imgUrl" alt="@svc.Title">
-                        </div>
-                        <div class="list-content flex-grow-1 pt10 pb10 pl15 pl0-lg">
-                            <h6 class="list-title line-clamp2 mb-2"><a href="@svc.DetailsUrl">@svc.Title</a></h6>
-                            <div class="list-meta d-flex justify-content-between align-items-center">
-                                <div class="review-meta d-flex align-items-center">
-                                    <i class="fas fa-star fz10 review-color me-2"></i>
-                                    <p class="mb-0 body-color fz14"><span class="dark-color me-2">@svc.Rating</span></p>
-                                </div>
-                                <div class="budget">
-                                    <p class="mb-0 body-color">Location<span class="fz17 fw500 dark-color ms-1">@svc.Location</span></p>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                    <hr class="opacity-100 mt-0">
-                }
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xxl-4">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="d-flex justify-content-between bdrb1 pb15 mb30">
-                <h5 class="title">Your Recent Exchanges</h5>
-                <a class="text-decoration-underline text-thm6" href="@Url.Action("Index","ExchangeDashboard")">View All</a>
-            </div>
-            <div class="dashboard-img-service">
-                @foreach (var pur in Model.RecentPurchases)
-                {
-                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb10">
-                        <div class="list-thumb wa flex-shrink-0 bdrs4 mb15-lg">
-                            <img class="wa img-2" src="@pur.OtherUserAvatarUrl" style="width:48px; height:48px; border-radius:50%;" alt="">
+                </div>
+
+                <!-- Your Recent Exchanges -->
+                <div class="col-md-6 col-xxl-4">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                        <div class="d-flex justify-content-between bdrb1 pb15 mb30">
+                            <h5 class="title">Your Recent Exchanges</h5>
+                            <a class="text-decoration-underline text-thm6"
+                               href="@Url.Action("Index","ExchangeDashboard")">View All</a>
                         </div>
-                        <div class="list-content flex-grow-1 py-0 pb10 pl15 pl0-lg">
-                            <h6 class="list-title mb-2">@pur.OtherUser. <span class="text-thm">has accepted the swap for, </span> @pur.ServiceTitle</h6>
-                            <div class="list-meta d-flex justify-content-between align-items-center">
-                                <div class="review-meta d-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Exchange Date">
-                                    <p class="mb-0 body-color fz14">@pur.InitiatedDate.ToString("MMM d, yyyy")</p>
+                        <div class="dashboard-img-service">
+                            @foreach (var pur in Model.RecentPurchases)
+                            {
+                                <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb10">
+                                    <div class="list-thumb wa flex-shrink-0 bdrs4 mb15-lg">
+                                        <img class="wa img-2"
+                                             src="@pur.OtherUserAvatarUrl"
+                                             style="width:48px; height:48px; border-radius:50%;"
+                                             alt="" />
+                                    </div>
+                                    <div class="list-content flex-grow-1 py-0 pb10 pl15 pl0-lg">
+                                        <h6 class="list-title mb-2">
+                                            @pur.OtherUser
+                                            <span class="text-thm">has accepted the swap for, </span>
+                                            @pur.ServiceTitle
+                                        </h6>
+                                        <div class="list-meta d-flex justify-content-between align-items-center">
+                                            <div class="review-meta d-flex align-items-center"
+                                                 data-bs-toggle="tooltip"
+                                                 data-bs-placement="bottom"
+                                                 title="Exchange Date">
+                                                <p class="mb-0 body-color fz14">
+                                                    @pur.InitiatedDate.ToString("MMM d, yyyy")
+                                                </p>
+                                            </div>
+                                            <div class="budget">
+                                                <p class="mb-0"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-placement="bottom"
+                                                   title="Token Cost">
+                                                    <span class="icon flaticon-income fz15 fw500 dark-color">
+                                                        &nbsp;@pur.Amount
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="budget">
-                                    <p class="mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Token Cost"><span class="icon flaticon-income fz15 fw500 dark-color">&nbsp;@pur.Amount</span></p>
-                                </div>
-                            </div>
+                                <hr class="opacity-100 mt-0" />
+                            }
                         </div>
                     </div>
-                    <hr class="opacity-100 mt-0">
-                }
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-xxl-4">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="bdrb1 pb15 mb30">
-                <h5 class="title">Recent Activity</h5>
-            </div>
-            @if (Model.RecentActivity?.Any() == true)
-            {
-                @foreach (var item in Model.RecentActivity)
-                {
-                    // Add bottom padding on all but the last item
-                    var isLast = item == Model.RecentActivity.Last();
-                    <div class="dashboard-timeline-label">
-                        <div class="timeline-item @(isLast ? "" : "pb15")">
-                            <!--begin::Label-->
-                            <div class="child-timeline-label">
-                                @item.Timestamp.ToLocalTime().ToString("hh:mm tt") (@item.Timestamp.ToLocalTime().Humanize())
-                            </div>
-                            <!--end::Label-->
-                            <!--begin::Badge-->
-                            <div class="timeline-badge d-flex align-items-center @item.BadgeColorClass">
-                                <i class="fas fa-genderless"></i>
-                            </div>
-                            <!--end::Badge-->
-                            <!--begin::Text-->
-                            <div class="ra_pcontent pl10"><span class="title">@item.Title</span> <br> <span class="subtitle">@item.Subtitle</span></div>
-                            <!--end::Text-->
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="col-md-6 col-xxl-4">
+                    <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                        <div class="bdrb1 pb15 mb30">
+                            <h5 class="title">Recent Activity</h5>
                         </div>
+                        @if (Model.RecentActivity?.Any() == true)
+                        {
+                            @foreach (var item in Model.RecentActivity)
+                            {
+                                var isLast = item == Model.RecentActivity.Last();
+                                <div class="dashboard-timeline-label">
+                                    <div class="timeline-item @(isLast ? "" : "pb15")">
+                                        <div class="child-timeline-label">
+                                            @item.Timestamp.ToLocalTime().ToString("hh:mm tt")
+                                            (@item.Timestamp.ToLocalTime().Humanize())
+                                        </div>
+                                        <div class="timeline-badge d-flex align-items-center @item.BadgeColorClass">
+                                            <i class="fas fa-genderless"></i>
+                                        </div>
+                                        <div class="ra_pcontent pl10">
+                                            <span class="title">@item.Title</span><br />
+                                            <span class="subtitle">@item.Subtitle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted">No recent activity.</p>
+                        }
                     </div>
-                }
-            }
-            else
-            {
-                <p class="text-muted">No recent activity.</p>
-            }
+                </div>
+            </div>
+
+            <!-- 2) Overlay prompting upgrade to Growth -->
+            <div class="upgrade-overlay">
+                <p>Upgrade to <strong>Growth</strong> to see your full history & insights</p>
+                <a href="@Url.Action("Pricing","Billing")" class="ud-btn btn-thm">
+                    Upgrade Now <i class="fal fa-arrow-right-long"></i>
+                </a>
+            </div>
         </div>
-    </div>
+    }
 </div>
 
 @section DynamicScript {
     <!-- Make sure you've referenced Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        const canBasic    = @canBasic.ToString().ToLower();
+        const canAdvanced = @canAdvanced.ToString().ToLower();
+
         // — Bar chart: Your top 7 service views —
-        (function(){
-            const rawLabels = @Html.Raw(JsonConvert.SerializeObject(Model.OfferViewLabels));
-            const labels = rawLabels.map(label =>
-              label.length > 20
-                ? label.slice(0, 20) + '…'
-                : label
-            );
-            const data = @Html.Raw(Json.Serialize(Model.OfferViewData));
-            const ctx    = document.getElementById('profileViewsChart').getContext('2d');
+        if (canBasic) {
+            (function(){
+                const rawLabels = @Html.Raw(JsonConvert.SerializeObject(Model.OfferViewLabels));
+                const labels = rawLabels.map(label =>
+                  label.length > 20
+                    ? label.slice(0, 20) + '…'
+                    : label
+                );
+                const data = @Html.Raw(Json.Serialize(Model.OfferViewData));
+                const ctx    = document.getElementById('profileViewsChart').getContext('2d');
 
-          new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: 'Views',
-                data: data,
-                backgroundColor: '#FBF8EF',  
-                borderColor:    '#5BBB7B',
-                borderWidth: 1.2,
-                borderRadius: 4,
-                barPercentage: 0.6
-              }]
-            },
-            options: {
-              scales: {
-               x: {
-                  ticks: {
-                    autoSkip: false,
-                    maxRotation: 0
-                  }
+              new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [{
+                    label: 'Views',
+                    data: data,
+                    backgroundColor: '#FBF8EF',
+                    borderColor:    '#5BBB7B',
+                    borderWidth: 1.2,
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                  }]
                 },
-                y: { beginAtZero: true }
-              },
-              plugins: { legend:{ display:false } }
-            }
-          });
-        })();
+                options: {
+                  scales: {
+                   x: {
+                      ticks: {
+                        autoSkip: false,
+                        maxRotation: 0
+                      }
+                    },
+                    y: { beginAtZero: true }
+                  },
+                  plugins: { legend:{ display:false } }
+                }
+              });
+            })();
 
-        // — Doughnut: Views by Category —
-        (function(){
-          const labels = @Html.Raw(JsonConvert.SerializeObject(Model.CategoryLabels));
-          const data   = @Html.Raw(JsonConvert.SerializeObject(Model.CategoryData));
-          const ctx    = document.getElementById('trafficChart').getContext('2d');
+            // — Doughnut: Views by Category —
+            (function(){
+              const labels = @Html.Raw(JsonConvert.SerializeObject(Model.CategoryLabels));
+              const data   = @Html.Raw(JsonConvert.SerializeObject(Model.CategoryData));
+              const ctx    = document.getElementById('trafficChart').getContext('2d');
 
-          new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: labels,
-              datasets: [{
-                data: data,
-                cutout: '60%'
-              }]
-            },
-            options: {
-              plugins: { legend:{ position:'right' } }
-            }
-          });
-        })();
+              new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                  labels: labels,
+                  datasets: [{
+                    data: data,
+                    cutout: '60%'
+                  }]
+                },
+                options: {
+                  plugins: { legend:{ position:'right' } }
+                }
+              });
+            })();
+        }
     </script>
 }

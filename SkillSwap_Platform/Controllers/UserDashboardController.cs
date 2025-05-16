@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+using SkillSwap_Platform.Services.Payment_Gatway;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -17,11 +19,13 @@ namespace SkillSwap_Platform.Controllers
     {
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<UserProfileController> _logger;
+        private readonly ISubscriptionService _subs;
 
-        public UserDashboardController(SkillSwapDbContext context, ILogger<UserProfileController> logger)
+        public UserDashboardController(SkillSwapDbContext context, ILogger<UserProfileController> logger, ISubscriptionService subs)
         {
             _db = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
+            _subs = subs ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task<IActionResult> Index()
@@ -30,6 +34,11 @@ namespace SkillSwap_Platform.Controllers
             {
                 // Load your various counts—replace these with your real queries
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                // Determine what they’re allowed to see
+                var canBasic = await _subs.IsInPlanAsync(userId, "Pro")
+                       || await _subs.IsInPlanAsync(userId, "Growth");
+                var canAdvanced = await _subs.IsInPlanAsync(userId, "Growth");
 
                 var servicesOffered = await _db.TblOffers.CountAsync(o => o.UserId == userId);
                 var newServicesOffered = await _db.TblOffers.CountAsync(o =>
@@ -53,26 +62,44 @@ namespace SkillSwap_Platform.Controllers
                     r.Offer.UserId == userId && r.CreatedDate >= DateTime.UtcNow.AddDays(-7));
                 var newReviews = Math.Max(0, rawNewReviews - 2);
 
-                // 1️⃣ Top 7 offers by total Views
-                var top7 = await _db.TblOffers
+                List<string> offerViewLabels = new(), categoryLabels = new();
+                List<int> offerViewData = new(), categoryData = new();
+                if (canBasic)
+                {
+                    // 1️⃣ Top 7 offers by total Views
+                    var top7 = await _db.TblOffers
                     .Where(o => o.UserId == userId)
                     .OrderByDescending(o => o.Views)
                     .Select(o => new { o.Title, o.Views })
                     .Take(7)
+                    .Select(o => new { o.Title, o.Views })
                     .ToListAsync();
 
-                // 2️⃣ Views aggregated by Category
-                var byCat = await _db.TblOffers
-                    .Where(o => o.UserId == userId)
-                    .GroupBy(o => o.Category)
-                    .Select(g => new {
-                        Category = g.Key,
-                        Total = g.Sum(o => o.Views)
-                    })
-                    .ToListAsync();
+                    offerViewLabels = top7.Select(x => x.Title).ToList();
+                    offerViewData = top7.Select(x => (int)x.Views).ToList();
 
-                // Top 3 most viewed services
-                var topServices = await _db.TblOffers
+                    // 2️⃣ Views aggregated by Category
+                    var byCat = await _db.TblOffers
+                        .Where(o => o.UserId == userId)
+                        .GroupBy(o => o.Category)
+                        .Select(g => new
+                        {
+                            Category = g.Key,
+                            Total = g.Sum(o => o.Views)
+                        })
+                        .ToListAsync();
+
+                    categoryLabels = byCat.Select(x => x.Category).ToList();
+                    categoryData = byCat.Select(x => (int)x.Total).ToList();
+                }
+
+                List<ServiceSummary> recentOffers = new();
+                List<ExchangeSummary> recentExchanges = new();
+                List<ActivityItem> recentActivity = new();
+                if (canAdvanced)
+                {
+                    // Top 3 most viewed services
+                    recentOffers = await _db.TblOffers
                     .Where(o => o.UserId == userId)
                     .OrderByDescending(o => o.Views)
                     .Take(3)
@@ -92,56 +119,70 @@ namespace SkillSwap_Platform.Controllers
                     })
                     .ToListAsync();
 
-                var raw = await (
-                    from ex in _db.TblExchanges
-                    join off in _db.TblOffers on ex.OfferId equals off.OfferId
-                    join usr in _db.TblUsers on ex.OtherUserId equals usr.UserId into buyers
-                    from buyer in buyers.DefaultIfEmpty()
-                    where ex.OfferOwnerId == userId
-                    select new
-                    {
-                        Exchange = ex,
-                        Offer = off,
-                        Buyer = buyer,
-                        Initiated = ex.RequestDate.HasValue
-                                        ? ex.RequestDate.Value
-                                        : ex.ExchangeDate
-                    }
-                )
-                .ToListAsync();
-
-                var recentExchanges = raw
-                    .OrderByDescending(x => x.Initiated)
-                    .Take(3)
-                    .Select(x => new ExchangeSummary
-                    {
-                        OtherUser = x.Buyer?.UserName ?? "Unknown user",
-                        ServiceTitle = x.Offer.Title,
-                        InitiatedDate = x.Initiated,
-                        Amount = x.Offer.TokenCost,
-                        OtherUserAvatarUrl = !string.IsNullOrWhiteSpace(x.Buyer?.ProfileImageUrl)
-                                             ? x.Buyer.ProfileImageUrl
-                                             : "/images/avatar-default.png"
-                    })
-                    .ToList();
-
-                // Recent activity
-                var activity = await _db.TblNotifications
-                    .Where(n => n.UserId == userId)
-                    .OrderByDescending(n => n.CreatedAt)
-                    .Take(5)
-                    .Select(n => new ActivityItem
-                    {
-                        Timestamp = n.CreatedAt,
-                        Title = n.Title,
-                        Subtitle = n.Message,
-                        // e.g. map different notification titles to different badge colors:
-                        BadgeColorClass = n.Title.Contains("Swap") ? "color1"
-                                        : n.Title.Contains("Aggreement") ? "color2"
-                                        : n.Title.Contains("Profile") ? "color3"
-                                        : "color4"
-                    })
+                    var raw = await (
+                        from ex in _db.TblExchanges
+                        join off in _db.TblOffers on ex.OfferId equals off.OfferId
+                        join usr in _db.TblUsers on ex.OtherUserId equals usr.UserId into buyers
+                        from buyer in buyers.DefaultIfEmpty()
+                        where ex.OfferOwnerId == userId
+                        select new
+                        {
+                            Exchange = ex,
+                            Offer = off,
+                            Buyer = buyer,
+                            Initiated = ex.RequestDate.HasValue
+                                            ? ex.RequestDate.Value
+                                            : ex.ExchangeDate
+                        }
+                    )
                     .ToListAsync();
+
+                    recentExchanges = raw
+                        .OrderByDescending(x => x.Initiated)
+                        .Take(3)
+                        .Select(x => new ExchangeSummary
+                        {
+                            OtherUser = x.Buyer?.UserName ?? "Unknown user",
+                            ServiceTitle = x.Offer.Title,
+                            InitiatedDate = x.Initiated,
+                            Amount = x.Offer.TokenCost,
+                            OtherUserAvatarUrl = !string.IsNullOrWhiteSpace(x.Buyer?.ProfileImageUrl)
+                                                 ? x.Buyer.ProfileImageUrl
+                                                 : "/images/avatar-default.png"
+                        })
+                        .ToList();
+
+                    // Recent activity
+                    recentActivity = await _db.TblNotifications
+                        .Where(n => n.UserId == userId)
+                        .OrderByDescending(n => n.CreatedAt)
+                        .Take(5)
+                        .Select(n => new ActivityItem
+                        {
+                            Timestamp = n.CreatedAt,
+                            Title = n.Title,
+                            Subtitle = n.Message,
+                            // e.g. map different notification titles to different badge colors:
+                            BadgeColorClass = n.Title.Contains("Swap") ? "color1"
+                                            : n.Title.Contains("Aggreement") ? "color2"
+                                            : n.Title.Contains("Profile") ? "color3"
+                                            : "color4"
+                        })
+                        .ToListAsync();
+                }
+
+                // 1) Fetch subscription
+                var subscription = await _subs.GetActiveAsync(userId);
+
+                DateTime? cancelledAt = null;
+                if (subscription != null)
+                {
+                    var cr = await _db.CancellationRequests
+                                   .Where(r => r.SubscriptionId == subscription.Id)
+                                   .OrderByDescending(r => r.RequestedAt)
+                                   .FirstOrDefaultAsync();
+                    cancelledAt = cr?.RequestedAt;
+                }
 
                 var vm = new DashboardVM
                 {
@@ -153,14 +194,20 @@ namespace SkillSwap_Platform.Controllers
                     NewInQueue = newInQueue,
                     TotalReviews = totalReviews,
                     NewReviews = newReviews,
-                    OfferViewLabels = top7.Select(x => x.Title).ToList(),
-                    OfferViewData = top7.Select(x => (int)x.Views).ToList(),
+                    OfferViewLabels = offerViewLabels,
+                    OfferViewData = offerViewData,
 
-                    CategoryLabels = byCat.Select(x => x.Category).ToList(),
-                    CategoryData = byCat.Select(x => (int)x.Total).ToList(),
-                    MostViewedServices = topServices,
+                    CategoryLabels = categoryLabels,
+                    CategoryData = categoryData,
+                    MostViewedServices = recentOffers,
                     RecentPurchases = recentExchanges,
-                    RecentActivity = activity
+                    RecentActivity = recentActivity,
+                    CurrentSubscription = subscription,
+                    BillingCycle = subscription?.BillingCycle ?? "monthly",
+                    IsAutoRenew = subscription?.IsAutoRenew ?? false,
+                    CanBasicAnalytics = canBasic,
+                    CanAdvancedAnalytics = canAdvanced,
+                    CancellationDateUtc = cancelledAt
                 };
 
                 return View(vm);

@@ -1,10 +1,4 @@
-﻿using AspNet.Security.OAuth.Apple;
-using AspNet.Security.OAuth.GitHub;
-using Hangfire;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Facebook;
-using Microsoft.AspNetCore.Authentication.Google;
+﻿using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Controllers;
@@ -42,6 +36,10 @@ using SkillSwap_Platform.Services.AdminControls.AdminSearch;
 using SkillSwap_Platform.Services.BadgeTire;
 using SkillSwap_Platform.Services.Matchmaking;
 using SkillSwap_Platform.Services.ProfileVerification;
+using SkillSwap_Platform.Services.Payment_Gatway.RazorPay;
+using SkillSwap_Platform.Services.Payment_Gatway;
+using Microsoft.AspNetCore.Authorization;
+using SkillSwap_Platform.Models.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +65,8 @@ builder.Logging
 var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>
         item.UseSqlServer(config.GetConnectionString("dbcs")));
+builder.Services.Configure<RazorpaySettings>(
+    builder.Configuration.GetSection("Razorpay"));
 
 builder.Services.AddHttpClient();
 
@@ -101,7 +101,9 @@ builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
 builder.Services.AddScoped<GoogleCalendarService>();
 builder.Services.AddScoped<BadgeService>();
-
+builder.Services.AddScoped<RazorpayService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IPaymentLogService, PaymentLogService>();
 
 
 // Admin Services
@@ -129,7 +131,25 @@ builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
 builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
 
+builder.Services
+    .AddTransient<IAuthorizationHandler, MinimumTierHandler>()
+    .AddAuthorization(options =>
+    {
+        // PlusPlan (tier ≥ Premium(1)): Free+Plus
+        options.AddPolicy("PlusPlan", policy =>
+            policy.Requirements.Add(
+                new MinimumTierRequirement(SubscriptionTier.Premium)));
 
+        // ProPlan (tier ≥ Pro(2)): Free+Plus+Pro
+        options.AddPolicy("ProPlan", policy =>
+            policy.Requirements.Add(
+                new MinimumTierRequirement(SubscriptionTier.Pro)));
+
+        // GrowthPlan (tier ≥ Growth(3)): Free+Plus+Pro+Growth
+        options.AddPolicy("GrowthPlan", policy =>
+            policy.Requirements.Add(
+                new MinimumTierRequirement(SubscriptionTier.Growth)));
+    });
 
 builder.Services.AddControllersWithViews(options =>
 {
@@ -154,6 +174,7 @@ builder.Services.AddSession(options =>
 //        options.Cookie.Name = "SkillSwapAuth"; // ✅ Custom cookie name
 //        options.ExpireTimeSpan = TimeSpan.FromDays(7);
 //    });
+
 builder.Services
     .AddAuthentication(options =>
     {
