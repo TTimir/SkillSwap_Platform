@@ -1,0 +1,269 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.AdminControl.BillingPlans.AdminBillingIndexVM
+
+@{
+    ViewData["Title"] = "All Subscriptions";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+
+<style>
+    .subscription-actions .btn {
+        border: none; /* drop the inline “border:0” */
+    }
+
+    .subscription-actions .form-select-sm {
+        width: auto; /* override full-width selects */
+        min-width: 5rem; /* give them a sensible min size */
+    }
+</style>
+
+@if (TempData["Success"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["Success"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-8">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-xl-4">
+    <div class="dashboard_search_meta">
+        <div class="search_area">
+            <form asp-action="Index" method="get">
+                <input type="hidden" name="page" value="1" />
+                <input type="text" name="term" value="@Model.Term" class="form-control bdrs4" placeholder="Search by name, email or plan…">
+                <button type="submit"
+                        class="position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent p-3"
+                        style="cursor: pointer;">
+                    <span class="far fa-magnifying-glass"></span>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Subscriptions of Users</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col"># (Id)</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">User Email</th>
+                                        <th scope="col">Plan</th>
+                                        <th scope="col">Cycle</th>
+                                        <th scope="col">Start Date</th>
+                                        <th scope="col">End Date</th>
+                                        <th scope="col">Auto-Renew</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var item in Model.Subscriptions)
+                                    {
+                                        <tr>
+                                            <td class="vam">@item.Id</td>
+                                            <td class="vam">@item.Name</td>
+                                            <td class="vam">@item.UserEmail</td>
+                                            <td class="vam">@item.PlanName</td>
+                                            <td class="vam" class="text-capitalize">@item.BillingCycle</td>
+                                            <td class="vam">@item.StartDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                                            <td class="vam">@item.EndDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</td>
+                                            <td class="vam">
+                                                @if (item.IsAutoRenew)
+                                                {
+                                                    <span class="badge bg-success">On</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Off</span>
+                                                }
+                                            </td>
+                                            <td class="vam">
+                                                <div class="subscription-actions d-flex flex-wrap align-items-center gap-2">
+
+                                                    <!-- Toggle & Renew grouped together -->
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <form asp-action="ToggleAutoRenew" method="post" class="m-0 p-0 me-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <button type="submit" class="btn btn-thm">
+                                                                @(item.IsAutoRenew ? "Turn Off" : "Turn On")
+                                                            </button>
+                                                        </form>
+                                                        <form asp-action="ForceRenew" method="post" class="m-0 p-0">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <button type="submit" class="btn btn-dark">
+                                                                Renew +1 @item.BillingCycle.Substring(0, 1).ToUpper()
+                                                            </button>
+                                                        </form>
+                                                    </div>
+
+                                                    <!-- Downgrade one cycle -->
+                                                    <form asp-action="ReducePeriod" method="post" class="d-inline-block m-0">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+                                                        <button type="submit"
+                                                                class="btn btn-outline-danger btn-sm"
+                                                                title="Remove one billing cycle"
+                                                        @(item.BillingCycle == "Free" ? "disabled" : "")>
+                                                            Downgrade –1 @item.BillingCycle.Substring(0, 1).ToUpper()
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Full Downgrade selector -->
+                                                    <form asp-action="Downgrade" method="post"
+                                                          class="d-flex align-items-center gap-1 m-0">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                                        <select name="newPlan"
+                                                                class="form-select form-select-sm">
+                                                            @{
+                                                                var tiers = new[] { "Free", "Plus", "Pro", "Growth" };
+                                                                var cur = Array.IndexOf(tiers, item.PlanName);
+                                                                for (int i = 0; i < cur; i++)
+                                                                {
+                                                                    <option value="@tiers[i]">@tiers[i]</option>
+                                                                    ;
+                                                                }
+                                                            }
+                                                        </select>
+
+                                                        <button type="submit"
+                                                                class="btn btn-outline-danger btn-sm"
+                                                        @(item.PlanName == "Free" ? "disabled" : "")>
+                                                            Downgrade
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Universal edit (plan + cycle) -->
+                                                    <form asp-action="EditSubscription" method="post"
+                                                          class="d-flex align-items-center gap-1 m-0">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                                        <select name="newPlan"
+                                                                class="form-select form-select-sm">
+                                                            @{
+                                                                var plans = new[] { "Free", "Plus", "Pro", "Growth" };
+                                                                foreach (var p in plans)
+                                                                {
+                                                                    <option value="@p"
+                                                                            selected="@(p == item.PlanName ? "selected" : null)">
+                                                                        @p
+                                                                    </option>
+                                                                    ;
+                                                                }
+                                                            }
+                                                        </select>
+
+                                                        <select name="newCycle"
+                                                                class="form-select form-select-sm">
+                                                            <option value="monthly"
+                                                                    selected="@(item.BillingCycle == "monthly" ? "selected" : null)">
+                                                                Monthly
+                                                            </option>
+                                                            <option value="yearly"
+                                                                    selected="@(item.BillingCycle == "yearly" ? "selected" : null)">
+                                                                Yearly
+                                                            </option>
+                                                        </select>
+
+                                                        <button type="submit"
+                                                                class="btn btn-thm btn-sm">
+                                                            Upgrade
+                                                        </button>
+                                                    </form>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.Page;
+                                var totalPages = (int)Math.Ceiling(Model.TotalItems / (double)Model.PageSize);
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page - 1)"
+                                               asp-route-term="@Model.Term">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Index"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page + 1)"
+                                               asp-route-term="@Model.Term">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

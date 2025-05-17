@@ -1,8 +1,10 @@
 ﻿using Google;
 using Microsoft.EntityFrameworkCore;
+using Razorpay.Api;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using System.Drawing;
+using Subscription = SkillSwap_Platform.Models.Subscription;
 
 namespace SkillSwap_Platform.Services.Payment_Gatway
 {
@@ -34,7 +36,8 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 UserId = userId,
                 PlanName = planName,
                 StartDate = start,
-                EndDate = end
+                EndDate = end,
+                IsAutoRenew = true
             };
 
             _db.Subscriptions.Add(sub);
@@ -45,45 +48,68 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
         public async Task UpsertAsync(int userId, string planName, string billingCycle, DateTime start, DateTime end)
         {
-            // either insert new or update existing active
-            var sub = await _db.Subscriptions
-                .Where(s => s.UserId == userId && s.EndDate > DateTime.UtcNow)
-                .FirstOrDefaultAsync();
-
-            if (sub == null)
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
             {
-                sub = new Subscription { UserId = userId };
-                _db.Subscriptions.Add(sub);
+                var existing = await GetActiveAsync(userId);
+                if (existing is null)
+                    _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
+
+                existing.PlanName = planName;
+                existing.BillingCycle = billingCycle;
+                existing.StartDate = start;
+                existing.EndDate = end;
+                existing.IsAutoRenew = true;   // always turn auto-renew back on
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                _logger.LogInformation("Upserted subscription {Plan} for user {UserId}", planName, userId);
             }
-
-            sub.PlanName = planName;
-            sub.BillingCycle = billingCycle;
-            sub.StartDate = start;
-            sub.EndDate = end;
-            sub.IsAutoRenew = true;   // always turn auto-renew back on
-
-            await _db.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(
+                    ex,
+                    "Error upserting subscription for user {UserId} plan {PlanName}",
+                    userId, planName);
+                throw;
+            }
         }
 
         public async Task CancelAutoRenewAsync(int userId, string reason)
         {
-            var sub = await GetActiveAsync(userId);
-            if (sub == null || !sub.IsAutoRenew)
-                return;
-
-            // 1) Turn off auto-renew
-            sub.IsAutoRenew = false;
-
-            // 2) Record the cancellation reason
-            var cancel = new CancellationRequest
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
             {
-                SubscriptionId = sub.Id,
-                RequestedAt = DateTime.UtcNow,
-                Reason = reason
-            };
-            _db.CancellationRequests.Add(cancel);
+                var sub = await GetActiveAsync(userId);
+                if (sub == null || !sub.IsAutoRenew)
+                    return;
 
-            await _db.SaveChangesAsync();
+                // 1) Turn off auto-renew
+                sub.IsAutoRenew = false;
+
+                // 2) Record the cancellation reason
+                var cancel = new CancellationRequest
+                {
+                    SubscriptionId = sub.Id,
+                    RequestedAt = DateTime.UtcNow,
+                    Reason = reason
+                };
+                _db.CancellationRequests.Add(cancel);
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                _logger.LogInformation("Cancelled auto-renew for user {UserId}", userId);
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(
+                    ex,
+                    "Error cancelling auto-renew for user {UserId}",
+                    userId);
+                throw;
+            }
         }
 
         public async Task<bool> IsInPlanAsync(int userId, string planName)
@@ -95,7 +121,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             var rank = new Dictionary<string, int>
             {
                 ["Free"] = 0,
-                ["Premium"] = 1,
+                ["Plus"] = 1,
                 ["Pro"] = 2,
                 ["Growth"] = 3
             };
@@ -111,7 +137,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
             return sub.PlanName switch
             {
-                "Premium" => SubscriptionTier.Premium,
+                "Plus" => SubscriptionTier.Plus,
                 "Pro" => SubscriptionTier.Pro,
                 "Growth" => SubscriptionTier.Growth,
                 _ => SubscriptionTier.Free

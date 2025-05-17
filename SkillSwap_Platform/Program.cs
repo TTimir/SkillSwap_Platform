@@ -40,6 +40,7 @@ using SkillSwap_Platform.Services.Payment_Gatway.RazorPay;
 using SkillSwap_Platform.Services.Payment_Gatway;
 using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,16 +58,25 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Logging
-       .ClearProviders()
-       .AddConsole()
-       .AddDebug();
+
+// 1) Load configuration files
+builder.Configuration
+       .SetBasePath(builder.Environment.ContentRootPath)
+       .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+       .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
+                    optional: true, reloadOnChange: true);
+
+// 2) Also read env-vars (they’ll override file values if set)
+builder.Configuration.AddEnvironmentVariables();
+
 // Configure DB Context
 var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>
         item.UseSqlServer(config.GetConnectionString("dbcs")));
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("Razorpay"));
+builder.Services.Configure<PlanSettings>(
+    builder.Configuration.GetSection("PlanSettings"));
 
 builder.Services.AddHttpClient();
 
@@ -101,7 +111,7 @@ builder.Services.AddHostedService<MiningHostedService>();
 builder.Services.AddHostedService<SeedDataService>();
 builder.Services.AddScoped<GoogleCalendarService>();
 builder.Services.AddScoped<BadgeService>();
-builder.Services.AddScoped<RazorpayService>();
+builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IPaymentLogService, PaymentLogService>();
 
@@ -138,7 +148,7 @@ builder.Services
         // PlusPlan (tier ≥ Premium(1)): Free+Plus
         options.AddPolicy("PlusPlan", policy =>
             policy.Requirements.Add(
-                new MinimumTierRequirement(SubscriptionTier.Premium)));
+                new MinimumTierRequirement(SubscriptionTier.Plus)));
 
         // ProPlan (tier ≥ Pro(2)): Free+Plus+Pro
         options.AddPolicy("ProPlan", policy =>

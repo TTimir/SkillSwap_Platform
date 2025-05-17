@@ -122,6 +122,12 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                             VerificationId = cert.VerificationId,
                             IsApproved = cert.IsApproved,
                             ApprovedDate = cert.ApprovedDate,
+                            Status = cert.IsApproved
+                                        ? CertificateDetailDto.ReviewStatus.Approved
+                                        : (!string.IsNullOrEmpty(cert.RejectionReason)
+                                            ? CertificateDetailDto.ReviewStatus.Rejected
+                                            : CertificateDetailDto.ReviewStatus.Pending),
+                            ProcessedDateUtc = cert.ApprovedDate,
                             RejectionReason = cert.RejectionReason
                         }
                     )

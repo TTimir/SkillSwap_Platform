@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Drawing;
 using System.Security.Claims;
+using Hangfire.Logging;
+using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Razorpay.Api;
 using SkillSwap_Platform.Models;
+using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
 using SkillSwap_Platform.Services.Payment_Gatway;
 using SkillSwap_Platform.Services.Payment_Gatway.RazorPay;
@@ -49,7 +52,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             var now = DateTime.UtcNow;
             var end = model.planName switch
             {
-                "Premium" => now.AddMonths(1),
+                "Plus" => now.AddMonths(1),
                 "Pro" => now.AddMonths(1),
                 "Growth" => now.AddMonths(1),
                 _ => now
@@ -69,13 +72,6 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             return View("Success", model);
         }
 
-        public class CallbackModel
-        {
-            public string razorpay_payment_id { get; set; }
-            public string razorpay_order_id { get; set; }
-            public string razorpay_signature { get; set; }
-            public string planName { get; set; }  // add this to your callback_url query
-        }
 
         // 1) Show the pricing grid
         [HttpGet]
@@ -85,14 +81,16 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             return View();
         }
 
-        [HttpPost]
-        [Route("Billing/Checkout")]
-        public IActionResult Checkout([FromBody] PlanRequest req)
+        [HttpPost("Checkout")]
+        public async Task<IActionResult> Checkout([FromBody] PlanRequest req)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
-                var order = _rzp.CreateOrderForPlan(req.Plan, req.BillingCycle);
-                return Json(order);
+                var result = await _rzp.CreateOrderAsync(req.Plan, req.BillingCycle);
+                return Json(result);
             }
             catch (ArgumentException ex)
             {
@@ -102,7 +100,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating Razorpay order");
-                return StatusCode(500, "Could not create order");
+                return RedirectToAction("500", "EP");
             }
         }
 
@@ -122,17 +120,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
         }
 
         // 3) Verify signature after payment
-        public class PaymentResponse
-        {
-            public string razorpay_payment_id { get; set; }
-            public string razorpay_order_id { get; set; }
-            public string razorpay_signature { get; set; }
-            public string planName { get; set; }
-            public string billingCycle { get; set; }
-        }
-
-        [HttpPost]
-        [Route("Billing/Verify")]
+        [HttpPost("Verify")]
         public async Task<IActionResult> Verify([FromBody] PaymentResponse resp)
         {
             var ok = _rzp.VerifySignature(
@@ -143,20 +131,35 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             if (!ok)
                 return Json(new { success = false, message = "Payment verification failed." });
 
+            if (await _paymentLog.HasProcessedAsync(resp.razorpay_order_id))
+                return Ok(new { success = true, message = "Already processed" });
+
             // signature is valid → update the DB
             var userId = GetUserId() ?? throw new Exception("Unauthenticated");
-            if (await _paymentLog.HasProcessedAsync(resp.razorpay_order_id))
-                return Json(new { success = true, message = "Already processed" });
 
-            var start = DateTime.UtcNow;
-            var end = resp.billingCycle == "yearly"
-                ? start.AddYears(1)
-                : start.AddMonths(1);
+            using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                var start = DateTime.UtcNow;
+                var end = resp.billingCycle == "yearly"
+                    ? start.AddYears(1)
+                    : start.AddMonths(1);
 
-            _subs.UpsertAsync(userId, resp.planName, resp.billingCycle, start, end);
+                await _subs.UpsertAsync(userId, resp.planName, resp.billingCycle, start, end);
 
-            // TODO: update user subscription, unlock features...
-            return Json(new { success = true, message = "Payment successful! Subscription updated." });
+                await tx.CommitAsync();
+                _logger.LogInformation("Payment {OrderId} applied to user {UserId}", resp.razorpay_order_id, userId);
+
+
+                // TODO: update user subscription, unlock features...
+                return Json(new { success = true, message = "Payment successful! Subscription updated." });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Error processing payment {OrderId}", resp.razorpay_order_id);
+                return StatusCode(500, new { success = false, message = "Processing failed" });
+            }
         }
 
         [HttpGet, Route("Billing/BillingHistory")]
@@ -217,15 +220,12 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
 
         private int? GetUserId()
         {
-            // First, try to get from session (set during registration/OTP)
-            int? tempUserId = HttpContext.Session.GetInt32("TempUserId");
-            if (tempUserId != null)
-                return tempUserId;
-            // Fallback: if user is signed in, try claims.
-            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (claim != null && int.TryParse(claim.Value, out int userId))
-                return userId;
-            return null;
+            if (HttpContext.Session.TryGetValue("TempUserId", out var data)
+                && BitConverter.ToInt32(data) is int tempId)
+                return tempId;
+
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(claim, out var id) ? id : (int?)null;
         }
     }
 }

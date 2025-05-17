@@ -2,9 +2,9 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     // base monthly prices
     var starterMonthly = 0m;
-    var premiumMonthly = 190m;
-    var proMonthly = 490m;
-    var growthMonthly = 990m;
+    var premiumMonthly = 99m;
+    var proMonthly = 299m;
+    var growthMonthly = 499m;
     // apply 19.6% discount for yearly equivalent monthly rate
     Func<decimal, decimal> toYearlyMonthly = m => (int)Math.Round(m * (1 - 0.196m), 0);
 }

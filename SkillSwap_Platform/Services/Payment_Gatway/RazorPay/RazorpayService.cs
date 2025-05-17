@@ -3,58 +3,42 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Razorpay.Api;
+using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
+using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
 
 namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
 {
-    public class RazorpaySettings
+    public class RazorpayService : IRazorpayService
     {
-        public string Key { get; set; }
-        public string Secret { get; set; }
-    }
+        private readonly RazorpaySettings _rzpSettings;
+        private readonly PlanSettings _planSettings;
+        public RazorpayService(
+            IOptions<RazorpaySettings> rzpOpts,
+            IOptions<PlanSettings> planOpts)
+        {
+            _rzpSettings = rzpOpts.Value;
+            _planSettings = planOpts.Value;
+        }
 
-    public class PlanRequest
-    {
-        public string Plan { get; set; }
-        public string BillingCycle { get; set; }  // "monthly" or "yearly"
-    }
-
-    public class PaymentResponse
-    {
-        public string razorpay_payment_id { get; set; }
-        public string razorpay_order_id { get; set; }
-        public string razorpay_signature { get; set; }
-        public string PlanName { get; set; }
-        public string BillingCycle { get; set; }
-    }
-
-    public class RazorpayService
-    {
-        private readonly RazorpaySettings _settings;
-        public RazorpayService(IOptions<RazorpaySettings> opts)
-            => _settings = opts.Value;
 
         // Expose the test/live key for your frontend
-        public string Key => _settings.Key;
+        public string Key => _rzpSettings.Key;
 
-        // Single RazorpayClient instance
-        private RazorpayClient Client
-            => new RazorpayClient(_settings.Key, _settings.Secret);
 
-        public object CreateOrderForPlan(string planName, string billingCycle)
+        public async Task<CreateOrderResult> CreateOrderAsync(string planName, string billingCycle)
         {
-            // 1) determine base price
-            decimal basePrice = planName switch
-            {
-                "Premium" => 190m,
-                "Pro" => 490m,
-                "Growth" => 990m,
-                _ => throw new ArgumentException("Invalid plan", nameof(planName))
-            };
+            // 1) look up the plan in config
+            var plan = _planSettings.Plans
+                .SingleOrDefault(p => p.Name.Equals(planName, StringComparison.OrdinalIgnoreCase))
+                ?? throw new ArgumentException($"Unknown plan “{planName}”", nameof(planName));
 
-            // 2) adjust for yearly
-            var isYearly = billingCycle == "yearly";
-            var multiplier = isYearly ? 12m * (1 - 0.196m) : 1m;
+            // 2) compute price
+            var basePrice = plan.MonthlyPrice;
+            var isYearly = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase);
+            var multiplier = isYearly
+                                       ? 12m * (1 - _planSettings.Discount)
+                                       : 1m; 
             var priceInRupees = Math.Round(basePrice * multiplier, 0);
 
             // 3) paise
@@ -64,13 +48,14 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
             var receipt = $"rcpt_{Guid.NewGuid():N}";
             try
             {
-                var order = Client.Order.Create(new Dictionary<string, object>
+                var client = new RazorpayClient(_rzpSettings.Key, _rzpSettings.Secret);
+                var order = await Task.Run(() => client.Order.Create(new Dictionary<string, object>
                 {
                     ["amount"] = amountInPaise,
                     ["currency"] = "INR",
                     ["receipt"] = receipt,
                     ["payment_capture"] = 1
-                });
+                }));
 
                 return new CreateOrderResult
                 {
@@ -85,7 +70,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
             }
             catch (Exception ex)
             {
-                throw;  // let controller catch & return 500
+                throw new InvalidOperationException("Razorpay order creation failed", ex);
             }
         }
 
@@ -103,8 +88,8 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
             var payload = $"{orderId}|{paymentId}";
 
             // 2) Compute the HMAC-SHA256 digest
-            byte[] keyBytes = Encoding.UTF8.GetBytes(_settings.Secret);
-            byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+            var keyBytes = Encoding.UTF8.GetBytes(_rzpSettings.Secret);
+            var payloadBytes = Encoding.UTF8.GetBytes(payload);
             byte[] computedHash;
             using (var hmac = new HMACSHA256(keyBytes))
             {
@@ -113,14 +98,14 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
 
             // 3) Decode the signature (hex → bytes).  
             //    This handles uppercase, lowercase, etc.
-            byte[] signatureBytes;
             try
             {
-                signatureBytes = Enumerable
-                    .Range(0, signature.Length)
-                    .Where(i => i % 2 == 0)
-                    .Select(i => Convert.ToByte(signature.Substring(i, 2), 16))
+                var signatureBytes = Enumerable.Range(0, signature.Length / 2)
+                    .Select(i => Convert.ToByte(signature.Substring(i * 2, 2), 16))
                     .ToArray();
+
+                // 4) Constant-time compare
+                return CryptographicOperations.FixedTimeEquals(computedHash, signatureBytes);
             }
             catch
             {
@@ -128,8 +113,6 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
                 return false;
             }
 
-            // 4) Constant-time compare
-            return CryptographicOperations.FixedTimeEquals(computedHash, signatureBytes);
         }
     }
 }

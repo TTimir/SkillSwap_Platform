@@ -8,6 +8,10 @@
         public int SkillId { get; set; }
         public string VerificationId { get; set; }
         public string CertificateFilePath { get; set; }
+
+        public enum ReviewStatus { Pending, Approved, Rejected }
+        public ReviewStatus Status { get; set; }
+        public DateTime? ProcessedDateUtc { get; set; }
         public string RejectionReason { get; set; }
     }
 }

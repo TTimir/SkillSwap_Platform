@@ -301,7 +301,8 @@
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
                                                 <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" class="btn btn-link text-decoration-none dropdown-item">
@@ -496,6 +497,29 @@
                                class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="History" ? "-is-active" : "")">
                                 <i class="flaticon-document mr15"></i>
                                 Verification Logs
+                            </a>
+                        </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Billings & Cancellations</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminBilling", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-receipt mr15"></i>
+                                User Membership plans
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Cancellations","AdminBilling", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Cancellations" ? "-is-active" : "")">
+                                <i class="flaticon-dollar mr15"></i>
+                                Membership Cancellations
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Users","AdminBilling", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Users" ? "-is-active" : "")">
+                                <i class="flaticon-photo mr15"></i>
+                                Membership History
                             </a>
                         </div>
 
