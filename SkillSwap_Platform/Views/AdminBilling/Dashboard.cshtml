@@ -1,0 +1,160 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.PaymentGatway.AdminBillingDashboardVM
+
+@{
+    ViewData["Title"] = "Billing Dashboard";
+    ViewData["SubTitle"] = "Subscription & Billing Trends";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+
+<!-- Top-line Metrics -->
+<div class="row mb-4">
+    <div class="col-sm-6 col-xxl-3 mb-3">
+        <div class="statistics_funfact d-flex align-items-center justify-content-between">
+            <div class="details">
+                <div class="fz15">New Subs (12 mo)</div>
+                <div class="title">@Model.NewSubscriptions.Sum(p => p.Count)</div>
+                <div class="text fz14">Total new subscriptions in the last year</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-briefcase"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3 mb-3">
+        <div class="statistics_funfact d-flex align-items-center justify-content-between">
+            <div class="details">
+                <div class="fz15">Cancellations (12 mo)</div>
+                <div class="title">@Model.Cancellations.Sum(p => p.Count)</div>
+                <div class="text fz14">Total cancellations in the last year</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-delete"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3 mb-3">
+        <div class="statistics_funfact d-flex align-items-center justify-content-between">
+            <div class="details">
+                <div class="fz15">Active Subs (now)</div>
+                <div class="title">@(Model.ActiveSubscriptions.LastOrDefault()?.Count ?? 0)</div>
+                <div class="text fz14">Subscriptions active at end of last month</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-wallet"></i></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xxl-3 mb-3">
+        <div class="statistics_funfact d-flex align-items-center justify-content-between">
+            <div class="details">
+                <div class="fz15">Renewals (12 mo)</div>
+                <div class="title">@Model.Renewals.Sum(p => p.Count)</div>
+                <div class="text fz14">Total manual/auto‐renewals in the last year</div>
+            </div>
+            <div class="icon text-center"><i class="flaticon-refresh"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-xl-6 mb-4">
+        <div class="ps-widget bgc-white bdrs4 p30 h-100">
+            <h4 class="title fz17 mb20">New Subscriptions Over Time</h4>
+            <canvas id="newSubsChart" style="height:240px;"></canvas>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-4">
+        <div class="ps-widget bgc-white bdrs4 p30 h-100">
+            <h4 class="title fz17 mb20">Cancellations Over Time</h4>
+            <canvas id="cancelsChart" style="height:240px;"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-6 mb-4">
+        <div class="ps-widget bgc-white bdrs4 p30 h-100">
+            <h4 class="title fz17 mb20">Active Subscriptions Over Time</h4>
+            <canvas id="activeChart" style="height:240px;"></canvas>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-4">
+        <div class="ps-widget bgc-white bdrs4 p30 h-100">
+            <h4 class="title fz17 mb20">Renewals Over Time</h4>
+            <canvas id="renewalsChart" style="height:240px;"></canvas>
+        </div>
+    </div>
+</div>
+
+@section DynamicAdminScript {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Serialize the server VM into JSON
+        const vm = @Html.Raw(
+          System.Text.Json.JsonSerializer.Serialize(
+              Model,
+              new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null
+            }
+          )
+    );
+
+        function buildChart(ctxId, label, labels, data, color) {
+            const ctx = document.getElementById(ctxId).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        tension: 0.2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Count' } }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildChart(
+                'newSubsChart',
+                'New Subscriptions',
+                vm.NewSubscriptions.map(p => p.Period),
+                vm.NewSubscriptions.map(p => p.Count),
+                'green'
+            );
+            buildChart(
+                'cancelsChart',
+                'Cancellations',
+                vm.Cancellations.map(p => p.Period),
+                vm.Cancellations.map(p => p.Count),
+                'red'
+            );
+            buildChart(
+                'activeChart',
+                'Active Subscriptions',
+                vm.ActiveSubscriptions.map(p => p.Period),
+                vm.ActiveSubscriptions.map(p => p.Count),
+                'blue'
+            );
+            buildChart(
+                'renewalsChart',
+                'Renewals',
+                vm.Renewals.map(p => p.Period),
+                vm.Renewals.map(p => p.Count),
+                'orange'
+            );
+        });
+    </script>
+}

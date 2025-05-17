@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Razorpay.Api;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
+using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.NotificationTrack;
 using System.Drawing;
 using Subscription = SkillSwap_Platform.Models.Subscription;
 
@@ -11,14 +13,20 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
     public class SubscriptionService : ISubscriptionService
     {
         private readonly SkillSwapDbContext _db;
+        private readonly IEmailService _emailSender;
         private readonly ILogger<SubscriptionService> _logger;
+        private readonly INotificationService _notif;
 
         public SubscriptionService(
             SkillSwapDbContext db,
-            ILogger<SubscriptionService> logger)
+            IEmailService emailSender,
+            ILogger<SubscriptionService> logger,
+            INotificationService notification)
         {
             _db = db;
+            _emailSender = emailSender;
             _logger = logger;
+            _notif = notification;
         }
 
         public async Task<Subscription> GetActiveAsync(int userId)
@@ -42,8 +50,38 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
             _db.Subscriptions.Add(sub);
             await _db.SaveChangesAsync();
-            _logger.LogInformation("Recorded subscription {Plan} for user {User} from {Start} to {End}",
-                planName, userId, start, end);
+
+            // NOTIFICATION
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = userId,
+                Title = "Subscription Activated",
+                Message = $"Your {planName} plan is now active until {end.ToString("MMMM d, yyyy")}.",
+                Url = "/UserDashboard/Index",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // --- EMAIL NOTIFICATION: ACTIVATION ---
+            var user = await _db.TblUsers.FindAsync(userId);
+            if (user != null)
+            {
+                var subject = $"✅ Your {planName} subscription is now active!";
+                var html = $@"
+                    <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
+                      <h1 style=""color:#2a9d8f;"">🎉 Hi {user.FirstName}, your subscription is live! 🎉</h1>
+                      <p>Your <strong style=""color:#264653;"">{planName}</strong> plan has been <strong>activated</strong>.</p>
+                      <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
+                        <p><strong>Subscription ID:</strong> {sub.Id}</p>
+                        <p><strong>Start Date:</strong> {start:MMMM d, yyyy}</p>
+                        <p><strong>End Date:</strong> {end:MMMM d, yyyy}</p>
+                      </div>
+                      <p>Manage your subscription anytime in your 
+                         <a href=""/UserDashboard/Index"" style=""color:#2a9d8f;text-decoration:none;"">Account Settings</a>.
+                      </p>
+                      <p style=""margin-top:2em;"">Cheers,<br/><strong>The SkillSwap Team</strong></p>
+                    </div>";
+                await _emailSender.SendEmailAsync(user.Email, subject, html);
+            }
         }
 
         public async Task UpsertAsync(int userId, string planName, string billingCycle, DateTime start, DateTime end)
@@ -55,6 +93,11 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 if (existing is null)
                     _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
 
+                var isNew = existing is null;
+
+                if (isNew)
+                    _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
+
                 existing.PlanName = planName;
                 existing.BillingCycle = billingCycle;
                 existing.StartDate = start;
@@ -63,7 +106,43 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
-                _logger.LogInformation("Upserted subscription {Plan} for user {UserId}", planName, userId);
+
+                // NOTIFICATION
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = userId,
+                    Title = isNew ? "Subscription Activated" : "Subscription Renewed",
+                    Message = isNew
+                        ? $"Your {planName} plan is now active until {end:MMMM d, yyyy}."
+                        : $"Your {planName} plan has been renewed through {end:MMMM d, yyyy}.",
+                    Url = "/UserDashboard/Index",
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // --- EMAIL NOTIFICATION: RENEWAL or INITIAL ---
+                var user = await _db.TblUsers.FindAsync(userId);
+                if (user != null)
+                {
+                    var action = isNew ? "activated" : "renewed";
+                    var subject = isNew
+                        ? $"✅ Your {planName} subscription is now active!"
+                        : $"🔁 Your {planName} subscription has been renewed!";
+                    var html = $@"
+                        <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
+                          <h1 style=""color:#2a9d8f;"">{(isNew ? "🎉" : "🔁")} Hi {user.FirstName}, your subscription has been {action}! </h1>
+                          <p>Your <strong style=""color:#264653;"">{planName}</strong> plan ({billingCycle}) is now {action}.</p>
+                          <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
+                            <p><strong>Subscription ID:</strong> {existing.Id}</p>
+                            <p><strong>Start Date:</strong> {start:MMMM d, yyyy}</p>
+                            <p><strong>End Date:</strong> {end:MMMM d, yyyy}</p>
+                          </div>
+                          <p>Review or upgrade anytime via your 
+                             <a href=""/UserDashboard/Index"" style=""color:#2a9d8f;text-decoration:none;"">Account Settings</a>.
+                          </p>
+                          <p style=""margin-top:2em;"">Thanks for staying with us,<br/><strong>The SkillSwap Team</strong></p>
+                        </div>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, html);
+                }
             }
             catch (Exception ex)
             {
@@ -99,7 +178,37 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
-                _logger.LogInformation("Cancelled auto-renew for user {UserId}", userId);
+
+                // NOTIFICATION
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = userId,
+                    Title = "Auto-Renew Cancelled",
+                    Message = $"Your subscription will now end on {sub.EndDate:MMMM d, yyyy}.",
+                    Url = "/UserDashboard/Index",
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // --- EMAIL NOTIFICATION: CANCELLATION ---
+                var user = await _db.TblUsers.FindAsync(userId);
+                if (user != null)
+                {
+                    var subject = $"❌ Your subscription auto-renew has been cancelled";
+                    var html = $@"
+                        <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
+                          <h1 style=""color:#e76f51;"">Notice: Auto-renew turned off</h1>
+                          <p>We’ve cancelled auto-renew for your subscription <strong>ID {sub.Id}</strong>.</p>
+                          <div style=""background:#fdecea;border-radius:8px;padding:1em;margin:1.5em 0;"">
+                            <p><strong>End Date Remains:</strong> {sub.EndDate:MMMM d, yyyy}</p>
+                            <p><strong>Reason:</strong> {reason}</p>
+                          </div>
+                          <p style=""margin-top:2em;"">If this was a mistake, you can re-enable auto-renew in your 
+                             <a href=""/UserDashboard/Index"" style=""color:#e76f51;text-decoration:none;"">Account Settings</a>.
+                          </p>
+                          <p style=""margin-top:2em;"">Regards,<br/><strong>The SkillSwap Team</strong></p>
+                        </div>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, html);
+                }
             }
             catch (Exception ex)
             {

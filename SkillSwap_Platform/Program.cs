@@ -50,7 +50,7 @@ builder.Services.AddHttpContextAccessor();
 string encryptionKey = builder.Configuration.GetValue<string>("EncryptionConfig:EncryptionKey");
 if (string.IsNullOrEmpty(encryptionKey) || encryptionKey.Length != 32)
 {
-    throw new Exception("❌ Encryption key is invalid or missing. Ensure it is 32 characters long.");
+    throw new Exception("Encryption key is invalid or missing. Ensure it is 32 characters long.");
 }
 
 // ✅ Register configuration

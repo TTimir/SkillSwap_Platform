@@ -502,17 +502,17 @@
 
                         <p class="fz15 fw400 ff-heading pl30 mt30">Billings & Cancellations</p>
                         <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Dashboard","AdminBilling", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-pay-day mr15"></i>
+                                Billing Dashboard
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Index","AdminBilling", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Index" ? "-is-active" : "")">
                                 <i class="flaticon-receipt mr15"></i>
                                 User Membership plans
-                            </a>
-                        </div>
-                        <div class="sidebar_list_item">
-                            <a href="@Url.ActionLink("Cancellations","AdminBilling", new { area = "Admin" })"
-                               class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Cancellations" ? "-is-active" : "")">
-                                <i class="flaticon-dollar mr15"></i>
-                                Membership Cancellations
                             </a>
                         </div>
                         <div class="sidebar_list_item">
@@ -761,13 +761,13 @@
             <!-- Footer -->
             <footer class="dashboard_footer pt30 pb30">
                 <div class="container">
-                    <div class="row align-items-center justify-content-center justify-content-md-between">
+                    <div class="row align-items-center justify-content-center justify-content-md-end">
                         <div class="col-auto">
                             <div class="copyright-widget">
                                 <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
-                        <div class="col-auto">
+                        @* <div class="col-auto">
                             <div class="footer_bottom_right_btns at-home8 text-center text-lg-end">
                                 <ul class="p-0 m-0">
                                     <li class="list-inline-item bg-white">
@@ -788,7 +788,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
             </footer>

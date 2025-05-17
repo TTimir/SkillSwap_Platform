@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.AdminControl.BillingPlans;
+using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.Payment_Gatway;
 
@@ -530,6 +531,103 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 PageSize = pageSize,
                 TotalItems = total,
                 Users = items
+            };
+            return View(vm);
+        }
+
+
+        [HttpGet("Dashboard")]
+        public async Task<IActionResult> Dashboard()
+        {
+            var cutoff = DateTime.UtcNow.AddMonths(-11);
+
+            // 1) Get raw year/month/count from the DB, no string formatting here
+            var rawNewSubs = await _db.Subscriptions
+                .Where(s => s.StartDate >= cutoff)
+                .GroupBy(s => new { s.StartDate.Year, s.StartDate.Month })
+                .Select(g => new {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync();
+
+            // 2) Turn raw data into DashboardPoints
+            var newSubs = rawNewSubs
+                .Select(x => new BillingDashboardPoint
+                {
+                    Period = $"{x.Year}-{x.Month:00}",
+                    Count = x.Count
+                })
+                .ToList();
+
+            // 3) Same for cancellations
+            var rawCancels = await _db.CancellationRequests
+                .Where(c => c.RequestedAt >= cutoff)
+                .GroupBy(c => new { c.RequestedAt.Year, c.RequestedAt.Month })
+                .Select(g => new {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync();
+
+            var cancels = rawCancels
+                .Select(x => new BillingDashboardPoint
+                {
+                    Period = $"{x.Year}-{x.Month:00}",
+                    Count = x.Count
+                })
+                .ToList();
+
+            // 4) Active subscriptions at month‐end remains the same
+            var active = new List<BillingDashboardPoint>();
+            for (int i = 0; i < 12; i++)
+            {
+                var dt = cutoff.AddMonths(i);
+                var monthEnd = new DateTime(dt.Year, dt.Month,
+                    DateTime.DaysInMonth(dt.Year, dt.Month), 23, 59, 59);
+
+                var count = await _db.Subscriptions
+                    .CountAsync(s => s.StartDate <= monthEnd && s.EndDate > monthEnd);
+
+                active.Add(new BillingDashboardPoint
+                {
+                    Period = $"{dt.Year}-{dt.Month:00}",
+                    Count = count
+                });
+            }
+
+            // 5) Renewals—raw grouping
+            var rawRenewals = await _db.Subscriptions
+                .Where(s => s.StartDate >= cutoff
+                         && s.StartDate != s.EndDate.AddMonths(-1))
+                .GroupBy(s => new { s.StartDate.Year, s.StartDate.Month })
+                .Select(g => new {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync();
+
+            var renewals = rawRenewals
+                .Select(x => new BillingDashboardPoint
+                {
+                    Period = $"{x.Year}-{x.Month:00}",
+                    Count = x.Count
+                })
+                .ToList();
+
+            // 6) Assemble and return
+            var vm = new AdminBillingDashboardVM
+            {
+                NewSubscriptions = newSubs,
+                Cancellations = cancels,
+                ActiveSubscriptions = active,
+                Renewals = renewals
             };
             return View(vm);
         }
