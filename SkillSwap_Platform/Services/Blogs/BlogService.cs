@@ -19,15 +19,24 @@ namespace SkillSwap_Platform.Services.Blogs
         public async Task<int> CountAsync()
             => await _db.TblBlogPosts.CountAsync();
 
-        public async Task<IEnumerable<BlogPost>> ListAsync(int page, int pageSize)
+        public async Task<PagedResult<BlogPost>> ListAsync(int page, int pageSize)
         {
-            return await _db.TblBlogPosts
+            var total = await _db.TblBlogPosts.CountAsync();
+            var items = await _db.TblBlogPosts
                 .AsNoTracking()
                 .OrderByDescending(x => x.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(x => MapToDto(x))
                 .ToListAsync();
+
+            return new PagedResult<BlogPost>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = total
+            };
         }
 
         public async Task<BlogPost> GetByIdAsync(int id)

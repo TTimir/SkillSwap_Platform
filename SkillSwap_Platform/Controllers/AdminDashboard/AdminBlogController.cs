@@ -21,7 +21,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         // GET: /Admin/Blog
         public async Task<IActionResult> Index(int page = 1)
         {
-            const int pageSize = 10;
+            const int pageSize = 9;
             var posts = await _blog.ListAsync(page, pageSize);
             return View(posts);
         }

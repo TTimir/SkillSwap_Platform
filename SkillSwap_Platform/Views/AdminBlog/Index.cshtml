@@ -1,4 +1,5 @@
-﻿@model IEnumerable<SkillSwap_Platform.Models.BlogPost>
+﻿@using SkillSwap_Platform.Services.Blogs
+@model PagedResult<SkillSwap_Platform.Models.BlogPost>
 
 @{
     ViewData["Title"] = "Blog Posts";
@@ -43,98 +44,87 @@
     </div>
 </div>
 </div>
-<div class="row">
-    <div class="col-xl-12">
-        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
-            <div class="navtab-style1">
-                <nav>
-                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Posted Blogs</a>
-                    </div>
-                </nav>
-                <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
-                        <div class="packages_table table-responsive">
-                            <table class="table-style3 table at-savesearch">
-                                <thead class="t-head">
-                                    <tr>
-                                        <th scope="col">#</th>
-                                        <th scope="col">Title</th>
-                                        <th scope="col">Summary</th>
-                                        <th scope="col">Content</th>
-                                        <th scope="col">Created</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="t-body">
-                                    @foreach (var post in Model)
-                                    {
-                                        <tr>
-                                            <td>1</td>
-                                            <td>@post.Title</td>
-                                            <td>@post.Summary</td>
-                                            <td>@post.Content</td>
-                                            <td>@post.CreatedAt.ToLocalTime().ToString("MMMM dd, yyyy")</td>
-                                            <td class="d-flex justify-content-end align-items-center gap-2">
-                                                <a asp-action="Edit" asp-route-id="@post.Id" class="ud-btn btn-thm">Edit</a>
-                                                <form asp-action="Delete" asp-route-id="@post.Id"
-                                                      method="post" class="d-inline"
-                                                      onsubmit="return confirm('Delete this post?');">
-                                                    <button type="submit" class="ud-btn btn-light-thm" style="border:0;">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            @* @{
-                                var page = Model.Page;
-                                var totalPages = Model.TotalPages;
-                            }
-                            @if (totalPages > 1)
-                            {
-                                <div class="mbp_pagination text-center mt30">
-                                    <ul class="page_navigation">
-                                        <!-- Previous -->
-                                        <li class="page-item @(page == 1 ? "disabled" : "")">
-                                            <a class="page-link"
-                                               asp-action="Manage"
-                                               asp-route-page="@(page - 1)">
-                                                <span class="fas fa-angle-left"></span>
-                                            </a>
-                                        </li>
+<div class="row g-4">
+    @foreach (var post in Model.Items)
+    {
+        <div class="col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                @* Optional cover image *@
+                @if (!string.IsNullOrEmpty(post.CoverImagePath))
+                {
+                    <img src="@post.CoverImagePath"
+                         class="card-img-top"
+                         style="height:180px; object-fit:cover;"
+                         alt="Cover for @post.Title" />
+                }
 
-                                        <!-- Page links -->
-                                        @for (int p = 1; p <= totalPages; p++)
-                                        {
-                                            <li class="page-item @(p == page ? "active" : "")">
-                                                <a class="page-link"
-                                                   asp-action="Manage"
-                                                   asp-route-page="@p">@p</a>
-                                            </li>
-                                        }
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">@post.Title</h5>
+                    <p class="card-text text-truncate">@post.Summary</p>
+                    <small class="text-muted mb-3">
+                        Created @post.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </small>
 
-                                        <!-- Next -->
-                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
-                                            <a class="page-link"
-                                               asp-action="Manage"
-                                               asp-route-page="@(page + 1)">
-                                                <span class="fas fa-angle-right"></span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                    <p class="mt10 mb-0 pagination_page_count text-center">
-                                        Page @(page) of @totalPages
-                                    </p>
-                                </div>
-                            } *@
-                        </div>
+                    <div class="mt-auto d-flex justify-content-between">
+                        <a asp-action="Edit" asp-route-id="@post.Id"
+                           class="ud-btn btn-thm btn-sm">
+                            <i class="fal fa-edit" style="transform:rotate(0deg)"></i> Edit
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@post.Id"
+                              method="post"
+                              onsubmit="return confirm('Delete this post?');">
+                            <button type="submit"
+                                    class="ud-btn btn-light-thm btn-sm">
+                                <i class="fal fa-trash" style="transform:rotate(0deg); border:0;"></i> Delete
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
+@{
+    var page = Model.Page;
+    var totalPages = Model.TotalPages;
+}
+@if (totalPages > 1)
+{
+    <div class="mbp_pagination text-center mt30">
+        <ul class="page_navigation">
+            <!-- Previous -->
+            <li class="page-item @(page == 1 ? "disabled" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-page="@(page - 1)">
+                    <span class="fas fa-angle-left"></span>
+                </a>
+            </li>
+
+            <!-- Page links -->
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p == page ? "active" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@p">@p</a>
+                </li>
+            }
+
+            <!-- Next -->
+            <li class="page-item @(page == totalPages ? "disabled" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-page="@(page + 1)">
+                    <span class="fas fa-angle-right"></span>
+                </a>
+            </li>
+        </ul>
+        <p class="mt10 mb-0 pagination_page_count text-center">
+            Page @(page) of @totalPages
+        </p>
+    </div>
+}
 </div>
 
 

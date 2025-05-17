@@ -4,7 +4,7 @@ namespace SkillSwap_Platform.Services.Blogs
 {
     public interface IBlogService
     {
-        Task<IEnumerable<BlogPost>> ListAsync(int page, int pageSize);
+        Task<PagedResult<BlogPost>> ListAsync(int page, int pageSize);
         Task<BlogPost> GetByIdAsync(int id);
         Task<BlogPost> CreateAsync(CreateBlogPostDto dto);
         Task<BlogPost> UpdateAsync(EditBlogPostDto dto);
