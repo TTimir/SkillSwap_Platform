@@ -29,6 +29,7 @@ using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Controllers.AdminDashboard;
 using SkillSwap_Platform.Services.AdminControls.UserManagement;
 using Microsoft.Extensions.Primitives;
+using SkillSwap_Platform.Services.Blogs;
 
 namespace SkillSwap_Platform.Controllers;
 
@@ -44,8 +45,9 @@ public class HomeController : Controller
     private readonly int _satisfactionThreshold;
     private readonly ILogger<HomeController> _logger;
     private readonly IUserManagmentService _usv;
+    private readonly IBlogService _blogService;
 
-    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config, ILogger<HomeController> logger, IUserManagmentService usv)
+    public HomeController(IUserServices userService, SkillSwapDbContext context, IEmailService emailService, IPasswordResetService passwordReset, INewsletterService newsletter, IConfiguration config, ILogger<HomeController> logger, IUserManagmentService usv, IBlogService blogService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _dbcontext = context ?? throw new ArgumentNullException(nameof(context));
@@ -56,6 +58,7 @@ public class HomeController : Controller
         _satisfactionThreshold = config.GetValue<int>("TrustMetrics:SatisfactionThreshold", 4);
         _logger = logger;
         _usv = usv;
+        _blogService = blogService;
     }
 
     #region Layout Helpers
@@ -390,7 +393,8 @@ public class HomeController : Controller
                 EarlyAdopterCount = displayCount,
                 //UserCountryIso = countryIso,
                 //UserCountryName = countryName,
-                IsVerified = isVerified
+                IsVerified = isVerified,
+                RecentBlogPosts = (await _blogService.ListAsync(1, 3)).ToList()
             };
 
             // 1) TOP SKILLS overall (by # of offers)

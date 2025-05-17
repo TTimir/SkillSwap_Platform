@@ -41,6 +41,7 @@ using SkillSwap_Platform.Services.Payment_Gatway;
 using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
+using SkillSwap_Platform.Services.Blogs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -140,6 +141,7 @@ builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
 builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
+builder.Services.AddScoped<IBlogService, BlogService>();
 
 builder.Services
     .AddTransient<IAuthorizationHandler, MinimumTierHandler>()

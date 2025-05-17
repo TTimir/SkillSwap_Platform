@@ -128,6 +128,8 @@ public partial class TblUser
 
     public virtual ICollection<PaymentLog> PaymentLogs { get; set; } = new List<PaymentLog>();
 
+    public virtual ICollection<TblBlogPost> TblBlogPosts { get; set; } = new List<TblBlogPost>();
+
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();

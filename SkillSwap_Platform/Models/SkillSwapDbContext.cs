@@ -39,6 +39,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblBadgeAward> TblBadgeAwards { get; set; }
 
+    public virtual DbSet<TblBlogPost> TblBlogPosts { get; set; }
+
     public virtual DbSet<TblContract> TblContracts { get; set; }
 
     public virtual DbSet<TblEducation> TblEducations { get; set; }
@@ -270,6 +272,24 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.BadgeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__TblBadgeA__Badge__68A8708A");
+        });
+
+        modelBuilder.Entity<TblBlogPost>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tblBlogP__3214EC073374D83A");
+
+            entity.ToTable("tblBlogPosts");
+
+            entity.Property(e => e.CoverImagePath).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Summary).HasMaxLength(2000);
+            entity.Property(e => e.Tags).HasMaxLength(500);
+            entity.Property(e => e.Title).HasMaxLength(200);
+
+            entity.HasOne(d => d.Author).WithMany(p => p.TblBlogPosts)
+                .HasForeignKey(d => d.AuthorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BlogPosts_TblUsers");
         });
 
         modelBuilder.Entity<TblContract>(entity =>

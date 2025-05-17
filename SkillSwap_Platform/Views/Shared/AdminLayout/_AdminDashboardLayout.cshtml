@@ -682,6 +682,22 @@
                             </a>
                         </div>
 
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Blogs & Manage</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Create","AdminBlog", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBlog" && currentAction=="Create" ? "-is-active" : "")">
+                                <i class="flaticon-review mr15"></i>
+                                Create Post
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminBlog", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminBlog" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-presentation mr15"></i>
+                                Posted Blogs
+                            </a>
+                        </div>
+
                         <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                         <div class="sidebar_list_item">
                             <!-- hidden logout form -->
@@ -718,6 +734,9 @@
                                         <li><a href="@Url.ActionLink("Index","CertificateReview")"><i class="flaticon-document mr10"></i>Review Certificates</a></li>
                                         <li><a href="@Url.ActionLink("Index","MessageReview")"><i class="flaticon-review-1 mr10"></i>Review Messages</a></li>
                                         <li><a href="@Url.ActionLink("Index","OtpLogs")"><i class="flaticon-antivirus mr10"></i>OTP Failures</a></li>
+                                        <p class="fz15 fw400 ff-heading pl30 mt30">Billings & Cancellations</p>
+                                        <li><a href="@Url.ActionLink("Dashboard","AdminBilling")"><i class="flaticon-pay-day mr10"></i>Billing Dashboard</a></li>
+                                        <li><a href="@Url.ActionLink("Index","AdminBilling")"><i class="flaticon-receipt mr10"></i>User Membership plans</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Escrow & Transactions</p></li>
                                         <li><a href="@Url.ActionLink("Dashboard","Escrow")"><i class="flaticon-pay-day mr10"></i>Escrow Statement</a></li>
                                         <li><a href="@Url.ActionLink("Index","Escrow")"><i class="flaticon-dollar mr10"></i>Escrow Counters</a></li>
@@ -738,6 +757,9 @@
                                         <li><a href="@Url.ActionLink("Create","SensitiveWords")"><i class="flaticon-add mr10"></i>Add Sensitive Words</a></li>
                                         <li><a href="@Url.ActionLink("Index","PrivacySensitiveWords")"><i class="flaticon-antivirus mr10"></i>Privacy Words</a></li>
                                         <li><a href="@Url.ActionLink("Create","PrivacySensitiveWords")"><i class="flaticon-add mr10"></i>Add Privacy Words</a></li>
+                                        <li><p class="fz15 fw400 ff-heading mt30 pl30">Privacy & Manage</p></li>
+                                        <li><a href="@Url.ActionLink("Create","AdminBlog")"><i class="flaticon-review mr10"></i>Create Post</a></li>
+                                        <li><a href="@Url.ActionLink("Index","AdminBlog")"><i class="flaticon-presentation mr10"></i>Posted Blogs</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
                                         <li>
                                             <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
