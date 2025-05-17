@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels.FreelancersVM
+﻿using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
+
+namespace SkillSwap_Platform.Models.ViewModels.FreelancersVM
 {
     public class ProfileCardVM
     {
@@ -18,5 +20,7 @@
         public double? Recommendation { get; set; }
         public double? JobSuccessRate { get; set; }
         public DateTime? LastActive { get; set; }
+        public bool IsVerified { get; set; }
+        public List<BadgeAwardVM> Badges { get; set; } = new List<BadgeAwardVM>();
     }
 }

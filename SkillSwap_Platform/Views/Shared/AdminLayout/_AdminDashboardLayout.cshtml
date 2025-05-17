@@ -20,7 +20,8 @@
     heldUsersCount = 0,
     flaggedReviews = 0,
     flaggedProfiles = 0,
-    flaggedMessages = 0;
+    flaggedMessages = 0,
+    profileverification = 0;
     if (isAdmin)
     {
         try
@@ -94,6 +95,15 @@
         {
             Logger.LogError(ex, "Failed to load flagged profile count");
         }
+
+        try
+        {
+            profileverification = await AdminService.GetPendingVerificationRequestsCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load pending profile verification count");
+        }
     }
 }
 
@@ -157,6 +167,30 @@
                 color: #fff;
                 cursor: url('@cursorUrl') 16 16;
             }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
+
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
     </style>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -177,7 +211,12 @@
                     <div class="col-6 col-lg-auto">
                         <div class="text-center text-lg-start d-flex align-items-center">
                             <div class="dashboard_header_logo position-relative me-2 me-xl-5">
-                                <a href="index.html" class="logo"><img src="/template_assets/images/header-logo-dark.svg" alt=""></a>
+                                <a class="header-logo logo1" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                    </span>
+                                </a>
                             </div>
                             <div class="fz20 ml90">
                                 <a href="#" class="dashboard_sidebar_toggle_icon vam"><img src="/template_assets/images/dashboard-navicon.svg" alt=""></a>
@@ -440,6 +479,25 @@
                                 Swap Offers
                             </a>
                         </div>
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Verification Center</p>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Pending","ProfileVerification", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="Pending" ? "-is-active" : "")">
+                                <i class="flaticon-like-1 mr15"></i>
+                                Profile Verification
+                                @if (profileverification > 0)
+                                {
+                                    <span class="badge badge-pill bg-info ms-auto">@profileverification</span>
+                                }
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("History","ProfileVerification", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="ProfileVerification" && currentAction=="History" ? "-is-active" : "")">
+                                <i class="flaticon-document mr15"></i>
+                                Verification Logs
+                            </a>
+                        </div>
 
                         <p class="fz15 fw400 ff-heading pl30 mt30">Email & Manage</p>
                         <div class="sidebar_list_item">
@@ -599,6 +657,26 @@
                                 Add Privacy Words
                             </a>
                         </div>
+
+                        <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
+                        <div class="sidebar_list_item">
+                            <!-- hidden logout form -->
+                            <form id="logoutForm"
+                                  asp-controller="Home"
+                                  asp-action="Logout"
+                                  method="post"
+                                  class="d-none">
+                                @Html.AntiForgeryToken()
+                            </form>
+
+                            <!-- visible link that submits the form -->
+                            <a href="javascript:document.getElementById('logoutForm').submit();"
+                               class="items-center"
+                               title="Logout">
+                                <i class="flaticon-logout mr15"></i>
+                                Logout
+                            </a>
+                        </div>
                     }
                 </div>
             </div>
@@ -662,7 +740,7 @@
                     <div class="row align-items-center justify-content-center justify-content-md-between">
                         <div class="col-auto">
                             <div class="copyright-widget">
-                                <p class="mb-md-0">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                                <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         <div class="col-auto">

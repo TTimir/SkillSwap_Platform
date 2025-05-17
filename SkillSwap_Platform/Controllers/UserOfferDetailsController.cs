@@ -12,6 +12,7 @@ using SkillSwap_Platform.Models.ViewModels.OfferFilterVM;
 using SkillSwap_Platform.Models.ViewModels.OfferPublicVM;
 using SkillSwap_Platform.Services;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag;
+using SkillSwap_Platform.Services.Matchmaking;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -24,12 +25,14 @@ namespace SkillSwap_Platform.Controllers
     {
         private const string RecentCookie = "RecentlyViewedOffers";
         private readonly SkillSwapDbContext _context;
+        private readonly IMatchmakingService _matchSvc;
         private readonly ILogger<UserOfferManageController> _logger;
         private readonly IOfferFlagService _svc;
 
-        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc)
+        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc, IMatchmakingService offerMatchService)
         {
             _context = context;
+            _matchSvc = offerMatchService;
             _logger = logger;
             _svc = svc;
         }
@@ -173,6 +176,7 @@ namespace SkillSwap_Platform.Controllers
                     // Fetch comparable offers from the database (raw data without processing)
                     var comparableOfferEntities = await _context.TblOffers
                         .Where(o => o.OfferId != offerId && o.Category == offer.Category)
+                        .Include(o => o.User)
                         .OrderByDescending(o => o.JobSuccessRate)
                         .ThenByDescending(o => o.TokenCost)
                         .Take(3)
@@ -664,11 +668,25 @@ namespace SkillSwap_Platform.Controllers
                     };
                 }).ToList();
 
+                IReadOnlyList<OfferCardVM> suggestedCards = Array.Empty<OfferCardVM>();
+                if (User.Identity.IsAuthenticated)
+                {
+                    var uid = _context.TblUsers
+                        .Where(u => u.UserName == User.Identity.Name)
+                        .Select(u => (int?)u.UserId)
+                        .FirstOrDefault();
+
+                    if (uid.HasValue)
+                        suggestedCards = await _matchSvc
+                            .GetSuggestedOffersForUserAsync(uid.Value);
+                }
+
                 var textInfo = CultureInfo.CurrentCulture.TextInfo;
                 // Load filter options
                 var vm = new OfferFilterVM
                 {
                     Offers = offerCards,
+                    SuggestedOffers = suggestedCards,
                     CategoryOptions = await _context.TblOffers
                         .Where(o => !string.IsNullOrWhiteSpace(o.Category))
                         .Select(o => o.Category)
@@ -723,6 +741,7 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = (int)Math.Ceiling((double)totalOffers / pageSize)
                 };
 
+                await tx.CommitAsync(); 
                 return View("PublicOfferList", vm);
             }
             catch (Exception ex)

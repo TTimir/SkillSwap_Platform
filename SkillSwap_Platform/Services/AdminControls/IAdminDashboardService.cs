@@ -17,7 +17,7 @@ namespace SkillSwap_Platform.Services.AdminControls
         Task<int> GetFlaggedMessagesCountAsync();
         Task<int> GetHeldAccountsCountAsync();
         Task<int> GetActiveFlaggedUsersCountAsync();
-
+        Task<int> GetPendingVerificationRequestsCountAsync();
 
         Task<AdminDashboardMetricsDto> GetAdminDashboardMetricsAsync(DateTime periodStart, DateTime periodEnd);
     }

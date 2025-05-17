@@ -1,0 +1,7 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.UserProfileMV.BadgeAwardVM
+
+<img src="@Url.Content(Model.IconUrl)"
+     alt="@Model.Name"
+     title="@($"{Model.Name} — {Model.Description}")"
+     style="width:22px; height:22px; cursor:help;"
+     data-bs-toggle="tooltip" />

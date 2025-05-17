@@ -35,6 +35,11 @@
         animation: pulse 2s infinite;
     }
 
+    .mining-dot.error {
+        background-color: crimson; /* or another “error” color */
+        animation: none; /* stop any existing spin so it’s more noticeable */
+    }
+
 @keyframes pulse {
     0%,100% {
         transform: scale(1);

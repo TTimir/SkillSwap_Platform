@@ -204,7 +204,7 @@ public class HomeController : Controller
             int displayCount = actualUsers + (int)Math.Ceiling(actualUsers * bonusPct);
 
             int actualTalents = await _dbcontext.TblUsers
-            .Where(u => u.IsActive && u.IsVerified)
+            .Where(u => u.IsActive)
             .CountAsync();
 
             // 2) read bonus percentage from appsettings.json
@@ -317,7 +317,7 @@ public class HomeController : Controller
             var highestRatedUsers = await _dbcontext.TblUsers
                 .Include(u => u.TblReviewReviewees)
                 .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
-                .Where(u => u.IsVerified && u.IsActive)
+                .Where(u => u.IsActive)
                 .Where(u => !currentUserId.HasValue || u.UserId != currentUserId.Value) // ✅ exclude current user
                 .Take(10)
                 .ToListAsync();
@@ -341,6 +341,7 @@ public class HomeController : Controller
                     .Take(3)
                     .Select(us => us.Skill.SkillName)
                     .ToList(),
+                IsVerified = u.IsVerified
             }).ToList();
 
             //// 4) Top skills in the visitor’s country
@@ -364,6 +365,15 @@ public class HomeController : Controller
             //string countryIso = region.TwoLetterISORegionName; // e.g. "IN"
             //string countryName = region.EnglishName;             // e.g. "India"
 
+            bool isVerified = false;
+            if (currentUserId.HasValue)
+            {
+                isVerified = await _dbcontext.TblUsers
+                    .Where(u => u.UserId == currentUserId.Value)
+                    .Select(u => u.IsVerified)
+                    .FirstOrDefaultAsync();
+            }
+
             var vm = new HomePageVM
             {
                 TrendingOffers = trendingOfferVMs,
@@ -380,6 +390,7 @@ public class HomeController : Controller
                 EarlyAdopterCount = displayCount,
                 //UserCountryIso = countryIso,
                 //UserCountryName = countryName,
+                IsVerified = isVerified
             };
 
             // 1) TOP SKILLS overall (by # of offers)
@@ -528,7 +539,7 @@ public class HomeController : Controller
         var topUsers = await _dbcontext.TblUsers
             .Include(u => u.TblUserSkills).ThenInclude(us => us.Skill)
             .Include(u => u.TblReviewReviewees)
-            .Where(u => u.IsVerified && u.IsActive)
+            .Where(u => u.IsActive)
             .OrderByDescending(u => u.JobSuccessRate)
             .ThenByDescending(u => u.ReviewCount)
             .Take(6)
@@ -623,7 +634,7 @@ public class HomeController : Controller
 
         // 1) Pull the top 4 verified, active users ordered by success → reviews
         var top4 = await _dbcontext.TblUsers
-            .Where(u => u.IsVerified && u.IsActive)
+            .Where(u => u.IsActive)
             .Select(u => new
             {
                 u.UserId,
@@ -843,7 +854,6 @@ public class HomeController : Controller
             {
                 Email = email,
                 UserName = email,
-                IsVerified = true,
                 IsActive = true
             };
             await _userService.RegisterUserAsync(user, Guid.NewGuid().ToString("N"));
@@ -1026,11 +1036,11 @@ public class HomeController : Controller
             }
 
             // If not approved by admin, do not allow login.
-            if (!user.IsVerified)
-            {
-                TempData["ApprovalMessage"] = "🔎 Your account is not yet approved.";
-                return View(model);
-            }
+            //if (!user.IsVerified)
+            //{
+            //    TempData["ApprovalMessage"] = "🔎 Your account is not yet approved.";
+            //    return View(model);
+            //}
 
             // Set TempData to show the banner once
             TempData["ShowAuthBanner"] = true;
@@ -1148,7 +1158,9 @@ public class HomeController : Controller
         }
 
         // Pull a fresh copy from the database so we can update their counters
-        var user = await _dbcontext.TblUsers.FindAsync(loginUser.UserId);
+        var user = await _dbcontext.TblUsers
+            .IgnoreQueryFilters()                              // ← bypass the “no-Admin” filter
+            .FirstOrDefaultAsync(u => u.UserId == loginUser.UserId);
         if (user == null)
         {
             _logger.LogError("LoginOtp: user {UserId} not found in System", loginUser.UserId);
@@ -1695,6 +1707,36 @@ public class HomeController : Controller
     }
 
     #endregion
+
+    public async Task<IActionResult> TutorTeaching()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> PrivacyandPolicy()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> TermsofService()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> CookiePolicy()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> HelpandSupport()
+    {
+        return View();
+    }
+
+    public async Task<IActionResult> TrustandSafety()
+    {
+        return View();
+    }
 
     [AllowAnonymous]
     [HttpGet("Home/AccessDenied")]

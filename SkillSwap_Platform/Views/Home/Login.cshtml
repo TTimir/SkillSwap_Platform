@@ -47,6 +47,29 @@
             margin-bottom: 10px;
             font-size: 14px;
         }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
+
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
     </style>
 </head>
 <body class="bgc-thm4">
@@ -61,8 +84,13 @@
                     <div class="row align-items-center justify-content-between">
                         <div class="col-auto pe-0">
                             <div class="d-flex align-items-center">
-                                <a class="header-logo bdrr1 pr30 pr5-xl" href="index.html"><img src="/template_assets/images/header-logo-dark.svg" alt="Header Logo"></a>
-                               @*  <div class="home1_style">
+                                <a class="header-logo logo1" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                    </span>
+                                </a>
+                                @*  <div class="home1_style">
                                     <div id="mega-menu">
                                         <a class="btn-mega fw500" href="#"><span class="pl30 pl10-xl pr5 fz15 vam flaticon-menu"></span> Categories</a>
                                         <ul class="menu ps-0">
@@ -651,10 +679,10 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="text-center text-lg-start">
-                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        @* <div class="col-sm-6">
                             <div class="footer_bottom_right_btns at-home9 text-center text-lg-end">
                                 <ul class="p-0 m-0">
                                     <li class="list-inline-item">
@@ -675,7 +703,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
             </section>

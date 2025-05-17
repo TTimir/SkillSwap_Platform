@@ -46,7 +46,8 @@ namespace SkillSwap_Platform.Models.ViewModels
         public IEnumerable<TblReview> Reviews { get; set; }
 
         public List<OfferFaqVM> Faqs { get; set; } = new List<OfferFaqVM>();
-
+        public IReadOnlyList<MatchedOfferVM> MatchedOffers { get; set; }
+        = new List<MatchedOfferVM>();
     }
 
     public class UserLanguageVM

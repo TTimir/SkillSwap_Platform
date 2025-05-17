@@ -1,0 +1,176 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkillSwap Cookie Policy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter',sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #333;
+        }
+
+        header {
+            background: #16a085;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        nav {
+            background: #f9f9f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+            nav ul {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            nav a {
+                padding: 12px 18px;
+                text-decoration: none;
+                color: #555;
+                font-weight: 600;
+            }
+
+                nav a.active, nav a:hover {
+                    color: #16a085;
+                }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: #16a085;
+        }
+
+        h2 {
+            margin-top: 2.5rem;
+            font-size: 1.5rem;
+            color: #16a085;
+        }
+
+        p, ul {
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+
+        .short-version {
+            background: #f0f4f8;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+            .short-version h2 {
+                margin-top: 0;
+            }
+
+        footer {
+            text-align: center;
+            margin: 50px 0;
+            font-size: 0.9rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Cookie Policy</h1>
+        <p>Last updated: May 14, 2025</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#short" class="active">Short Version</a></li>
+            <li><a href="#1">1. What Are Cookies?</a></li>
+            <li><a href="#2">2. Types of Cookies</a></li>
+            <li><a href="#3">3. Third-Party Cookies</a></li>
+            <li><a href="#4">4. Managing Cookies</a></li>
+            <li><a href="#5">5. Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+
+        <!-- Short Version -->
+        <section id="short" class="short-version">
+            <h2>The Short Version</h2>
+            <p><strong>Cookies:</strong> Small text files placed on your device to store preferences, track usage, and enable core functionality.</p>
+            <p><strong>Why We Use Them:</strong> Essential site operation, performance analytics, and, with consent, marketing.</p>
+            <p><strong>Your Control:</strong> You can block or delete cookies via your browser settings—but essential features may break.</p>
+        </section>
+
+        <!-- 1. What Are Cookies? -->
+        <section id="1">
+            <h2>1. What Are Cookies?</h2>
+            <p>Cookies are small data files stored on your device when you visit a website. They help remember your settings (language, login status), understand how you use the site, and provide a smoother experience.</p>
+        </section>
+
+        <!-- 2. Types of Cookies -->
+        <section id="2">
+            <h2>2. Types of Cookies We Use</h2>
+            <ul>
+                <li><strong>Essential Cookies:</strong> Required for login, session management, and security.</li>
+                <li><strong>Performance Cookies:</strong> Collect anonymous statistics on site usage (via Google Analytics).</li>
+                <li><strong>Functional Cookies:</strong> Remember your preferences (language, display).</li>
+                <li><strong>Marketing Cookies:</strong> Track browsing to show relevant ads (third-party).</li>
+            </ul>
+        </section>
+
+        <!-- 3. Third-Party Cookies -->
+        <section id="3">
+            <h2>3. Third-Party Cookies</h2>
+            <p>We integrate features from partners (e.g., Stripe, Facebook). These third parties may set their own cookies; their use is governed by their own policies.</p>
+        </section>
+
+        <!-- 4. Managing Cookies -->
+        <section id="4">
+            <h2>4. Managing Cookies</h2>
+            <p>You can control or delete cookies through your browser settings:</p>
+            <ul>
+                <li>Chrome: Settings → Privacy → Cookies and other site data</li>
+                <li>Firefox: Options → Privacy & Security → Cookies</li>
+                <li>Edge: Settings → Privacy & Services → Cookies</li>
+            </ul>
+            <p>Disabling essential cookies may prevent the site from functioning properly.</p>
+        </section>
+
+        <!-- 5. Contact -->
+        <section id="5">
+            <h2>5. Contact Us</h2>
+            <p>Questions about this policy? Email  <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>.</p>
+        </section>
+
+        <footer>&copy; 2025 SkillSwap. All rights reserved.</footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('nav a').forEach(link => {
+          link.addEventListener('click', e => {
+            document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+            e.target.classList.add('active');
+          });
+        });
+    </script>
+</body>
+</html>

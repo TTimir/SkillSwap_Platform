@@ -11,6 +11,50 @@
         : "-";
 }
 
+<style>
+    /* Shared pill styling */
+    .badge-level {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    /* Tier colors */
+    .badge-tier-Common {
+        color: #95a5a6;
+        background: #95a5a611;
+    }
+    /* gray */
+    .badge-tier-Uncommon {
+        color: #2ecc71;
+        background: #2ecc7111;
+    }
+    /* green */
+    .badge-tier-Rare {
+        color: #3498db;
+        background: #3498db11;
+    }
+    /* blue */
+    .badge-tier-Epic {
+        color: #9b59b6;
+        background: #9b59b611;
+    }
+    /* purple */
+    .badge-tier-Legendary {
+        color: #f39c12;
+        background: #f39c1211;
+    }
+    /* gold */
+    .badge-tier-Mythic {
+        color: #e74c3c;
+        background: #e74c3c11;
+    }
+    /* red */
+</style>
+
 <div class="row mb-4">
     <div class="col">
         <h2>@ViewData["Title"] — #@Model.User.UserId (@Model.User.UserName)</h2>
@@ -663,6 +707,44 @@
             </table>
         }
     </div>
+</div>
+
+<!-- Badges -->
+<div class="card mb-5">
+  <div class="card-header">
+    <strong>Earned Badges (@Model.User.Badges.Count)</strong>
+  </div>
+  <div class="card-body">
+    @if (!Model.User.Badges.Any())
+    {
+      <p class="p-3">No badges yet.</p>
+    }
+    else
+    {
+      <div class="row
+                  row-cols-2       /* xs: 2 per row */
+                  row-cols-sm-3    /* ≥576px: 3 per row */
+                  row-cols-md-4    /* ≥768px: 4 per row */
+                  row-cols-lg-6    /* ≥992px: 6 per row */
+                  g-4             /* gutter both X & Y = 1.5rem */
+                  text-center">
+        @foreach (var b in Model.User.Badges)
+        {
+          var levelClass = "badge-tier-" + b.LevelName;
+          var iconSrc    = Url.Content(b.IconUrl);
+          <div class="col">
+            <img src="@iconSrc"
+                 alt="@b.Name"
+                 class="img-fluid mb-2"
+                 style="width:64px; height:64px; object-fit:cover; border-radius:8px;" />
+            <h6 class="mb-1">@b.Name</h6>
+            <small class="badge-level @levelClass">@b.LevelName</small>
+            <p class="small mt-1">@b.Description</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
 </div>
 
 <div class="mb-5">

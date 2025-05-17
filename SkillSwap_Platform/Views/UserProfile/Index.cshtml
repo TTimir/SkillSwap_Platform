@@ -2,7 +2,11 @@
 @inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @using System.Text.RegularExpressions
 @using System.Security.Claims
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Serialization
 @inject IHttpContextAccessor HttpContextAccessor
+@using System.Linq
+@using SkillSwap_Platform.Models.ViewModels.UserProfileMV
 
 @{
     ViewData["Title"] = "My Profile";
@@ -227,6 +231,48 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     }
+
+    #badge-strip {
+        padding-top: 10px;
+
+        /* switch to grid */
+        display: grid;
+        /* each badge gets at least 60px, but will fan out to fill the row */
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 8px;               /* spacing between icons */
+        align-items: center;    /* vertical center */
+        justify-items: center;  /* horizontal center in each cell */
+    }
+    .badge-icon-container {
+      transition: transform .2s;
+    }
+    .badge-icon-container:hover {
+      transform: scale(1.1);
+    }
+    .badge-icon {
+      display: block;
+    }
+    .badge-icon {
+      width: 60px !important;
+      height: 60px !important;
+    }
+    /* Shared pill styling */
+.badge-level {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Tier colors */
+.badge-tier-Common     { color: #95a5a6; background: #95a5a611; } /* gray */
+.badge-tier-Uncommon   { color: #2ecc71; background: #2ecc7111; } /* green */
+.badge-tier-Rare       { color: #3498db; background: #3498db11; } /* blue */
+.badge-tier-Epic       { color: #9b59b6; background: #9b59b611; } /* purple */
+.badge-tier-Legendary  { color: #f39c12; background: #f39c1211; } /* gold */
+.badge-tier-Mythic     { color: #e74c3c; background: #e74c3c11; } /* red */
 </style>
 <div class="body_content bgc-thm3">
     <!-- Breadcumb Sections -->
@@ -312,7 +358,39 @@
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@
                                                 </a>
                                                 <div class="ml20 ml0-xs">
-                                                    <h5 class="title mb-1">@Model.User.FirstName @Model.User.LastName <small>(<i>@("@")@Model.User.UserName</i>)</small></h5>
+                                                    <h5 class="title mb-1">
+                                                        @Model.User.FirstName @Model.User.LastName 
+                                                        <small>(<i>@("@")@Model.User.UserName</i>)</small>
+                                                        @if (Model.IsVerified)
+                                                        {
+                                                            <img src="~/template_assets/images/SSVerified.png"
+                                                                 alt="Verified"
+                                                                 title="This user has been verified by SkillSwap"
+                                                                 class="ms-2"
+                                                                 style="width:22px; height:22px; cursor:help;"
+                                                                 data-bs-toggle="tooltip"
+                                                                 data-bs-placement="top" />
+                                                        }
+                                                        @{
+                                                             // Cast to BadgeAwardVM, not BadgeDefinition
+                                                             var typedBadges = Model.Badges as IEnumerable<BadgeAwardVM>
+                                                                               ?? Enumerable.Empty<BadgeAwardVM>();
+                                                             var topTierBadge = typedBadges
+                                                                 .Where(b => b.BadgeId is 9 or 10 or 11)
+                                                                 .OrderByDescending(b => b.BadgeId)
+                                                                 .FirstOrDefault();
+                                                        }
+                                                        @if (topTierBadge != null)
+                                                        {
+                                                            <img 
+                                                                src="@Url.Content(topTierBadge.IconUrl)" 
+                                                                alt="@topTierBadge.Name" 
+                                                                title="@($"{topTierBadge.Name} — {topTierBadge.Description}")"
+                                                                style="width:22px; height:22px; cursor:help;"
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top" />
+                                                        }
+                                                    </h5>
                                                     <p class="mb-0">@Model.User.Designation</p>
                                                     @if(Model.User.ReviewCount > 0)
                                                     {
@@ -422,10 +500,78 @@
                                 </div>
                             </div>
                         </div>
+                        @if (Model.Badges != null && Model.Badges.Count > 0)
+                        {
+                            <div class="service-about">
+                                <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
+                                    <h4 class="mb30">My Badges &amp; Milestones</h4>
+                                    <div class="my-3 d-flex flex-wrap align-items-center" id="badge-strip">
+                                        @foreach (var badge in Model.Badges)
+                                        {
+                                          <div class="badge-icon-container"
+                                                 style="cursor:pointer"
+                                                 data-badge='@Html.Raw(JsonConvert.SerializeObject(
+                                                     new {
+                                                       badge.Name,
+                                                       badge.Description,
+                                                       IconUrl = Url.Content(badge.IconUrl),
+                                                       badge.LevelName      
+                                                     },
+                                                     new JsonSerializerSettings {
+                                                       ContractResolver = new DefaultContractResolver()
+                                                     }
+                                                 ))'
+                                                 onclick="showBadgeModal(this)">
+                                              <img src="@Url.Content(badge.IconUrl)" alt="@badge.Name" class="badge-icon"/>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <!-- Badge Share / Download Modal -->
+                        <div class="modal fade" id="badgeModal" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-dialog-centered modal-sm">
+                            <div class="modal-content border-0 rounded-3 shadow-lg overflow-hidden">
+                              <!-- Logo Header -->
+                              <div class="bg-thm3 py-3 text-center">
+                                  <a class="header-logo logo1" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                    </span>
+                                </a>
+                              </div>
+                        
+                              <!-- Badge Content -->
+                              <div class="p-4 text-center">
+                                <img id="badgeModalIcon"
+                                     src=""
+                                     alt=""
+                                     class="mx-auto d-block rounded-circle mb-3"
+                                     style="width:96px; height:96px; object-fit:cover;  
+                                            border:4px solid rgba(91, 187, 123,0.3);" />
+                        
+                                <p id="badgeModalLevel" class="small badge-level mb-2"></p>
+                                <h5 id="badgeModalTitle" class="fw-bold mb-2 text-dark"></h5>
+                                <p id="badgeModalDesc" class="small text-secondary mb-3 px-2"></p>
+                        
+                                <blockquote id="badgeModalQuote"
+                                            class="fst-italic small text-thm2 mb-4 px-3">
+                                  <!-- quote injected here -->
+                                </blockquote>
+                        
+                                <button id="badgeDownloadBtn"
+                                        class="ud-btn btn-thm w-100" style="border:0">
+                                  <i class="fas fa-download me-1" style="transform:rotate(0deg)"></i> Download Badge
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         <div class="service-about">
                             <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
                                 <h4>Description</h4>
-                                <p class="text mb30">@Model.User.AboutMe </p>
                                 <p class="text mb30">@Model.User.AboutMe</p>
                             </div>
                             <div class="p30 mb30 bg-white bdrs12 wow fadeInUp default-box-shadow1 bdr1">
@@ -1186,6 +1332,57 @@
             });
         });
     </script>
+    <script>
+        // after your other $(document).ready or at the end
+        $(function () {
+          var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+          popoverTriggerList.forEach(function (el) {
+            new bootstrap.Popover(el)
+          })
+        });
+    </script>
+    <script>
+      function showBadgeModal(el) {
+        const badge = JSON.parse(el.getAttribute('data-badge'));
+        const { Name, Description, IconUrl, LevelName } = badge;
+    
+        // Pick a random quote
+        const quotes = [
+          "“The only limit to our realization of tomorrow is our doubts of today.” — Franklin D. Roosevelt",
+          "“The journey of a thousand miles begins with one step.” — Lao Tzu",
+          "“Believe you can and you're halfway there.” — Theodore Roosevelt",
+          "“It always seems impossible until it’s done.” — Nelson Mandela",
+          "“The only way to do great work is to love what you do.” — Steve Jobs",
+          "“Keep your face always toward the sunshine—and shadows will fall behind you.” — Walt Whitman",
+          "“Success is not final, failure is not fatal: It is the courage to continue that counts.” — Winston Churchill",
+          "“What you get by achieving your goals is not as important as what you become by achieving your goals.” — Zig Ziglar",
+          "“Don’t watch the clock; do what it does. Keep going.” — Sam Levenson",
+          "“Act as if what you do makes a difference. It does.” — William James",
+          "“The future belongs to those who believe in the beauty of their dreams.” — Eleanor Roosevelt"
+        ];
+        const quote = quotes[Math.floor(Math.random()*quotes.length)];
+    
+        // Populate modal
+        document.getElementById('badgeModalIcon').src        = IconUrl;
+        document.getElementById('badgeModalIcon').alt        = Name;
+        const lvlEl = document.getElementById('badgeModalLevel');
+        lvlEl.innerText = LevelName;
+        lvlEl.className = 'small badge-level badge-tier-' + LevelName;
+        document.getElementById('badgeModalTitle').innerText = Name;
+        document.getElementById('badgeModalDesc').innerText  = Description || "No description provided.";
+        document.getElementById('badgeModalQuote').innerText = quote;
+    
+        // Configure download
+        document.getElementById('badgeDownloadBtn').onclick = () => {
+          const a = document.createElement('a');
+          a.href = IconUrl;
+          a.download = `${Name.replace(/\s+/g,'_')}.png`;
+          a.click();
+        };
+    
+        // Show the modal (Bootstrap 5)
+        const modal = new bootstrap.Modal(document.getElementById('badgeModal'));
+        modal.show();
+      }
+    </script>
 }
-
-

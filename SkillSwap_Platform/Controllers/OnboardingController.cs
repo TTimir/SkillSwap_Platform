@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Skill_Swap.Models;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.OnBoardVM;
+using SkillSwap_Platform.Services.BadgeTire;
 using SkillSwap_Platform.Services.Email;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -14,6 +15,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly SkillSwapDbContext _context;
         private readonly ILogger<OnboardingController> _logger;
         private readonly IEmailService _emailService;
+        private readonly BadgeService _badgeService;
 
         // Per-step rewards (sum = 2.0m)
         private const decimal ROLE_STEP_REWARD = 0.25m;
@@ -23,11 +25,12 @@ namespace SkillSwap_Platform.Controllers
         private const decimal CERT_STEP_REWARD = 0.25m;
         private const decimal SOCKYC_STEP_REWARD = 0.25m;
 
-        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService)
+        public OnboardingController(SkillSwapDbContext context, ILogger<OnboardingController> logger, IEmailService emailService, BadgeService badgeService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger;
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _badgeService = badgeService ?? throw new ArgumentNullException(nameof(badgeService));
         }
 
         #region STEP 1: Select Role
@@ -609,7 +612,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = SKILLPREF_STEP_REWARD;
-            
+
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -798,7 +801,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = CERT_STEP_REWARD;
-            
+
             var certificateNames = form["certification[certificate_name][]"];
             var certifiedFrom = form["certification[certified_from][]"];
             var completionDate = form["certification[completion_date][]"];
@@ -917,7 +920,7 @@ namespace SkillSwap_Platform.Controllers
             }
 
             ViewBag.StepReward = SOCKYC_STEP_REWARD;
-            
+
             int? tempUserId = GetUserId(); // CHANGE
             if (tempUserId == null)
             {
@@ -994,6 +997,17 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                if (progress.RoleSelected
+                && progress.ProfileCompleted
+                && progress.SkillsFilled
+                && progress.SkillPreferencesSet
+                && progress.CertificateUploaded
+                && progress.SocialAndKycCompleted)
+                {
+                    // Award Onboard Complete for  participants:
+                    _badgeService.EvaluateAndAward(userId);
+                }
 
                 // 🎉 Fire off the "onboarding complete" email
                 var htmlBody = $@"
@@ -1076,21 +1090,22 @@ namespace SkillSwap_Platform.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult ApprovalPending()
         {
-            int? tempUserId = GetUserId(); // CHANGE
-            if (tempUserId == null)
-            {
-                ViewBag.ErrorMessage = "User not found. Please try to login again.";
-                return RedirectToAction("Login", "Home");
-            }
-            int userId = tempUserId.Value; // CHANGE
-            var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
-            if (user != null && user.IsVerified)
-            {
-                TempData["SuccessMessage"] = "Your account is sent for review! be kind and have patience.";
-                // If approved, redirect to the dashboard.
-                return RedirectToAction("Index", "Home");
-            }
-            return View();
+            //int? tempUserId = GetUserId(); // CHANGE
+            //if (tempUserId == null)
+            //{
+            //    ViewBag.ErrorMessage = "User not found. Please try to login again.";
+            //    return RedirectToAction("Login", "Home");
+            //}
+            //int userId = tempUserId.Value; // CHANGE
+            //var user = _context.TblUsers.FirstOrDefault(u => u.UserId == userId);
+            //if (user != null && user.IsVerified)
+            //{
+            //    TempData["SuccessMessage"] = "Your account is sent for review! be kind and have patience.";
+            //    // If approved, redirect to the dashboard.
+            //    return RedirectToAction("Index", "Home");
+            //}
+            //return View();
+            return RedirectToAction("Index", "Home");
         }
 
         #endregion
@@ -1124,6 +1139,34 @@ namespace SkillSwap_Platform.Controllers
             // record it so it won’t run again
             progress.TotalTokensGiven = total;
             await _context.SaveChangesAsync();
+
+            var subject = $"🎉 You’ve just earned {total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}!";
+            var htmlBody = $@"
+                <div style=""font-family:sans-serif;line-height:1.4;color:#333;"">
+                  <h2>Congrats, {user.FirstName}! 🥳</h2>
+                  <p>Because you completed every onboarding step, we’ve just deposited <strong>{total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}</strong> into your account.</p>
+                  <img src=""/template_assets/images/SSDToken.png"" 
+                       alt=""SkillSwap Token"" 
+                       style=""width:100px;height:100px;object-fit:contain;"" />
+                  <p>
+                    Your new balance is now <strong>{user.DigitalTokenBalance:0.##}</strong> tokens.
+                    Use them to post offers, request help, or explore the community—your next big swap is just a click away!
+                  </p>
+                  <blockquote style=""border-left:4px solid #5BBB7B;padding-left:1em;color:#444;margin:1em 0;"">
+                    “Tokens aren’t just currency—they’re the fuel for your next achievement!”  
+                  </blockquote>
+                  <p>
+                    <a href=""{Url.Action("Profile", "User")}"">View your profile</a> to see them in action.
+                  </p>
+                  <p style=""margin-top:2em;"">— Happy swapping,<br/>The SkillSwap Team</p>
+                </div>";
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                subject,
+                htmlBody,
+                isBodyHtml: true
+            );
         }
 
         #region Helper Methods

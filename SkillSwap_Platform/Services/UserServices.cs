@@ -72,8 +72,8 @@ namespace SkillSwap_Platform.Services
                 return cachedQrCode;
             }
 
-            var user = await _dbcontext.TblUsers
-                .Where(u => u.Email == email && u.IsVerified) // ✅ Ensure user is verified
+            var user = await _dbcontext.TblUsers.IgnoreQueryFilters()
+                .Where(u => u.Email == email) // ✅ Ensure user is verified
                 .Select(u => new { u.TotpSecret })
                 .FirstOrDefaultAsync();
 
@@ -89,7 +89,7 @@ namespace SkillSwap_Platform.Services
 
         public async Task<bool> VerifyTotpAsync(string email, string otp)
         {
-            var user = await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _dbcontext.TblUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email);
             if (user == null || string.IsNullOrEmpty(user.TotpSecret)) return false;
 
             // ✅ Prevent brute-force OTP attempts
@@ -148,6 +148,7 @@ namespace SkillSwap_Platform.Services
         public async Task<TblUser> ValidateUserCredentialsAsync(string login, string password)
         {
             var user = await _dbcontext.TblUsers
+                .IgnoreQueryFilters()
                 .Where(u => u.UserName == login || u.Email == login)
                 .Select(u => new TblUser
                 {
@@ -208,7 +209,10 @@ namespace SkillSwap_Platform.Services
         {
             try
             {
-                var user = await _dbcontext.TblUsers.FindAsync(userId);
+                // After: bypasses the global filter so you can fetch Admin (and escrow) accounts
+                var user = await _dbcontext.TblUsers
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
                 if (user == null) return false;
 
                 // re‑salt & hash
@@ -268,7 +272,7 @@ namespace SkillSwap_Platform.Services
 
         public async Task<TblUser> GetUserByUserNameOrEmailAsync(string userName, string email)
         {
-            return await _dbcontext.TblUsers
+            return await _dbcontext.TblUsers.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(u => u.UserName == userName || u.Email == email);
         }
 
@@ -284,12 +288,12 @@ namespace SkillSwap_Platform.Services
 
         public async Task<TblUser> GetUserByUsername(string username)
         {
-            return await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.UserName == username);
+            return await _dbcontext.TblUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.UserName == username);
         }
 
         public async Task<TblUser> GetUserByIdAsync(int userId)
         {
-            return await _dbcontext.TblUsers.FirstOrDefaultAsync(u => u.UserId == userId);
+            return await _dbcontext.TblUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.UserId == userId);
         }
     }
 }

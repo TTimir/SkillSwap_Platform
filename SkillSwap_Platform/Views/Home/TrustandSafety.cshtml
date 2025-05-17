@@ -1,0 +1,189 @@
+﻿
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap | Trust & Safety</title>
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter',sans-serif;
+            background: #eef2f7;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(90deg,#059669,#10b981);
+            padding: 2rem;
+            text-align: center;
+            color: #fff;
+        }
+
+            header h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                letter-spacing: 1px;
+            }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .intro {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+            .intro p {
+                font-size: 1.1rem;
+                margin: 0;
+            }
+
+        h2.section-title {
+            margin-top: 2.5rem;
+            font-size: 1.75rem;
+            color: #059669;
+            border-bottom: 2px solid #d1fae5;
+            padding-bottom: 0.5rem;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+            .card h3 {
+                margin-top: 0;
+                color: #059669;
+            }
+
+            .card p {
+                margin: 0.75rem 0;
+            }
+
+        ul.steps {
+            list-style: none;
+            padding: 0;
+        }
+
+            ul.steps li {
+                display: flex;
+                margin: 1rem 0;
+            }
+
+                ul.steps li i {
+                    font-size: 1.5rem;
+                    color: #10b981;
+                    margin-right: 1rem;
+                    margin-top: 0.25rem;
+                }
+
+        .btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+            .btn:hover {
+                background: #047857;
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SkillSwap Trust & Safety</h1>
+    </header>
+
+    <div class="container">
+        <div class="intro">
+            <p>Your safety and trust are our top priorities. We maintain a secure, respectful community for all SkillSwap users.</p>
+        </div>
+
+        <h2 class="section-title">1. Community Guidelines</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>No Harassment</h3>
+                <p>Zero tolerance for bullying, hate speech, or threats. Respect all community members.</p>
+            </div>
+            <div class="card">
+                <h3>Honest Representation</h3>
+                <p>List your skills and credentials accurately. Misrepresentation may lead to account suspension.</p>
+            </div>
+            <div class="card">
+                <h3>Privacy Protection</h3>
+                <p>Never share personal or financial info publicly. Use in-app messaging or email support for sensitive matters.</p>
+            </div>
+            <div class="card">
+                <h3>Legal Compliance</h3>
+                <p>Follow all applicable laws and our platform rules. Illegal activities will be reported and banned.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">2. Reporting & Enforcement</h2>
+        <ul class="steps">
+            <li><i class="fas fa-flag"></i><div class="steps-content"><strong>Report Abuse:</strong> Click the "Report" button on any profile, message, or session.</div></li>
+            <li><i class="fas fa-envelope"></i><div class="steps-content"><strong>Email Support:</strong> Send details to <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>.</div></li>
+            <li><i class="fas fa-user-shield"></i><div class="steps-content"><strong>Confidentiality:</strong> All reports are reviewed privately and treated with discretion.</div></li>
+        </ul>
+
+        <h2 class="section-title">3. Investigation Process</h2>
+        <ul class="steps">
+            <li><i class="fas fa-clock"></i><div class="steps-content"><strong>Triage (24h):</strong> We acknowledge and assess reports within 24 hours.</div></li>
+            <li><i class="fas fa-search"></i><div class="steps-content"><strong>Review:</strong> We may request additional info or evidence.</div></li>
+            <li><i class="fas fa-gavel"></i><div class="steps-content"><strong>Action:</strong> Possible actions include warnings, suspensions, or bans.</div></li>
+        </ul>
+
+        <h2 class="section-title">4. Safety Features</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>KYC Verification</h3>
+                <p>Optional but recommended to build trust—verify your identity under Settings → KYC.</p>
+            </div>
+            <div class="card">
+                <h3>Session Reviews</h3>
+                <p>Rate and review each session to help us maintain quality and safety.</p>
+            </div>
+            <div class="card">
+                <h3>Escrowed Tokens</h3>
+                <p>Tokens are held in escrow until both parties confirm session completion.</p>
+            </div>
+            <div class="card">
+                <h3>Data Encryption</h3>
+                <p>All personal data is encrypted in transit and at rest, compliant with GDPR & CCPA.</p>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top:2rem;">
+            <a href="mailto:skillswap360@gmail.com" class="btn"><i class="fas fa-paper-plane"></i> Contact Safety Team</a>
+        </div>
+    </div>
+</body>
+</html>
+

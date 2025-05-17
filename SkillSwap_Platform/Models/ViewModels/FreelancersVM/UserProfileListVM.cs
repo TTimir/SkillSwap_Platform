@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using SkillSwap_Platform.Models.ViewModels.UserProfileMV;
 
 namespace SkillSwap_Platform.Models.ViewModels.FreelancersVM
 {
@@ -25,5 +26,6 @@ namespace SkillSwap_Platform.Models.ViewModels.FreelancersVM
         public List<SelectListItem> InteractionModeOptions { get; set; }
         public List<SelectListItem> SkillOptions { get; set; }
         public List<SelectListItem> LanguageOptions { get; set; }
+        public List<BadgeAwardVM> Badges { get; set; }
     }
 }

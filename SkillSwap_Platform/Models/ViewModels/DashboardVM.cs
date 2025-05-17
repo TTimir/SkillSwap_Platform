@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Models.ViewModels
+﻿using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
+
+namespace SkillSwap_Platform.Models.ViewModels
 {
     public class DashboardVM
     {
@@ -19,11 +21,39 @@
         // For the doughnut chart of category breakdown
         public List<string> CategoryLabels { get; set; } = new();
         public List<int> CategoryData { get; set; } = new();
+        public Subscription CurrentSubscription { get; set; }
 
         // Lists
         public IEnumerable<ServiceSummary> MostViewedServices { get; set; }
         public IEnumerable<ExchangeSummary> RecentPurchases { get; set; }
         public IEnumerable<ActivityItem> RecentActivity { get; set; }
+
+        /// <summary>
+        /// True if the user may see charts (Pro+ or Growth)
+        /// </summary>
+        public bool CanBasicAnalytics { get; set; }
+
+        /// <summary>
+        /// True if the user may see the full history section (Growth only)
+        /// </summary>
+        public bool CanAdvancedAnalytics { get; set; }
+        public string BillingCycle { get; set; }
+        //public string BillingCycle
+        //{
+        //    get
+        //    {
+        //        if (CurrentSubscription == null) return "";
+        //        var span = CurrentSubscription.EndDate - CurrentSubscription.StartDate;
+        //        // anything longer than 45 days we’ll call “Yearly”
+        //        return span.TotalDays > 45
+        //            ? "Yearly"
+        //            : "Monthly";
+        //    }
+        //}
+        public bool IsAutoRenew { get; set; }
+        public DateTime? CancellationDateUtc { get; set; }
+        public IList<SubscriptionHistoryItem> BillingHistory { get; set; }
+
     }
 
     public class ServiceSummary

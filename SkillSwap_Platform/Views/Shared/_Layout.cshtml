@@ -35,6 +35,57 @@
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+
+    <style>
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
+
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+        /* footer logos: center image + text */
+        .footer-widget .footer-logo,
+        .footer-widget .logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            gap: 8px; /* space between logo and text */
+            text-decoration: none;
+        }
+
+            .footer-widget .footer-logo img,
+            .footer-widget .logo1 img {
+                width: 40px; /* match your header size (or whatever you prefer) */
+                height: auto;
+                border-radius: 14px; /* optional */
+            }
+
+        .footer-widget .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            color: #fff; /* ensure it’s white in your footer */
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
     <div class="wrapper ovh">
@@ -88,7 +139,10 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="logos">
                                     <a class="header-logo logo1" href="@Url.Action("Index","Home")">
-                                        <img src="~/template_assets/images/header-logo-dark.svg" alt="Header Logo">
+                                        <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
+                                        <span class="logo-text">
+                                            SkillSwap<span style="color:#5BBB7B">.</span>
+                                        </span>
                                     </a>
                                 </div>
                                 <!-- Responsive Menu -->
@@ -98,6 +152,7 @@
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About Us</span></a></li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Pricing</span></a></li>
                                     <li><a class="list-item pe-0" href="@Url.ActionLink("Contact","Home")">Contact</a></li>
                                 </ul>
                             </div>
@@ -137,7 +192,7 @@
                                             <img src="~/template_assets/images/SSDToken.png"
                                                  alt="Tokens"
                                                  width="32" height="32" />
-                                            <span id="token-balance">@balance.ToString("0.0000")</span>
+                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
                                         </li>
                                         <li class="user_setting">
                                             <div class="dropdown">
@@ -273,6 +328,9 @@
                         <a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About</span></a>
                     </li>
                     <li>
+                        <a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Pricing</span></a>
+                    </li>
+                    <li>
                         <a class="list-item" href="@Url.ActionLink("Contact","Home")"><span class="title">Contact</span></a>
                     </li>
                     <!-- Only for Mobile View -->
@@ -283,7 +341,10 @@
 
         <div class="body_content">
             <form id="filterForm" method="get" action="@Url.Action("PublicOfferList","UserOfferDetails")">
-                <input type="hidden" name="category" id="categoryInput" value="@Model.Category" />
+                @{
+                    var currentCategory = ViewContext.HttpContext.Request.Query["category"].ToString();
+                }
+                <input type="hidden" name="category" id="categoryInput" value="@currentCategory" />
                 @await Component.InvokeAsync("CategoryMenu")
             </form>
             @RenderBody()
@@ -314,11 +375,12 @@
                                         <div class="link-style1 mb-3">
                                             <h6 class="text-white mb25">About</h6>
                                             <div class="link-list">
-                                                <a href="">Press & News</a>
-                                                <a href="">Partnerships</a>
-                                                <a href="">Privacy Policy</a>
-                                                <a href="">Terms of Service</a>
-                                                <a href="">Cookie Policy</a>
+                                                <a href="@Url.ActionLink("TutorTeaching","Home")">Teaching Guide</a>
+                                                @* <a href="">Press & News</a>
+                                                <a href="">Partnerships</a> *@
+                                                <a href="@Url.ActionLink("PrivacyandPolicy","Home")">Privacy Policy</a>
+                                                <a href="@Url.ActionLink("TermsofService","Home")">Terms of Service</a>
+                                                <a href="@Url.ActionLink("CookiePolicy","Home")">Cookie Policy</a>
                                             </div>
                                         </div>
                                     </div>
@@ -332,7 +394,7 @@
                                                 @foreach (var c in cats)
                                                 {
                                                     <li>
-                                                        <a href="@Url.Action("PublicOfferList","UserOfferDetails", new { category = c })">@c</a>
+                                                        <a href="@Url.ActionLink("PublicOfferList","UserOfferDetails", new { category = c })">@c</a>
                                                     </li>
                                                 }
                                             </ul>
@@ -342,10 +404,10 @@
                                         <div class="link-style1 mb-3">
                                             <h6 class="text-white mb25">Support</h6>
                                             <ul class="ps-0">
-                                                <li><a href="">Help & Support</a></li>
-                                                <li><a href="">Trust & Safety</a></li>
-                                                <li><a href="">Swap on Astrix</a></li>
-                                                <li><a href="">Contact Us</a></li>
+                                                <li><a href="@Url.ActionLink("HelpandSupport","Home")">Help & Support</a></li>
+                                                <li><a href="@Url.ActionLink("TrustandSafety","Home")">Trust & Safety</a></li>
+                                                <li><a href="@Url.ActionLink("PublicOfferList","UserOfferDetails")">Swap on Skillswap</a></li>
+                                                <li><a href="@Url.ActionLink("Contact","Home")">Contact Us</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -354,7 +416,13 @@
                         </div>
                         <div class="col-lg-6 col-xl-4 offset-xl-2">
                             <div class="footer-widget mb-4 mb-lg-5">
-                                <a class="footer-logo" href="index.html"><img class="mb40" src="/template_assets/images/header-logo-white.svg" alt=""></a>
+                                <a class="footer-logo logo1 mb40" href="@Url.Action("Index","Home")">
+                                    <img src="~/template_assets/images/header-logo-light.png"
+                                         alt="SkillSwap Logo" />
+                                    <span class="logo-text">
+                                        SkillSwap<span style="color:#FFF">.</span>
+                                    </span>
+                                </a>
                                 <div class="row mb-4 mb-lg-5">
                                     <!--<div class="col-auto">
                                          <div class="contact-info">
@@ -417,7 +485,7 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="text-center text-lg-start">
-                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© Freeio. 2023 CreativeLayers. All rights reserved.</p>
+                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         <div class="col-sm-6">

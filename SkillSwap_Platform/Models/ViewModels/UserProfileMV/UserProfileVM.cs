@@ -1,4 +1,5 @@
-﻿using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
+﻿using SkillSwap_Platform.Models.ViewModels.BadgeTire;
+using SkillSwap_Platform.Models.ViewModels.ExchangeVM;
 
 namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 {
@@ -29,11 +30,36 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public double AverageRating { get; set; }
         public bool IsFlagged { get; set; }
         public bool IsOwnProfile { get; set; }
+        public bool IsVerified { get; set; }
+
+        public List<BadgeAwardVM> Badges { get; set; }
+        public BadgeVm? TopTierBadge { get; set; }
     }
 
     public class SkillVM
     {
         public string Name { get; set; }
         public bool IsOffered { get; set; }
+    }
+
+    public class BadgeAwardVM
+    {
+        public int BadgeId { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public int Level { get; set; }
+        public string LevelName =>
+            Level switch
+            {
+                1 => "Common",
+                2 => "Uncommon",
+                3 => "Rare",
+                4 => "Epic",
+                5 => "Legendary",
+                6 => "Mythic",
+                _ => "Level n/a"
+            };
+        public string IconUrl { get; set; }
+        public DateTime AwardedAt { get; set; }
     }
 }

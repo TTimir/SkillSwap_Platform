@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.DigitalToken;
 using Newtonsoft.Json;
+using SkillSwap_Platform.Services.BadgeTire;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -18,12 +19,15 @@ namespace SkillSwap_Platform.Controllers
         private readonly ILogger<ExchangeDashboardController> _logger;
         private readonly INotificationService _notif;
         private readonly IDigitalTokenService _tokenService;
-        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif, IDigitalTokenService tokenService)
+        private readonly BadgeService _badgeService;
+
+        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif, IDigitalTokenService tokenService, BadgeService badgeService)
         {
             _context = context;
             _logger = logger;
             _notif = notif;
             _tokenService = tokenService;
+            _badgeService = badgeService;
         }
 
         #region Active Dashboard
@@ -682,6 +686,11 @@ namespace SkillSwap_Platform.Controllers
                 }
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
+
+                // Award *all* exchange‐based badges (First Exchange, 5 Exchanges,
+                // Category Explorer, Skill Master, Performance Champion.) for both participants:
+                _badgeService.EvaluateAndAward(exchange.OfferOwnerId!.Value);
+                _badgeService.EvaluateAndAward(exchange.OtherUserId!.Value);
 
                 // log notification:
                 await _notif.AddAsync(new TblNotification
