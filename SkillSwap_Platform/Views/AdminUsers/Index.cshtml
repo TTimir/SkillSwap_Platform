@@ -1,0 +1,186 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.AdminControl.AdminUserIndexVM
+
+@{
+    ViewData["Title"] = "Manage Admin/Moderator";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @TempData["Error"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a href="@Url.ActionLink("Register","AdminUsers")" class="ud-btn btn-dark default-box-shadow2">New Admin/Mod<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+            <div class="navtab-style1">
+                <nav>
+                    <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
+                        <a class="nav-link active fw500 ps-0" id="nav-item1-tab" type="button" aria-selected="true">Admin/Mod Users</a>
+                    </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <div class="packages_table table-responsive">
+                            <table class="table-style3 table at-savesearch">
+                                <thead class="t-head">
+                                    <tr>
+                                        <th scope="col">User ID</th>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Roles</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Active</th>
+                                        <th scope="col">Held</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="t-body">
+                                    @foreach (var u in Model.Users)
+                                    {
+                                        <tr>
+                                            <td>@u.UserId</td>
+                                            <td>@u.Email</td>
+                                            <td>@u.FirstName @u.LastName</td>
+                                            <td>@string.Join(", ", u.Roles)</td>
+                                            <td>@u.CreatedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                                            <td>
+                                                @if (u.IsActive)
+                                                {
+                                                    <span class="pending-style style2">Yes</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="pending-style style3">No</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (u.IsHeld)
+                                                {
+                                                    <span class="pending-style style1">Held</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-dark">—</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                @* Hold / Unhold *@
+                                                @if (u.IsHeld)
+                                                {
+                                                    <form asp-action="Unhold" method="post" class="d-inline">
+                                                        <input type="hidden" name="id" value="@u.UserId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Remove Held The User" data-bs-original-title="Tooltip on top">
+                                                            <i class="fal fa-lock-open"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <form asp-action="Hold" method="post" class="d-inline">
+                                                        <input type="hidden" name="id" value="@u.UserId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Held Flag" data-bs-original-title="Tooltip on bottom">
+                                                            <i class="fal fa-lock"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+
+                                                @* Delete *@
+                                                <form asp-action="Delete" method="post" class="d-inline"
+                                                      onsubmit="return confirm('Delete user @u.Email?');">
+                                                    <input type="hidden" name="id" value="@u.UserId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove The User" data-bs-original-title="Tooltip on top">
+                                                        <i class="fal fa-user-times"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @{
+                                var page = Model.PageIndex;
+                                var totalPages = Model.TotalPages;
+                            }
+                            @if (totalPages > 1)
+                            {
+                                <div class="mbp_pagination text-center mt30">
+                                    <ul class="page_navigation">
+                                        <!-- Previous -->
+                                        <li class="page-item @(page == 1 ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page - 1)">
+                                                <span class="fas fa-angle-left"></span>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page links -->
+                                        @for (int p = 1; p <= totalPages; p++)
+                                        {
+                                            <li class="page-item @(p == page ? "active" : "")">
+                                                <a class="page-link"
+                                                   asp-action="Index"
+                                                   asp-route-page="@p">@p</a>
+                                            </li>
+                                        }
+
+                                        <!-- Next -->
+                                        <li class="page-item @(page == totalPages ? "disabled" : "")">
+                                            <a class="page-link"
+                                               asp-action="Index"
+                                               asp-route-page="@(page + 1)">
+                                                <span class="fas fa-angle-right"></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <p class="mt10 mb-0 pagination_page_count text-center">
+                                        Page @(page) of @totalPages
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+

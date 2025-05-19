@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
 
 namespace SkillSwap_Platform.Services.AdminControls.Certificate
 {
@@ -9,14 +10,17 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<CertificateReviewService> _logger;
         private readonly IEmailService _emailService;
+        private readonly ISubscriptionService _subs;
         public CertificateReviewService(
             SkillSwapDbContext db,
             ILogger<CertificateReviewService> logger, 
-            IEmailService emailService)
+            IEmailService emailService,
+            ISubscriptionService subscription)
         {
             _db = db;
             _logger = logger;
             _emailService = emailService;
+            _subs = subscription;
         }
 
         private async Task<PagedResult<CertificateReviewDto>> GetPagedAsync(
@@ -157,7 +161,18 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                 var user = await _db.TblUsers.FindAsync(cert.UserId);
                 if (user != null)
                 {
-                    var subject = "🎉 Your Certificate Has Been Approved!";
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] 🎉 Your Certificate Has Been Approved!";
                     var body = $@"
                         <p>Hi {user.FirstName},</p>
                         <p>Great news! Your submission for <strong>“{cert.CertificateName}”</strong> was approved on <strong>{cert.ApprovedDate:dd MMM yyyy hh:mm tt} UTC</strong>.</p>
@@ -207,7 +222,18 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                 var user = await _db.TblUsers.FindAsync(cert.UserId);
                 if (user != null)
                 {
-                    var subject = "Update on Your Certificate Submission";
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Update on Your Certificate Submission";
                     var body = $@"
                         <p>Hi {user.FirstName},</p>
                         <p>We’ve reviewed your submission for <strong>“{cert.CertificateName}”</strong>, and unfortunately our verification process was unable to confirm the authenticity of your <strong>“{cert.CertificateName}”</strong> certificate.</p>

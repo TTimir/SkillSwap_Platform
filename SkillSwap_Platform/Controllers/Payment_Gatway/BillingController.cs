@@ -14,16 +14,17 @@ using SkillSwap_Platform.Services.Payment_Gatway.RazorPay;
 
 namespace SkillSwap_Platform.Controllers.Payment_Gatway
 {
+    [Route("Billing")]
     public class BillingController : Controller
     {
-        private readonly RazorpayService _rzp;
+        private readonly IRazorpayService _rzp;
         private readonly ISubscriptionService _subs;
         private readonly IPaymentLogService _paymentLog;
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<BillingController> _logger;
 
         public BillingController(
-            RazorpayService rzp,
+            IRazorpayService rzp,
             IPaymentLogService payment,
             ISubscriptionService subs,
             SkillSwapDbContext db,
@@ -36,7 +37,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             _logger = logger;
         }
 
-        [HttpPost, Route("Billing/Callback")]
+        [HttpPost, Route("Callback")]
         public async Task<IActionResult> Callback([FromForm] CallbackModel model)
         {
             if (!_rzp.VerifySignature(
@@ -75,7 +76,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
 
         // 1) Show the pricing grid
         [HttpGet]
-        [Route("Billing/Pricing")]
+        [Route("Pricing")]
         public IActionResult Pricing()
         {
             return View();
@@ -100,7 +101,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating Razorpay order");
-                return RedirectToAction("500", "EP");
+                return StatusCode(500, $"Order creation failed: {ex.Message}");
             }
         }
 
@@ -162,7 +163,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             }
         }
 
-        [HttpGet, Route("Billing/BillingHistory")]
+        [HttpGet, Route("BillingHistory")]
         public async Task<IActionResult> BillingHistory(int page = 1, int pageSize = 10)
         {
             var userId = GetUserId();

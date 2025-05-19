@@ -44,11 +44,16 @@ namespace SkillSwap_Platform.Controllers
                 TempData["SuccessMessage"] = "We’ve received your details and will review them within 48 hours.";
                 return RedirectToAction(nameof(ThankYou));
             }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.ErrorMessage = ex.Message;
+                return View(vm);
+            }
             catch (Exception ex)
             {
                 _log.LogError(ex, "Submit failed for user {User}", User.Identity.Name);
                 ModelState.AddModelError("", "An error occurred. Please try again later.");
-                return View(vm);
+                return RedirectToAction("EP500", "EP");
             }
         }
 

@@ -6,6 +6,7 @@ using SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM;
 using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM;
 using SkillSwap_Platform.Services.Email;
 using VerificationStatus = SkillSwap_Platform.Models.ViewModels.ProfileVerifivationVM.VerificationStatus;
+using SkillSwap_Platform.Services.Payment_Gatway;
 
 namespace SkillSwap_Platform.Services.ProfileVerification
 {
@@ -15,21 +16,57 @@ namespace SkillSwap_Platform.Services.ProfileVerification
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<VerificationService> _log;
         private readonly IEmailService _emailSender;
+        private readonly ISubscriptionService _subs;
 
         public VerificationService(
             SkillSwapDbContext db,
             IWebHostEnvironment env,
             ILogger<VerificationService> log,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISubscriptionService subscriptions)
         {
             _db = db;
             _env = env;
             _log = log;
             _emailSender = emailService;
+            _subs = subscriptions;
         }
 
         public async Task SubmitAsync(string userId, SubmitRequestVm vm)
         {
+            var uid = int.Parse(userId);
+
+            var sub = await _subs.GetActiveAsync(uid);
+            var plan = sub?.PlanName ?? "Freebie";
+            var lifetime = await _db.VerificationRequests
+                                      .CountAsync(r => r.UserId == userId);
+            var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var thisMonth = await _db.VerificationRequests
+                                      .CountAsync(r => r.UserId == userId
+                                                    && r.SubmittedAt >= monthStart);
+
+            switch (plan)
+            {
+                case "Freebie":
+                    if (lifetime >= 1)
+                        throw new InvalidOperationException(
+                            "Free members may only submit one verification request in their lifetime.");
+                    break;
+
+                case "Plus":
+                case "Pro":
+                    if (thisMonth >= 1)
+                        throw new InvalidOperationException(
+                            "Plus & Pro members may submit one verification request per calendar month.");
+                    break;
+
+                case "Growth":
+                    if (thisMonth >= 2)
+                        throw new InvalidOperationException(
+                            "Growth members may submit up to two verification requests per calendar month.");
+                    break;
+            }
+
             try
             {
                 // create upload folder
@@ -330,7 +367,18 @@ namespace SkillSwap_Platform.Services.ProfileVerification
                 return;
 
             // 2) build a friendly message
-            var subject = "🎉 You’re Verified on SkillSwap!";
+            // 1) figure out their active tier & SLA
+            var activeSub = await _subs.GetActiveAsync(user.UserId);
+            var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+            {
+                "Plus" => ("Plus Support", "72h SLA"),
+                "Pro" => ("Pro Support", "48h SLA"),
+                "Growth" => ("Growth Support", "24h SLA"),
+                _ => ("Free Support", "120h SLA")
+            };
+
+            // 2) build a prefixed subject
+            var subject = $"[{supportLabel} · {sla}] 🎉 You’re Verified on SkillSwap!";
             var body = $@"
                 <div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.5em;'>
                   <h3>Your SkillSwap Verification Has Been Approved!</h3>
@@ -374,7 +422,18 @@ namespace SkillSwap_Platform.Services.ProfileVerification
                 return;
 
             // 2) build a constructive message
-            var subject = "Update on Your SkillSwap Verification Request";
+            // 1) figure out their active tier & SLA
+            var activeSub = await _subs.GetActiveAsync(user.UserId);
+            var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+            {
+                "Plus" => ("Plus Support", "72h SLA"),
+                "Pro" => ("Pro Support", "48h SLA"),
+                "Growth" => ("Growth Support", "24h SLA"),
+                _ => ("Free Support", "120h SLA")
+            };
+
+            // 2) build a prefixed subject
+            var subject = $"[{supportLabel} · {sla}] Update on Your SkillSwap Verification Request";
             var commentSection = string.IsNullOrWhiteSpace(comments)
                 ? ""
                 : $"<blockquote style='border-left:3px solid #ccc; padding-left:10px; color:#555;'>" +
@@ -427,8 +486,19 @@ namespace SkillSwap_Platform.Services.ProfileVerification
                 if (user == null || string.IsNullOrEmpty(user.Email))
                     return;
 
-                // 2) build a thoughtful, motivating message
-                var subject = "Important Update on Your SkillSwap Verification";
+            // 2) build a thoughtful, motivating message
+            // 1) figure out their active tier & SLA
+            var activeSub = await _subs.GetActiveAsync(user.UserId);
+            var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+            {
+                "Plus" => ("Plus Support", "72h SLA"),
+                "Pro" => ("Pro Support", "48h SLA"),
+                "Growth" => ("Growth Support", "24h SLA"),
+                _ => ("Free Support", "120h SLA")
+            };
+
+            // 2) build a prefixed subject
+            var subject = $"[{supportLabel} · {sla}] Important Update on Your SkillSwap Verification";
                 var commentSection = string.IsNullOrWhiteSpace(comments)
                     ? ""
                     : $"<blockquote style='border-left:3px solid #ccc; padding:10px; color:#555;'>" +

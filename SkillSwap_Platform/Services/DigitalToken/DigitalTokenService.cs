@@ -1,14 +1,7 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.CodeAnalysis.Text;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
-using NuGet.Protocol.Plugins;
+﻿using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.Email;
 using SkillSwap_Platform.Services.NotificationTrack;
-using System;
 using System.Data;
 using System.Security.Cryptography;
 
@@ -16,11 +9,13 @@ namespace SkillSwap_Platform.Services.DigitalToken
 {
     public class DigitalTokenService : IDigitalTokenService
     {
+        private const int EscrowUserId = 1;          // userId of escrow account
+        private const int SystemReserveUserId = 2;   // userId of platform reserve (for bonuses)
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<DigitalTokenService> _logger;
         private readonly INotificationService _notif;
         private readonly IEmailService _email;
-        private const int EscrowUserId = 1;
+
         public DigitalTokenService(
             SkillSwapDbContext db,
             ILogger<DigitalTokenService> logger,
@@ -147,8 +142,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 if (!ex.TokensHeld)
                     throw new InvalidOperationException("Tokens have not been held.");
 
-                var buyer = await _db.TblUsers.FindAsync(ex.OtherUserId)
-                  ?? throw new KeyNotFoundException($"Buyer not found.");
                 var seller = ex.Offer.User
                               ?? throw new KeyNotFoundException($"Offer owner not found.");
 
@@ -156,72 +149,36 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     .FirstOrDefaultAsync(t => t.ExchangeId == exchangeId && t.TxType == "Hold" && !t.IsReleased);
                 if (holdTx == null) throw new InvalidOperationException("No outstanding hold.");
 
-                decimal cost = holdTx.Amount;
+                decimal amount = holdTx.Amount;
+                var escrow = await GetUserAsync(EscrowUserId, "Escrow", ct);
 
-                // debit escrow, credit seller
-                var escrow = await GetEscrowUserAsync();
+                // 1) release original tokens
+                await ReleaseOriginalAsync(escrow, seller, holdTx, amount, exchangeId, ct);
 
-                if (escrow.DigitalTokenBalance < cost)
-                    throw new InvalidOperationException(
-                        $"Escrow balance {escrow.DigitalTokenBalance} is insufficient to release {cost} tokens.");
+                // 2) calculate & credit boost
+                await ApplyBoostAsync(seller.UserId, amount, exchangeId, ct);
 
-                escrow.DigitalTokenBalance -= cost;
-                _db.TblUsers.Update(escrow);
-
-                // credit seller
-                seller.DigitalTokenBalance += cost;
-                _db.TblUsers.Update(seller);
-
-                // mark hold as released
-                // 1) Mark the original hold as released
-                holdTx.IsReleased = true;
-                _db.TblTokenTransactions.Update(holdTx);
-
-                // 2) **Add a new “Release” Tx row:**
-                _db.TblTokenTransactions.Add(new TblTokenTransaction
-                {
-                    ExchangeId = exchangeId,
-                    FromUserId = escrow.UserId,
-                    ToUserId = seller.UserId,
-                    Amount = cost,
-                    TxType = "Release",
-                    Description = $"Release for exchange #{exchangeId}",
-                    CreatedAt = DateTime.UtcNow
-                });
-
+                // 3) finalize exchange record
                 ex.TokensHeld = false;
                 ex.TokensSettled = true;
                 ex.TokenReleaseDate = DateTime.UtcNow;
+                ex.Status = "Completed";
                 _db.TblExchanges.Update(ex);
 
                 await _db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
-
-                await _notif.AddAsync(new TblNotification
-                {
-                    UserId = seller.UserId,
-                    Title = "Tokens released from escrow",
-                    Message = $"{cost} tokens have been released to your account for exchange #{exchangeId}.",
-                    Url = $"/UserDashboard/Exchanges/{exchangeId}"
-                });
-
-                // 2) In-app notification to buyer
-                await _notif.AddAsync(new TblNotification
-                {
-                    UserId = buyer.UserId,
-                    Title = "Escrow released",
-                    Message = $"Escrow of {cost} tokens for exchange #{exchangeId} has been released to the seller.",
-                    Url = $"/UserDashboard/Exchanges/{exchangeId}"
-                });
 
                 await _email.SendEmailAsync(
                     seller.Email,
                     subject: $"Funds released for exchange #{exchangeId}",
                     body: $@"
                         <p>Hi {seller.UserName},</p>
-                        <p>The <strong>{cost}</strong> tokens held in escrow for exchange <strong>#{exchangeId}</strong> have just been released to your account.</p>
+                        <p>The <strong>{amount}</strong> tokens held in escrow for exchange <strong>#{exchangeId}</strong> have just been released to your account.</p>
                         <p>Thanks for using SkillSwap!</p>"
                 );
+
+                var buyer = await _db.TblUsers.FindAsync(ex.OtherUserId)
+                  ?? throw new KeyNotFoundException($"Buyer not found.");
 
                 // Email to buyer
                 await _email.SendEmailAsync(
@@ -229,7 +186,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     subject: $"Your escrow has been released",
                     body: $@"
                     <p>Hi {buyer.UserName},</p>
-                    <p>Your escrow of <strong>{cost}</strong> tokens for exchange <strong>#{exchangeId}</strong> has now been released..</p>
+                    <p>Your escrow of <strong>{amount}</strong> tokens for exchange <strong>#{exchangeId}</strong> has now been released..</p>
                     <p>Thanks,<br/>The SkillSwap Team</p>"
                 );
             }
@@ -239,6 +196,112 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _logger.LogError(exn, "Error releasing tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
+        }
+
+        private async Task ReleaseOriginalAsync(
+            TblUser escrow,
+            TblUser seller,
+            TblTokenTransaction holdTx,
+            decimal amount,
+            int exchangeId,
+        CancellationToken ct)
+        {
+            if (escrow.DigitalTokenBalance < amount)
+                throw new InvalidOperationException(
+                    $"Escrow balance {escrow.DigitalTokenBalance} insufficient to release {amount}.");
+
+            escrow.DigitalTokenBalance -= amount;
+            seller.DigitalTokenBalance += amount;
+            _db.TblUsers.UpdateRange(escrow, seller);
+
+            // mark hold as released
+            holdTx.IsReleased = true;
+            _db.TblTokenTransactions.Update(holdTx);
+
+            // record release transaction
+            _db.TblTokenTransactions.Add(new TblTokenTransaction
+            {
+                ExchangeId = exchangeId,
+                FromUserId = escrow.UserId,
+                ToUserId = seller.UserId,
+                Amount = amount,
+                TxType = "Release",
+                Description = $"Release for exchange #{exchangeId}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = seller.UserId,
+                Title = "Tokens Released",
+                Message = $"{amount} tokens released to you for exchange #{exchangeId}.",
+                Url = $"/ExchangeDashboard/Details/{exchangeId}"
+            });
+        }
+
+        private async Task ApplyBoostAsync(
+            int sellerUserId,
+            decimal originalAmount,
+            int exchangeId,
+            CancellationToken ct)
+        {
+            var multiplier = await GetBoostMultiplierAsync(sellerUserId, ct);
+            var bonusTotal = Math.Floor(originalAmount * (multiplier - 1));
+            if (bonusTotal <= 0) return;
+
+            var reserve = await GetUserAsync(SystemReserveUserId, "System reserve", ct);
+            if (reserve.DigitalTokenBalance < bonusTotal)
+                throw new InvalidOperationException(
+                    $"System reserve {reserve.DigitalTokenBalance} insufficient to pay bonus {bonusTotal}.");
+
+            var seller = await _db.TblUsers.FindAsync(new object[] { sellerUserId }, ct)
+                         ?? throw new KeyNotFoundException("Seller not found.");
+
+            reserve.DigitalTokenBalance -= bonusTotal;
+            seller.DigitalTokenBalance += bonusTotal;
+            _db.TblUsers.UpdateRange(reserve, seller);
+
+            _db.TblTokenTransactions.Add(new TblTokenTransaction
+            {
+                ExchangeId = exchangeId,
+                FromUserId = reserve.UserId,
+                ToUserId = seller.UserId,
+                Amount = bonusTotal,
+                TxType = "BoostReward",
+                Description = $"Membership boost for exchange #{exchangeId}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _notif.AddAsync(new TblNotification
+            {
+                UserId = seller.UserId,
+                Title = "Bonus Tokens Credited",
+                Message = $"{bonusTotal} bonus tokens credited (membership boost).",
+                Url = $"/ExchangeDashboard/Details/{exchangeId}"
+            });
+        }
+
+        private async Task<decimal> GetBoostMultiplierAsync(int userId, CancellationToken ct)
+        {
+            var sub = await _db.Subscriptions
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.UserId == userId && s.IsActive, ct);
+
+            return sub?.PlanName switch
+            {
+                "Plus" => 1.25m,   // no extra
+                "Pro" => 1.50m,   // 25% boost
+                "Growth" => 2.00m,   // 50% boost
+                _ => 1.00m
+            };
+        }
+
+        private async Task<TblUser> GetUserAsync(int userId, string roleDescription, CancellationToken ct)
+        {
+            var u = await _db.TblUsers.FindAsync(new object[] { userId }, ct);
+            if (u == null)
+                throw new KeyNotFoundException($"{roleDescription} account (UserId={userId}) is missing.");
+            return u;
         }
 
         public async Task RefundTokensAsync(int exchangeId, CancellationToken ct = default)

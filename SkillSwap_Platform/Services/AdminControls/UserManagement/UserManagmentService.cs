@@ -2,6 +2,7 @@
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.Certificate;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
 using System.Drawing;
 
 namespace SkillSwap_Platform.Services.AdminControls.UserManagement
@@ -11,11 +12,13 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<UserManagmentService> _logger;
         private readonly IEmailService _emailService;
-        public UserManagmentService(SkillSwapDbContext db, ILogger<UserManagmentService> logger, IEmailService emailService)
+        private readonly ISubscriptionService _subs;
+        public UserManagmentService(SkillSwapDbContext db, ILogger<UserManagmentService> logger, IEmailService emailService, ISubscriptionService subscription)
         {
             _db = db;
             _logger = logger;
             _emailService = emailService;
+            _subs = subscription;
         }
 
         private async Task<PagedResult<T>> GetPagedAsync<T>(
@@ -119,7 +122,18 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                     ? until.Value.ToString("dd MMM yyyy hh:mm tt") + " UTC"
                     : "until further notice";
                 // ——— In HoldUserAsync ———
-                var subject = "Important: Your SkillSwap Account Is Temporarily On Hold";
+                // 1) figure out their active tier & SLA
+                var activeSub = await _subs.GetActiveAsync(user.UserId);
+                var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 2) build a prefixed subject
+                var subject = $"[{supportLabel} · {sla}] Important: Your SkillSwap Account Is Temporarily On Hold";
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
@@ -192,7 +206,18 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 await _db.SaveChangesAsync();
 
                 // send notification
-                var subject = "Good News: Your SkillSwap Account Hold Has Been Lifted";
+                // 1) figure out their active tier & SLA
+                var activeSub = await _subs.GetActiveAsync(user.UserId);
+                var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 2) build a prefixed subject
+                var subject = $"[{supportLabel} · {sla}] Good News: Your SkillSwap Account Hold Has Been Lifted";
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
@@ -250,7 +275,18 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
             // notify them
             foreach (var user in toRelease)
             {
-                var subject = "Your SkillSwap Account Hold Has Expired";
+                // 1) figure out their active tier & SLA
+                var activeSub = await _subs.GetActiveAsync(user.UserId);
+                var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 2) build a prefixed subject
+                var subject = $"[{supportLabel} · {sla}] Your SkillSwap Account Hold Has Expired";
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
                     <p>The temporary hold on your SkillSwap account has just expired as of {now:dd MMM yyyy hh:mm tt} UTC.</p>

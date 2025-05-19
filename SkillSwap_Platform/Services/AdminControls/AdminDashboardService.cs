@@ -232,6 +232,21 @@ namespace SkillSwap_Platform.Services.AdminControls
             }
         }
 
+        public async Task<int> GetPendingAdminNotificationsCountAsync()
+        {
+            try
+            {
+                // any notification still without a SentAtUtc is “pending” (i.e. failed or not yet retried)
+                return await _db.AdminNotifications
+                                .CountAsync(n => n.SentAtUtc == null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching pending admin notifications count");
+                return 0;
+            }
+        }
+
         #region Admin Overview Dashboard
 
         public async Task<AdminDashboardMetricsDto> GetAdminDashboardMetricsAsync(DateTime start, DateTime end)

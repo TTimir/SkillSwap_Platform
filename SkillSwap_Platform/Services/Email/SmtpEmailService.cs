@@ -1,36 +1,45 @@
 ﻿using System.Net.Mail;
 using System.Net;
+using Microsoft.Extensions.Options;
+using SkillSwap_Platform.Models.ViewModels;
 
 namespace SkillSwap_Platform.Services.Email
 {
     public class SmtpEmailService : IEmailService
     {
-        private readonly IConfiguration _config;
         private readonly ILogger<SmtpEmailService> _logger;
+        private readonly EmailOptions _opts;
+        public SmtpEmailService(IOptions<EmailOptions> opts) => _opts = opts.Value;
+
 
         public SmtpEmailService(
-            IConfiguration config,
+            IOptions<EmailOptions> opts,
             ILogger<SmtpEmailService> logger)
         {
-            _config = config;
+            _opts = opts.Value;
             _logger = logger;
         }
 
         public async Task SendEmailAsync(string to, string subject, string body, bool isBodyHtml = false, IEnumerable<EmailAttachment>? attachments = null)
         {
-            var smtpHost = _config["Email:SmtpHost"];
-            var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "25");
-            var smtpUser = _config["Email:SmtpUser"];
-            var smtpPass = _config["Email:SmtpPass"];
-            var fromAddr = _config["Email:FromAddress"];
+            if (string.IsNullOrWhiteSpace(_opts.FromAddress) || string.IsNullOrWhiteSpace(_opts.FromName))
+                throw new InvalidOperationException(
+                        "EmailOptions.FromAddress or FormName is not configured—did you call " +
+                        "services.Configure<EmailOptions>(Configuration.GetSection(\"Email\"))?"
+                    );
 
-            var message = new MailMessage(fromAddr, to, subject, body)
+            // 1) build mail message
+            var fromAddress = new MailAddress(_opts.FromAddress, _opts.FromName);
+            var toAddress = new MailAddress(to);
+
+            using var message = new MailMessage(fromAddress, toAddress)
             {
                 Subject = subject,
                 Body = body,
-                IsBodyHtml = true
+                IsBodyHtml = isBodyHtml
             };
 
+            // 2) attach any files
             if (attachments != null)
             {
                 foreach(var attach in attachments)
@@ -54,14 +63,16 @@ namespace SkillSwap_Platform.Services.Email
                 }
             }
 
-            using var client = new SmtpClient(smtpHost, smtpPort)
+            // 3) configure SMTP client
+            using var client = new SmtpClient(_opts.SmtpHost, int.Parse(_opts.SmtpPort))
             {
-                Credentials = new NetworkCredential(smtpUser, smtpPass),
+                Credentials = new NetworkCredential(_opts.SmtpUser, _opts.SmtpPass),
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 Timeout = 30_000
             };
 
+            // 4) send and log
             try
             {
                 await client.SendMailAsync(message);

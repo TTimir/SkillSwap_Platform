@@ -206,5 +206,27 @@ namespace SkillSwap_Platform.Services.Newsletter
             return savedPaths;
         }
 
+        public async Task<bool> UnsubscribeAsync(string email, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email must be provided", nameof(email));
+
+            // Look for an existing subscriber
+            var subscriber = await _db.TblNewsletterSubscribers
+                                      .FirstOrDefaultAsync(n => n.Email == email, ct);
+
+            if (subscriber == null)
+            {
+                _logger.LogInformation("Unsubscribe requested but not found: {Email}", email);
+                return false;
+            }
+
+            // Remove and persist
+            _db.TblNewsletterSubscribers.Remove(subscriber);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Subscriber removed: {Email}", email);
+            return true;
+        }
     }
 }

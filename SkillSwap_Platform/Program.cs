@@ -42,6 +42,7 @@ using Microsoft.AspNetCore.Authorization;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
 using SkillSwap_Platform.Services.Blogs;
+using SkillSwap_Platform.Services.AdminControls.AdminNotification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,8 +65,7 @@ builder.Services.AddControllersWithViews();
 builder.Configuration
        .SetBasePath(builder.Environment.ContentRootPath)
        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-       .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
-                    optional: true, reloadOnChange: true);
+       .AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
 
 // 2) Also read env-vars (they’ll override file values if set)
 builder.Configuration.AddEnvironmentVariables();
@@ -74,6 +74,8 @@ builder.Configuration.AddEnvironmentVariables();
 var config = builder.Configuration;
 builder.Services.AddDbContext<SkillSwapDbContext>(item =>
         item.UseSqlServer(config.GetConnectionString("dbcs")));
+builder.Services.Configure<EmailOptions>(
+    builder.Configuration.GetSection("Email"));
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("Razorpay"));
 builder.Services.Configure<PlanSettings>(
@@ -142,6 +144,13 @@ builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
 builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
 builder.Services.AddScoped<IBlogService, BlogService>();
+builder.Services.AddHostedService<AdminNotificationDispatcher>();
+
+builder.Services.AddSingleton<AdminNotificationInterceptor>();
+builder.Services.AddDbContext<SkillSwapDbContext>((sp, opt) =>
+    opt.UseSqlServer(config.GetConnectionString("dbcs"))
+       .AddInterceptors(sp.GetRequiredService<AdminNotificationInterceptor>())
+);
 
 builder.Services
     .AddTransient<IAuthorizationHandler, MinimumTierHandler>()

@@ -27,6 +27,21 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             _emailSender = emailService;
         }
 
+        private bool IsFree(Subscription sub) =>
+            string.Equals(sub.PlanName, "Free", StringComparison.OrdinalIgnoreCase);
+
+        private IActionResult RedirectToIndexWithError(string message)
+        {
+            TempData["Error"] = message;
+            return RedirectToAction(nameof(Index));
+        }
+
+        private IActionResult RedirectToIndexWithSuccess(string message)
+        {
+            TempData["Success"] = message;
+            return RedirectToAction(nameof(Index));
+        }
+
         // GET: /Admin/AdminBilling
         public async Task<IActionResult> Index(string term, int page = 1, int pageSize = 20)
         {
@@ -41,10 +56,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             if (!string.IsNullOrWhiteSpace(term))
             {
                 joined = joined.Where(x =>
-                     // EF will translate this concatenation
-                     (x.User.FirstName + " "
-                    + x.User.LastName + " ("
-                    + x.User.UserName + ")").Contains(term)
+                     (x.User.FirstName + " " + x.User.LastName + " (" + x.User.UserName + ")").Contains(term)
                   || x.User.Email.Contains(term)
                   || x.Subscription.PlanName.Contains(term)
                 );
@@ -134,33 +146,56 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         {
             var sub = await _db.Subscriptions.FindAsync(id);
             if (sub == null) return NotFound();
-            sub.IsAutoRenew = !sub.IsAutoRenew;
-            await _db.SaveChangesAsync();
 
-            // Send confirmation email
-            var user = await _db.TblUsers.FindAsync(sub.UserId);
-            if (user != null)
+            if (IsFree(sub))
+                return RedirectToIndexWithError("Free plan does not support auto-renew.");
+
+            try
             {
-                var subject = "Your subscription auto-renew status has been updated";
-                var status = sub.IsAutoRenew ? "enabled" : "disabled";
-                var message = $@"Hello {user.FirstName},
+                sub.IsAutoRenew = !sub.IsAutoRenew;
+                await _db.SaveChangesAsync();
 
-                As per your request, our moderator team has {status} the auto-renew for your subscription (ID: {sub.Id}).
-                Your next billing date remains {sub.EndDate:MMMM d, yyyy}.
-                
-                If you have any questions or need further assistance, please reply to this email.
-                
-                Warm regards,
-                The SkillSwap Admin Team";
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
+                // Send confirmation email
+                var user = await _db.TblUsers.FindAsync(sub.UserId);
+                if (user != null)
+                {
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Your subscription auto-renew status has been updated";
+
+                    // 3) build your body however you like
+                    var status = sub.IsAutoRenew ? "enabled" : "disabled";
+                    var message = $@"Hello {user.FirstName},
+                        As per your request, our moderator team has {status} the auto-renew for your subscription (ID: {sub.Id}).
+                        Your next billing date remains {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}.
+                        
+                        If you have any questions or need further assistance, please reply to this email.
+                        
+                        Warm regards,
+                        The SkillSwap Admin Team";
+                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                }
+                var uname = user?.UserName ?? "(unknown)";
+                var fullname = user != null
+                               ? $"{user.FirstName} {user.LastName}"
+                               : "(unknown)";
+                TempData["Success"] =
+                $"Moderator has turned {(sub.IsAutoRenew ? "ON" : "OFF")} auto-renew for {uname} ({fullname})’s “{sub.PlanName}” plan.";
+                return RedirectToAction(nameof(Index));
             }
-            var uname = user?.UserName ?? "(unknown)";
-            var fullname = user != null
-                           ? $"{user.FirstName} {user.LastName}"
-                           : "(unknown)";
-            TempData["Success"] =
-      $"Moderator has turned {(sub.IsAutoRenew ? "ON" : "OFF")} auto-renew for {uname} ({fullname})’s “{sub.PlanName}” plan.";
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return RedirectToIndexWithError("Error updating auto-renew.");
+            }
         }
 
         // POST: /Admin/AdminBilling/ForceRenew/5
@@ -170,35 +205,55 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var sub = await _db.Subscriptions.FindAsync(id);
             if (sub == null) return NotFound();
 
-            var start = sub.EndDate;
-            var end = sub.BillingCycle == "yearly"
-                        ? start.AddYears(1)
-                        : start.AddMonths(1);
+            if (IsFree(sub))
+                return RedirectToIndexWithError("Cannot renew the Free plan.");
 
-            await _subs.UpsertAsync(sub.UserId, sub.PlanName, sub.BillingCycle, start, end);
-
-            var user = await _db.TblUsers.FindAsync(sub.UserId);
-            if (user != null)
+            try
             {
-                var subject = "Your subscription has been renewed";
-                var message = $@"Hello {user.FirstName},
+                var start = sub.EndDate;
+                var end = sub.BillingCycle == "yearly"
+                            ? start.AddYears(1)
+                            : start.AddMonths(1);
 
-                At your request, our moderator team has manually renewed your subscription (ID: {sub.Id}).
-                Your new subscription period is from {start:MMMM d, yyyy} to {end:MMMM d, yyyy}.
-                
-                Thank you for continuing to choose SkillSwap.
-                
-                Best regards,
-                The SkillSwap Admin Team";
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
+                await _subs.UpsertAsync(sub.UserId, sub.PlanName, sub.BillingCycle, start, end);
+
+                var user = await _db.TblUsers.FindAsync(sub.UserId);
+                if (user != null)
+                {
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Your subscription has been renewed";
+                    var message = $@"Hello {user.FirstName},
+                        At your request, our moderator team has manually renewed your subscription (ID: {sub.Id}).
+                        Your new subscription period is from {start.ToLocalTime().ToString("MMMM d, yyyy")} to {end.ToLocalTime().ToString("MMMM d, yyyy")}.
+                        
+                        Thank you for continuing to choose SkillSwap.
+                        
+                        Best regards,
+                        The SkillSwap Admin Team";
+                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                }
+                var uname = user?.UserName ?? "(unknown)";
+                var fullname = user != null
+                               ? $"{user.FirstName} {user.LastName}"
+                               : "(unknown)";
+                TempData["Success"] =
+                $"Moderator has manually renewed {uname} ({fullname})’s “{sub.PlanName}” plan until {end:yyyy-MM-dd}.";
+                return RedirectToAction(nameof(Index));
             }
-            var uname = user?.UserName ?? "(unknown)";
-            var fullname = user != null
-                           ? $"{user.FirstName} {user.LastName}"
-                           : "(unknown)";
-            TempData["Success"] =
-      $"Moderator has manually renewed {uname} ({fullname})’s “{sub.PlanName}” plan until {end:yyyy-MM-dd}.";
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return RedirectToIndexWithError("Error forcing renewal.");
+            }
         }
 
         [HttpPost]
@@ -208,21 +263,25 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var sub = await _db.Subscriptions.FindAsync(id);
             if (sub == null) return NotFound();
 
-            // Determine the new end date by subtracting one cycle
-            DateTime newEnd = sub.BillingCycle switch
-            {
-                "yearly" => sub.EndDate.AddYears(-1),
-                "monthly" => sub.EndDate.AddMonths(-1),
-                _ => sub.EndDate.AddMonths(-1)
-            };
+            if (IsFree(sub))
+                return RedirectToIndexWithError("Cannot adjust period on the Free plan.");
 
-            // Never allow end < start
-            if (newEnd <= sub.StartDate)
+            try
             {
-                TempData["Error"] = "Cannot remove a cycle: subscription would end before it began.";
-            }
-            else
-            {
+                // Determine the new end date by subtracting one cycle
+                var newEnd = sub.BillingCycle switch
+                {
+                    "yearly" => sub.EndDate.AddYears(-1),
+                    "monthly" => sub.EndDate.AddMonths(-1),
+                    _ => sub.EndDate.AddMonths(-1)
+                };
+
+                // Never allow end < start
+                if (newEnd <= sub.StartDate)
+                {
+                    TempData["Error"] = "Cannot remove a cycle: subscription would end before it began.";
+                }
+
                 var oldEnd = sub.EndDate;
                 sub.EndDate = newEnd;
                 await _db.SaveChangesAsync();
@@ -230,12 +289,23 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 var user = await _db.TblUsers.FindAsync(sub.UserId);
                 if (user != null)
                 {
-                    var subject = "Your subscription period has been adjusted";
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Your subscription period has been adjusted";
                     var cycleText = sub.BillingCycle == "yearly" ? "year" : "month";
                     var message = $@"Hello {user.FirstName},
 
                         Per your request, our moderator team has reduced your subscription (ID: {sub.Id}) by one {cycleText}.
-                        Previously set to end on {oldEnd:MMMM d, yyyy}, it will now end on {newEnd:MMMM d, yyyy}.
+                        Previously set to end on {oldEnd.ToLocalTime().ToString("MMMM d, yyyy")}, it will now end on {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
                         
                         If this isn’t correct, please let us know.
                         
@@ -248,11 +318,14 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                                ? $"{user.FirstName} {user.LastName}"
                                : "(unknown)";
                 TempData["Success"] =
-        $"Moderator has reduced {uname} ({fullname})’s “{sub.PlanName}” plan by one " +
-        $"{(sub.BillingCycle == "yearly" ? "year" : "month")} — now ending on {newEnd:yyyy-MM-dd}.";
+                $"Moderator has reduced {uname} ({fullname})’s “{sub.PlanName}” plan by one " +
+                $"{(sub.BillingCycle == "yearly" ? "year" : "month")} — now ending on {newEnd:yyyy-MM-dd}.";
+                return RedirectToAction(nameof(Index));
             }
-
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return RedirectToIndexWithError("Error reducing period.");
+            }
         }
 
         [HttpPost]
@@ -280,44 +353,71 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 return RedirectToAction(nameof(Index));
             }
 
-            // Compute remaining time
-            var now = DateTime.UtcNow;
-            var remaining = sub.EndDate > now
-                ? sub.EndDate - now
-                : TimeSpan.Zero;
-            var newEnd = now + remaining;
-
-            // Apply downgrade
-            var oldPlan = sub.PlanName;
-            sub.PlanName = newPlan;
-            sub.StartDate = now;
-            sub.EndDate = newEnd;
-            sub.IsAutoRenew = false;    // turn off auto-renew after downgrade
-
-            await _db.SaveChangesAsync();
-
-            var user = await _db.TblUsers.FindAsync(sub.UserId);
-            if (user != null)
+            try
             {
-                var subject = "Your subscription has been downgraded";
-                var message = $@"Hello {user.FirstName},
+                var now = DateTime.UtcNow;
+                var remaining = sub.EndDate > now ? sub.EndDate - now : TimeSpan.Zero;
+                var oldPlan = sub.PlanName;
+
+                var originalCycle = sub.BillingCycle; 
+                if (newPlan == "Free")
+                {
+                    sub.PlanName = "Free";
+                    sub.BillingCycle = "Free Cycle";
+                    sub.IsAutoRenew = false;
+                    sub.StartDate = now;
+                    sub.EndDate = now;
+                }
+                else
+                {
+                    sub.PlanName = newPlan;
+                    sub.BillingCycle = originalCycle;
+                    sub.IsAutoRenew = false;
+                    sub.StartDate = now;
+                    sub.EndDate = now + remaining;
+                }
+
+                await _db.SaveChangesAsync();
+
+                var user = await _db.TblUsers.FindAsync(sub.UserId);
+                var newEnd = now + remaining;
+                if (user != null)
+                {
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Your subscription has been downgraded";
+                    var message = $@"Hello {user.FirstName},
 
                     As requested, our moderator team has downgraded your subscription (ID: {sub.Id}) from {oldPlan} to {newPlan}.
-                    Your subscription will now run until {newEnd:MMMM d, yyyy}.
+                    Your subscription will now run until {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
                     
                     If you need to make further changes, feel free to contact us.
                     
                     Regards,
                     The SkillSwap Admin Team";
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                }
+                var uname = user?.UserName ?? "(unknown)";
+                var fullname = user != null
+                                   ? $"{user.FirstName} {user.LastName}"
+                                   : "(unknown)";
+                TempData["Success"] =
+                $"Moderator has downgraded {uname} ({fullname})’s plan from “{oldPlan}” to “{newPlan}.”";
+                return RedirectToAction(nameof(Index));
             }
-            var uname = user?.UserName ?? "(unknown)";
-            var fullname = user != null
-                               ? $"{user.FirstName} {user.LastName}"
-                               : "(unknown)";
-            TempData["Success"] =
-      $"Moderator has downgraded {uname} ({fullname})’s plan from “{oldPlan}” to “{newPlan}.”";
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return RedirectToIndexWithError("Error during downgrade.");
+            }
         }
 
         [HttpPost]
@@ -342,48 +442,74 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 return RedirectToAction(nameof(Index));
             }
 
-            // 3) You may want to adjust dates for a plan switch:
-            //    Here we simply keep the remaining time window intact.
-            var now = DateTime.UtcNow;
-            var remaining = sub.EndDate > now
-                          ? sub.EndDate - now
-                          : TimeSpan.Zero;
-            var newEnd = now + remaining;
-
-            // 4) Apply changes
-            var oldPlan = sub.PlanName;
-            var oldCycle = sub.BillingCycle;
-            sub.PlanName = newPlan;
-            sub.BillingCycle = newCycle;
-            sub.StartDate = now;
-            sub.EndDate = newEnd;
-            sub.IsAutoRenew = false;  // turn off to avoid surprise renewals
-
-            await _db.SaveChangesAsync();
-
-            var user = await _db.TblUsers.FindAsync(sub.UserId);
-            if (user != null)
+            try
             {
-                var subject = "Your subscription has been updated";
-                var message = $@"Hello {user.FirstName},
+                // 3) You may want to adjust dates for a plan switch:
+                //    Here we simply keep the remaining time window intact.
+                var now = DateTime.UtcNow;
+                var remaining = sub.EndDate > now ? sub.EndDate - now : TimeSpan.Zero;
+                var oldPlan = sub.PlanName;
+                var oldCycle = sub.BillingCycle;
 
-                Per your request, our moderator team has updated your subscription (ID: {sub.Id}) from {oldPlan} ({oldCycle}) to {newPlan} ({newCycle}).
-                Your subscription will now expire on {newEnd:MMMM d, yyyy}.
-                
-                Thank you for being part of SkillSwap.
-                
-                Best,
-                The SkillSwap Admin Team";
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
+                if (newPlan == "Free")
+                {
+                    sub.PlanName = "Free";
+                    sub.BillingCycle = null;
+                    sub.IsAutoRenew = false;
+                    sub.StartDate = now;
+                    sub.EndDate = now;
+                }
+                else
+                {
+                    sub.PlanName = newPlan;
+                    sub.BillingCycle = newCycle;
+                    sub.StartDate = now;
+                    sub.EndDate = now + remaining;
+                    sub.IsAutoRenew = false;
+                }
+
+                await _db.SaveChangesAsync();
+
+                var user = await _db.TblUsers.FindAsync(sub.UserId);
+                var newEnd = now + remaining;
+                if (user != null)
+                {
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await _subs.GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] Your subscription has been updated";
+                    var message = $@"Hello {user.FirstName},
+
+                        Per your request, our moderator team has updated your subscription (ID: {sub.Id}) from {oldPlan} ({oldCycle}) to {newPlan} ({newCycle}).
+                        Your subscription will now expire on {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
+                        
+                        Thank you for being part of SkillSwap.
+                        
+                        Best,
+                        The SkillSwap Admin Team";
+                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                }
+                var uname = user?.UserName ?? "(unknown)";
+                var fullname = user != null
+                                   ? $"{user.FirstName} {user.LastName}"
+                                   : "(unknown)";
+                TempData["Success"] =
+                      $"Moderator has updated {uname} ({fullname})’s subscription from “{oldPlan} ({oldCycle})” " +
+                      $"to “{newPlan} ({newCycle}).”";
+                return RedirectToAction(nameof(Index));
             }
-            var uname = user?.UserName ?? "(unknown)";
-            var fullname = user != null
-                               ? $"{user.FirstName} {user.LastName}"
-                               : "(unknown)";
-            TempData["Success"] =
-                  $"Moderator has updated {uname} ({fullname})’s subscription from “{oldPlan} ({oldCycle})” " +
-                  $"to “{newPlan} ({newCycle}).”";
-            return RedirectToAction(nameof(Index));
+            catch
+            {
+                return RedirectToIndexWithError("Error editing subscription.");
+            }
         }
 
         [HttpGet, Route("Admin/AdminBilling/History/{userId}")]
@@ -545,7 +671,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var rawNewSubs = await _db.Subscriptions
                 .Where(s => s.StartDate >= cutoff)
                 .GroupBy(s => new { s.StartDate.Year, s.StartDate.Month })
-                .Select(g => new {
+                .Select(g => new
+                {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
                     Count = g.Count()
@@ -566,7 +693,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var rawCancels = await _db.CancellationRequests
                 .Where(c => c.RequestedAt >= cutoff)
                 .GroupBy(c => new { c.RequestedAt.Year, c.RequestedAt.Month })
-                .Select(g => new {
+                .Select(g => new
+                {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
                     Count = g.Count()
@@ -605,7 +733,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 .Where(s => s.StartDate >= cutoff
                          && s.StartDate != s.EndDate.AddMonths(-1))
                 .GroupBy(s => new { s.StartDate.Year, s.StartDate.Month })
-                .Select(g => new {
+                .Select(g => new
+                {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
                     Count = g.Count()

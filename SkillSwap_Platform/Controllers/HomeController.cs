@@ -116,8 +116,11 @@ public class HomeController : Controller
 
         try
         {
-            //await _newsletter.UnsubscribeAsync(email);
-            ViewBag.Message = $"✅ {email} has been removed from our mailing list.";
+            bool removed = await _newsletter.UnsubscribeAsync(email);
+            if (removed)
+                ViewBag.Message = $"✅ {email} has been successfully unsubscribed from our mailing list.";
+            else
+                ViewBag.Message = $"⚠️ {email} was not found in our mailing list.";
         }
         catch (Exception ex)
         {
@@ -394,7 +397,9 @@ public class HomeController : Controller
                 //UserCountryIso = countryIso,
                 //UserCountryName = countryName,
                 IsVerified = isVerified,
-                RecentBlogPosts = (await _blogService.ListAsync(1, 3)).ToList()
+                RecentBlogPosts = (await _blogService.ListAsync(1, 3))
+                        .Items
+                        .ToList()
             };
 
             // 1) TOP SKILLS overall (by # of offers)
@@ -980,6 +985,7 @@ public class HomeController : Controller
     // POST: /Home/Login
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequireHttps]                      // ensure this endpoint is always HTTPS
     public async Task<IActionResult> Login(UserLoginVM model, string returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
@@ -990,13 +996,50 @@ public class HomeController : Controller
 
         try
         {
-            // Validate user credentials.
-            var user = await _userService.ValidateUserCredentialsAsync(model.LoginName, model.Password);
+            // 1) Look up the user by login name or email
+            var user = await _userService.GetUserByUserNameOrEmailAsync(model.LoginName, model.LoginName);
             if (user == null)
             {
-                TempData["ErrorMessage"] = "❌ Invalid username or password.";
+                // generic error, don’t reveal if username or password was bad
+                _logger.LogWarning("Login failed for unknown user '{LoginName}'", model.LoginName);
+                TempData["ErrorMessage"] = "Invalid username or password.";
                 return View(model);
             }
+
+            // 2) Check for lockout
+            if (user.LockoutEndTime.HasValue && user.LockoutEndTime > DateTime.UtcNow)
+            {
+                var unlock = TimeZoneInfo.ConvertTimeFromUtc(
+                    user.LockoutEndTime.Value,
+                    TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata"));
+
+                TempData["ErrorMessage"] = $"Your account is locked until {unlock:dd MMM yyyy hh:mm tt} IST.";
+                return View(model);
+            }
+
+            // 3) Validate credentials via your service (which uses parameterized EF under the hood)
+            var authenticatedUser = await _userService.ValidateUserCredentialsAsync(model.LoginName, model.Password);
+            if (authenticatedUser == null)
+            {
+                // increment failure count
+                user.FailedOtpAttempts++;
+
+                if (user.FailedOtpAttempts >= 5)
+                {
+                    user.LockoutEndTime = DateTime.UtcNow.AddMinutes(15);
+                    _logger.LogWarning("User {UserId} locked out until {LockoutEnd}", user.UserId, user.LockoutEndTime);
+                }
+
+                await _dbcontext.SaveChangesAsync();
+
+                TempData["ErrorMessage"] = "Invalid username or password.";
+                return View(model);
+            }
+
+            // 4) Success!  Reset failure counters.
+            user.FailedOtpAttempts = 0;
+            user.LockoutEndTime = null;
+            await _dbcontext.SaveChangesAsync();
 
             // Force a fresh DB fetch to ensure updated user data.
             user = await _userService.GetUserByIdAsync(user.UserId);

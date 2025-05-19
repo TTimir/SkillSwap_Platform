@@ -27,7 +27,9 @@ namespace SkillSwap_Platform.Controllers
             if (page < 1) page = 1;
             try
             {
-                var posts = await _blog.ListAsync(page, PageSize);
+                var paged = await _blog.ListAsync(page, PageSize);
+
+                var posts = paged.Items;
 
                 // Map to lightweight DTO for the feed
                 // project to an anonymous type with camelCase props
@@ -64,7 +66,8 @@ namespace SkillSwap_Platform.Controllers
                 if (post == null) return NotFound();
 
                 // recent 5 posts (excluding the current one)
-                var recent = (await _blog.ListAsync(1, 6))
+                var pagedRecent = await _blog.ListAsync(1, 6);
+                var recent = pagedRecent.Items
                                 .Where(p => p.Id != id)
                                 .Take(5)
                                 .ToList();

@@ -65,7 +65,18 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             var user = await _db.TblUsers.FindAsync(userId);
             if (user != null)
             {
-                var subject = $"✅ Your {planName} subscription is now active!";
+                // 1) figure out their active tier & SLA
+                var activeSub = await GetActiveAsync(user.UserId);
+                var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 2) build a prefixed subject
+                var subject = $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!";
                 var html = $@"
                     <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
                       <h1 style=""color:#2a9d8f;"">🎉 Hi {user.FirstName}, your subscription is live! 🎉</h1>
@@ -123,10 +134,19 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 var user = await _db.TblUsers.FindAsync(userId);
                 if (user != null)
                 {
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
                     var action = isNew ? "activated" : "renewed";
                     var subject = isNew
-                        ? $"✅ Your {planName} subscription is now active!"
-                        : $"🔁 Your {planName} subscription has been renewed!";
+                        ? $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!"
+                        : $"[{supportLabel} · {sla}] 🔁 Your {planName} subscription has been renewed!";
                     var html = $@"
                         <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
                           <h1 style=""color:#2a9d8f;"">{(isNew ? "🎉" : "🔁")} Hi {user.FirstName}, your subscription has been {action}! </h1>
@@ -193,7 +213,18 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 var user = await _db.TblUsers.FindAsync(userId);
                 if (user != null)
                 {
-                    var subject = $"❌ Your subscription auto-renew has been cancelled";
+                    // 1) figure out their active tier & SLA
+                    var activeSub = await GetActiveAsync(user.UserId);
+                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    // 2) build a prefixed subject
+                    var subject = $"[{supportLabel} · {sla}] ❌ Your subscription auto-renew has been cancelled";
                     var html = $@"
                         <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
                           <h1 style=""color:#e76f51;"">Notice: Auto-renew turned off</h1>

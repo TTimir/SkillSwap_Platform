@@ -21,7 +21,8 @@
     flaggedReviews = 0,
     flaggedProfiles = 0,
     flaggedMessages = 0,
-    profileverification = 0;
+    profileverification = 0,
+    adminfailednotifications = 0;
     if (isAdmin)
     {
         try
@@ -103,6 +104,15 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load pending profile verification count");
+        }
+
+        try
+        {
+            adminfailednotifications = await AdminService.GetPendingAdminNotificationsCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load admin failed notification count");
         }
     }
 }
@@ -416,6 +426,13 @@
                             </a>
                         </div>
                         <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminUsers", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminUsers" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-photo mr15"></i>
+                                New Admin/Moderator
+                            </a>
+                        </div>
+                        <div class="sidebar_list_item">
                             <a href="@Url.ActionLink("Dashboard","AdminMining", new { area = "Admin" })"
                                class="d-flex items-center @(currentController=="AdminMining" && currentAction=="Dashboard" ? "-is-active" : "")">
                                 <i class="flaticon-money mr15"></i>
@@ -461,6 +478,18 @@
                                 @if (otpFailures > 0)
                                 {
                                     <span class="badge badge-pill bg-warning ms-auto">@otpFailures</span>
+                                }
+                            </a>
+                        </div>
+
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","AdminNotifications", new { area = "Admin" })"
+                               class="d-flex items-center @(currentController=="AdminNotifications" && currentAction=="Index" ? "-is-active" : "")">
+                                <i class="flaticon-notification mr15"></i>
+                                Admin Notifications (Failed)
+                                @if (adminfailednotifications > 0)
+                                {
+                                    <span class="badge badge-pill bg-danger ms-auto">@adminfailednotifications</span>
                                 }
                             </a>
                         </div>
@@ -734,6 +763,7 @@
                                         <li><a href="@Url.ActionLink("Index","CertificateReview")"><i class="flaticon-document mr10"></i>Review Certificates</a></li>
                                         <li><a href="@Url.ActionLink("Index","MessageReview")"><i class="flaticon-review-1 mr10"></i>Review Messages</a></li>
                                         <li><a href="@Url.ActionLink("Index","OtpLogs")"><i class="flaticon-antivirus mr10"></i>OTP Failures</a></li>
+                                        <li><a href="@Url.ActionLink("Index","AdminNotifications")"><i class="flaticon-notification mr10"></i>Admin Notifications (Failed)</a></li>
                                         <p class="fz15 fw400 ff-heading pl30 mt30">Billings & Cancellations</p>
                                         <li><a href="@Url.ActionLink("Dashboard","AdminBilling")"><i class="flaticon-pay-day mr10"></i>Billing Dashboard</a></li>
                                         <li><a href="@Url.ActionLink("Index","AdminBilling")"><i class="flaticon-receipt mr10"></i>User Membership plans</a></li>

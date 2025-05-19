@@ -150,10 +150,16 @@
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Feed","Blog")"><span class="title">Blogs</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About Us</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Pricing</span></a></li>
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">Discover</span></a>
+                                        <!-- Level Two-->
+                                        <ul>
+                                            <li><a href="@Url.ActionLink("HowItWorks","Home")">How It Works</a></li>
+                                            <li><a href="@Url.ActionLink("Feed","Blog")">News & Tips</a></li>
+                                            <li><a href="@Url.ActionLink("About","Home")">About Us</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Membership Plans</span></a></li>
                                     <li><a class="list-item pe-0" href="@Url.ActionLink("Contact","Home")">Contact</a></li>
                                 </ul>
                             </div>

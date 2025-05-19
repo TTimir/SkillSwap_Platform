@@ -1,10 +1,14 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferFilterVM
 @using System.Security.Claims
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 @{
     ViewData["Title"] = "Swap Offers";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var PlusMember = (await AuthZ.AuthorizeAsync(User, "PlusPlan")).Succeeded;
+    var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
 }
 
 <style>
@@ -341,7 +345,7 @@
             </div>
         </form>
 
-        @if (Model.SuggestedOffers?.Any() == true)
+        @if (ProMember && Model.SuggestedOffers?.Any() == true)
         {
             foreach (var offer in Model.SuggestedOffers)
             {
@@ -458,16 +462,19 @@
             }
         }
 
-        @if (User.Identity.IsAuthenticated)
+        @if (PlusMember)
         {
-            @if (Model != null)
+            @if (User.Identity.IsAuthenticated)
             {
-                <section class="mb-1">
-                    <h3>Offers Near You</h3>
-                    <div id="nearbyOffers">
-                        <p>Hang tight, finding swap offers near you…</p>
-                    </div>
-                </section>
+                @if (Model != null)
+                {
+                    <section class="mb-1">
+                        <h3>Offers Near You</h3>
+                        <div id="nearbyOffers">
+                            <p>Hang tight, finding swap offers near you…</p>
+                        </div>
+                    </section>
+                }
             }
         }
 

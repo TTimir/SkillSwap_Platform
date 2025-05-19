@@ -14,9 +14,12 @@
     var canAdvanced = (await AuthZ.AuthorizeAsync(User, "GrowthPlan")).Succeeded;
 
     var hasAutoRenew = Model.IsAutoRenew;
-    var hasActiveSub = Model.CurrentSubscription?.IsActive == true;
+
     // pull the cancelled‐at string (or null)
     var cancelledAt = TempData["CancelInfo"] as string;
+
+    bool isFreePlan = Model.CurrentSubscription?.PlanName?.Equals("Free", StringComparison.OrdinalIgnoreCase) ?? true;
+    bool hasPaidSub = Model.CurrentSubscription != null && !isFreePlan;
 }
 
 <style>
@@ -138,11 +141,11 @@
                 </div>
 
                 <!-- Right side: buttons -->
-                <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                    @if (hasActiveSub)
+                <div class="col-md-5 mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+                    @if (hasPaidSub)
                     {
-                        <a href="@Url.Action("Manage","Billing")" class="ud-btn btn-thm ms-2">
-                            View Billings <i class="fal fa-arrow-right-long"></i>
+                        <a href="@Url.Action("BillingHistory","Billing")" class="ud-btn btn-thm ms-2">
+                            Manage Billings <i class="fal fa-arrow-right-long"></i>
                         </a>
                     }
                     else
@@ -151,7 +154,7 @@
                             Upgrade Now <i class="fal fa-arrow-right-long"></i>
                         </a>
                     }
-                    @if (hasAutoRenew)
+                    @if (hasPaidSub && hasAutoRenew)
                     {
                         <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
                                 style="border:0"

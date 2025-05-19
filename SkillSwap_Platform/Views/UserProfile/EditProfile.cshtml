@@ -667,6 +667,10 @@
                     <div class="text-start mb-5">
                         <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
                     </div>
+                    <a class="ms-2"
+                       href="@Url.Action("UnsubscribeNewsletter", "Home", new { email = Model.PersonalDetails.Email })">
+                        Unsubscribe
+                    </a>
                 </div>
             </div>
         }

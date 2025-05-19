@@ -22,5 +22,6 @@ public partial class Subscription
 
     [NotMapped]
     public bool IsActive => EndDate > DateTime.UtcNow;
+
     public virtual ICollection<CancellationRequest> CancellationRequests { get; set; } = new List<CancellationRequest>();
 }

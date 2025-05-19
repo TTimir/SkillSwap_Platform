@@ -17,6 +17,8 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<AdminNotification> AdminNotifications { get; set; }
+
     public virtual DbSet<CancellationRequest> CancellationRequests { get; set; }
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
@@ -138,6 +140,15 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AdminNotification>(entity =>
+        {
+            entity.ToTable("AdminNotification");
+
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Subject).HasMaxLength(256);
+            entity.Property(e => e.ToEmail).HasMaxLength(256);
+        });
+
         modelBuilder.Entity<CancellationRequest>(entity =>
         {
             entity.Property(e => e.RequestedAt).HasDefaultValueSql("(sysutcdatetime())");

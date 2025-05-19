@@ -3,8 +3,8 @@
     // base monthly prices
     var starterMonthly = 0m;
     var premiumMonthly = 99m;
-    var proMonthly = 299m;
-    var growthMonthly = 499m;
+    var proMonthly = 149m;
+    var growthMonthly = 249m;
     // apply 19.6% discount for yearly equivalent monthly rate
     Func<decimal, decimal> toYearlyMonthly = m => (int)Math.Round(m * (1 - 0.196m), 0);
 }
@@ -45,18 +45,26 @@
                             <span class="price-value">₹@starterMonthly</span>
                             <small>/ monthly</small>
                         </h1>
-                        <h4 class="package_title mt-2">Free Plan</h4>
+                        <h4 class="package_title mt-2">Freebie Plan</h4>
                     </div>
                     <div class="details">
                         <p class="text mb30">Start swapping with zero cost and no limits.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li>Unlimited skill swaps</li>
                             <li>Global matching</li>
-                            <li>Basic profile listing</li>
                             <li>Access to shared resources</li>
-                            <li>1 verification request (lifetime)</li>
+                            <li>Basic profile listing</li>
+                            <li>
+                                1 verification request <strong>(lifetime)</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="A single, one-time verification request for your account.">
+                                </i>
+                            </li>
                             <li>Email support (5-day SLA)</li>
                         </ul>
+                        <br />
                         <div class="d-grid">
                             @if (User.Identity.IsAuthenticated)
                             {
@@ -77,7 +85,7 @@
 
             <!-- Premium -->
             <div class="col-sm-6 col-xl-3">
-                <div class="pricing_packages active text-center bdrs16"
+                <div class="pricing_packages text-center bdrs16"
                      data-monthly="@premiumMonthly"
                      data-yearly="@toYearlyMonthly(premiumMonthly)">
                     <div class="heading mb10">
@@ -90,11 +98,18 @@
                     <div class="details">
                         <p class="text mb30">Stand out with local suggestions & featured slots.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
-                            <li>Everything in Starter, plus:</li>
+                            <li>Everything in Freebie, plus:</li>
                             <li>Nearby & global matching</li>
-                            <li>Activity access</li>
-                            <li>1 verification request/month</li>
-                            <li>1× token boost</li>
+                            <li>Recent Activity access</li>
+                            <li>
+                                1 verification request <strong>/ month</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="One verification request per calendar month. If declined, you may re-apply next month.">
+                                </i>
+                            </li>
+                            <li>1.25× token boost</li>
                             <li>Email support (72 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
                         </ul>
@@ -113,9 +128,10 @@
 
             <!-- Pro -->
             <div class="col-sm-6 col-xl-3">
-                <div class="pricing_packages text-center bdrs16"
+                <div class="pricing_packages active text-center bdrs16"
                      data-monthly="@proMonthly"
                      data-yearly="@toYearlyMonthly(proMonthly)">
+                    <div class="recommend-ribbon"><span>Best Value</span></div>
                     <div class="heading mb10">
                         <h1 class="text2">
                             <span class="price-value">₹@proMonthly</span>
@@ -128,9 +144,9 @@
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li>Everything in Plus, additionally:</li>
                             <li>Priority matching nearby</li>
-                            <li>Calendar integration</li>
                             <li>Basic analytics</li>
-                            <li>1.25× token boost</li>
+                            <li>Calendar integration</li>
+                            <li>1.5× token boost</li>
                             <li>Email support (48 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
                         </ul>
@@ -162,9 +178,16 @@
                         <p class="text mb30">Exports, insights & VIP support, your all-access pass.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li> Everything in Pro, plus:</li>
-                            <li> 2 verification requests/month</li>
-                            <li> 1.5× token boost</li>
                             <li> Advanced analytics</li>
+                            <li>
+                                2 verification requests <strong>/ month</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="Up to two verification requests per calendar month. Any additional requests open next month.">
+                                </i>
+                            </li>
+                            <li> 2× token boost</li>
                             <li> Data export & custom alerts</li>
                             <li> Email support  (24 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
@@ -278,3 +301,33 @@
               .addEventListener('change', togglePricing);
     });
 </script>
+
+<style>
+    .recommend-ribbon {
+        width: 140px;
+        height: 140px;
+        overflow: hidden;
+        position: absolute;
+        top: -12px;
+        right: -12px;
+        pointer-events: none;
+    }
+
+        .recommend-ribbon span {
+            position: absolute;
+            display: block;
+            width: 200px;
+            padding: 8px 0;
+            background: linear-gradient(135deg, #00b894, #6c5ce7);
+            color: #fff;
+            font-weight: 700;
+            font-size: .8rem;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(45deg);
+            top: 25px;
+            right: -50px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            pointer-events: all;
+        }
+</style>
