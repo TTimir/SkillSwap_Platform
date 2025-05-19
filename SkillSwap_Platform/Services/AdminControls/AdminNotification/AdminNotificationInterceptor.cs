@@ -5,6 +5,9 @@ using SkillSwap_Platform.Services.Email;
 using System.Text;
 using SkillSwap_Platform.Models.ViewModels.ProfileVerificationVM;
 using Humanizer;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Skill_Swap.Models;
+using System.Diagnostics;
 
 namespace SkillSwap_Platform.Services.AdminControls.AdminNotification
 {
@@ -12,122 +15,157 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminNotification
     {
         private readonly IEmailService _email;
         private readonly IHttpContextAccessor _http;
-        private readonly SkillSwapDbContext _db;
+        private readonly ILogger<AdminNotificationInterceptor> _log;
+
+        // NEW: cache admin emails & track when we last refreshed
+        private List<string>? _adminEmails;
+        private DateTime _lastRefresh = DateTime.MinValue;
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
 
         public AdminNotificationInterceptor(
             IEmailService email,
             IHttpContextAccessor httpAccessor,
-            SkillSwapDbContext db)
+            ILogger<AdminNotificationInterceptor> log)
         {
             _email = email;
             _http = httpAccessor;
-            _db = db;
+            _log = log;
         }
 
-        public override async ValueTask<InterceptionResult<int>>
-            SavingChangesAsync(DbContextEventData eventData,
-                               InterceptionResult<int> result,
-                               CancellationToken cancellationToken = default)
+        public override InterceptionResult<int> SavingChanges(
+            DbContextEventData eventData,
+            InterceptionResult<int> result)
         {
             var ctx = eventData.Context!;
-            // 1) collect all *new* entities in the ChangeTracker
-            var added = ctx.ChangeTracker
-                           .Entries()
-                           .Where(e => e.State == EntityState.Added)
-                           .Select(e => e.Entity)
-                           .ToList();
+            var sw = Stopwatch.StartNew();
 
-            // 2) build a list of “events” we need to email
-            var notifications = new List<(string Subject, string Body)>();
-
-            foreach (var e in added)
+            // A) Refresh admin email list only every _cacheDuration
+            if (_adminEmails == null || DateTime.UtcNow - _lastRefresh > _cacheDuration)
             {
-                switch (e)
-                {
-                    case TblOfferFlag f:
-                        notifications.Add(BuildFlagNotification("Offer", f.FlaggedDate));
-                        break;
-                    case TblReview r when r.IsFlagged:
-                        notifications.Add(BuildFlagNotification("Review", r.FlaggedDate));
-                        break;
-                    case TblReviewReply rr when rr.IsFlagged:
-                        notifications.Add(BuildFlagNotification("Review Reply", rr.FlaggedDate));
-                        break;
-                    case TblUserCertificate c:
-                        notifications.Add((
-                          Subject: "🆕 Certificate Pending",
-                          Body: $@"
-                        <p>A new user certificate (ID {c.CertificateId}) is awaiting your approval.</p>
+                _adminEmails = ctx.Set<TblUserRole>()
+                                  .Include(ur => ur.Role)
+                                  .Include(ur => ur.User)
+                                  .Where(ur => ur.Role.RoleName == "Admin"
+                                            || ur.Role.RoleName == "Moderator")
+                                  .Select(ur => ur.User.Email)
+                                  .Distinct()
+                                  .ToList();
+                _lastRefresh = DateTime.UtcNow;
+            }
+
+            // B) Gather notifications from only relevant new entities
+            var notifications = new List<(string Subject, string BodyHtml)>();
+
+            // Offer flags
+            foreach (var f in ctx.ChangeTracker.Entries<TblOfferFlag>()
+                               .Where(e => e.State == EntityState.Added)
+                               .Select(e => e.Entity))
+            {
+                notifications.Add(BuildFlagNotification("Offer", f.FlaggedDate));
+            }
+
+            // Review flags
+            foreach (var r in ctx.ChangeTracker.Entries<TblReview>()
+                               .Where(e => e.State == EntityState.Added && e.Entity.IsFlagged)
+                               .Select(e => e.Entity))
+            {
+                notifications.Add(BuildFlagNotification("Review", r.FlaggedDate));
+            }
+
+            // Review Reply flags
+            foreach (var rr in ctx.ChangeTracker.Entries<TblReviewReply>()
+                                .Where(e => e.State == EntityState.Added && e.Entity.IsFlagged)
+                                .Select(e => e.Entity))
+            {
+                notifications.Add(BuildFlagNotification("Review Reply", rr.FlaggedDate));
+            }
+
+            // Certificate pending
+            foreach (var c in ctx.ChangeTracker.Entries<TblUserCertificate>()
+                                .Where(e => e.State == EntityState.Added)
+                                .Select(e => e.Entity))
+            {
+                notifications.Add((
+                    Subject: "🆕 Certificate Pending",
+                    BodyHtml: $@"
+                        <p>Certificate ID {c.CertificateId} awaits approval.</p>
                         <p><a href=""{AdminLink("/Admin/Certificates")}"">Review now</a></p>"
-                        ));
-                        break;
-                    case VerificationRequest vr when vr.Status == (int)VerificationStatus.Pending:
-                        notifications.Add((
-                          Subject: "🆕 Verification Request",
-                          Body: $@"
-                        <p>User {vr.UserId} has requested verification.</p>
-                        <p><a href=""{AdminLink("/Admin/VerificationRequests")}"">Review now</a></p>"
-                        ));
-                        break;
-                    case TblTokenTransaction tx
-                        when tx.TxType == "Hold" && !tx.IsReleased:
-                        notifications.Add((
-                          Subject: "🆕 Escrow Transaction",
-                          Body: $@"
-                        <p>Transaction {tx.TransactionId} is now on hold for {tx.Amount} tokens.</p>
-                        <p><a href=""{AdminLink("/Admin/Escrow")}"">Review now</a></p>"
-                        ));
-                        break;
-                    case OtpAttempt oa when !oa.WasSuccessful:
-                        notifications.Add((
-                          Subject: "⚠️ OTP Failure",
-                          Body: $@"
-                        <p>User {oa.UserId} failed an OTP at {oa.AttemptedAt:yyyy-MM-dd HH:mm} UTC.</p>"
-                        ));
-                        break;
-                }
+                ));
             }
 
-            // 3) let EF save to the database
-            var saved = await base.SavingChangesAsync(eventData, result, cancellationToken);
-
-            var notifyRoles = await _db.TblRoles
-             .Where(r => r.RoleName == "Admin" || r.RoleName == "Moderator")
-             .Select(r => r.RoleId)
-             .ToListAsync(cancellationToken);
-
-            var toEmails = await _db.TblUserRoles
-                        .Where(ur => notifyRoles.Contains(ur.RoleId))
-                        .Select(ur => ur.User.Email)
-                        .Distinct()
-                        .ToListAsync(cancellationToken);
-
-            foreach (var note in notifications)
+            // Verification requests
+            foreach (var vr in ctx.ChangeTracker.Entries<VerificationRequest>()
+                                 .Where(e => e.State == EntityState.Added
+                                           && e.Entity.Status == (int)VerificationStatus.Pending)
+                                 .Select(e => e.Entity))
             {
-                foreach (var to in toEmails)
-                {
-                    _db.AdminNotifications.Add(new Models.AdminNotification
-                    {
-                        ToEmail = to,
-                        Subject = note.Subject,
-                        Body = WrapInStandardTemplate(note.Body),
-                        CreatedAtUtc = DateTime.UtcNow
-                    });
-                }
+                notifications.Add((
+                    Subject: "🆕 Verification Request",
+                    BodyHtml: $@"
+                        <p>User {vr.UserId} requested verification.</p>
+                        <p><a href=""{AdminLink("/Admin/VerificationRequests")}"">Review now</a></p>"
+                ));
             }
-            await _db.SaveChangesAsync(cancellationToken);
 
-            return saved;
+            // Escrow holds
+            foreach (var tx in ctx.ChangeTracker.Entries<TblTokenTransaction>()
+                                 .Where(e => e.State == EntityState.Added
+                                           && e.Entity.TxType == "Hold"
+                                           && !e.Entity.IsReleased)
+                                 .Select(e => e.Entity))
+            {
+                notifications.Add((
+                    Subject: "🆕 Escrow Transaction",
+                    BodyHtml: $@"
+                        <p>Transaction {tx.TransactionId} on hold for {tx.Amount} tokens.</p>
+                        <p><a href=""{AdminLink("/Admin/Escrow")}"">Review now</a></p>"
+                ));
+            }
+
+            // OTP failures
+            foreach (var oa in ctx.ChangeTracker.Entries<OtpAttempt>()
+                                 .Where(e => e.State == EntityState.Added
+                                           && !e.Entity.WasSuccessful)
+                                 .Select(e => e.Entity))
+            {
+                notifications.Add((
+                    Subject: "⚠️ OTP Failure",
+                    BodyHtml: $@"
+                        <p>User {oa.UserId} failed OTP at {oa.AttemptedAt:yyyy-MM-dd HH:mm} UTC.</p>"
+                ));
+            }
+
+            // C) Enqueue AdminNotification rows if any
+            if (notifications.Count > 0)
+            {
+                foreach (var (subject, bodyHtml) in notifications)
+                    foreach (var toEmail in _adminEmails!)
+                    {
+                        ctx.Set<SkillSwap_Platform.Models.AdminNotification>().Add(
+                            new SkillSwap_Platform.Models.AdminNotification
+                            {
+                                ToEmail = toEmail,
+                                Subject = subject,
+                                Body = WrapInStandardTemplate(bodyHtml),
+                                CreatedAtUtc = DateTime.UtcNow
+                            });
+                    }
+            }
+
+            sw.Stop();
+            _log.LogDebug("AdminNotificationInterceptor took {Elapsed}ms", sw.ElapsedMilliseconds);
+
+            return base.SavingChanges(eventData, result);
         }
 
         private (string Subject, string Body) BuildFlagNotification(string what, DateTime? when)
         {
             when ??= DateTime.UtcNow;
             return (
-              Subject: $"🚩 New {what} Flagged",
-              Body: $@"
-            <p>{what} was flagged at {when?.ToLocalTime().ToString("yyyy-MM-dd HH:mm tt")} IST.</p>
-            <p><a href=""{AdminLink($"/AdminDashboard/Index")}"">Review it now</a></p>"
+                Subject: $"🚩 New {what} Flagged",
+                Body: $@"
+                    <p>{what} flagged at {when.Value.ToLocalTime():yyyy-MM-dd HH:mm tt} IST.</p>
+                    <p><a href=""{AdminLink("/AdminDashboard/Index")}"">Review</a></p>"
             );
         }
 
@@ -137,7 +175,8 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminNotification
             sb.Append("<html><body>");
             sb.Append("<h2>SkillSwap Admin Notification</h2>");
             sb.Append(innerHtml);
-            sb.Append("<hr/><p><em>Please keep this email confidential.  If you did not expect this notification, contact <a href=\"mailto:skillswap360@gmail.com\">skillswap360@gmail.com</a> immediately.</em></p>");
+            sb.Append("<hr/><p><em>If you did not expect this, contact ");
+            sb.Append("<a href=\"mailto:skillswap360@gmail.com\">skillswap360@gmail.com</a>.</em></p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }

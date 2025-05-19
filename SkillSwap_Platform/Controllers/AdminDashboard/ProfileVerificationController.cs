@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {
-    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin, Moderator")]
     [Route("Admin/[controller]")]
     [Route("Admin/[controller]/[action]")]
     public class ProfileVerificationController : Controller

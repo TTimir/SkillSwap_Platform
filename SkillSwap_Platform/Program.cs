@@ -152,6 +152,12 @@ builder.Services.AddDbContext<SkillSwapDbContext>((sp, opt) =>
        .AddInterceptors(sp.GetRequiredService<AdminNotificationInterceptor>())
 );
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("StaffOnly", policy =>
+        policy.RequireRole("Admin", "Moderator", "Support Agent"));
+});
+
 builder.Services
     .AddTransient<IAuthorizationHandler, MinimumTierHandler>()
     .AddAuthorization(options =>
