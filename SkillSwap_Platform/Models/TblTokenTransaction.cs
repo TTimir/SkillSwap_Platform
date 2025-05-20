@@ -23,6 +23,24 @@ public partial class TblTokenTransaction
 
     public bool IsReleased { get; set; }
 
+    public string? AdminAdjustmentReason { get; set; }
+
+    public string? AdminAdjustmentType { get; set; }
+
+    public int? AdminUserId { get; set; }
+
+    public decimal? OldBalance { get; set; }
+
+    public decimal? NewBalance { get; set; }
+
+    public bool RequiresApproval { get; set; }
+
+    public bool? IsApproved { get; set; }
+
+    public int? ApprovedByUserId { get; set; }
+
+    public DateTime? ApprovedAt { get; set; }
+
     public virtual TblExchange? Exchange { get; set; }
 
     public virtual TblUser? FromUser { get; set; }

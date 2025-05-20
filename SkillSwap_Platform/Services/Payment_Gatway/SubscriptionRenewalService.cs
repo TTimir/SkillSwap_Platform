@@ -27,11 +27,11 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 var service = scope.ServiceProvider.GetRequiredService<ISubscriptionService>();
 
                 // find ended subscriptions that still wanted auto-renew
-                var toRenew = await db.Subscriptions
-                    //.Where(s => s.EndDate <= DateTime.UtcNow && s.IsAutoRenew)
+                var due = await db.Subscriptions
+                    .Where(s => s.EndDate <= DateTime.UtcNow && s.IsAutoRenew)
                     .ToListAsync(stoppingToken);
 
-                foreach (var sub in toRenew)
+                foreach (var sub in due)
                 {
                     try
                     {

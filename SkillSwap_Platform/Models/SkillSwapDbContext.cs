@@ -17,6 +17,8 @@ public partial class SkillSwapDbContext : DbContext
     {
     }
 
+    public virtual DbSet<AdminNotification> AdminNotifications { get; set; }
+
     public virtual DbSet<CancellationRequest> CancellationRequests { get; set; }
 
     public virtual DbSet<MiningLog> MiningLogs { get; set; }
@@ -38,6 +40,8 @@ public partial class SkillSwapDbContext : DbContext
     public virtual DbSet<TblBadge> TblBadges { get; set; }
 
     public virtual DbSet<TblBadgeAward> TblBadgeAwards { get; set; }
+
+    public virtual DbSet<TblBlogPost> TblBlogPosts { get; set; }
 
     public virtual DbSet<TblContract> TblContracts { get; set; }
 
@@ -136,6 +140,15 @@ public partial class SkillSwapDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AdminNotification>(entity =>
+        {
+            entity.ToTable("AdminNotification");
+
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Subject).HasMaxLength(256);
+            entity.Property(e => e.ToEmail).HasMaxLength(256);
+        });
+
         modelBuilder.Entity<CancellationRequest>(entity =>
         {
             entity.Property(e => e.RequestedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -239,7 +252,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.BillingCycle)
                 .HasMaxLength(10)
                 .HasDefaultValue("monthly");
+            entity.Property(e => e.GatewayOrderId).HasMaxLength(200);
+            entity.Property(e => e.GatewayPaymentId).HasMaxLength(200);
             entity.Property(e => e.IsAutoRenew).HasDefaultValue(true);
+            entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PlanName).HasMaxLength(50);
         });
 
@@ -270,6 +286,24 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.BadgeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__TblBadgeA__Badge__68A8708A");
+        });
+
+        modelBuilder.Entity<TblBlogPost>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tblBlogP__3214EC073374D83A");
+
+            entity.ToTable("tblBlogPosts");
+
+            entity.Property(e => e.CoverImagePath).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Summary).HasMaxLength(2000);
+            entity.Property(e => e.Tags).HasMaxLength(500);
+            entity.Property(e => e.Title).HasMaxLength(200);
+
+            entity.HasOne(d => d.Author).WithMany(p => p.TblBlogPosts)
+                .HasForeignKey(d => d.AuthorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BlogPosts_TblUsers");
         });
 
         modelBuilder.Entity<TblContract>(entity =>
@@ -1013,9 +1047,13 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.TransactionId).HasName("PK__TblToken__55433A6B698057C6");
 
+            entity.Property(e => e.AdminAdjustmentReason).HasMaxLength(256);
+            entity.Property(e => e.AdminAdjustmentType).HasMaxLength(50);
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 6)");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Description).HasMaxLength(200);
+            entity.Property(e => e.NewBalance).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.OldBalance).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TxType)
                 .HasMaxLength(50)
                 .IsUnicode(false);

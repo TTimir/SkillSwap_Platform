@@ -48,6 +48,7 @@ namespace SkillSwap_Platform.Models.ViewModels
         public List<string> TopCountrySkills { get; set; } = new();
         public List<string> ProjectCatalog { get; set; } = new();
         public List<OfferCardVM> GoodSwaps { get; set; } = new();
+        public List<BlogPost> RecentBlogPosts { get; set; }
 
 
         public string UserCountryIso { get; set; }      // e.g. "US"

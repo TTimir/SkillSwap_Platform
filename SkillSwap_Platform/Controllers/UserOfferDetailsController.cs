@@ -28,13 +28,15 @@ namespace SkillSwap_Platform.Controllers
         private readonly IMatchmakingService _matchSvc;
         private readonly ILogger<UserOfferManageController> _logger;
         private readonly IOfferFlagService _svc;
+        private readonly IAuthorizationService _authZ;
 
-        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc, IMatchmakingService offerMatchService)
+        public UserOfferDetailsController(SkillSwapDbContext context, ILogger<UserOfferManageController> logger, IOfferFlagService svc, IMatchmakingService offerMatchService, IAuthorizationService authZ)
         {
             _context = context;
             _matchSvc = offerMatchService;
             _logger = logger;
             _svc = svc;
+            _authZ = authZ;
         }
 
         #region Offer Details
@@ -671,14 +673,19 @@ namespace SkillSwap_Platform.Controllers
                 IReadOnlyList<OfferCardVM> suggestedCards = Array.Empty<OfferCardVM>();
                 if (User.Identity.IsAuthenticated)
                 {
-                    var uid = _context.TblUsers
+                    // Only fetch suggestions for Pro or Growth (because Growth ≥ Pro)
+                    var authResult = await _authZ.AuthorizeAsync(User, "ProPlan");
+                    if (authResult.Succeeded)
+                    {
+                        var uid = _context.TblUsers
                         .Where(u => u.UserName == User.Identity.Name)
                         .Select(u => (int?)u.UserId)
                         .FirstOrDefault();
 
-                    if (uid.HasValue)
-                        suggestedCards = await _matchSvc
-                            .GetSuggestedOffersForUserAsync(uid.Value);
+                        if (uid.HasValue)
+                            suggestedCards = await _matchSvc
+                                .GetSuggestedOffersForUserAsync(uid.Value);
+                    }
                 }
 
                 var textInfo = CultureInfo.CurrentCulture.TextInfo;
@@ -741,7 +748,7 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = (int)Math.Ceiling((double)totalOffers / pageSize)
                 };
 
-                await tx.CommitAsync(); 
+                await tx.CommitAsync();
                 return View("PublicOfferList", vm);
             }
             catch (Exception ex)
@@ -754,7 +761,7 @@ namespace SkillSwap_Platform.Controllers
         }
         #endregion
 
-        [Authorize]
+        [Authorize(Policy = "PlusPlan")]
         [HttpGet]
         public async Task<IActionResult> NearbyOffers(double lat, double lng, int max = 8)
         {
@@ -817,7 +824,7 @@ namespace SkillSwap_Platform.Controllers
                                    : (!string.IsNullOrWhiteSpace(o.Portfolio)
                                         ? JsonConvert.DeserializeObject<List<string>>(o.Portfolio) ?? new List<string>()
                                         : new List<string>());
-                
+
                 aggDict.TryGetValue(o.OfferId, out var a);
 
                 return new OfferCardVM

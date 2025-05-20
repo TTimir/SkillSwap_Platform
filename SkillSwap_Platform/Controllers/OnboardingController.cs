@@ -627,16 +627,16 @@ namespace SkillSwap_Platform.Controllers
                 return View(model);
             }
 
-            // Prevent empty submissions
-            if (string.IsNullOrWhiteSpace(Request.Form["willingSkills"]) || string.IsNullOrWhiteSpace(Request.Form["offeredSkills"]))
+            // Basic SkillPreferences fields
+            var offeredRaw = Request.Form["offeredSkills"].ToString();
+            var willingRaw = Request.Form["willingSkills"].ToString();
+            if (string.IsNullOrWhiteSpace(offeredRaw) || string.IsNullOrWhiteSpace(willingRaw))
             {
                 ViewBag.ErrorMessage = "Please enter at least one skill in each field (Your Offering and Willing).";
                 return View(model);
             }
-
-            // Update basic skill preferences in TblUsers.
-            user.DesiredSkillAreas = Request.Form["willingSkills"];
-            user.OfferedSkillAreas = Request.Form["offeredSkills"];
+            user.OfferedSkillAreas = offeredRaw;
+            user.DesiredSkillAreas = willingRaw;
 
             // Extract offered skills list from the hidden input.
             var offeredSkillsFromBadges = Request.Form["offeredSkills"]
@@ -657,7 +657,15 @@ namespace SkillSwap_Platform.Controllers
                 .Select(s => new { s.Skill.SkillName, s.Skill.SkillCategory }) // Get only relevant fields
                 .ToListAsync();
 
-            List<string> duplicateSkills = new List<string>();
+            var toInsertSkills = new List<TblSkill>();
+            var toInsertUserSkills = new List<TblUserSkill>();
+            var duplicateErrors = new List<string>();
+
+            // Preload all existing global skills into a dictionary for quick lookup
+            var allGlobalSkills = await _context.TblSkills
+                .ToListAsync();
+            var globalSkillLookup = allGlobalSkills
+                .ToDictionary(s => (s.SkillName.ToLower(), s.SkillCategory.ToLower()), s => s);
 
             for (int i = 0; i < offeredSkillNames.Length; i++)
             {
@@ -672,81 +680,57 @@ namespace SkillSwap_Platform.Controllers
                     category = offeredSkillCustomCategories.ElementAtOrDefault(i)?.Trim();
                 }
 
-                // Check if the skill already exists for this user (case-insensitive)
-                bool isDuplicate = existingUserSkills.Any(s =>
-                    s.SkillName.Equals(skillName, StringComparison.OrdinalIgnoreCase) &&
-                    s.SkillCategory.Equals(category, StringComparison.OrdinalIgnoreCase));
-
-                if (isDuplicate)
+                if (existingUserSkills.Any(x =>
+                    x.SkillName.Equals(skillName, StringComparison.OrdinalIgnoreCase) &&
+                    x.SkillCategory.Equals(category, StringComparison.OrdinalIgnoreCase)))
                 {
-                    duplicateSkills.Add($"{skillName} ({category})");
-                    continue; // Skip adding this skill
+                    duplicateErrors.Add($"{skillName} ({category})");
+                    continue;
                 }
 
-                // Map level to integer.
-                int? proficiencyLevel = null;
-                string levelStr = offeredSkillLevels.ElementAtOrDefault(i)?.Trim();
-                if (!string.IsNullOrWhiteSpace(levelStr))
+                // Map proficiency
+                int? prof = offeredSkillLevels.ElementAtOrDefault(i) switch
                 {
-                    switch (levelStr)
-                    {
-                        case "Basic":
-                            proficiencyLevel = 1;
-                            break;
-                        case "Intermediate":
-                            proficiencyLevel = 2;
-                            break;
-                        case "Proficient":
-                            proficiencyLevel = 3;
-                            break;
-                        default:
-                            proficiencyLevel = null;
-                            break;
-                    }
+                    "Basic" => 1,
+                    "Intermediate" => 2,
+                    "Proficient" => 3,
+                    _ => (int?)null
+                };
+
+                // Lookup or stage new global skill
+                TblSkill skillEntity;
+                var key = (skillName.ToLower(), category.ToLower());
+                if (!globalSkillLookup.TryGetValue(key, out skillEntity))
+                {
+                    skillEntity = new TblSkill { SkillName = skillName, SkillCategory = category };
+                    globalSkillLookup[key] = skillEntity;
+                    toInsertSkills.Add(skillEntity);
                 }
 
-                // Check if the skill exists in the global skill table
-                var existingSkill = await _context.TblSkills
-                        .FirstOrDefaultAsync(s => s.SkillName.ToLower() == skillName.ToLower()
-                           && s.SkillCategory.ToLower() == category.ToLower());
-
-                int skillId;
-                if (existingSkill != null)
-                {
-                    skillId = existingSkill.SkillId;
-                }
-                else
-                {
-                    // Create new TblSkill record.
-                    var newSkill = new TblSkill
-                    {
-                        SkillName = skillName,
-                        SkillCategory = category
-                    };
-                    _context.TblSkills.Add(newSkill);
-                    await _context.SaveChangesAsync();
-                    skillId = newSkill.SkillId;
-                }
-
-                // Set IsOffering to true if the offered skills list (from badges) contains this skill.
-                bool isOffering = offeredSkillsFromBadges.Contains(skillName.ToLowerInvariant());
-
-                // Create TblUserSkill record.
-                var userSkill = new TblUserSkill
+                // Create the user-skill link
+                toInsertUserSkills.Add(new TblUserSkill
                 {
                     UserId = userId,
-                    SkillId = skillId,
-                    ProficiencyLevel = proficiencyLevel,
-                    IsOffering = isOffering
-                };
-                _context.TblUserSkills.Add(userSkill);
+                    Skill = skillEntity,           // EF will wire up the FK
+                    ProficiencyLevel = prof,
+                    IsOffering = offeredRaw
+                                      .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(s => s.Trim().ToLower())
+                                      .Contains(skillName.ToLower())
+                });
             }
 
-            if (duplicateSkills.Any())
+            if (duplicateErrors.Any())
             {
-                ViewBag.ErrorMessage = $"The following skills already exist in your profile: {string.Join(", ", duplicateSkills)}";
+                ViewBag.ErrorMessage = "These skills already exist in your profile: "
+                    + string.Join(", ", duplicateErrors);
                 return View(model);
             }
+
+            // Add all new entities in one go
+            if (toInsertSkills.Any())
+                _context.TblSkills.AddRange(toInsertSkills);
+            _context.TblUserSkills.AddRange(toInsertUserSkills);
 
             try
             {
@@ -1373,9 +1357,10 @@ namespace SkillSwap_Platform.Controllers
             var positions = form["experience[position][]"].ToArray();
             var expStartDates = form["experience[start_date][]"].ToArray();
             var expEndDates = form["experience[end_date][]"].ToArray();
+            var isCurrentArr = form["experience[is_current][]"].ToArray();
             var expDescriptions = form["experience[description][]"].ToArray();
 
-            int expCount = new int[] { compNames.Length, positions.Length, expStartDates.Length, expEndDates.Length, expDescriptions.Length }.Max();
+            int expCount = new int[] { compNames.Length, positions.Length, expStartDates.Length, expEndDates.Length, isCurrentArr.Length, expDescriptions.Length }.Max();
 
             if (expCount == 0)
             {
@@ -1390,6 +1375,7 @@ namespace SkillSwap_Platform.Controllers
                 string position = i < positions.Length ? positions[i]?.Trim() : "";
                 string startDateStr = i < expStartDates.Length ? expStartDates[i]?.Trim() : "";
                 string endDateStr = i < expEndDates.Length ? expEndDates[i]?.Trim() : "";
+                bool isCurr = isCurrentArr.ElementAtOrDefault(i) == "true";
                 string expDesc = i < expDescriptions.Length ? expDescriptions[i]?.Trim() : "";
 
                 if (string.IsNullOrWhiteSpace(companyName) &&
@@ -1401,48 +1387,42 @@ namespace SkillSwap_Platform.Controllers
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(position))
+                if (string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(position) || !DateTime.TryParse(startDateStr, out var startDt))
                 {
                     isValid = false;
                     error = $"Both Company and Position are required for experience entry {i + 1}.";
                     break;
                 }
 
-                if (!DateTime.TryParse(startDateStr, out DateTime expStart))
+                DateTime endDt;
+                if (isCurr)
                 {
-                    isValid = false;
-                    error = $"Invalid Start Date for experience entry {i + 1}.";
-                    break;
-                }
-
-                DateTime expEnd;
-                if (!string.IsNullOrWhiteSpace(endDateStr))
-                {
-                    if (!DateTime.TryParse(endDateStr, out expEnd))
-                    {
-                        isValid = false;
-                        error = $"Invalid End Date for experience entry {i + 1}.";
-                        break;
-                    }
+                    endDt = DateTime.UtcNow;
                 }
                 else
                 {
-                    expEnd = DateTime.Now;
+                    if (!DateTime.TryParse(endDateStr, out endDt))
+                    {
+                        isValid = false;
+                        error = $"Invalid end date for experience row {i + 1}.";
+                        break;
+                    }
                 }
 
                 validCount++;
-                double duration = (expEnd - expStart).TotalDays / 365;
-                totalYears += duration;
+                double years = (endDt - startDt).TotalDays / 365;
+                totalYears += years;
 
                 var experience = new TblExperience
                 {
                     UserId = userId,
                     CompanyName = companyName,
                     Position = position,
+                    StartDate = startDt,
+                    EndDate = isCurr ? (DateTime?)null : endDt,
+                    IsCurrent = isCurr,
+                    Years = validCount > 0 ? (decimal?)Math.Round(totalYears, 2) : null,
                     Description = expDesc,
-                    StartDate = expStart,
-                    EndDate = string.IsNullOrWhiteSpace(endDateStr) ? (DateTime?)null : expEnd,
-                    Years = validCount > 0 ? (decimal?)Math.Round(totalYears, 2) : null
                 };
                 _context.TblExperiences.Add(experience);
             }

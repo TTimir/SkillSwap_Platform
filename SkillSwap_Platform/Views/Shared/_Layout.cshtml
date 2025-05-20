@@ -150,9 +150,16 @@
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Home</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a></li>
                                     <li class="visible_list"><a class="list-item" href="@Url.ActionLink("PublicProfileList","UserProfileList")"><span class="title">Swappers</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("HowItWorks","Home")"><span class="title">How It Works</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("About","Home")"><span class="title">About Us</span></a></li>
-                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Pricing</span></a></li>
+                                    <li class="visible_list">
+                                        <a class="list-item" href="#"><span class="title">Discover</span></a>
+                                        <!-- Level Two-->
+                                        <ul>
+                                            <li><a href="@Url.ActionLink("HowItWorks","Home")">How It Works</a></li>
+                                            <li><a href="@Url.ActionLink("Feed","Blog")">News & Tips</a></li>
+                                            <li><a href="@Url.ActionLink("About","Home")">About Us</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="visible_list"><a class="list-item" href="@Url.ActionLink("Pricing","Billing")"><span class="title">Membership Plans</span></a></li>
                                     <li><a class="list-item pe-0" href="@Url.ActionLink("Contact","Home")">Contact</a></li>
                                 </ul>
                             </div>
@@ -227,7 +234,7 @@
                                                 <div class="dropdown-menu">
                                                     <div class="user_setting_content">
                                                         <p class="fz15 fw400 ff-heading mb10 pl30">Start</p>
-                                                        @if (User.IsInRole("Admin"))
+                                                        @if (User.IsInRole("Admin") || User.IsInRole("Moderator") || User.IsInRole("SupportAgent"))
                                                         {
                                                             <a class="dropdown-item"
                                                                asp-area="Admin"
@@ -298,7 +305,7 @@
             <!-- /.mobile-menu -->
             <nav id="menu" class="">
                 <ul>
-                    @if (User.IsInRole("Admin"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("Moderator") || User.IsInRole("SupportAgent"))
                     {
                         <li>
                             <a class="list-item"
@@ -483,12 +490,12 @@
                 </div>
                 <div class="container white-bdrt1 py-4">
                     <div class="row">
-                        <div class="col-sm-6">
-                            <div class="text-center text-lg-start">
+                        <div class="col-sm-12">
+                            <div class="text-center text-lg-center">
                                 <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <!-- <div class="col-sm-6">
                             <div class="footer_bottom_right_btns at-home9 text-center text-lg-end">
                                 <ul class="p-0 m-0">
                                     <li class="list-inline-item">
@@ -509,7 +516,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </section>

@@ -3,6 +3,8 @@ using Microsoft.Extensions.Options;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.BadgeTire;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 using static SkillSwap_Platform.Models.ViewModels.BadgeTire.BadgeDefinition;
 
 namespace SkillSwap_Platform.Services.BadgeTire
@@ -14,12 +16,14 @@ namespace SkillSwap_Platform.Services.BadgeTire
         private readonly List<BadgeDefinition> _defs;
         private const int SwapSavantId = 9;
         private const int MasterofMastersId = 11;
+        private readonly ISubscriptionService _subs;
 
         public BadgeService(
-            SkillSwapDbContext ctx, IEmailService email)
+            SkillSwapDbContext ctx, IEmailService email, ISubscriptionService subscription)
         {
             _ctx = ctx;
             _email = email;
+            _subs = subscription;
 
             // 4.1 Central badge definitions
             _defs = new List<BadgeDefinition>
@@ -85,7 +89,7 @@ namespace SkillSwap_Platform.Services.BadgeTire
                         });
                         _ctx.SaveChanges();
 
-                        SendBadgeAwardEmailAsync(user.Email, user.UserName, def)
+                        SendBadgeAwardEmailAsync(userId, user.Email, user.UserName, def)
                             .ConfigureAwait(false);
                     }
                 }
@@ -98,9 +102,22 @@ namespace SkillSwap_Platform.Services.BadgeTire
             }
         }
 
-        private async Task SendBadgeAwardEmailAsync(string toEmail, string userName, BadgeDefinition def)
+        private async Task SendBadgeAwardEmailAsync(int userId, string toEmail, string userName, BadgeDefinition def)
         {
-            var subject = $"🏅 New Achievement Unlocked: {def.Name}!";
+            // 1) figure out their plan & SLA
+            var sub = await _subs.GetActiveAsync(userId);
+            var plan = sub?.PlanName ?? "Free";
+
+            var (label, sla) = plan switch
+            {
+                "Plus" => ("Plus Support", "72h SLA"),
+                "Pro" => ("Pro Support", "48h SLA"),
+                "Growth" => ("Growth Support", "24h SLA"),
+                _ => ("Free Support", "120h SLA")
+            };
+
+            // 2) prefix subject
+            var subject = $"[{label} · {sla}] 🏅 New Achievement Unlocked: {def.Name}!";
             var html = $@"
                 <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
                   <h1 style=""margin-bottom:0.5em;color:#2a9d8f;"">🎉 Congratulations, {userName}! 🎉</h1>

@@ -1,0 +1,70 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.AdminControl.RegisterConfirmVM
+
+@{
+    ViewData["Title"] = "Confirm New User Email";
+    Layout = null;
+}
+
+<div class="container-fluid">
+    <div class="row align-items-center mb30">
+        <div class="col-lg-9">
+            <div class="dashboard_title_area">
+                <h2>@ViewData["Title"]</h2>
+            </div>
+        </div>
+        <div class="col-lg-3 text-lg-end">
+            <a asp-action="Index" class="ud-btn btn-secondary">
+                <i class="fal fa-arrow-left-long me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                @* validation summary *@
+                <div asp-validation-summary="All" class="alert alart_style_three mb20" role="alert">
+                    <ul class="mb-0">
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@err.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+
+                <form asp-action="RegisterConfirm" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb20">
+                        <p class="m-0">
+                            A one-time code was sent to <strong>@Model.Email</strong>.<br />
+                            It expires at
+                            <strong>@Model.ExpiresAt.ToLocalTime():dd MMM yyyy hh:mm tt</strong>.
+                        </p>
+                    </div>
+
+                    <div class="mb20">
+                        <label asp-for="Otp" class="form-label fw500">
+                            Verification Code <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Otp" class="form-control bdrs3" placeholder="Enter the 6-digit code" />
+                        <span asp-validation-for="Otp" class="text-danger"></span>
+                    </div>
+
+                    <div class="text-start">
+                        <button type="submit" class="ud-btn btn-thm me-2">
+                            Verify & Activate <i class="fal fa-check-circle ms-1"></i>
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section DynamicAdminScript {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -14,9 +14,12 @@
     var canAdvanced = (await AuthZ.AuthorizeAsync(User, "GrowthPlan")).Succeeded;
 
     var hasAutoRenew = Model.IsAutoRenew;
-    var hasActiveSub = Model.CurrentSubscription?.IsActive == true;
+
     // pull the cancelled‐at string (or null)
     var cancelledAt = TempData["CancelInfo"] as string;
+
+    bool isFreePlan = Model.CurrentSubscription?.PlanName?.Equals("Free", StringComparison.OrdinalIgnoreCase) ?? true;
+    bool hasPaidSub = Model.CurrentSubscription != null && !isFreePlan;
 }
 
 <style>
@@ -101,7 +104,7 @@
             <div class="alert alert-info mt-3 d-flex align-items-start" role="alert" style="gap:0.5rem;">
                 <i class="fas fa-info-circle mt-1"></i>
                 <div>
-                    <strong>Heads-up:</strong> Cancelling auto-renew means your plan won’t renew automatically,
+                    <strong>Heads-up:</strong> Cancelling current plan means your plan won’t renew automatically,
                     but you’ll keep full access until 
                     <strong>
                         @(Model.CurrentSubscription != null
@@ -138,11 +141,11 @@
                 </div>
 
                 <!-- Right side: buttons -->
-                <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                    @if (hasActiveSub)
+                <div class="col-md-5 mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+                    @if (hasPaidSub)
                     {
-                        <a href="@Url.Action("Manage","Billing")" class="ud-btn btn-thm ms-2">
-                            View Billings <i class="fal fa-arrow-right-long"></i>
+                        <a href="@Url.Action("BillingHistory","Billing")" class="ud-btn btn-thm ms-2">
+                            Manage Billings <i class="fal fa-arrow-right-long"></i>
                         </a>
                     }
                     else
@@ -151,13 +154,13 @@
                             Upgrade Now <i class="fal fa-arrow-right-long"></i>
                         </a>
                     }
-                    @if (hasAutoRenew)
+                    @if (hasPaidSub && hasAutoRenew)
                     {
                         <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
                                 style="border:0"
                                 data-bs-toggle="modal"
                                 data-bs-target="#cancelModal">
-                            Cancel Auto-Renew
+                            Cancel Plan
                         </button>
                     }
                 </div>
@@ -176,9 +179,8 @@
             </div>
             <div class="modal-body">
                 <textarea name="reason"
-                          class="form-control"
                           rows="4"
-                          placeholder="Let us know why you’re turning off auto-renew…"
+                          placeholder="Let us know why you’re cancelling the plan…"
                           required></textarea>
             </div>
             <div class="modal-footer">

@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {
-    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin, Moderator, Support Agent")]
     [Route("Admin/[controller]")]
     [Route("Admin/[controller]/[action]")]
     public class UserFlagController : Controller

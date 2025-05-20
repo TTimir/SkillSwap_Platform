@@ -122,11 +122,15 @@ public partial class TblUser
 
     public bool IsFlagged { get; set; }
 
+    public bool IsSystemReserveAccount { get; set; }
+
     public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
 
     public virtual ICollection<OtpAttempt> OtpAttempts { get; set; } = new List<OtpAttempt>();
 
     public virtual ICollection<PaymentLog> PaymentLogs { get; set; } = new List<PaymentLog>();
+
+    public virtual ICollection<TblBlogPost> TblBlogPosts { get; set; } = new List<TblBlogPost>();
 
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 

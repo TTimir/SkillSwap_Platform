@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pag
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.Offer_and_Review.ViewModels;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
 
 namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 {
@@ -11,11 +12,12 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
     {
         private readonly SkillSwapDbContext _db;
         private readonly IEmailService _emailService;
-
-        public OfferReviewService(SkillSwapDbContext db, IEmailService email)
+        private readonly ISubscriptionService _subs;
+        public OfferReviewService(SkillSwapDbContext db, IEmailService email, ISubscriptionService subscription)
         {
             _db = db;
             _emailService = email;
+            _subs = subscription;
         }
 
         public async Task<PagedResult<OfferFlagVm>> GetFlaggedOffersAsync(int page, int pageSize)
@@ -385,10 +387,25 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
             await _db.SaveChangesAsync();
 
+            // common helper to build prefix
+            (string label, string sla) GetPrefix(int userId)
+            {
+                var plan = _subs.GetActiveAsync(userId).Result?.PlanName ?? "Free";
+                return plan switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+            }
+            ;
+
             // 4) Notify the **author** that their review is cleared
             if (author != null)
             {
-                var subject = $"Update on your review for “{review.Offer.Title}”";
+                var (label, sla) = GetPrefix(author.UserId);
+                var subject = $"[{label} · {sla}] Update on your review for “{review.Offer.Title}”";
                 var body = $@"
                 Hello {author.FirstName},<br/><br/>
 
@@ -411,7 +428,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             // 5) Acknowledge the **reporter** that the flag was dismissed
             if (reporter != null)
             {
-                var subject = $"Result of your report on “{review.Offer.Title}”";
+                var (label, sla) = GetPrefix(reporter.UserId);
+                var subject = $"[{label} · {sla}] Result of your report on “{review.Offer.Title}”";
                 var body = $@"
                 Hi {reporter.FirstName},<br/><br/>
 
@@ -461,10 +479,24 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
             await _db.SaveChangesAsync();
 
+            // same prefix helper
+            (string label, string sla) GetPrefix(int userId)
+            {
+                var plan = _subs.GetActiveAsync(userId).Result?.PlanName ?? "Free";
+                return plan switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+            }
+            ;
             // 4) Notify the author that the flag was dismissed
             if (author != null)
             {
-                var subject = $"Update on your reply (ID: {replyId})";
+                var (label, sla) = GetPrefix(author.UserId);
+                var subject = $"[{label} · {sla}] Update on your reply (ID: {replyId})";
                 var body = $@"
                 Hello {author.FirstName},<br/><br/>
 
@@ -486,7 +518,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             // 5) Acknowledge the reporter that the flag was dismissed
             if (reporter != null)
             {
-                var subject = $"Result of your report on a reply";
+                var (label, sla) = GetPrefix(author.UserId);
+                var subject = $"[{label} · {sla}] Result of your report on a reply";
                 var body = $@"
                 Hi {reporter.FirstName},<br/><br/>
 
@@ -542,21 +575,30 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 });
                 await _db.SaveChangesAsync();
 
-                // 3a) Notify the review’s author
                 var author = await _db.TblUsers.FindAsync(review.ReviewerId);
+                // prefix again
+                (string label, string sla) = _subs.GetActiveAsync(author.UserId).Result.PlanName switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 3a) Notify the review’s author
                 if (author != null)
                 {
-                    var subject = "Notice: Your review has been removed";
+                    var subject = $"[{label} · {sla}] Notice: Your review has been removed";
                     var body = $@"
-            <p>Hi {author.FirstName},</p>
-            <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
-            <p><strong>Moderator’s note:</strong></p>
-            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-              {moderationNote}
-            </blockquote>
-            <p>If you’d like to appeal or learn more, just reply to this email.</p>
-            <p>— The SkillSwap Support Team</p>
-        ";
+                        <p>Hi {author.FirstName},</p>
+                        <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
+                        <p><strong>Moderator’s note:</strong></p>
+                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                          {moderationNote}
+                        </blockquote>
+                        <p>If you’d like to appeal or learn more, just reply to this email.</p>
+                        <p>— The SkillSwap Support Team</p>
+                    ";
                     await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
                 }
 
@@ -566,21 +608,35 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                     var reporter = await _db.TblUsers.FindAsync(reporterId.Value);
                     if (reporter != null)
                     {
-                        var subject = "Thank you: your report helped us take action";
+                        // 1) get their current plan
+                        var reporterSub = await _subs.GetActiveAsync(reporter.UserId);
+                        var plan = reporterSub?.PlanName ?? "Free";
+
+                        // 2) map to support label + SLA
+                        var (reportLabel, reportSla) = plan switch
+                        {
+                            "Plus" => ("Plus Support", "72h SLA"),
+                            "Pro" => ("Pro Support", "48h SLA"),
+                            "Growth" => ("Growth Support", "24h SLA"),
+                            _ => ("Free Support", "120h SLA")
+                        };
+
+                        // 3) prefix your subject
+                        var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
                         var body = $@"
-                <p>Hi {reporter.FirstName},</p>
-                <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
-                <p><strong>Removed review:</strong></p>
-                <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                  {review.Comments}
-                </blockquote>
-                <p><strong>Moderator’s note:</strong></p>
-                <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                  {moderationNote}
-                </blockquote>
-                <p>Your help makes SkillSwap safer for everyone—thank you!</p>
-                <p>— The SkillSwap Support Team</p>
-            ";
+                            <p>Hi {reporter.FirstName},</p>
+                            <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
+                            <p><strong>Removed review:</strong></p>
+                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                              {review.Comments}
+                            </blockquote>
+                            <p><strong>Moderator’s note:</strong></p>
+                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                              {moderationNote}
+                            </blockquote>
+                            <p>Your help makes SkillSwap safer for everyone—thank you!</p>
+                            <p>— The SkillSwap Support Team</p>
+                        ";
                         await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
                     }
                 }
@@ -615,19 +671,27 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
                 // 3a) Notify the reply’s author
                 var author = await _db.TblUsers.FindAsync(reply.ReplierUserId);
+                // prefix again
+                (string label, string sla) = _subs.GetActiveAsync(author.UserId).Result.PlanName switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
                 if (author != null)
                 {
-                    var subject = "Notice: Your reply has been removed";
+                    var subject = $"[{label} · {sla}] Notice: Your reply has been removed";
                     var body = $@"
-            <p>Hi {author.FirstName},</p>
-            <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
-            <p><strong>Moderator’s note:</strong></p>
-            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-              {moderationNote}
-            </blockquote>
-            <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
-            <p>— The SkillSwap Support Team</p>
-        ";
+                        <p>Hi {author.FirstName},</p>
+                        <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
+                        <p><strong>Moderator’s note:</strong></p>
+                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                          {moderationNote}
+                        </blockquote>
+                        <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
+                        <p>— The SkillSwap Support Team</p>
+                    ";
                     await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
                 }
 
@@ -637,21 +701,35 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                     var reporter = await _db.TblUsers.FindAsync(reporterId.Value);
                     if (reporter != null)
                     {
-                        var subject = "Thank you: your report helped us take action";
+                        // 1) get their current plan
+                        var reporterSub = await _subs.GetActiveAsync(reporter.UserId);
+                        var plan = reporterSub?.PlanName ?? "Free";
+
+                        // 2) map to support label + SLA
+                        var (reportLabel, reportSla) = plan switch
+                        {
+                            "Plus" => ("Plus Support", "72h SLA"),
+                            "Pro" => ("Pro Support", "48h SLA"),
+                            "Growth" => ("Growth Support", "24h SLA"),
+                            _ => ("Free Support", "120h SLA")
+                        };
+
+                        // 3) prefix your subject
+                        var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
                         var body = $@"
-                <p>Hi {reporter.FirstName},</p>
-                <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
-                <p><strong>Removed reply content:</strong></p>
-                <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                  {reply.Comments}
-                </blockquote>
-                <p><strong>Moderator’s note:</strong></p>
-                <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                  {moderationNote}
-                </blockquote>
-                <p>Your help keeps SkillSwap safe—thank you!</p>
-                <p>— The SkillSwap Support Team</p>
-            ";
+                            <p>Hi {reporter.FirstName},</p>
+                            <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
+                            <p><strong>Removed reply content:</strong></p>
+                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                              {reply.Comments}
+                            </blockquote>
+                            <p><strong>Moderator’s note:</strong></p>
+                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
+                              {moderationNote}
+                            </blockquote>
+                            <p>Your help keeps SkillSwap safe—thank you!</p>
+                            <p>— The SkillSwap Support Team</p>
+                        ";
                         await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
                     }
                 }

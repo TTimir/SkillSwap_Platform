@@ -1,0 +1,120 @@
+﻿@model SkillSwap_Platform.Services.Blogs.EditBlogPostDto
+
+@{
+    ViewData["Title"] = "Edit Blog Post";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Modify Content</h5>
+                </div>
+                <div class="col-xl-8">
+                    <div class="row">
+                        <partial name="_BlogForm.cshtml" model="Model" />
+                    </div>
+                </div>                
+                <div class="col-md-12">
+                    <div class="d-flex align-items-center gap-4">
+                        <button type="submit" class="ud-btn btn-thm me-1">Update &amp; Publish <i class="fal fa-arrow-right-long"></i></button>
+                        <a asp-action="Index" class="ud-btn btn-white">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section DynamicAdminScript {
+    <script>
+        // whenever the tags input changes, re-render badges
+        document.addEventListener('DOMContentLoaded', () => {
+          const input = document.getElementById('tagsInput');
+          const preview = document.getElementById('tagsPreview');
+
+          function renderTags() {
+            // split on commas, trim, remove empties & dupes
+            const tags = Array.from(new Set(
+              input.value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0)
+            ));
+            if (tags.length === 0) {
+              preview.style.display = 'none';
+              preview.innerHTML = '';
+              return;
+            }
+            preview.style.display = 'block';
+            // build a badge for each
+            preview.innerHTML = tags
+              .map(t => `<span class="badge bg-secondary me-1">${t}</span>`)
+              .join('');
+          }
+
+          // on load (in case you’re editing)
+          renderTags();
+
+          // on every input change
+          input.addEventListener('input', renderTags);
+        });
+    </script>
+
+    <script>
+        document
+          .getElementById('coverImageInput')
+          .addEventListener('change', function(evt) {
+            const file = evt.target.files[0];
+            if (!file) {
+              document.getElementById('coverPreviewContainer').style.display = 'none';
+              return;
+            }
+            const url = URL.createObjectURL(file);
+            const img = document.getElementById('coverPreview');
+            img.src = url;
+            document.getElementById('coverPreviewContainer').style.display = 'block';
+          });
+    </script>
+
+    @Html.RenderPartialAsync("_ValidationScriptsPartial")
+}
+

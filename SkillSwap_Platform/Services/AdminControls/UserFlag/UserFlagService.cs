@@ -4,6 +4,7 @@ using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag;
 using SkillSwap_Platform.Services.AdminControls.UserFlag.Repository;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
 
 namespace SkillSwap_Platform.Services.AdminControls.UserFlag
 {
@@ -14,19 +15,21 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
         private readonly ILogger<UserFlagService> _log;
         private readonly IUserServices _userService;
         private readonly IEmailService _emailService;
-
+        private readonly ISubscriptionService _subs;
         public UserFlagService(
             IUserFlagRepository repo,
             SkillSwapDbContext ctx,
             ILogger<UserFlagService> log,
             IUserServices userService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISubscriptionService subs)
         {
             _repo = repo;
             _ctx = ctx;
             _log = log;
             _userService = userService;
             _emailService = emailService;
+            _subs = subs;
         }
 
         public async Task FlagUserAsync(int flaggedUserId, int byUserId, string reason)
@@ -58,7 +61,19 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     var reported = await _userService.GetUserByIdAsync(flaggedUserId);
                     if (reported != null)
                     {
-                        var subject = "Your SkillSwap profile has been reported";
+                        // 1) lookup their tier & SLA
+                        var sub = await _subs.GetActiveAsync(reported.UserId);
+                        var plan = sub?.PlanName ?? "Free";
+                        var (label, sla) = plan switch
+                        {
+                            "Plus" => ("Plus Support", "72h SLA"),
+                            "Pro" => ("Pro Support", "48h SLA"),
+                            "Growth" => ("Growth Support", "24h SLA"),
+                            _ => ("Free Support", "120h SLA")
+                        };
+
+                        // 2) prefix the subject
+                        var subject = $"[{label} · {sla}] Your SkillSwap profile has been reported";
                         var body = $@"
                             Hello {reported.FirstName},<br/><br/>
                             We wanted to let you know that a member of our community has reported your profile for the following reason:<br/>
@@ -83,7 +98,19 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     var reporter = await _userService.GetUserByIdAsync(byUserId);
                     if (reporter != null)
                     {
-                        var subject = "Thanks for reporting a profile";
+                        // 1) lookup their tier & SLA
+                        var sub = await _subs.GetActiveAsync(reporter.UserId);
+                        var plan = sub?.PlanName ?? "Free";
+                        var (label, sla) = plan switch
+                        {
+                            "Plus" => ("Plus Support", "72h SLA"),
+                            "Pro" => ("Pro Support", "48h SLA"),
+                            "Growth" => ("Growth Support", "24h SLA"),
+                            _ => ("Free Support", "120h SLA")
+                        };
+
+                        // 2) prefix subject
+                        var subject = $"[{label} · {sla}] Thanks for reporting a profile";
                         var body = $@"
                             Hi {reporter.FirstName},<br/><br/>
                             We’ve received your report against user <strong>{flaggedUserId}</strong> with the following details:<br/>
@@ -170,7 +197,17 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
             var reported = await _userService.GetUserByIdAsync(flag.FlaggedUserId);
             if (reported != null)
             {
-                var subject = "Your profile report has been dismissed";
+                var sub = await _subs.GetActiveAsync(reported.UserId);
+                var plan = sub?.PlanName ?? "Free";
+                var (label, sla) = plan switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "24h SLA"),
+                    "Growth" => ("Growth Support", "12h SLA"),
+                    _ => ("Free Support", "72h SLA")
+                };
+
+                var subject = $"[{label} · {sla}] Your profile report has been dismissed";
                 var body = $@"
                     Hello {reported.FirstName},<br/><br/>
                     Our moderation team has reviewed the report filed against your profile and found no violation.<br/>
@@ -184,7 +221,19 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
             var reporter = await _userService.GetUserByIdAsync(flag.FlaggedByUserId ?? 0);
             if (reporter != null)
             {
-                var subject = "Thank you for your report";
+                // 1) lookup their tier & SLA
+                var sub = await _subs.GetActiveAsync(reporter.UserId);
+                var plan = sub?.PlanName ?? "Free";
+                var (label, sla) = plan switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "48h SLA"),
+                    "Growth" => ("Growth Support", "24h SLA"),
+                    _ => ("Free Support", "120h SLA")
+                };
+
+                // 2) prefix subject
+                var subject = $"[{label} · {sla}] Thank you for your report";
                 var body = $@"
             Hi {reporter.FirstName},<br/><br/>
             We’ve completed our review of the report you submitted and decided to dismiss it.<br/>
@@ -291,7 +340,17 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     reported.ModifiedDate = DateTime.UtcNow;
                     _ctx.TblUsers.Update(reported);
 
-                    subject = "Account Deactivated: Multiple Reports Reviewed";
+                    var sub = await _subs.GetActiveAsync(reported.UserId);
+                    var plan = sub?.PlanName ?? "Free";
+                    var (label, sla) = plan switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    subject = $"[{label} · {sla}] Account Deactivated: Multiple Reports Reviewed";
                     body = $@"
                         Hello {reported.FirstName},<br/><br/>
 
@@ -325,7 +384,17 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                 var reporter = await _userService.GetUserByIdAsync(original.FlaggedByUserId ?? 0);
                 if (reporter != null)
                 {
-                    var repSubject = "Thank you for your report";
+                    var sub = await _subs.GetActiveAsync(reporter.UserId);
+                    var plan = sub?.PlanName ?? "Free";
+                    var (label, sla) = plan switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "48h SLA"),
+                        "Growth" => ("Growth Support", "24h SLA"),
+                        _ => ("Free Support", "120h SLA")
+                    };
+
+                    var repSubject = $"[{label} · {sla}] Thank you for your report";
                     var repBody = $@"
                          Hi {reporter.FirstName},<br/><br/>
                          We’ve {(warnCount < 2 ? "issued a warning on" : "deactivated")} the account you reported (<strong>{reported.UserName}</strong>).<br/><br/>

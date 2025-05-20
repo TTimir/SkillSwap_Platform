@@ -1,10 +1,14 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.OfferFilterVM.OfferFilterVM
 @using System.Security.Claims
 @inject SkillSwap_Platform.Services.Wishlist.IWishlistService WishlistService
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 @{
     ViewData["Title"] = "Swap Offers";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var PlusMember = (await AuthZ.AuthorizeAsync(User, "PlusPlan")).Succeeded;
+    var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
 }
 
 <style>
@@ -78,12 +82,12 @@
             <div class="row wow fadeInUp">
                 <div class="col-xl-5">
                     <div class="position-relative">
-                        <h2>Design & Creative</h2>
-                        <p class="text mb30">Give your visitor a smooth online experience with a solid UX design</p>
-                        <div class="d-flex align-items-center">
+                        <h2>Creative Talents</h2>
+                        <p class="text mb30">All live skill exchanges and find your next learning opportunity.</p>
+                        @* <div class="d-flex align-items-center">
                             <a class="video-btn mr10 popup-iframe popup-youtube" href="https://www.youtube.com/watch?v=7EHnQ0VM4KY"><i class="fal fa-play"></i></a>
-                            <h6 class="mb-0">How Freeio Works</h6>
-                        </div>
+                            <h6 class="mb-0">How SkillSwap Works</h6>
+                        </div> *@
                     </div>
                 </div>
             </div>
@@ -341,7 +345,7 @@
             </div>
         </form>
 
-        @if (Model.SuggestedOffers?.Any() == true)
+        @if (ProMember && Model.SuggestedOffers?.Any() == true)
         {
             foreach (var offer in Model.SuggestedOffers)
             {
@@ -458,16 +462,19 @@
             }
         }
 
-        @if (User.Identity.IsAuthenticated)
+        @if (PlusMember)
         {
-            @if (Model != null)
+            @if (User.Identity.IsAuthenticated)
             {
-                <section class="mb-1">
-                    <h3>Offers Near You</h3>
-                    <div id="nearbyOffers">
-                        <p>Hang tight, finding swap offers near you…</p>
-                    </div>
-                </section>
+                @if (Model != null)
+                {
+                    <section class="mb-1">
+                        <h3>Offers Near You</h3>
+                        <div id="nearbyOffers">
+                            <p>Hang tight, finding swap offers near you…</p>
+                        </div>
+                    </section>
+                }
             }
         }
 

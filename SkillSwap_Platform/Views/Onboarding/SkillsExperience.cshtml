@@ -245,6 +245,13 @@
                                     <div class="col-md-6">
                                         <label class="form-label">End Date <span class="text-danger">*</span></label>
                                         <input type="date" name="experience[end_date][]" class="form-control" required />
+                                        <div class="input-group-text">
+                                            <input type="checkbox"
+                                                   class="form-check-input present-checkbox"
+                                                   name="experience[is_current][]"
+                                                   value="true" />
+                                            <label class="form-check-label ms-1">Present</label>
+                                        </div>
                                     </div>
 
 
@@ -355,6 +362,36 @@
                 // Remove button click handler
                 $(document).on('click', '.remove-entry', function () {
                     $(this).closest('.row').remove();
+                });
+
+                function initPresentToggle($context) {
+                  $context.find('.present-checkbox').each(function() {
+                    const $chk = $(this);
+                    const $end = $chk.closest('.experience-entry').find('.end-date');
+                    // on page load:
+                    if ($chk.is(':checked')) {
+                      $end.prop('disabled', true);
+                    }
+                    // on change:
+                    $chk.off('change').on('change', function() {
+                      if (this.checked) {
+                        $end.prop('disabled', true).val('');
+                      } else {
+                        $end.prop('disabled', false);
+                      }
+                    });
+                  });
+                }
+
+                // initialize on existing rows
+                initPresentToggle($(document));
+
+                // in your cloneEntry function, after appending:
+                $(document).on('click', '.add-entry', function() {
+                  const section = $(this).closest('[id$="-section"]');
+                  cloneEntry(section);
+                  // wire up toggle on just-appended block:
+                  initPresentToggle(section.find('.experience-entry').last());
                 });
 
             });

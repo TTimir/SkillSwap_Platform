@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Services.AdminControls.OfferFlag.Repository;
 using SkillSwap_Platform.Services.Email;
+using SkillSwap_Platform.Services.Payment_Gatway;
 using System.Linq;
 
 namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
@@ -14,7 +15,8 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
         private readonly ILogger<OfferFlagService> _log;
         private readonly SkillSwapDbContext _ctx;
         private readonly IUserServices _userService;         // to look up emails
-        private readonly IEmailService _emailService;         
+        private readonly IEmailService _emailService;
+        private readonly ISubscriptionService _subs;
 
         public OfferFlagService(
             IOfferFlagRepository repo,
@@ -22,7 +24,8 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             ILogger<OfferFlagService> log,
             SkillSwapDbContext ctx,
             IUserServices userService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISubscriptionService subscription)
         {
             _flagRepo = repo;
             _offerRepo = offerRepo;
@@ -30,6 +33,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             _ctx = ctx;
             _userService = userService;
             _emailService = emailService;
+            _subs = subscription;
         }
 
         public async Task FlagOfferAsync(int offerId, int userId, string reason)
@@ -60,7 +64,18 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                 var owner = await _userService.GetUserByIdAsync(offer.UserId);
                 if (owner != null)
                 {
-                    var subject = $"Notice: Your SkillSwap offer “{offer.Title}” has been reported";
+                    // --- compute prefix ---
+                    var active = await _subs.GetActiveAsync(owner.UserId);
+                    var (label, sla) = (active?.PlanName ?? "Free") switch
+                    {
+                        "Plus" => ("Plus Support", "72h SLA"),
+                        "Pro" => ("Pro Support", "24h SLA"),
+                        "Growth" => ("Growth Support", "12h SLA"),
+                        _ => ("Free Support", "72h SLA")
+                    };
+
+                    // --- flagged‐owner email ---
+                    var subject = $"[{label} · {sla}] Notice: Your SkillSwap offer “{offer.Title}” has been reported";
                     var body = $@"
                         Hi {owner.FirstName},<br/><br/>
 
@@ -82,7 +97,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     var flagger = await _userService.GetUserByIdAsync(userId);
                     if (flagger != null)
                     {
-                        var subjectFlagger = $"Thanks for reporting “{offer.Title}”";
+                        var subjectFlagger = $"[{label} · {sla}] Thanks for reporting “{offer.Title}”";
                         var bodyFlagger = $@"
                             Hi {flagger.FirstName},<br/><br/>
 
@@ -186,7 +201,16 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             var owner = await _userService.GetUserByIdAsync(offerOwner.UserId);
             if (owner != null)
             {
-                var subject = $"Update: Report on your offer “{flag.Offer.Title}” has been dismissed";
+                var active = await _subs.GetActiveAsync(owner.UserId);
+                var (label, sla) = (active?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "24h SLA"),
+                    "Growth" => ("Growth Support", "12h SLA"),
+                    _ => ("Free Support", "72h SLA")
+                };
+
+                var subject = $"[{label} · {sla}] Update: Report on your offer “{flag.Offer.Title}” has been dismissed";
                 var body = $@"
                     Hello {owner.FirstName},<br/><br/>
 
@@ -209,7 +233,16 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             var flagger = await _userService.GetUserByIdAsync(flag.FlaggedByUserId);
             if (flagger != null)
             {
-                var subject = $"Your report on “{flag.Offer.Title}” has been reviewed";
+                var activeF = await _subs.GetActiveAsync(flagger.UserId);
+                var (lblF, slaF) = (activeF?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "24h SLA"),
+                    "Growth" => ("Growth Support", "12h SLA"),
+                    _ => ("Free Support", "72h SLA")
+                };
+
+                var subject = $"[{lblF} · {slaF}] Your report on “{flag.Offer.Title}” has been reviewed";
                 var body = $@"
                 Hi {flagger.FirstName},<br/><br/>
                 We’ve completed our review of the report you submitted for “<strong>{offerOwner.Title}</strong>” and found no violations.<br/>
@@ -247,7 +280,16 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             var owner = await _userService.GetUserByIdAsync(offer.UserId);
             if (owner != null)
             {
-                var subject = $"Action Taken: Your offer “{offer.Title}” has been removed";
+                var active = await _subs.GetActiveAsync(owner.UserId);
+                var (label, sla) = (active?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "24h SLA"),
+                    "Growth" => ("Growth Support", "12h SLA"),
+                    _ => ("Free Support", "72h SLA")
+                };
+
+                var subject = $"[{label} · {sla}] Action Taken: Your offer “{offer.Title}” has been removed";
                 var body = $@"
                     Hi {owner.FirstName},<br/><br/>
 
@@ -273,7 +315,16 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
             var flagger = await _userService.GetUserByIdAsync(flag.FlaggedByUserId);
             if (flagger != null)
             {
-                var subject = $"Thank you: “{offer.Title}” has been removed";
+                var activeF = await _subs.GetActiveAsync(flagger.UserId);
+                var (lblF, slaF) = (activeF?.PlanName ?? "Free") switch
+                {
+                    "Plus" => ("Plus Support", "72h SLA"),
+                    "Pro" => ("Pro Support", "24h SLA"),
+                    "Growth" => ("Growth Support", "12h SLA"),
+                    _ => ("Free Support", "72h SLA")
+                };
+
+                var subject = $"[{lblF} · {slaF}] Thank you: “{offer.Title}” has been removed";
                 var body = $@"
                     Hi {flagger.FirstName},<br/><br/>
                     Thank you for your report on “<strong>{offer.Title}</strong>”. We’ve reviewed it and removed the offer.<br/>

@@ -5,6 +5,9 @@
 
     dot.classList.add("active");
 
+    const INTERVAL_MS = 30_000;
+    const lastKey = "miningLastFetch";
+
     async function refreshBalance() {
         try {
             const resp = await fetch('/api/MiningApi/status', {
@@ -17,14 +20,17 @@
             if (balSpan.textContent !== newBal) {
                 balSpan.textContent = newBal;
             }
+            // record when we successfully fetched
+            localStorage.setItem(lastKey, Date.now().toString());
+
             // clear any previous error state
             dot.classList.remove("error");
             dot.removeAttribute("title");
-
         } catch {
             // indicate an error for the user
             dot.classList.add("error");
             dot.title = "Failed to refresh balance";
+
             // remove the error indicator after 1s
             setTimeout(() => {
                 dot.classList.remove("error");
@@ -33,11 +39,13 @@
         }
     }
 
-    // initial fetch
-    refreshBalance();
+    // Decide whether to do an *immediate* fetch
+    const lastFetch = parseInt(localStorage.getItem(lastKey) || "0", 10);
+    if (Date.now() - lastFetch > INTERVAL_MS) {
+        refreshBalance();
+    }
 
-    // poll every 30 seconds
-    setInterval(refreshBalance, 30_000);
+    setInterval(refreshBalance, INTERVAL_MS);
 });
 
 //document.addEventListener("DOMContentLoaded", () => {

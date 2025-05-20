@@ -1,0 +1,28 @@
+﻿@model IEnumerable<SkillSwap_Platform.Models.BlogPost>
+
+@{
+    ViewData["Title"] = "Manage Blog";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<h2>Blog Posts</h2>
+<p><a asp-action="Create" class="btn btn-primary">New Post</a></p>
+<table class="table">
+    <thead><tr><th>Title</th><th>Created</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Title</td>
+                <td>@p.CreatedAt.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@p.Id">Edit</a> |
+                    <form asp-action="Delete" asp-route-id="@p.Id" method="post" style="display:inline">
+                        <button type="submit" class="btn btn-link text-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+

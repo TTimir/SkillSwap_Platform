@@ -1,0 +1,125 @@
+﻿@using SkillSwap_Platform.Models.ViewModels.TokenReserve
+@model AdminAdjustDto
+
+@{
+    ViewData["Title"] = "New Token Adjustment";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-12">
+        @using (Html.BeginForm("Create", "AdminTokenAdjust", FormMethod.Post, new { onsubmit = "return confirmAdjustment();" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
+                <div class="bdrb1 pb15 mb25">
+                    <h5 class="list-title">Token Adjustment</h5>
+                </div>
+                <div class="col-xl-8">
+                    <div class="row">
+                        <div class="form-group mb-3">
+                            <label asp-for="UserId">User</label>
+                            @Html.DropDownListFor(m => m.UserId, (SelectList)ViewBag.UserList,
+                                     "-- select user --", new { @class = "form-control" })
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="Amount" class="heading-color ff-heading fw500 mb10">Amount (positive to credit, negative to debit) <span class="text-danger">*</span></label>
+                                <input asp-for="Amount" type="text" class="form-control" placeholder="i will">
+                                <span asp-validation-for="Amount" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="mb20">
+                                <label asp-for="Type" class="heading-color ff-heading fw500 mb10">Adjustment Type <span class="text-danger">*</span></label>
+                                <div class="bootselect-multiselect">
+                                    <select asp-for="Type" class="selectpicker">
+                                        <option value="">-- Select --</option>
+                                        <option>Refund</option>
+                                        <option>Correction</option>
+                                        <option>Promo</option>
+                                        <option>Other</option>
+                                    </select>
+                                    <span asp-validation-for="Type" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb10">
+                                <label asp-for="Reason" class="heading-color ff-heading fw500 mb10">Reason / Reference</label>
+                                <textarea asp-for="Reason" cols="30" rows="6" placeholder="Reason / Reference"></textarea>
+                                <span asp-validation-for="Reason" class="text-danger"></span>
+                            </div>
+                        </div>
+                        @* <div class="col-md-12">
+                            <div class="text-start">
+                                <button type="submit" class="ud-btn btn-thm">Save<i class="fal fa-arrow-right-long"></i></button>
+                            </div>
+                        </div> *@
+                        <div class="col-md-12 mt20">
+                            <div class="text-start">
+                                @* <a class="ud-btn btn-thm" href="page-contact.html">Save & Publish<i class="fal fa-arrow-right-long"></i></a> *@
+                                <button type="submit" class="ud-btn btn-thm me-4">Save Adjustment<i class="fal fa-arrow-right-long"></i></button>
+                                <a asp-action="Index">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section DynamicAdminScript {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function confirmAdjustment() {
+          // grab the amount input
+          var amtEl = document.getElementById("Amount");
+          if (!amtEl) return true;
+          var val = parseFloat(amtEl.value);
+          // only if it's a big adjustment
+          if (val > 1000) {
+            return confirm(
+              "⚠️ You are about to adjust more than 1 000 tokens.\n" +
+              "Are you absolutely sure you want to proceed?"
+            );
+          }
+          return true;
+        }
+    </script>
+}
+

@@ -1,0 +1,45 @@
+﻿@model SkillSwap_Platform.Services.Blogs.IBlogFormModel
+
+<input asp-for="Id" type="hidden" />
+<input asp-for="AuthorId" type="hidden" />
+<div class="col-sm-12">
+    <div class="mb20">
+        <label asp-for="Title" class="heading-color ff-heading fw500 mb10">Content Title <span class="text-danger">*</span></label>
+        <input asp-for="Title" type="text" class="form-control" placeholder="i will">
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+</div>
+<div class="col-sm-12">
+    <div class="mb20">
+        <label asp-for="Summary" class="heading-color ff-heading fw500 mb10">Content Summary <span class="text-danger">*</span></label>
+        <input asp-for="Summary" type="text" class="form-control" placeholder="i will">
+        <span asp-validation-for="Summary" class="text-danger"></span>
+    </div>
+</div>
+<div class="col-md-12">
+    <div class="mb10">
+        <label asp-for="Content" class="heading-color ff-heading fw500 mb10">Content <span class="text-danger">*</span></label>
+        <textarea asp-for="Content" cols="30" rows="4" placeholder="Describe what is your content about"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="Tags" class="form-label">Tags (comma-separated)</label>
+    <input asp-for="Tags" class="form-control" placeholder="dotnet,csharp,efcore" />
+    <span asp-validation-for="Tags" class="text-danger"></span>
+</div>
+<div id="tagsPreview" class="mb-3" style="display:none;">
+    <!-- badges will be injected here -->
+</div>
+
+<div class="col-md-12">
+    <div class="mb10">
+        <label class="form-label">Cover Image (optional)</label>
+        <input asp-for="CoverImage" type="file" accept="image/*" class="form-control" id="coverImageInput" />
+        <span asp-validation-for="CoverImage" class="text-danger"></span>
+    </div>
+</div>
+<div class="mb-3" id="coverPreviewContainer" style="display:none;">
+    <p><strong>Preview:</strong></p>
+    <img id="coverPreview" src="#" alt="Cover preview" class="img-fluid rounded" style="max-height:200px;" />
+</div>

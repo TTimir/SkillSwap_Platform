@@ -12,8 +12,9 @@ using System.Net.Mail;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {
-    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin, Moderator")]
     [Route("Admin/[controller]")]
+    [Route("Admin/[controller]/[action]")]
     public class NewsletterController : Controller
     {
         private readonly INewsletterService _newsletter;
@@ -277,7 +278,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         }
 
         // GET /Admin/Newsletter/ViewAttachment?file=uploads/newsletters/foo.png
-        [HttpGet("view-attachment", Name = "ViewAttachmentRoute")]
+        [HttpGet("~/Admin/Newsletter/view-attachment", Name = "ViewAttachmentRoute")]
         public async Task<IActionResult> ViewAttachment(int logId, string file)
         {
             if (string.IsNullOrWhiteSpace(file))

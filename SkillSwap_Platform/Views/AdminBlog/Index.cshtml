@@ -1,0 +1,130 @@
+﻿@using SkillSwap_Platform.Services.Blogs
+@model PagedResult<SkillSwap_Platform.Models.BlogPost>
+
+@{
+    ViewData["Title"] = "Blog Posts";
+    Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_four alert-dismissible fade show mb20" role="alert">
+                    @TempData["SuccessMessage"]
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="col-lg-12">
+        <div class="ui-content">
+            <div class="message-alart-style1">
+                <div class="alert alart_style_three alert-dismissible fade show mb20" role="alert">
+                    @ViewBag.ErrorMessage
+                    <i class="far fa-xmark btn-close" data-bs-dismiss="alert" aria-label="Close"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="col-lg-9">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text">@ViewData["SubTitle"]</p>
+    </div>
+</div>
+<div class="col-lg-3">
+    <div class="text-lg-end">
+        <a asp-action="Create" class="ud-btn btn-dark default-box-shadow2">Create New Post<i class="fal fa-arrow-right-long"></i></a>
+    </div>
+</div>
+</div>
+<div class="row g-4">
+    @foreach (var post in Model.Items)
+    {
+        <div class="col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                @* Optional cover image *@
+                @if (!string.IsNullOrEmpty(post.CoverImagePath))
+                {
+                    <img src="@post.CoverImagePath"
+                         class="card-img-top"
+                         style="height:180px; object-fit:cover;"
+                         alt="Cover for @post.Title" />
+                }
+
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">@post.Title</h5>
+                    <p class="card-text text-truncate">@post.Summary</p>
+                    <small class="text-muted mb-3">
+                        Created @post.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </small>
+
+                    <div class="mt-auto d-flex justify-content-between">
+                        <a asp-action="Edit" asp-route-id="@post.Id"
+                           class="ud-btn btn-thm btn-sm">
+                            <i class="fal fa-edit" style="transform:rotate(0deg)"></i> Edit
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@post.Id"
+                              method="post"
+                              onsubmit="return confirm('Delete this post?');">
+                            <button type="submit"
+                                    class="ud-btn btn-light-thm btn-sm">
+                                <i class="fal fa-trash" style="transform:rotate(0deg); border:0;"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+@{
+    var page = Model.Page;
+    var totalPages = Model.TotalPages;
+}
+@if (totalPages > 1)
+{
+    <div class="mbp_pagination text-center mt30">
+        <ul class="page_navigation">
+            <!-- Previous -->
+            <li class="page-item @(page == 1 ? "disabled" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-page="@(page - 1)">
+                    <span class="fas fa-angle-left"></span>
+                </a>
+            </li>
+
+            <!-- Page links -->
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                <li class="page-item @(p == page ? "active" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@p">@p</a>
+                </li>
+            }
+
+            <!-- Next -->
+            <li class="page-item @(page == totalPages ? "disabled" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-page="@(page + 1)">
+                    <span class="fas fa-angle-right"></span>
+                </a>
+            </li>
+        </ul>
+        <p class="mt10 mb-0 pagination_page_count text-center">
+            Page @(page) of @totalPages
+        </p>
+    </div>
+}
+</div>
+
+

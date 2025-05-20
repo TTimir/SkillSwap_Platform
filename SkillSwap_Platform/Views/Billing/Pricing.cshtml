@@ -1,15 +1,22 @@
-﻿@{
+﻿@model SkillSwap_Platform.Models.ViewModels.PaymentGatway.PricingViewModel
+
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     // base monthly prices
     var starterMonthly = 0m;
-    var premiumMonthly = 190m;
-    var proMonthly = 490m;
-    var growthMonthly = 990m;
+    var premiumMonthly = 99m;
+    var proMonthly = 149m;
+    var growthMonthly = 249m;
     // apply 19.6% discount for yearly equivalent monthly rate
     Func<decimal, decimal> toYearlyMonthly = m => (int)Math.Round(m * (1 - 0.196m), 0);
 }
 
-<section class="our-pricing pb90">
+<div id="paymentMessage" class="alert d-none text-center mx-auto my-4" style="max-width: 500px;"></div>
+
+<section id="pricingSection" class="our-pricing pb90"
+         data-current-plan="@Model.CurrentPlan"
+         data-current-cycle="@Model.CurrentCycle"
+         data-current-end="@Model.CurrentEndDate?.ToLocalTime().ToString("yyyy-MM-dd")">
     <div class="container">
         <div class="row">
             <div class="col-lg-6 m-auto wow fadeInUp">
@@ -45,18 +52,26 @@
                             <span class="price-value">₹@starterMonthly</span>
                             <small>/ monthly</small>
                         </h1>
-                        <h4 class="package_title mt-2">Free Plan</h4>
+                        <h4 class="package_title mt-2">Freebie Plan</h4>
                     </div>
                     <div class="details">
                         <p class="text mb30">Start swapping with zero cost and no limits.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li>Unlimited skill swaps</li>
                             <li>Global matching</li>
-                            <li>Basic profile listing</li>
                             <li>Access to shared resources</li>
-                            <li>1 verification request (lifetime)</li>
+                            <li>Basic profile listing</li>
+                            <li>
+                                1 verification request <strong>(lifetime)</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="A single, one-time verification request for your account.">
+                                </i>
+                            </li>
                             <li>Email support (5-day SLA)</li>
                         </ul>
+                        <br />
                         <div class="d-grid">
                             @if (User.Identity.IsAuthenticated)
                             {
@@ -77,7 +92,7 @@
 
             <!-- Premium -->
             <div class="col-sm-6 col-xl-3">
-                <div class="pricing_packages active text-center bdrs16"
+                <div class="pricing_packages text-center bdrs16"
                      data-monthly="@premiumMonthly"
                      data-yearly="@toYearlyMonthly(premiumMonthly)">
                     <div class="heading mb10">
@@ -90,11 +105,18 @@
                     <div class="details">
                         <p class="text mb30">Stand out with local suggestions & featured slots.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
-                            <li>Everything in Starter, plus:</li>
+                            <li>Everything in Freebie, plus:</li>
                             <li>Nearby & global matching</li>
-                            <li>Activity access</li>
-                            <li>1 verification request/month</li>
-                            <li>1× token boost</li>
+                            <li>Recent Activity access</li>
+                            <li>
+                                1 verification request <strong>/ month</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="One verification request per calendar month. If declined, you may re-apply next month.">
+                                </i>
+                            </li>
+                            <li>1.25× token boost</li>
                             <li>Email support (72 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
                         </ul>
@@ -102,7 +124,7 @@
                             <button type="button"
                                     class="ud-btn btn-thm-border bdrs8 buy-btn"
                                     style="border:0"
-                                    data-plan="Premium">
+                                    data-plan="Plus">
                                 Upgrade to Plus
                                 <i class="fal fa-arrow-right-long"></i>
                             </button>
@@ -113,9 +135,10 @@
 
             <!-- Pro -->
             <div class="col-sm-6 col-xl-3">
-                <div class="pricing_packages text-center bdrs16"
+                <div class="pricing_packages active text-center bdrs16"
                      data-monthly="@proMonthly"
                      data-yearly="@toYearlyMonthly(proMonthly)">
+                    <div class="recommend-ribbon"><span>Best Value</span></div>
                     <div class="heading mb10">
                         <h1 class="text2">
                             <span class="price-value">₹@proMonthly</span>
@@ -128,9 +151,9 @@
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li>Everything in Plus, additionally:</li>
                             <li>Priority matching nearby</li>
-                            <li>Calendar integration</li>
                             <li>Basic analytics</li>
-                            <li>1.25× token boost</li>
+                            <li>Calendar integration</li>
+                            <li>1.5× token boost</li>
                             <li>Email support (48 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
                         </ul>
@@ -162,9 +185,16 @@
                         <p class="text mb30">Exports, insights & VIP support, your all-access pass.</p>
                         <ul class="pricing-list mb40 px-0 text-left">
                             <li> Everything in Pro, plus:</li>
-                            <li> 2 verification requests/month</li>
-                            <li> 1.5× token boost</li>
                             <li> Advanced analytics</li>
+                            <li>
+                                2 verification requests <strong>/ month</strong>
+                                <i class="fas fa-info-circle ms-1"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="Up to two verification requests per calendar month. Any additional requests open next month.">
+                                </i>
+                            </li>
+                            <li> 2× token boost</li>
                             <li> Data export & custom alerts</li>
                             <li> Email support  (24 hr SLA)</li>
                             <p class="text-muted"><small>Cancel anytime, no questions asked.</small></p>
@@ -183,6 +213,27 @@
         </div>
     </div>
 </section>
+
+<!-- Plan Change Confirmation Modal -->
+<div class="modal fade" id="planChangeModal" tabindex="-1" aria-labelledby="planChangeLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planChangeLabel">Confirm Plan Change</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>You’re currently on: <strong id="curPlanName"></strong> (<span id="curPlanCycle"></span>), expires <strong id="curPlanEnd"></strong>.</p>
+                <p>You’re about to purchase: <strong id="newPlanName"></strong>.</p>
+                <p>Do you want to continue?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="ud-btn btn-light-thm" style="border:0" data-bs-dismiss="modal">No</button>
+                <button id="confirmChangeBtn" type="button" class="ud-btn btn-thm" style="border:0">Yes, i want to <i class="fal fa-arrow-right-long"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Razorpay Checkout SDK -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -204,6 +255,8 @@
 
     // 2) Kick off Razorpay Checkout for a given plan
     async function startPayment(plan) {
+        let clientPlan = plan;
+        if (plan === "Premium") clientPlan = "Plus";
         const isYearly = document.getElementById('billingToggle').checked;
         const clientCycle   = isYearly ? 'yearly' : 'monthly';
       try {
@@ -244,14 +297,29 @@
             .then(r => r.json())
             .then(j => {
               if (j.success) {
-                // on successful verification & subscription update,
-                // you might redirect to the dashboard:
-                window.location.href = '/UserDashboard';
-              } else {
-                alert(j.message);
-              }
+                const msgDiv = document.getElementById('paymentMessage');
+                 msgDiv.classList.remove('d-none', 'alert-danger');
+                 msgDiv.classList.add('alert-success');
+                 msgDiv.textContent = '🎉 Payment successful! Redirecting you shortly…';
+                    // 2b) After a short pause, send them on their way
+                    setTimeout(() => {
+                      window.location.href = '/UserDashboard';
+                    }, 3000); // 3 seconds; adjust as you like              
+                } else {
+                  // on failure, show the error inline instead of alert()
+                  const msgDiv = document.getElementById('paymentMessage');
+                  msgDiv.classList.remove('d-none', 'alert-success');
+                  msgDiv.classList.add('alert-danger');
+                  msgDiv.textContent = j.message || "Payment succeeded but we couldn’t able could not able to update your account. 🙁";
+                }
             })
-            .catch(() => alert('Verification failed'));
+            .catch(err => {
+              const msgDiv = document.getElementById('paymentMessage');
+              msgDiv.classList.remove('d-none', 'alert-success');
+              msgDiv.classList.add('alert-danger');
+              msgDiv.textContent = '✅ Payment successful and plan activated! Please wait while we redirect you to your billing dashboard…';
+              console.error(err);
+            });
           },
           modal: {
             ondismiss: () => {
@@ -267,14 +335,81 @@
       }
     }
 
-    // 4) Wire up all Buy buttons and the toggle switch
     document.addEventListener('DOMContentLoaded', () => {
-      // Plan buttons
+      // read current-plan from data-attributes
+      const wrap    = document.getElementById('pricingSection');
+      const curPlan = wrap.dataset.currentPlan;    // “Plus”
+      const curCycle= wrap.dataset.currentCycle;   // “monthly”/“yearly”
+      const curEnd  = wrap.dataset.currentEnd;     // “2025-06-15”
+
+      // modal elements
+      const modalEl    = new bootstrap.Modal(document.getElementById('planChangeModal'));
+      const curNameEl  = document.getElementById('curPlanName');
+      const curCycleEl = document.getElementById('curPlanCycle');
+      const curEndEl   = document.getElementById('curPlanEnd');
+      const newNameEl  = document.getElementById('newPlanName');
+      const confirmBtn = document.getElementById('confirmChangeBtn');
+
+      let pendingPlan;
+
+      // intercept all Buy buttons
       document.querySelectorAll('.buy-btn').forEach(btn => {
-        btn.addEventListener('click', () => startPayment(btn.dataset.plan));
+        btn.addEventListener('click', () => {
+          pendingPlan = btn.dataset.plan;  // e.g. “Pro”
+
+          // same-plan? or no logged-in plan? → go straight to checkout
+          if (!curPlan || curPlan === "Free" || pendingPlan === curPlan) {
+            return startPayment(pendingPlan);
+          }
+
+          // populate modal with details
+          curNameEl.textContent  = curPlan;
+          curCycleEl.textContent = curCycle;
+          curEndEl.textContent   = new Date(curEnd).toLocaleDateString();
+          newNameEl.textContent  = pendingPlan;
+
+          modalEl.show();
+        });
       });
-      // Pricing toggle
+
+      // on confirm, actually start payment
+      confirmBtn.addEventListener('click', () => {
+        modalEl.hide();
+        startPayment(pendingPlan);
+      });
+
+      // keep your togglePricing hookup too
       document.getElementById('billingToggle')
               .addEventListener('change', togglePricing);
     });
 </script>
+
+<style>
+    .recommend-ribbon {
+        width: 140px;
+        height: 140px;
+        overflow: hidden;
+        position: absolute;
+        top: -12px;
+        right: -12px;
+        pointer-events: none;
+    }
+
+        .recommend-ribbon span {
+            position: absolute;
+            display: block;
+            width: 200px;
+            padding: 8px 0;
+            background: linear-gradient(135deg, #00b894, #6c5ce7);
+            color: #fff;
+            font-weight: 700;
+            font-size: .8rem;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(45deg);
+            top: 25px;
+            right: -50px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            pointer-events: all;
+        }
+</style>

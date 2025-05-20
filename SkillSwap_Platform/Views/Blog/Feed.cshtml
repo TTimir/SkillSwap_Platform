@@ -1,0 +1,142 @@
+﻿
+@{
+    ViewData["Title"] = "Blog";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="container py-5">
+    <h1 class="mb-5 text-center">Insights &amp; Stories</h1>
+
+    <div id="feed" class="row gx-4 gy-5">
+        @* Cards get injected here *@
+    </div>
+
+    <div id="loading" class="text-center my-4" style="display:none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading…</span>
+        </div>
+    </div>
+    <div id="endOfFeed" class="alert alert-secondary text-center mt20" style="display:none;">
+        You’ve reached the end.
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        const defaultAvatarUrl = '@Url.Content("~/template_assets/images/SS-Dark.png")';
+    </script>
+
+    <script>
+        (async function(){
+          let page = 1, loading = false, end = false;
+          const feed      = document.getElementById('feed'),
+                loadingEl = document.getElementById('loading'),
+                endEl     = document.getElementById('endOfFeed');
+
+          function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, c =>
+              ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+          }
+
+          async function loadPage() {
+            if (loading || end) return;
+            loading = true;
+            loadingEl.style.display = 'block';
+            try {
+              const res   = await fetch(`/Blog/FeedData?page=${page}`);
+              if (!res.ok) throw new Error();
+              const items = await res.json();
+              if (items.length === 0) {
+                end = true;
+                endEl.style.display = 'block';
+              } else {
+                items.forEach(it => {
+                  const col = document.createElement('div');
+                  col.className = 'col-sm-6 col-lg-4';
+
+                  const title   = escapeHtml(it.title);
+                  const summary = escapeHtml(it.summary).slice(0, 120) + '…';
+                  const date    = new Date(it.createdAt).toLocaleDateString(undefined, {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  });
+                  const imgUrl  = it.coverImageUrl || '/images/blog-placeholder.png';
+                  const author  = escapeHtml(it.authorName || 'SkillSwap Team');
+
+                  col.innerHTML = `
+                    <div class="card blog-card h-100 border-0 shadow-sm" style="border-radius:16px;">
+                      <div class="ratio ratio-16x9 overflow-hidden">
+                        <img src="${imgUrl}" class="card-img-top object-fit-cover" alt="${title}" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                      </div>
+                      <div class="card-body d-flex flex-column">
+                        <small class="text-muted mb-2">${date}</small>
+                        <h5 class="card-title mb-3">
+                          <a href="${it.url}" class="stretched-link text-dark text-decoration-none">
+                            ${title}
+                          </a>
+                        </h5>
+                        <p class="card-text text-secondary flex-grow-1">${summary}</p>
+                        <div class="mt-4 d-flex align-items-center">
+                          <img src="${defaultAvatarUrl}"
+                               width="32" height="32"
+                               class="rounded-circle me-2"
+                               alt="${author}">
+                          <span class="small text-muted">${author}</span>
+                        </div>
+                      </div>
+                    </div>`;
+                  feed.appendChild(col);
+                });
+                page++;
+              }
+            } catch {
+              console.error('Failed to load more posts');
+            } finally {
+              loading = false;
+              loadingEl.style.display = 'none';
+            }
+          }
+
+          // kick off
+          await loadPage();
+          window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY + 200 >= document.body.offsetHeight) {
+              loadPage();
+            }
+          });
+        })();
+    </script>
+
+    <style>
+        /* Card hover lift + shadow */
+        .blog-card {
+            transition: transform .2s, box-shadow .2s;
+            border-radius: .5rem;
+        }
+
+            .blog-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            }
+
+        /* Ensure images cover the ratio box */
+        .object-fit-cover {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Tweak card body spacing */
+        .blog-card .card-body {
+            padding: 1rem;
+        }
+
+        .blog-card .card-title {
+            font-size: 1.125rem;
+            line-height: 1.3;
+        }
+
+        .blog-card .card-text {
+            margin-bottom: 0;
+        }
+    </style>
+}

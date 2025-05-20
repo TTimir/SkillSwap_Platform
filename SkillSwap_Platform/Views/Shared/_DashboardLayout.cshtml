@@ -1,11 +1,15 @@
 ﻿@using System.Security.Claims
 @inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
-
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 @{
     // grab once at the top of your file
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    var PlusMember = (await AuthZ.AuthorizeAsync(User, "PlusPlan")).Succeeded;
+    var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
 }
 
 <!DOCTYPE html>
@@ -35,7 +39,7 @@
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
-    <title>Freeio - Freelance Marketplace HTML Template</title>
+    <title>SkillSwap - Your Skills, Your Community</title>
     <!-- Favicon -->
     <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
     <!-- Apple Touch Icon -->
@@ -78,19 +82,19 @@
             gap: 6px; /* small space between img and text */
         }
 
-        .header-logo.logo1 img {
-            border-radius: 14px;
-            width: 40px;
-            height: auto;
-        }
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
 
-        .header-logo.logo1 .logo-text {
-            font-family: monospace;
-            font-size: 22px;
-            letter-spacing: 1;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
 
         /* footer logos: center image + text */
         .footer-widget .footer-logo,
@@ -220,7 +224,7 @@
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Quick Start</p>
-                                                @if (User.IsInRole("Admin"))
+                                                @if (User.IsInRole("Admin") || User.IsInRole("Moderator") || User.IsInRole("SupportAgent"))
                                                 {
                                                     <a class="dropdown-item"
                                                        asp-area="Admin"
@@ -230,7 +234,10 @@
                                                     </a>
                                                 }
                                                 <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
-                                                <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                @if (PlusMember)
+                                                {
+                                                    <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                }
                                                 <a class="dropdown-item" href="@Url.Action("Create","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Create Swap Offer</a>
                                                 <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                 <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
@@ -295,7 +302,7 @@
         <!-- /.mobile-menu -->
         <nav id="menu" class="">
             <ul>
-                @if (User.IsInRole("Admin"))
+                @if (User.IsInRole("Admin") || User.IsInRole("Moderator") || User.IsInRole("SupportAgent"))
                 {
                     <li>
                         <a class="list-item"
@@ -337,12 +344,18 @@
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("Index","UserDashboard")" class="items-center @(currentController == "UserDashboard" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-home mr15"></i>Dashboard</a>
                     </div>
-                    <div class="sidebar_list_item">
-                        <a href="@Url.ActionLink("Index","TrackNotifications")" class="items-center @(currentController == "TrackNotifications" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-document mr15"></i>My Activity</a>
-                    </div>
-                    <div class="sidebar_list_item">
-                        <a href="@Url.ActionLink("Index","GoogleCalendar")" class="items-center @(currentController == "GoogleCalendar" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-30-days mr15"></i>My Calendar</a>
-                    </div>
+                    @if (PlusMember)
+                    {
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","TrackNotifications")" class="items-center @(currentController == "TrackNotifications" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-document mr15"></i>My Activity</a>
+                        </div>
+                    }
+                    @if (ProMember)
+                    {
+                        <div class="sidebar_list_item">
+                            <a href="@Url.ActionLink("Index","GoogleCalendar")" class="items-center @(currentController == "GoogleCalendar" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-30-days mr15"></i>My Calendar</a>
+                        </div>
+                    }
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("Index","UserWishlist")" class="items-center @(currentController == "UserWishlist" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-like mr15"></i>Saved</a>
                     </div>
@@ -415,7 +428,14 @@
                                     <ul id="myDropdown" class="dropdown-content">
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Start</p></li>
                                         <li><a href="@Url.ActionLink("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a></li>
-                                        <li><a href="@Url.ActionLink("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a></li>
+                                        @if (PlusMember)
+                                        {
+                                            <li><a href="@Url.ActionLink("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a></li>
+                                        }
+                                        @if (ProMember)
+                                        {
+                                            <li><a href="@Url.ActionLink("Index","GoogleCalendar")"><i class="flaticon-30-days mr10"></i>My Calendar</a></li>
+                                        }
                                         <li><a href="@Url.ActionLink("Index","UserWishlist")"><i class="flaticon-like mr10"></i>Saved</a></li>
                                         <li><a href="@Url.ActionLink("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a></li>
                                         <li><a href="@Url.ActionLink("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a></li>
@@ -452,13 +472,13 @@
             <!-- Footer -->
             <footer class="dashboard_footer pt30 pb30">
                 <div class="container">
-                    <div class="row align-items-center justify-content-center justify-content-md-between">
+                    <div class="row align-items-center justify-content-center justify-content-md-end">
                         <div class="col-auto">
                             <div class="copyright-widget">
                                 <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
-                        <div class="col-auto">
+                        @* <div class="col-auto">
                             <div class="footer_bottom_right_btns at-home8 text-center text-lg-end">
                                 <ul class="p-0 m-0">
                                     <li class="list-inline-item bg-white">
@@ -479,7 +499,7 @@
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div> *@
                     </div>
                 </div>
             </footer>

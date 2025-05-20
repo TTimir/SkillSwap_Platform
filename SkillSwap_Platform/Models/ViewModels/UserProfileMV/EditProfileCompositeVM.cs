@@ -5,6 +5,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
 {
     public class EditProfileCompositeVM
     {
+        public string Email => PersonalDetails.Email;
         public EditPersonalDetailsVM PersonalDetails { get; set; } = new EditPersonalDetailsVM();
         public EditSkillVM Skills { get; set; } = new EditSkillVM();
         public List<EducationVM> EducationEntries { get; set; } = new List<EducationVM>();

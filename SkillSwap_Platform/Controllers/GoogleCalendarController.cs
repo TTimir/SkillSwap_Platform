@@ -281,6 +281,7 @@ namespace SkillSwap_Platform.Controllers
             }
         }
 
+        [Authorize(Policy = "ProPlan")]
         public async Task<IActionResult> Index()
         {
             var uidClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -309,6 +310,7 @@ namespace SkillSwap_Platform.Controllers
 
 
         // JSON endpoint for FullCalendar
+        [Authorize(Policy = "ProPlan")]
         [HttpGet]
         public async Task<IActionResult> EventsJson()
         {
@@ -339,6 +341,7 @@ namespace SkillSwap_Platform.Controllers
             return Json(fcEvents);
         }
 
+        [Authorize(Policy = "ProPlan")]
         [HttpGet]
         public async Task<IActionResult> CreateCalEvent(int exchangeId)
         {

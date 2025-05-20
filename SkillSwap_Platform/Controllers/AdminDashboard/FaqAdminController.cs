@@ -5,7 +5,7 @@ using SkillSwap_Platform.Services.AdminControls.Faqs;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {
-    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin, Moderator")]
     [Route("Admin/[controller]")]
     [Route("Admin/[controller]/[action]")]
     public class FaqAdminController : Controller

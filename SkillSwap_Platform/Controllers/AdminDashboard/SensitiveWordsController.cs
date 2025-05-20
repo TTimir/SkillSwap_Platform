@@ -4,7 +4,7 @@ using SkillSwap_Platform.Services.AdminControls.Message.SensitiveWord;
 
 namespace SkillSwap_Platform.Controllers.AdminDashboard
 {
-    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "SkillSwapAuth", Roles = "Admin, Moderator")]
     [Route("Admin/[controller]")]
     [Route("Admin/[controller]/[action]")]
     public class SensitiveWordsController : Controller

@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "PlusPlan")]
     public class TrackNotificationsController : Controller
     {
         private readonly SkillSwapDbContext _db;

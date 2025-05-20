@@ -13,7 +13,9 @@ namespace SkillSwap_Platform.Services
         {
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<SkillSwapDbContext>();
+            await db.EnsureAdminUserAsync();
             await db.EnsureEscrowUserAsync();
+            await db.EnsureSystemReserveUserAsync();
         }
 
         public Task StopAsync(CancellationToken _) => Task.CompletedTask;
