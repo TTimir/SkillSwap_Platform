@@ -747,6 +747,25 @@
                             </div>
                         }
 
+                        @if (isAdmin)
+                        {
+                            <p class="fz15 fw400 ff-heading pl30 mt30">Token Reserve & Adjustment</p>
+                            <div class="sidebar_list_item">
+                                <a href="@Url.ActionLink("Index","AdminTokenAdjust", new { area = "Admin" })"
+                                   class="d-flex items-center @(currentController=="AdminBlog" && currentAction=="Create" ? "-is-active" : "")">
+                                    <i class="flaticon-dollar mr15"></i>
+                                    Adjusted Tokens
+                                </a>
+                            </div>
+                            <div class="sidebar_list_item">
+                                <a href="@Url.ActionLink("Create","AdminTokenAdjust", new { area = "Admin" })"
+                                   class="d-flex items-center @(currentController=="AdminBlog" && currentAction=="Index" ? "-is-active" : "")">
+                                    <i class="flaticon-money mr15"></i>
+                                    Adjust Reserved Tokens
+                                </a>
+                            </div>
+                        }
+
                         <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                         <div class="sidebar_list_item">
                             <!-- hidden logout form -->
@@ -854,6 +873,11 @@
                                                 <li><p class="fz15 fw400 ff-heading mt30 pl30">Privacy & Manage</p></li>
                                                 <li><a href="@Url.ActionLink("Create","AdminBlog")"><i class="flaticon-review mr10"></i>Create Post</a></li>
                                                 <li><a href="@Url.ActionLink("Index","AdminBlog")"><i class="flaticon-presentation mr10"></i>Posted Blogs</a></li>
+                                            }
+                                            @if (isAdmin)
+                                            {
+                                                <li><a href="@Url.ActionLink("Index","AdminTokenAdjust")"><i class="flaticon-dollar mr10"></i>Adjusted Tokens</a></li>
+                                                <li><a href="@Url.ActionLink("Create","AdminTokenAdjust")"><i class="flaticon-money mr10"></i> Adjust Reserved Tokens</a></li>
                                             }
                                             <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
                                             <li>

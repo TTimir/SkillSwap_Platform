@@ -252,7 +252,10 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.BillingCycle)
                 .HasMaxLength(10)
                 .HasDefaultValue("monthly");
+            entity.Property(e => e.GatewayOrderId).HasMaxLength(200);
+            entity.Property(e => e.GatewayPaymentId).HasMaxLength(200);
             entity.Property(e => e.IsAutoRenew).HasDefaultValue(true);
+            entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PlanName).HasMaxLength(50);
         });
 
@@ -1044,9 +1047,13 @@ public partial class SkillSwapDbContext : DbContext
         {
             entity.HasKey(e => e.TransactionId).HasName("PK__TblToken__55433A6B698057C6");
 
+            entity.Property(e => e.AdminAdjustmentReason).HasMaxLength(256);
+            entity.Property(e => e.AdminAdjustmentType).HasMaxLength(50);
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 6)");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Description).HasMaxLength(200);
+            entity.Property(e => e.NewBalance).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.OldBalance).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TxType)
                 .HasMaxLength(50)
                 .IsUnicode(false);

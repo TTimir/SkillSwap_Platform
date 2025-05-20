@@ -22,7 +22,10 @@ namespace SkillSwap_Platform.Models.ViewModels
 
         [Required(ErrorMessage = "Contact Number is required.")]
         [Display(Name = "Contact Number")]
-        [RegularExpression(@"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$", ErrorMessage = "Please enter a valid contact number (10 digits) and should follow this format (123-123-1234).")]
+        [RegularExpression(
+    @"^(\+91)?\d{10}$",
+    ErrorMessage = "Please enter a valid 10-digit contact number, with optional +91 prefix."
+)]
         public string ContactNo { get; set; }
 
         [Required(ErrorMessage = "Password is required.")]

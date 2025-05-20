@@ -362,6 +362,19 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
                 await _db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
+
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = buyer.UserId,
+                    Title = "Tokens Refunded",
+                    Message = $"{cost} tokens have been returned to your account for cancelled exchange #{exchangeId}.",
+                    Url = $"/UserDashboard/Exchanges/{exchangeId}"
+                });
+                await _email.SendEmailAsync(
+                    buyer.Email,
+                    subject: $"Your tokens have been refunded",
+                    body: $"<p>Hi {buyer.UserName},</p><p>Your {cost} tokens have been returned after cancelling exchange #{exchangeId}.</p><p>Thanks,<br/>The SkillSwap Team</p>"
+                );
             }
             catch (Exception ex)
             {

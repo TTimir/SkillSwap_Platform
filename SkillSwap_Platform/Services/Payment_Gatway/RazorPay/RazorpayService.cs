@@ -24,7 +24,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
 
         // Expose the test/live key for your frontend
         public string Key => _rzpSettings.Key;
-
+        public string Secret => _rzpSettings.Secret;
 
         public async Task<CreateOrderResult> CreateOrderAsync(string planName, string billingCycle)
         {
@@ -38,7 +38,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
             var isYearly = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase);
             var multiplier = isYearly
                                        ? 12m * (1 - _planSettings.Discount)
-                                       : 1m; 
+                                       : 1m;
             var priceInRupees = Math.Round(basePrice * multiplier, 0);
 
             // 3) paise
@@ -48,14 +48,30 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
             var receipt = $"rcpt_{Guid.NewGuid():N}";
             try
             {
-                var client = new RazorpayClient(_rzpSettings.Key, _rzpSettings.Secret);
-                var order = await Task.Run(() => client.Order.Create(new Dictionary<string, object>
+                var client = new RazorpayClient(Key, Secret);
+                var parameters = new Dictionary<string, object>
                 {
                     ["amount"] = amountInPaise,
                     ["currency"] = "INR",
                     ["receipt"] = receipt,
                     ["payment_capture"] = 1
-                }));
+                };
+                Order order = null;
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    try
+                    {
+                        order = client.Order.Create(parameters);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the exception including any inner WebException info
+                        await Task.Delay(TimeSpan.FromSeconds(attempt));
+                    }
+                }
+                if (order == null)
+                    throw new InvalidOperationException($"Unable to create Razorpay order after 3 attempts");
 
                 return new CreateOrderResult
                 {
@@ -112,7 +128,29 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
                 // invalid hex string
                 return false;
             }
-
         }
+
+        // Services/Payment_Gatway/RazorPay/RazorpayService.cs
+        public bool VerifyWebhookSignature(string payload, string signature)
+        {
+            if (string.IsNullOrEmpty(signature)) return false;
+
+            var keyBytes = Encoding.UTF8.GetBytes(_rzpSettings.WebhookSecret);
+            using var hmac = new HMACSHA256(keyBytes);
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+            try
+            {
+                // signature is hex; convert to bytes
+                var sigBytes = Enumerable.Range(0, signature.Length / 2)
+                    .Select(i => Convert.ToByte(signature.Substring(i * 2, 2), 16))
+                    .ToArray();
+                return CryptographicOperations.FixedTimeEquals(computedHash, sigBytes);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

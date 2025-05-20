@@ -122,6 +122,8 @@ public partial class TblUser
 
     public bool IsFlagged { get; set; }
 
+    public bool IsSystemReserveAccount { get; set; }
+
     public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
 
     public virtual ICollection<OtpAttempt> OtpAttempts { get; set; } = new List<OtpAttempt>();

@@ -23,5 +23,7 @@ public partial class TblExperience
 
     public string? Description { get; set; }
 
+    public bool IsCurrent { get; set; }
+
     public virtual TblUser User { get; set; } = null!;
 }

@@ -144,6 +144,7 @@ builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IAdminSearchService, AdminSearchService>();
 builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService>();
 builder.Services.AddScoped<IBlogService, BlogService>();
+builder.Services.AddScoped<TokenAdminService>();
 builder.Services.AddHostedService<AdminNotificationDispatcher>();
 
 builder.Services.AddSingleton<AdminNotificationInterceptor>();

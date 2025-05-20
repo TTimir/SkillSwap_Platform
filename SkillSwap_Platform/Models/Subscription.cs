@@ -20,8 +20,13 @@ public partial class Subscription
 
     public string BillingCycle { get; set; } = null!;
 
+    public string? GatewayOrderId { get; set; }
+
+    public string? GatewayPaymentId { get; set; }
+
+    public decimal? PaidAmount { get; set; }
+
     [NotMapped]
     public bool IsActive => EndDate > DateTime.UtcNow;
-
     public virtual ICollection<CancellationRequest> CancellationRequests { get; set; } = new List<CancellationRequest>();
 }

@@ -2,8 +2,9 @@
 {
     public class RazorpaySettings
     {
-        public string Key { get; set; }
-        public string Secret { get; set; }
+        public string Key { get; set; } = default!;
+        public string Secret { get; set; } = default!;
+        public string WebhookSecret { get; set; } = default!;
     }
 
     public class PlanRequest

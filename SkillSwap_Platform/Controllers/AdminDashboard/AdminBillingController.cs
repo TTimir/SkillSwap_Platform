@@ -45,24 +45,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         // GET: /Admin/AdminBilling
         public async Task<IActionResult> Index(string term, int page = 1, int pageSize = 20)
         {
-            // 1) build the raw join
-            var joined = from s in _db.Subscriptions
+            // 1) Build a subquery of latest StartDate per user
+            var latestDates = _db.Subscriptions
+                    .GroupBy(s => s.UserId)
+                    .Select(g => new {
+                        UserId = g.Key,
+                        Latest = g.Max(s => s.StartDate)
+                    });
+
+            // 2) Join back to Subscriptions to get the full Subscription entity for that date
+            var latestSubs = from s in _db.Subscriptions
+                             join ld in latestDates
+                               on new { s.UserId, s.StartDate }
+                               equals new { ld.UserId, StartDate = ld.Latest }
+                             select s;
+
+            // 3) Now join each latest sub to its User
+            var joined = from s in latestSubs
                          join u in _db.TblUsers
                            on s.UserId equals u.UserId into users
                          from u in users.DefaultIfEmpty()
                          select new { Subscription = s, User = u };
 
-            // 2) apply search *before* projection
+            // 4) Apply search (only across one record per user now)
             if (!string.IsNullOrWhiteSpace(term))
             {
                 joined = joined.Where(x =>
-                     (x.User.FirstName + " " + x.User.LastName + " (" + x.User.UserName + ")").Contains(term)
+                     (x.User.FirstName + " " + x.User.LastName + " (" + x.User.UserName + ")")
+                         .Contains(term)
                   || x.User.Email.Contains(term)
                   || x.Subscription.PlanName.Contains(term)
                 );
             }
 
-            // 3) count & page
+            // 5) Count & page
             var total = await joined.CountAsync();
             var pageItems = await joined
                 .OrderByDescending(x => x.Subscription.StartDate)
@@ -71,7 +87,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 .AsNoTracking()
                 .ToListAsync();
 
-            // 4) project *after* filtering
+            // 6) Project into your VM
             var subsPage = pageItems.Select(x => new AdminSubscriptionItem
             {
                 Id = x.Subscription.Id,
@@ -84,7 +100,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 IsAutoRenew = x.Subscription.IsAutoRenew
             }).ToList();
 
-            // 5) build VM
+            // 7) Build and return the VM
             var vm = new AdminBillingIndexVM
             {
                 Term = term,
@@ -346,41 +362,45 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 ["Growth"] = 3
             };
 
-            // Only allow strictly lower tiers
-            if (!rank.ContainsKey(newPlan) || rank[newPlan] >= rank[sub.PlanName])
+            if (!rank.TryGetValue(newPlan, out var newRank)
+                || newRank >= rank[sub.PlanName])
             {
-                TempData["Error"] = "Invalid downgrade.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToIndexWithError("Invalid downgrade.");
             }
 
             try
             {
-                var now = DateTime.UtcNow;
-                var remaining = sub.EndDate > now ? sub.EndDate - now : TimeSpan.Zero;
-                var oldPlan = sub.PlanName;
+                var originalStart = sub.StartDate;
 
-                var originalCycle = sub.BillingCycle; 
-                if (newPlan == "Free")
+                var now = DateTime.UtcNow;
+                var remaining = sub.EndDate > now
+                                ? sub.EndDate - now
+                                : TimeSpan.Zero;
+
+                // 5) Figure out the new EndDate
+                //    - For Free, we end immediately (you could also set EndDate = originalStart if preferred)
+                var newEnd = newPlan == "Free"
+                             ? now
+                             : now + remaining;
+
+                // 6) Prevent ending before it began (only for paid-to-paid downgrades)
+                if (newPlan != "Free" && newEnd <= originalStart)
                 {
-                    sub.PlanName = "Free";
-                    sub.BillingCycle = "Free Cycle";
-                    sub.IsAutoRenew = false;
-                    sub.StartDate = now;
-                    sub.EndDate = now;
+                    return RedirectToIndexWithError(
+                        "Cannot downgrade: subscription would end before it began."
+                    );
                 }
-                else
-                {
-                    sub.PlanName = newPlan;
-                    sub.BillingCycle = originalCycle;
-                    sub.IsAutoRenew = false;
-                    sub.StartDate = now;
-                    sub.EndDate = now + remaining;
-                }
+
+                // 7) Apply the changes
+                var oldPlan = sub.PlanName;
+                sub.PlanName = newPlan;
+                sub.BillingCycle = newPlan == "Free" ? null : sub.BillingCycle;
+                sub.IsAutoRenew = false;
+                sub.EndDate = newEnd;
 
                 await _db.SaveChangesAsync();
 
                 var user = await _db.TblUsers.FindAsync(sub.UserId);
-                var newEnd = now + remaining;
                 if (user != null)
                 {
                     // 1) figure out their active tier & SLA

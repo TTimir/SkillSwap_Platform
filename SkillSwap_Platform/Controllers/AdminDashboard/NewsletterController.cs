@@ -278,7 +278,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         }
 
         // GET /Admin/Newsletter/ViewAttachment?file=uploads/newsletters/foo.png
-        [HttpGet("view-attachment", Name = "ViewAttachmentRoute")]
+        [HttpGet("~/Admin/Newsletter/view-attachment", Name = "ViewAttachmentRoute")]
         public async Task<IActionResult> ViewAttachment(int logId, string file)
         {
             if (string.IsNullOrWhiteSpace(file))

@@ -11,6 +11,7 @@ using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
 using SkillSwap_Platform.Services.Payment_Gatway;
 using SkillSwap_Platform.Services.Payment_Gatway.RazorPay;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace SkillSwap_Platform.Controllers.Payment_Gatway
 {
@@ -46,18 +47,14 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
                   model.razorpay_signature))
             {
                 _logger.LogWarning("Invalid signature for payment {PaymentId}", model.razorpay_payment_id);
-                return View("404", "EP");
+                return View("EP404", "EP");
             }
 
             // determine plan duration
             var now = DateTime.UtcNow;
-            var end = model.planName switch
-            {
-                "Plus" => now.AddMonths(1),
-                "Pro" => now.AddMonths(1),
-                "Growth" => now.AddMonths(1),
-                _ => now
-            };
+            var end = model.billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
+              ? now.AddYears(1)
+              : now.AddMonths(1);
 
             // get current user
             var userId = GetUserId();
@@ -67,8 +64,39 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
                 return View("404", "EP");
             }
 
-            await _subs.CreateAsync(userId ?? 0, model.planName, now, end);
-            _logger.LogInformation("Subscription for user {UserId} upgraded to {Plan} until {EndDate}", userId, model.planName, end);
+            // 5) Stamp the GatewayOrderId so RecordPaymentAsync can find it
+            var sub = await _subs.GetActiveAsync(userId.Value);
+            sub.GatewayOrderId = model.razorpay_order_id;
+            await _db.SaveChangesAsync();
+
+            // 6) Determine paid amount
+            decimal paidAmount;
+            if (model.razorpay_amount > 0)
+            {
+                // if your form posts amount in paise:
+                paidAmount = model.razorpay_amount / 100m;
+            }
+            else
+            {
+                // otherwise fetch from Razorpay API:
+                var client = new RazorpayClient(_rzp.Key, _rzp.Secret);
+                var payment = await Task.Run(() => client.Payment.Fetch(model.razorpay_payment_id));
+                paidAmount = Convert.ToDecimal(payment["amount"]) / 100m;
+            }
+
+            // 7) Record payment details + fire notifications
+            await _subs.RecordPaymentAsync(
+                model.razorpay_order_id,    // orderId
+                model.razorpay_payment_id,  // paymentId
+                paidAmount,                 // paidAmount
+                model.planName,             // desiredPlanName
+                model.billingCycle          // billingCycle ("monthly" or "yearly")
+            );
+
+            _logger.LogInformation(
+                "User {UserId} subscribed to {Plan} (order {OrderId}) paid {Amount}",
+                userId, model.planName, model.razorpay_order_id, paidAmount
+            );
 
             return View("Success", model);
         }
@@ -77,9 +105,20 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
         // 1) Show the pricing grid
         [HttpGet]
         [Route("Pricing")]
-        public IActionResult Pricing()
+        public async Task<IActionResult> Pricing()
         {
-            return View();
+            var userId = GetUserId();
+            Models.Subscription activeSub = null;
+            if (userId.HasValue)
+                activeSub = await _subs.GetActiveAsync(userId.Value);
+
+            var vm = new PricingViewModel
+            {
+                CurrentPlan = activeSub?.PlanName ?? "Free",
+                CurrentCycle = activeSub?.BillingCycle ?? "monthly",
+                CurrentEndDate = activeSub?.EndDate
+            };
+            return View(vm);
         }
 
         [HttpPost("Checkout")]
@@ -137,27 +176,59 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
 
             // signature is valid → update the DB
             var userId = GetUserId() ?? throw new Exception("Unauthenticated");
+            var now = DateTime.UtcNow;
 
-            using var tx = await _db.Database.BeginTransactionAsync();
+            var activeSub = await _subs.GetActiveAsync(userId);
+            DateTime newStart, newEnd;
+
+            // are we renewing an unexpired subscription of the same plan+cycle?
+            if (activeSub != null
+                && activeSub.PlanName.Equals(resp.planName, StringComparison.OrdinalIgnoreCase)
+                && activeSub.BillingCycle.Equals(resp.billingCycle, StringComparison.OrdinalIgnoreCase)
+                && activeSub.EndDate > now)
+            {
+                // extend from the *current* end date
+                newStart = activeSub.StartDate;          // you could also leave StartDate untouched
+                newEnd = activeSub.EndDate
+                             .AddMonths(resp.billingCycle == "yearly" ? 12 : 1);
+            }
+            else
+            {
+                // brand-new or expired → start today
+                newStart = now;
+                newEnd = now.AddYears(resp.billingCycle == "yearly" ? 1 : 0)
+                              .AddMonths(resp.billingCycle == "yearly" ? 0 : 1);
+            }
             try
             {
-                var start = DateTime.UtcNow;
-                var end = resp.billingCycle == "yearly"
-                    ? start.AddYears(1)
-                    : start.AddMonths(1);
 
-                await _subs.UpsertAsync(userId, resp.planName, resp.billingCycle, start, end);
+                var sub = await _subs.GetActiveAsync(userId)
+                            ?? throw new InvalidOperationException("No subscription to attach order to");
+                sub.GatewayOrderId = resp.razorpay_order_id;
+                await _db.SaveChangesAsync();
 
-                await tx.CommitAsync();
+                // 6) Fetch the paid amount from Razorpay API
+                var client = new RazorpayClient(_rzp.Key, _rzp.Secret);
+                var payment = await Task.Run(() => client.Payment.Fetch(resp.razorpay_payment_id));
+                var amountInPaise = Convert.ToDecimal(payment["amount"]);
+                var paidAmount = amountInPaise / 100m;
+
+                // 7) Record payment + fire notifications
+                await _subs.RecordPaymentAsync(
+                    resp.razorpay_order_id,   // orderId
+                    resp.razorpay_payment_id, // paymentId
+                    paidAmount,               // paidAmount
+                    resp.planName,            // desiredPlanName
+                    resp.billingCycle         // billingCycle
+                );
+
                 _logger.LogInformation("Payment {OrderId} applied to user {UserId}", resp.razorpay_order_id, userId);
-
 
                 // TODO: update user subscription, unlock features...
                 return Json(new { success = true, message = "Payment successful! Subscription updated." });
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error processing payment {OrderId}", resp.razorpay_order_id);
                 return StatusCode(500, new { success = false, message = "Processing failed" });
             }

@@ -43,6 +43,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             {
                 UserId = userId,
                 PlanName = planName,
+                BillingCycle = "initial",
                 StartDate = start,
                 EndDate = end,
                 IsAutoRenew = true
@@ -56,7 +57,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             {
                 UserId = userId,
                 Title = "Subscription Activated",
-                Message = $"Your {planName} plan is now active until {end.ToString("MMMM d, yyyy")}.",
+                Message = $"Your {planName} plan is now active until {end.ToLocalTime().ToString("MMMM d, yyyy")}.",
                 Url = "/UserDashboard/Index",
                 CreatedAt = DateTime.UtcNow
             });
@@ -83,15 +84,15 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                       <p>Your <strong style=""color:#264653;"">{planName}</strong> plan has been <strong>activated</strong>.</p>
                       <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
                         <p><strong>Subscription ID:</strong> {sub.Id}</p>
-                        <p><strong>Start Date:</strong> {start:MMMM d, yyyy}</p>
-                        <p><strong>End Date:</strong> {end:MMMM d, yyyy}</p>
+                        <p><strong>Start Date:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+                        <p><strong>End Date:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
                       </div>
                       <p>Manage your subscription anytime in your 
-                         <a href=""/UserDashboard/Index"" style=""color:#2a9d8f;text-decoration:none;"">Account Settings</a>.
+                         Account.
                       </p>
                       <p style=""margin-top:2em;"">Cheers,<br/><strong>The SkillSwap Team</strong></p>
                     </div>";
-                await _emailSender.SendEmailAsync(user.Email, subject, html);
+                await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
             }
         }
 
@@ -104,16 +105,36 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 if (existing is null)
                     _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
 
-                var isNew = existing is null;
+                // 2) Check if this is simply a renewal extension
+                bool isRenewalExtension = existing != null
+                    && string.Equals(existing.PlanName, planName, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(existing.BillingCycle, billingCycle, StringComparison.OrdinalIgnoreCase)
+                    && existing.EndDate > DateTime.UtcNow;
 
-                if (isNew)
-                    _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
+                if (isRenewalExtension)
+                {
+                    // EXTENSION: extend the EndDate by one cycle
+                    var extensionStart = existing.EndDate;
+                    existing.EndDate = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
+                        ? extensionStart.AddYears(1)
+                        : extensionStart.AddMonths(1);
+                }
+                else
+                {
+                    // 3) Brand-new or different-plan subscription
+                    if (existing is null)
+                    {
+                        existing = new Subscription { UserId = userId };
+                        _db.Subscriptions.Add(existing);
+                    }
 
-                existing.PlanName = planName;
-                existing.BillingCycle = billingCycle;
-                existing.StartDate = start;
-                existing.EndDate = end;
-                existing.IsAutoRenew = true;   // always turn auto-renew back on
+                    existing.PlanName = planName;
+                    existing.BillingCycle = billingCycle;
+                    existing.StartDate = start;  // usually DateTime.UtcNow
+                    existing.EndDate = end;    // start.AddMonths or AddYears
+                }
+
+                existing.IsAutoRenew = true;   // keep auto-renew on
 
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
@@ -122,10 +143,10 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 await _notif.AddAsync(new TblNotification
                 {
                     UserId = userId,
-                    Title = isNew ? "Subscription Activated" : "Subscription Renewed",
-                    Message = isNew
-                        ? $"Your {planName} plan is now active until {end:MMMM d, yyyy}."
-                        : $"Your {planName} plan has been renewed through {end:MMMM d, yyyy}.",
+                    Title = isRenewalExtension ? "Subscription Activated" : "Subscription Renewed",
+                    Message = isRenewalExtension
+                        ? $"Your {planName} plan is now active until {end.ToLocalTime().ToString("MMMM d, yyyy")}."
+                        : $"Your {planName} plan has been renewed through {end.ToLocalTime().ToString("MMMM d, yyyy")}.",
                     Url = "/UserDashboard/Index",
                     CreatedAt = DateTime.UtcNow
                 });
@@ -143,25 +164,25 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                         "Growth" => ("Growth Support", "24h SLA"),
                         _ => ("Free Support", "120h SLA")
                     };
-                    var action = isNew ? "activated" : "renewed";
-                    var subject = isNew
+                    var action = isRenewalExtension ? "activated" : "renewed";
+                    var subject = isRenewalExtension
                         ? $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!"
                         : $"[{supportLabel} · {sla}] 🔁 Your {planName} subscription has been renewed!";
                     var html = $@"
                         <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
-                          <h1 style=""color:#2a9d8f;"">{(isNew ? "🎉" : "🔁")} Hi {user.FirstName}, your subscription has been {action}! </h1>
+                          <h1 style=""color:#2a9d8f;"">{(isRenewalExtension ? "🎉" : "🔁")} Hi {user.FirstName}, your subscription has been {action}! </h1>
                           <p>Your <strong style=""color:#264653;"">{planName}</strong> plan ({billingCycle}) is now {action}.</p>
                           <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
                             <p><strong>Subscription ID:</strong> {existing.Id}</p>
-                            <p><strong>Start Date:</strong> {start:MMMM d, yyyy}</p>
-                            <p><strong>End Date:</strong> {end:MMMM d, yyyy}</p>
+                            <p><strong>Start Date:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+                            <p><strong>End Date:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
                           </div>
                           <p>Review or upgrade anytime via your 
-                             <a href=""/UserDashboard/Index"" style=""color:#2a9d8f;text-decoration:none;"">Account Settings</a>.
+                            Account.
                           </p>
                           <p style=""margin-top:2em;"">Thanks for staying with us,<br/><strong>The SkillSwap Team</strong></p>
                         </div>";
-                    await _emailSender.SendEmailAsync(user.Email, subject, html);
+                    await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
                 }
             }
             catch (Exception ex)
@@ -204,7 +225,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 {
                     UserId = userId,
                     Title = "Auto-Renew Cancelled",
-                    Message = $"Your subscription will now end on {sub.EndDate:MMMM d, yyyy}.",
+                    Message = $"Your subscription will now end on {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}.",
                     Url = "/UserDashboard/Index",
                     CreatedAt = DateTime.UtcNow
                 });
@@ -230,15 +251,15 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                           <h1 style=""color:#e76f51;"">Notice: Auto-renew turned off</h1>
                           <p>We’ve cancelled auto-renew for your subscription <strong>ID {sub.Id}</strong>.</p>
                           <div style=""background:#fdecea;border-radius:8px;padding:1em;margin:1.5em 0;"">
-                            <p><strong>End Date Remains:</strong> {sub.EndDate:MMMM d, yyyy}</p>
+                            <p><strong>End Date Remains:</strong> {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}</p>
                             <p><strong>Reason:</strong> {reason}</p>
                           </div>
                           <p style=""margin-top:2em;"">If this was a mistake, you can re-enable auto-renew in your 
-                             <a href=""/UserDashboard/Index"" style=""color:#e76f51;text-decoration:none;"">Account Settings</a>.
+                             Account.
                           </p>
                           <p style=""margin-top:2em;"">Regards,<br/><strong>The SkillSwap Team</strong></p>
                         </div>";
-                    await _emailSender.SendEmailAsync(user.Email, subject, html);
+                    await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
                 }
             }
             catch (Exception ex)
@@ -250,6 +271,40 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                     userId);
                 throw;
             }
+        }
+
+        // Services/Payment_Gatway/SubscriptionService.cs
+        public async Task RecordPaymentAsync(string orderId, string paymentId, decimal paidAmount, string desiredPlanName, string billingCycle)
+        {
+            // 1) Find the subscription by GatewayOrderId
+            var sub = await _db.Subscriptions
+                .Where(s => s.GatewayOrderId == orderId)
+                .OrderByDescending(s => s.StartDate)
+                .FirstOrDefaultAsync();
+
+            if (sub == null)
+                throw new InvalidOperationException($"No subscription found for order {orderId}");
+
+            // 2) Record the payment details
+            sub.GatewayPaymentId = paymentId;
+            sub.PaidAmount = paidAmount;
+            await _db.SaveChangesAsync();
+
+            // 3) Upgrade/renew the subscription
+            // — only extend from EndDate if cycle hasn’t changed and sub still active
+            bool sameCycle =
+                    string.Equals(sub.BillingCycle, billingCycle, StringComparison.OrdinalIgnoreCase)
+                    && sub.EndDate > DateTime.UtcNow;
+
+            var start = sameCycle
+                    ? sub.EndDate
+                    : DateTime.UtcNow;
+
+            var end = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
+                    ? start.AddYears(1)
+                    : start.AddMonths(1);
+
+            await UpsertAsync(sub.UserId, desiredPlanName, billingCycle, start, end);
         }
 
         public async Task<bool> IsInPlanAsync(int userId, string planName)

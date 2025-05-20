@@ -104,7 +104,7 @@
             <div class="alert alert-info mt-3 d-flex align-items-start" role="alert" style="gap:0.5rem;">
                 <i class="fas fa-info-circle mt-1"></i>
                 <div>
-                    <strong>Heads-up:</strong> Cancelling auto-renew means your plan won’t renew automatically,
+                    <strong>Heads-up:</strong> Cancelling current plan means your plan won’t renew automatically,
                     but you’ll keep full access until 
                     <strong>
                         @(Model.CurrentSubscription != null
@@ -180,7 +180,7 @@
             <div class="modal-body">
                 <textarea name="reason"
                           rows="4"
-                          placeholder="Let us know why you’re turning off auto-renew…"
+                          placeholder="Let us know why you’re cancelling the plan…"
                           required></textarea>
             </div>
             <div class="modal-footer">

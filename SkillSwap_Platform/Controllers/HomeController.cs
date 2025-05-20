@@ -911,6 +911,11 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(UserRegisterationVM model)
     {
+        if (!string.IsNullOrEmpty(model.ContactNo))
+        {
+            model.ContactNo = Regex.Replace(model.ContactNo, @"\D", "");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
