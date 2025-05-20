@@ -210,7 +210,10 @@
                             </div>
 
                             <div class="col-md-12 mb-4">
-                                <label class="form-label">Skills You Offer (Press Enter to add) <span class="text-danger">*</span></label>
+                                <label class="form-label">Skills You Offer (Press Enter or leave the field to add) <span class="text-danger">*</span></label>
+                                <small class="form-text text-muted mb-2">
+                                    Please enter only those skills you have added in your Skill Set above.
+                                </small>
                                 <input type="text" id="offeredSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
                                 <div id="offeredSkillsContainer" class="mt-2"></div>
                                 <input type="hidden" name="offeredSkills" id="offeredSkillsHidden">
@@ -218,7 +221,7 @@
                             </div>
 
                             <div class="col-md-12">
-                                <label class="form-label">Skills You Want to Learn (Press Enter to add) <span class="text-danger">*</span></label>
+                                <label class="form-label">Skills You Want to Learn (Press Enter or leave the field to add) <span class="text-danger">*</span></label>
                                 <input type="text" id="willingSkillInput" class="form-control" placeholder="Type a skill and press Enter" />
                                 <div id="willingSkillsContainer" class="mt-2"></div>
                                 <input type="hidden" name="willingSkills" id="willingSkillsHidden">
@@ -277,7 +280,144 @@
 
     <!-- JavaScript (jQuery) to Clone Sections -->
     <script>
-             $(document).ready(function () {
+        $(document).ready(function () {
+          // Update hidden input with comma-separated badges
+          function updateHiddenSkills(hiddenInput, container) {
+            const skills = container.find('.skill-badge')
+              .map((_, el) => $(el).text().replace('×', '').trim())
+              .get();
+            hiddenInput.val(skills.join(','));
+          }
+
+          // Remove badges that no longer exist in the Skill Set
+          function checkOfferedSkills() {
+            const available = $("#skillset-section input[name='skill[name][]']")
+              .map((_, inp) => $(inp).val().toLowerCase().trim())
+              .get();
+            $('#offeredSkillsContainer .skill-badge').each(function () {
+              const s = $(this).text().replace('×','').trim().toLowerCase();
+              if (!available.includes(s)) $(this).remove();
+            });
+            updateHiddenSkills($('#offeredSkillsHidden'), $('#offeredSkillsContainer'));
+          }
+
+          // Core function to add a badge
+          function addSkillBadge(input, container, hidden, error) {
+            const val = $(input).val().trim();
+            const $cont = $(container), $hid = $(hidden), $err = $(error);
+            if (!val) return;
+            // duplicate?
+            if ($cont.find('.skill-badge').filter((_, b) =>
+                  $(b).text().replace('×','').trim().toLowerCase() === val.toLowerCase()
+                ).length) {
+              $err.text('Already added.');
+              return $(input).val('');
+            }
+            // limit 5
+            if ($cont.find('.skill-badge').length >= 5) {
+              $err.text('Max 5 allowed.');
+              return $(input).val('');
+            }
+            $cont.append(`
+              <span class="skill-badge">
+                ${val}
+                <i class="far fa-times remove-skill ms-2"></i>
+              </span>`);
+            updateHiddenSkills($hid, $cont);
+            $(input).val('');
+            $err.text('');
+          }
+
+          // ENTER + BLUR for both fields
+          ['#offeredSkillInput','#willingSkillInput'].forEach(selector => {
+            const isOffered = selector === '#offeredSkillInput';
+            const container = isOffered ? '#offeredSkillsContainer' : '#willingSkillsContainer';
+            const hidden    = isOffered ? '#offeredSkillsHidden'    : '#willingSkillsHidden';
+            const error     = isOffered ? '#offeredSkillError'      : '#willingSkillError';
+
+            // Enter key
+            $(selector).on('keypress', e => {
+              if (e.which === 13) {
+                e.preventDefault();
+                // if offered, ensure skill exists in Skill Set
+                if (isOffered) {
+                  const skill = $(selector).val().trim().toLowerCase();
+                  const avail = $("#skillset-section input[name='skill[name][]']")
+                    .map((_, i) => $(i).val().toLowerCase().trim())
+                    .get();
+                  if (!avail.includes(skill)) {
+                    return $(error).text(`"${$(selector).val()}" not in your Skill Set`);
+                  }
+                }
+                addSkillBadge(selector, container, hidden, error);
+              }
+            });
+
+            // Blur event
+            $(selector).on('blur', () => {
+              if ($(selector).val().trim()) {
+                // same validation for offered
+                if (isOffered) {
+                  const skill = $(selector).val().trim().toLowerCase();
+                  const avail = $("#skillset-section input[name='skill[name][]']")
+                    .map((_, i) => $(i).val().toLowerCase().trim())
+                    .get();
+                  if (!avail.includes(skill)) {
+                    return $(error).text(`"${$(selector).val()}" not in your Skill Set`);
+                  }
+                }
+                addSkillBadge(selector, container, hidden, error);
+              }
+            });
+          });
+
+          // Remove badge
+          $(document).on('click', '.remove-skill', function () {
+            const $b = $(this).parent();
+            const isOff = $b.parent().is('#offeredSkillsContainer');
+            $b.remove();
+            updateHiddenSkills(isOff ? $('#offeredSkillsHidden') : $('#willingSkillsHidden'),
+                               isOff ? $('#offeredSkillsContainer') : $('#willingSkillsContainer'));
+          });
+
+          // Prevent empty submission
+          $('form').on('submit', e => {
+            if (!$('#offeredSkillsHidden').val().trim() ||
+                !$('#willingSkillsHidden').val().trim()) {
+              $('#offeredSkillError').text('Add at least one Offered skill.');
+              $('#willingSkillError').text('Add at least one Willing skill.');
+              e.preventDefault();
+            }
+          });
+
+          // Clone/remove Skill Set entries
+          function cloneEntry(section) {
+            const $orig = $(section).find('.row:first');
+            const $cl   = $orig.clone(false, false);
+            $cl.find('input').val('');
+            $cl.find('.custom-category-container').hide();
+            $cl.find('.add-entry').remove();
+            $cl.find('.remove-entry').removeClass('d-none');
+            $(section).append($cl);
+          }
+          $(document).on('click', '.add-entry', function () {
+            cloneEntry($(this).closest('[id$="-section"]'));
+          });
+          $(document).on('click', '.remove-entry', function () {
+            $(this).closest('.row').remove();
+            checkOfferedSkills();
+          });
+
+          // Show/hide custom category
+          $(document).on('changed.bs.select', 'select[name="skill[category][]"]', function () {
+            const sel = $(this).val(), $cc = $(this).closest('.row').find('.custom-category-container');
+            if (sel === 'Other') $cc.show().find('input').attr('required', true);
+            else $cc.hide().find('input').val('').removeAttr('required');
+          });
+        });
+    </script>
+    @* <script>
+           $(document).ready(function () {
             // Function to update hidden input field with skills
             function updateHiddenSkills(hiddenInput, container) {
                 var skills = [];
@@ -432,7 +572,7 @@
                 }
             });
         });
-    </script>
+    </script> *@
     <!-- TempData-driven success popup -->
     @if (TempData["ShowCreditSuccess"] != null)
     {
