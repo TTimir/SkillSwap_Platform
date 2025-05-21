@@ -47,8 +47,6 @@ public partial class TblReview
 
     public string? DeletionReason { get; set; }
 
-    public virtual TblUser? DeletedByAdmin { get; set; }
-
     public virtual TblExchange Exchange { get; set; } = null!;
 
     public virtual TblOffer Offer { get; set; } = null!;
@@ -60,6 +58,4 @@ public partial class TblReview
     public virtual ICollection<TblReviewModerationHistory> TblReviewModerationHistories { get; set; } = new List<TblReviewModerationHistory>();
 
     public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
-
-    public virtual TblUser User { get; set; } = null!;
 }

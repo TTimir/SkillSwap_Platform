@@ -19,7 +19,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
             SkillSwapDbContext db,
             IUserServices userService,
             IEmailService emailService,
-            ILogger<PasswordResetService> logger, 
+            ILogger<PasswordResetService> logger,
             INotificationService notif)
         {
             _db = db;
@@ -124,7 +124,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
                 await trx.CommitAsync();
 
-                var htmlBody = @"
+                var htmlBody = $@"
                     <!DOCTYPE html>
                     <html lang=""en"">
                     <head>
@@ -154,16 +154,16 @@ namespace SkillSwap_Platform.Services.PasswordReset
                                     Your SkillSwap Password Has Changed
                                   </h2>
                                   <p style=""margin:0 0 10px;"">
-                                    Dear <strong>{userName}</strong>,
+                                    Dear <strong>{user.UserName}</strong>,
                                   </p>
                                   <p style=""margin:0 0 15px;"">
                                     We wanted to let you know that your SkillSwap password was successfully changed on
-                                    <strong>{DateTime.UtcNow:MMMM d, yyyy 'at' h:mm tt} UTC</strong>.
+                                    <strong>{DateTime.UtcNow.ToLocalTime().ToString("MMMM d, yyyy hh:m tt")} IST</strong>.
                                   </p>
                                   <p style=""margin:0 0 15px;"">
                                     If you did not request this change, please
                                     <p style=""color:#00A88F;text-decoration:none;font-weight:bold;"">
-                                      contact our support team
+                                      contact our support team (skillswap360@gmail.com)
                                     </p>
                                     immediately.
                                   </p>
@@ -181,12 +181,13 @@ namespace SkillSwap_Platform.Services.PasswordReset
                               <!-- Legal / Trademark Text -->
                               <tr>
                                 <td style=""background-color:#00A88F;padding:10px 20px;color:#e0f7f1;font-size:11px;line-height:1.4;text-align:center;"">
-                                  <p style=""margin:5px 0;"">
-                                    SkillSwap and the SkillSwap logo are trademarks of SkillSwap Inc. All other trademarks are the property of their respective owners.
-                                  </p>
-                                  <p style=""margin:5px 0;"">
-                                    Registered Office: by SkillSwap.
-                                  </p>
+                                  <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+                                      Thank you for being a valued member of <strong>SkillSwap</strong>. 
+                                      Your creativity and passion make our community thrive!
+                                    </p>
+                                    <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+                                      We appreciate you—keep sharing your skills and inspiring others.
+                                    </p>
                                 </td>
                               </tr>
                     
@@ -201,7 +202,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
                 await _emailService.SendEmailAsync(
                     to: user.Email,
                     subject: "Your SkillSwap password has changed",
-                    body    : htmlBody,
+                    body: htmlBody,
                     isBodyHtml: true
                 );
 
@@ -213,6 +214,40 @@ namespace SkillSwap_Platform.Services.PasswordReset
                 _logger.LogError(ex, "Error resetting password for token {Token}", token);
                 return (false, "An unexpected error occurred. Please try again.");
             }
+        }
+
+        public async Task<int?> GetUserIdByTokenAsync(string token)
+        {
+            var now = DateTime.UtcNow;
+            var entry = await _db.TblPasswordResetTokens
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(t => t.Token == token && t.Expiration > now && !t.IsUsed);
+            return entry?.UserId;
+        }
+
+        public async Task<bool> IsPasswordInUseAsync(string newPassword, int excludingUserId)
+        {
+            var allUsers = await _db.TblUsers
+                .Where(u => u.UserId != excludingUserId)
+                .Select(u => new { u.Salt, u.PasswordHash })
+                .ToListAsync();
+
+            foreach (var row in allUsers)
+            {
+                try
+                {
+                    var candidateHash = PasswordHelper.HashPassword(newPassword, row.Salt);
+                    if (candidateHash == row.PasswordHash)
+                        return true;
+                }
+                catch (FormatException)
+                {
+                    // row.Salt wasn’t Base64 – skip
+                    continue;
+                }
+            }
+
+            return false;
         }
     }
 }

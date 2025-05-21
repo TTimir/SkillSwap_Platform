@@ -378,30 +378,58 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subject = $"[{supportLabel} · {sla}] 🎉 You’re Verified on SkillSwap!";
-            var body = $@"
-                <div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.5em;'>
-                  <h3>Your SkillSwap Verification Has Been Approved!</h3>
-                  <h2 style='color:#0066CC;'>Congratulations, {user.FirstName}!</h2>
-                  <p>We’re thrilled to let you know that your verification request <strong>#{requestId}</strong> has been <span style='color:green;'>approved</span>.</p>
+            var subjectApproved = $"[{supportLabel} · {sla}] 🎉 You’re Verified on SkillSwap!";
+            var bodyApproved = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+      
+      <!-- Header: Blue -->
+      <tr>
+        <td style=""background:#0066CC;color:#ffffff;padding:15px;font-size:18px;text-align:center;font-weight:bold;"">
+          SkillSwap Verification
+        </td>
+      </tr>
 
-                  <p style='font-size:1.1em;'>What this means for you:</p>
-                  <ul>
-                    <li><strong>Verified badge</strong> added to your SkillSwap profile — stand out and build instant trust.</li>
-                    <li>Boost your visibility to learners and collaborators across our global community.</li>
-                    <li>Unlock exclusive opportunities — top swappers often get featured in our newsletters and social channels.</li>
-                  </ul>
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <h3 style=""margin-top:0;"">Your SkillSwap Verification Has Been Approved!</h3>
+          <h2 style=""color:#0066CC;margin-bottom:15px;"">Congratulations, {user.FirstName}!</h2>
+          <p>We’re thrilled to let you know that your verification request <strong>#{requestId}</strong> has been <span style=""color:green;"">approved</span>.</p>
 
-                  <p>Keep sharing your expertise, inspiring others, and unlocking new skills together. We can’t wait to see what you swap next!</p>
+          <p style=""font-size:1.1em;margin-top:20px;"">What this means for you:</p>
+          <ul style=""margin:0;padding-left:1.2em;"">
+            <li><strong>Verified badge</strong> added to your profile — stand out instantly.</li>
+            <li>Boost your visibility to learners and collaborators worldwide.</li>
+            <li>Unlock exclusive features and get featured in our community highlights.</li>
+          </ul>
 
-                  <p style='margin-top:40px;'>Warmly,<br/>
-                  <strong>The SkillSwap Team</strong></p>
-                </div>
-            ";
+          <p style=""margin-top:20px;"">Keep sharing your expertise and inspiring others—we can’t wait to see what you swap next!</p>
+        </td>
+      </tr>
+
+      <!-- Footer: Green -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
 
             try
             {
-                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                await _emailSender.SendEmailAsync(user.Email, subjectApproved, bodyApproved, isBodyHtml: true);
             }
             catch (Exception ex)
             {
@@ -433,41 +461,65 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subject = $"[{supportLabel} · {sla}] Update on Your SkillSwap Verification Request";
+            var subjectUpdate = $"[{supportLabel} · {sla}] Update on Your SkillSwap Verification Request";
             var commentSection = string.IsNullOrWhiteSpace(comments)
                 ? ""
-                : $"<blockquote style='border-left:3px solid #ccc; padding-left:10px; color:#555;'>" +
-                  $"<em>{comments}</em></blockquote>";
+                : $@"<blockquote style=""border-left:3px solid #ccc;padding-left:10px;color:#555;margin:15px 0;"">
+          <em>{comments}</em>
+        </blockquote>";
 
-            var body = $@"
-              <div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.6em;'>
-                <h2 style='color:#CC3300;'>Hey {user.FirstName},</h2>
-            
-                <p>First off, thank you for taking that extra step and sharing your documents for verification <strong>#{requestId}</strong>. You’re already showing the dedication that sets top SkillSwap members apart!</p>
-            
-                {commentSection}
-            
-                <p><em>Every great journey has a few checkpoints…</em> these tweaks will put you right over the line:</p>
-                <ol>
-                  <li><strong>Fine-tune</strong> your document scans—clear, legible, with your name and date front-and-center.</li>
-                  <li><strong>Double-check</strong> that your certificates match the skills listed in your profile.</li>
-                  <li><strong>Re-submit</strong> using our simple form and we’ll sprint to review it.</li>
-                </ol>
-            
-                <p>Once you’re verified, you’ll unlock a <strong>shiny badge</strong> on your profile that instantly signals trust and expertise to everyone in our community. Think of it as your personal seal of credibility!</p>
-            
-                <p>You’ve built valuable skills—now let them shine. Keep swapping knowledge, forging connections, and expanding your horizons.</p>
-            
-                <p>We’re rooting for you every step of the way. Let’s get you verified—your next big opportunity awaits!</p>
-            
-                <p style='margin-top:40px;'>With enthusiasm,<br/>
-                <strong>The SkillSwap Team</strong></p>
-              </div>
-            ";
+            var bodyUpdate = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+      
+      <!-- Header: Orange -->
+      <tr>
+        <td style=""background:#CC3300;color:#ffffff;padding:15px;font-size:18px;text-align:center;font-weight:bold;"">
+          Verification Update Required
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.6;"">
+          <h2 style=""margin-top:0;color:#CC3300;"">Hey {user.FirstName},</h2>
+          <p>Thanks for submitting documents for verification <strong>#{requestId}</strong>. You’re almost there!</p>
+
+          {commentSection}
+
+          <p><em>To complete your verification:</em></p>
+          <ol style=""padding-left:1.2em;margin:0 0 20px;"">
+            <li>Ensure your document scans are clear, legible, and show your name & date.</li>
+            <li>Confirm that your certificates match the skills listed in your profile.</li>
+            <li>Re-submit using our verification form and we’ll review it promptly.</li>
+          </ol>
+
+          <p>Once verified, you’ll unlock your shiny badge and stand out in our community. Let’s get you across the finish line!</p>
+        </td>
+      </tr>
+
+      <!-- Footer: Green -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Need help? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
 
             try
             {
-                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                await _emailSender.SendEmailAsync(user.Email, subjectUpdate, bodyUpdate, isBodyHtml: true);
             }
             catch (Exception ex)
             {
@@ -498,36 +550,65 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subject = $"[{supportLabel} · {sla}] Important Update on Your SkillSwap Verification";
-                var commentSection = string.IsNullOrWhiteSpace(comments)
-                    ? ""
-                    : $"<blockquote style='border-left:3px solid #ccc; padding:10px; color:#555;'>" +
-                      $"<em>{comments}</em></blockquote>";
+            var subjectRevoked = $"[{supportLabel} · {sla}] Important Update on Your SkillSwap Verification";
+            var commentSection = string.IsNullOrWhiteSpace(comments)
+                ? ""
+                : $@"<blockquote style=""border-left:3px solid #ccc;padding:10px;color:#555;margin:15px 0;"">
+          <em>{comments}</em>
+        </blockquote>";
 
-                var body = $@"
-                  <div style='font-family:Segoe UI, sans-serif; color:#333; line-height:1.6em;'>
-                    <h2 style='color:#CC3300;'>Hi {user.FirstName},</h2>
-                    <p>We wanted to let you know that your verified status on SkillSwap (request <strong>#{requestId}</strong>) has been <span style='color:#CC3300;'>revoked</span>.</p>
+            var bodyRevoked = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+      
+      <!-- Header: Orange/Red -->
+      <tr>
+        <td style=""background:#CC3300;color:#ffffff;padding:15px;font-size:18px;text-align:center;font-weight:bold;"">
+          Verification Status Update
+        </td>
+      </tr>
 
-                    {commentSection}
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.6;"">
+          <h2 style=""margin-top:0;color:#CC3300;"">Hi {user.FirstName},</h2>
+          <p>We wanted to let you know that your verified status on SkillSwap (request <strong>#{requestId}</strong>) has been <span style=""color:#CC3300;"">revoked</span>.</p>
 
-                    <p>Here’s how to get back on track:</p>
-                    <ol>
-                      <li>Review the feedback above to understand why your badge was removed.</li>
-                      <li>Gather any additional or clearer documentation that highlights your credentials.</li>
-                      <li>Re-submit your verification and we’ll fast-track the review.</li>
-                    </ol>
+          {commentSection}
 
-                    <p>Remember: a verified badge sets you apart in our global community. We believe in your expertise and can’t wait to help you regain that trusted status!</p>
+          <p>Here’s how to get back on track:</p>
+          <ol style=""padding-left:1.2em;margin:0 0 20px;"">
+            <li>Review the feedback above to understand why your badge was removed.</li>
+            <li>Gather any additional or clearer documentation that highlights your credentials.</li>
+            <li>Re-submit your verification and we’ll fast-track the review.</li>
+          </ol>
 
-                    <p style='margin-top:40px;'>All the best,<br/>
-                    <strong>The SkillSwap Team</strong></p>
-                  </div>
-                ";
+          <p>Remember: a verified badge sets you apart in our global community. We believe in your expertise and can’t wait to help you regain that trusted status!</p>
+        </td>
+      </tr>
+
+      <!-- Footer: Green -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
 
             try
             {
-                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                await _emailSender.SendEmailAsync(user.Email, subjectRevoked, bodyRevoked, isBodyHtml: true);
             }
             catch (Exception ex)
             {

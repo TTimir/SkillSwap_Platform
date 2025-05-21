@@ -40,6 +40,29 @@
             padding: 15px 0;
             margin-top: 50px;
         }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+        .header-logo.logo1 img {
+            border-radius: 14px;
+            width: 40px;
+            height: auto;
+        }
+
+        .header-logo.logo1 .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -47,8 +70,11 @@
     <header class="header-nav">
         <div class="container-custom d-flex justify-content-between align-items-center py-3">
             <div class="logo mx-3">
-                <a href="/index">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        SkillSwap<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
         </div>

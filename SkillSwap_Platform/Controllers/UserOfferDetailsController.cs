@@ -566,7 +566,10 @@ namespace SkillSwap_Platform.Controllers
 
                 // Build time commitment ranges dynamically.
                 var timeCommitmentRanges = new List<SelectListItem>();
-                int maxDays = await _context.TblOffers.MaxAsync(o => o.TimeCommitmentDays);
+                int maxDays = await _context.TblOffers
+                    .Select(o => (int?)o.TimeCommitmentDays)
+                    .MaxAsync()
+                    ?? 0;
                 int step = 10;
                 for (int i = 0; i < maxDays; i += step)
                 {

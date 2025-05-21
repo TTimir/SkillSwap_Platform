@@ -18,6 +18,4 @@ public partial class OtpAttempt
     public string Method { get; set; } = null!;
 
     public string IpAddress { get; set; } = null!;
-
-    public virtual TblUser User { get; set; } = null!;
 }

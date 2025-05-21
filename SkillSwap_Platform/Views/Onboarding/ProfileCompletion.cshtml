@@ -42,6 +42,29 @@
             border: 2px dashed #ccc; /* Optional: border for clarity */
             background-color: #f4f4f4; /* Optional: background for better visibility */
         }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+        .header-logo.logo1 img {
+            border-radius: 14px;
+            width: 40px;
+            height: auto;
+        }
+
+        .header-logo.logo1 .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -49,8 +72,11 @@
     <header class="header-nav">
         <div class="container-custom">
             <div class="logo">
-                <a href="index.html">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        SkillSwap<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
             <nav>
@@ -99,6 +125,13 @@
 
         <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
         <p class="mb-4 text-center">Tell us a bit about yourself.</p>
+        @if (ViewBag.StepReward != null)
+        {
+            var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+            <p class="text-center text-primary">
+                🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+            </p>
+        }
 
         @using (Html.BeginForm("ProfileCompletion", "Onboarding", FormMethod.Post, new { enctype = "multipart/form-data" }))
         {
@@ -196,14 +229,6 @@
                                 </button>
                                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
                             </div>
-
-                            @if (ViewBag.StepReward != null)
-                            {
-                                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
-                                <p class="text-center text-primary">
-                                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
-                                </p>
-                            }
                         </div>
                     </div>
                 </div>

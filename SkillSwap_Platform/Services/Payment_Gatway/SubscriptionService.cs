@@ -78,21 +78,50 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
                 // 2) build a prefixed subject
                 var subject = $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!";
-                var html = $@"
-                    <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
-                      <h1 style=""color:#2a9d8f;"">🎉 Hi {user.FirstName}, your subscription is live! 🎉</h1>
-                      <p>Your <strong style=""color:#264653;"">{planName}</strong> plan has been <strong>activated</strong>.</p>
-                      <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
-                        <p><strong>Subscription ID:</strong> {sub.Id}</p>
-                        <p><strong>Start Date:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-                        <p><strong>End Date:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-                      </div>
-                      <p>Manage your subscription anytime in your 
-                         Account.
-                      </p>
-                      <p style=""margin-top:2em;"">Cheers,<br/><strong>The SkillSwap Team</strong></p>
-                    </div>";
-                await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
+                var htmlBody6 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(41,157,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#299D8F;"">Subscription Activated</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">🎉 Hi {user.FirstName}, your subscription is live! 🎉</h2>
+            <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1em 0;"">
+              <p><strong>Subscription ID:</strong> {sub.Id}</p>
+              <p><strong>Plan:</strong> {planName}</p>
+              <p><strong>Start:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+              <p><strong>End:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+            </div>
+            <p style=""margin:0;"">
+              Manage your subscription anytime in your <a href=""/Account"" style=""color:#299D8F;text-decoration:underline;"">Account</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#299D8F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e6f4f1;font-size:14px;"">
+              Thank you for choosing <strong>SkillSwap</strong>!
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
+                await _emailSender.SendEmailAsync(user.Email, subject, htmlBody6, isBodyHtml: true);
             }
         }
 
@@ -168,21 +197,51 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                     var subject = isRenewalExtension
                         ? $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!"
                         : $"[{supportLabel} · {sla}] 🔁 Your {planName} subscription has been renewed!";
-                    var html = $@"
-                        <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
-                          <h1 style=""color:#2a9d8f;"">{(isRenewalExtension ? "🎉" : "🔁")} Hi {user.FirstName}, your subscription has been {action}! </h1>
-                          <p>Your <strong style=""color:#264653;"">{planName}</strong> plan ({billingCycle}) is now {action}.</p>
-                          <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1.5em 0;"">
-                            <p><strong>Subscription ID:</strong> {existing.Id}</p>
-                            <p><strong>Start Date:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-                            <p><strong>End Date:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-                          </div>
-                          <p>Review or upgrade anytime via your 
-                            Account.
-                          </p>
-                          <p style=""margin-top:2em;"">Thanks for staying with us,<br/><strong>The SkillSwap Team</strong></p>
-                        </div>";
-                    await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
+                    var htmlBody7 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(41,157,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#299D8F;"">{(isRenewalExtension ? "🎉" : "🔁")} Subscription {action}!</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <p style=""margin:0 0 15px;"">
+              Your <strong>{planName}</strong> plan ({billingCycle}) has been {action}.
+            </p>
+            <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1em 0;"">
+              <p><strong>Subscription ID:</strong> {existing.Id}</p>
+              <p><strong>Start:</strong> {start:MMMM d, yyyy}</p>
+              <p><strong>End:</strong> {end:MMMM d, yyyy}</p>
+            </div>
+            <p style=""margin:0;"">
+              Review or upgrade anytime in your <a href=""/Account"" style=""color:#299D8F;text-decoration:underline;"">Account</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#299D8F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e6f4f1;font-size:14px;"">
+              Thanks for staying with <strong>SkillSwap</strong>!
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
+                    await _emailSender.SendEmailAsync(user.Email, subject, htmlBody7, isBodyHtml: true);
                 }
             }
             catch (Exception ex)
@@ -246,20 +305,50 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] ❌ Your subscription auto-renew has been cancelled";
-                    var html = $@"
-                        <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
-                          <h1 style=""color:#e76f51;"">Notice: Auto-renew turned off</h1>
-                          <p>We’ve cancelled auto-renew for your subscription <strong>ID {sub.Id}</strong>.</p>
-                          <div style=""background:#fdecea;border-radius:8px;padding:1em;margin:1.5em 0;"">
-                            <p><strong>End Date Remains:</strong> {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-                            <p><strong>Reason:</strong> {reason}</p>
-                          </div>
-                          <p style=""margin-top:2em;"">If this was a mistake, you can re-enable auto-renew in your 
-                             Account.
-                          </p>
-                          <p style=""margin-top:2em;"">Regards,<br/><strong>The SkillSwap Team</strong></p>
-                        </div>";
-                    await _emailSender.SendEmailAsync(user.Email, subject, html, isBodyHtml: true);
+                    var htmlBody8 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(231,111,81,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#E76F51;"">Auto-Renew Canceled</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <p style=""margin:0 0 15px;"">
+              We’ve turned off auto-renew for Subscription ID <strong>{sub.Id}</strong>.
+            </p>
+            <div style=""background:#fdecea;border-radius:8px;padding:1em;margin:1em 0;"">
+              <p><strong>End Date:</strong> {sub.EndDate:MMMM d, yyyy}</p>
+              <p><strong>Reason:</strong> {reason}</p>
+            </div>
+            <p style=""margin:0;"">
+              If this was a mistake, re-enable auto-renew in your <a href=""/Account"" style=""color:#E76F51;text-decoration:underline;"">Account</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#E76F51;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#fceae9;font-size:14px;"">
+              We’re here if you need anything!
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
+                    await _emailSender.SendEmailAsync(user.Email, subject, htmlBody8, isBodyHtml: true);
                 }
             }
             catch (Exception ex)

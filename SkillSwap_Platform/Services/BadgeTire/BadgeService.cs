@@ -118,49 +118,62 @@ namespace SkillSwap_Platform.Services.BadgeTire
 
             // 2) prefix subject
             var subject = $"[{label} · {sla}] 🏅 New Achievement Unlocked: {def.Name}!";
-            var html = $@"
-                <div style=""font-family:Arial,sans-serif;line-height:1.6;color:#333;"">
-                  <h1 style=""margin-bottom:0.5em;color:#2a9d8f;"">🎉 Congratulations, {userName}! 🎉</h1>
-                  <p style=""font-size:1.1em;"">
-                    You’ve outdone yourself and just earned the <strong style=""color:#264653;"">{def.Name}</strong> badge!
-                  </p>
-                
-                  <div style=""text-align:center;margin:1.5em 0;"">
-                    <img 
-                      src=""{def.IconPath}"" 
-                      alt=""{def.Name} badge"" 
-                      style=""width:140px;height:140px;object-fit:cover;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);"" />
-                  </div>
-                
-                  <h2 style=""color:#e76f51;margin-top:0;"">{def.Name}</h2>
+            var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        
+        <!-- header -->
+        <tr>
+          <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
+            SkillSwap
+          </td>
+        </tr>
+        
+        <!-- body -->
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.6;"">
+            <h1 style=""margin:0 0 10px;color:#2a9d8f;"">🎉 Congratulations, {userName}! 🎉</h1>
+            <p>You’ve earned the <strong style=""color:#264653;"">{def.Name}</strong> badge!</p>
+            
+            <div style=""text-align:center;margin:20px 0;"">
+              <img src=""{def.IconPath}"" alt=""{def.Name} badge""
+                   style=""width:140px;height:140px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);""/>
+            </div>
+            
+            <p><strong>{def.Tier} Tier</strong></p>
+            <p>{def.Description}</p>
+            
+            <blockquote style=""border-left:5px solid #2a9d8f;background:#f0f4f8;padding:1em;font-style:italic;color:#2a2a2a;"">
+              “Every badge is a milestone on your journey—wear it proudly!”  
+            </blockquote>
+          </td>
+        </tr>
+        
+        <!-- footer -->
+        <tr>
+          <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+            View all your badges on your profile — The SkillSwap Team
+          </td>
+        </tr>
+      
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
 
-                  <div style=""margin-bottom:1em;"">
-                     <span style=""display:inline-block;padding:6px 14px;border-radius:14px;
-                                    text-transform:uppercase;font-weight:600;
-                                    background:#2a9d8f11;color:#2a9d8f;font-size:0.9em;"">
-                       {def.Tier} Tier
-                     </span>
-                   </div>
-                
-                  <p style=""font-weight:500;color:#555;margin-bottom:0.5em;"">
-                    Here’s what you’ve unlocked:
-                  </p>
-                  <p style=""margin-top:0;color:#444;"">
-                    {def.Description}
-                  </p>
-                
-                  <blockquote style=""margin:2em 0;padding:1em 1.5em;border-left:5px solid #2a9d8f;background:#f0f4f8;color:#2a2a2a;font-style:italic;"">
-                    “Every badge is a milestone on your journey—wear it proudly and let it inspire your next adventure!”  
-                  </blockquote>
-                
-                  <p style=""font-size:0.95em;color:#666;"">
-                    Head over to your your skillswap profile to admire your new accolade and see the other badges you’ve collected.
-                  </p>
-                
-                  <p style=""margin-top:2em;color:#333;"">Keep up the great work,<br/><strong>The SkillSwap Team</strong></p>
-                </div>";
-
-            await _email.SendEmailAsync(toEmail, subject, html);
+            await _email.SendEmailAsync(
+              toEmail,
+              subject,
+              htmlBody,
+              isBodyHtml: true
+            );
         }
 
         // --- 4.3 Criteria methods ---

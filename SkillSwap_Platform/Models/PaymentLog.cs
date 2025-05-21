@@ -14,6 +14,4 @@ public partial class PaymentLog
     public string PaymentId { get; set; } = null!;
 
     public DateTime ProcessedAt { get; set; }
-
-    public virtual TblUser User { get; set; } = null!;
 }

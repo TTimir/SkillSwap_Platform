@@ -288,13 +288,72 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 // 2) build a prefixed subject
                 var subject = $"[{supportLabel} · {sla}] Your SkillSwap Account Hold Has Expired";
                 var body = $@"
-                    <p>Hi {user.FirstName},</p>
-                    <p>The temporary hold on your SkillSwap account has just expired as of {now:dd MMM yyyy hh:mm tt} UTC.</p>
-                    <p>You’re all set feel free to <a href=""/Home/Login"">log in</a> and continue swapping!</p>
-                    <p>— The SkillSwap Team</p>";
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        
+        <!-- Header -->
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Account Update</h1>
+          </td>
+        </tr>
+
+        <!-- Main Heading -->
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Hold Expired</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{user.FirstName}</strong>,
+            </p>
+            <p style=""margin:0 0 15px;"">
+              The temporary hold on your SkillSwap account has just expired as of 
+              <strong>{now.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")} UTC</strong>.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr>
+          <td style=""padding:0 20px;"">
+            <hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
+                
                 try
                 {
-                    await _emailService.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
+                    await _emailService.SendEmailAsync(
+                                      user.Email,
+                                      subject,
+                                      body,
+                                      isBodyHtml: true
+                                    );
                 }
                 catch (Exception ex)
                 {

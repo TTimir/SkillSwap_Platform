@@ -28,20 +28,48 @@
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Favicon -->
-    <link href="images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
+    <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
     <!-- Apple Touch Icon -->
     <link href="/template_assets/images/apple-touch-icon-60x60.png" sizes="60x60" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+
+    <style>
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
+
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+    </style>
 </head>
 <body>
     <!-- Minimal Navigation Bar -->
     <header class="header-nav">
         <div class="container-custom">
             <div class="logo">
-                <a href="index.html">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        SkillSwap<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
             <nav>
@@ -90,6 +118,13 @@
 
         <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
         <p class="mb-4 text-center">Let potential buyers know about your background.</p>
+        @if (ViewBag.StepReward != null)
+        {
+            var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+            <p class="text-center text-primary">
+                🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+            </p>
+        }
 
         @using (Html.BeginForm("SkillsExperience", "Onboarding", FormMethod.Post))
         {
@@ -165,7 +200,7 @@
 
                                     <div class="col-12 text-end">
                                         <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
-                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                            <i class="far fa-minus-circle me-2" style="transform:rotate(0deg)"></i> Remove
                                         </a>
                                     </div>
                                 </div>
@@ -206,7 +241,7 @@
 
                                     <div class="col-12 text-end">
                                         <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
-                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                            <i class="far fa-minus-circle me-2" style="transform:rotate(0deg)"></i> Remove
                                         </a>
                                     </div>
                                 </div>
@@ -244,12 +279,13 @@
                                     <!-- End Date  -->
                                     <div class="col-md-6">
                                         <label class="form-label">End Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="experience[end_date][]" class="form-control" required />
+                                        <input type="date" name="experience[end_date][]" class="form-control end-date" />
                                         <div class="input-group-text">
                                             <input type="checkbox"
                                                    class="form-check-input present-checkbox"
                                                    name="experience[is_current][]"
-                                                   value="true" />
+                                                   value="true"
+                                                   style="background-color:none;border:0"/>
                                             <label class="form-check-label ms-1">Present</label>
                                         </div>
                                     </div>
@@ -262,7 +298,7 @@
 
                                     <div class="col-12 text-end">
                                         <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
-                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                            <i class="far fa-minus-circle me-2" style="transform:rotate(0deg)"></i> Remove
                                         </a>
                                     </div>
                                 </div>
@@ -274,14 +310,6 @@
                                 </button>
                                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
                             </div>
-
-                            @if (ViewBag.StepReward != null)
-                            {
-                                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
-                                <p class="text-center text-primary">
-                                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
-                                </p>
-                            }
                         </div>
                     </div>
                 </div>
@@ -353,10 +381,12 @@
                     $(sectionSelector).append($clone);
                 }
 
-                // Add button click handler
-                $(document).on('click', '.add-entry', function () {
-                    var section = $(this).closest('[id$="-section"]');
-                    cloneEntry(section);
+                $(document).on('click', '.add-entry', function(){
+                  var $section = $(this).closest('[id$="-section"]');
+                  cloneEntry($section);
+
+                  // initialize the present-toggle on the newly added entry
+                  initPresentToggle( $section.find('.experience-entry').last() );
                 });
 
                 // Remove button click handler
@@ -370,14 +400,14 @@
                     const $end = $chk.closest('.experience-entry').find('.end-date');
                     // on page load:
                     if ($chk.is(':checked')) {
-                      $end.prop('disabled', true);
-                    }
-                    // on change:
+                        $end.prop('disabled', true).prop('required', false).val('');
+                     }
+                    // on change
                     $chk.off('change').on('change', function() {
                       if (this.checked) {
-                        $end.prop('disabled', true).val('');
+                        $end.prop('disabled', true).prop('required', false).val('');
                       } else {
-                        $end.prop('disabled', false);
+                        $end.prop('disabled', false).prop('required', true);
                       }
                     });
                   });
@@ -385,15 +415,6 @@
 
                 // initialize on existing rows
                 initPresentToggle($(document));
-
-                // in your cloneEntry function, after appending:
-                $(document).on('click', '.add-entry', function() {
-                  const section = $(this).closest('[id$="-section"]');
-                  cloneEntry(section);
-                  // wire up toggle on just-appended block:
-                  initPresentToggle(section.find('.experience-entry').last());
-                });
-
             });
         </script>
         <!-- TempData-driven success popup -->

@@ -127,24 +127,36 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 await _db.SaveChangesAsync();
 
                 // 1) Build the hold‐notification email
-                var holdBody = $@"
-                  <p>Hi {user.FirstName},</p>
-                  <p>Your SkillSwap account with (Email: {user.UserName}) has just been <strong>placed on hold</strong> by an administrator.</p>
-                  <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")} IST<br/>
-                     <strong>By:</strong> {User.Identity.Name}
-                  </p>
-                  <p>If you believe this was done in error or have questions, please contact 
-                     <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
-                  </p>
-                  <p>— The SkillSwap Team</p>
-                ";
-
                 await _emailService.SendEmailAsync(
-                    to: user.Email,
-                    subject: "Your SkillSwap account has been put on hold",
-                    body: holdBody,
-                    isBodyHtml: true
-                );
+    to: user.Email,
+    subject: "Your SkillSwap account has been put on hold",
+    body: $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
+        SkillSwap
+      </td></tr>
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <p>Hi {user.FirstName},</p>
+        <p>Your SkillSwap account (Email: {user.UserName}) has just been <strong>placed on hold</strong> by an administrator.</p>
+        <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
+           <strong>By:</strong> {User.Identity.Name}</p>
+        <p>If you believe this was done in error or have questions, please contact 
+           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+      </td></tr>
+      <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+        Thank you for being part of SkillSwap! — The SkillSwap Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>",
+    isBodyHtml: true
+);
                 TempData["SuccessMessage"] = $"User {user.Email} is now held.";
             }
             return RedirectToAction(nameof(Index));
@@ -160,24 +172,36 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 user.IsHeld = false;
                 await _db.SaveChangesAsync();
 
-                var releaseBody = $@"
-                  <p>Hi {user.FirstName},</p>
-                  <p>Your SkillSwap account with (Email: {user.UserName}) has been <strong>released from hold</strong>.</p>
-                  <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")} IST<br/>
-                     <strong>By:</strong> {User.Identity.Name}
-                  </p>
-                  <p>You may now log in as usual. If you have any issues, contact 
-                     <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
-                  </p>
-                  <p>— The SkillSwap Team</p>
-                ";
-
                 await _emailService.SendEmailAsync(
-                    to: user.Email,
-                    subject: "Your SkillSwap account hold has been lifted",
-                    body: releaseBody,
-                    isBodyHtml: true
-                );
+    to: user.Email,
+    subject: "Your SkillSwap account hold has been lifted",
+    body: $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
+        SkillSwap
+      </td></tr>
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <p>Hi {user.FirstName},</p>
+        <p>Your SkillSwap account (Email: {user.UserName}) has been <strong>released from hold</strong>.</p>
+        <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
+           <strong>By:</strong> {User.Identity.Name}</p>
+        <p>You may now log in as usual. If you have any issues, contact 
+           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+      </td></tr>
+      <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+        Thank you for being part of SkillSwap! — The SkillSwap Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>",
+    isBodyHtml: true
+);
 
                 TempData["SuccessMessage"] = $"User {user.Email} has been released from hold.";
             }
@@ -201,25 +225,36 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 _db.TblUsers.Remove(user);
                 await _db.SaveChangesAsync();
 
-                var deleteBody = $@"
-                  <p>Hi {firstName},</p>
-                  <p>Your SkillSwap account with (Email: {user.UserName}) has been <strong>permanently deleted</strong> by an administrator.</p>
-                  <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime().ToString("dd MMM yyyy HH:mm tt")} IST<br/>
-                     <strong>By:</strong> {User.Identity.Name}
-                  </p>
-                  <p>
-                    If you need to reactivate or have questions, please reach out within 30 days at 
-                     <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
-                  </p>
-                  <p>— The SkillSwap Team</p>
-                ";
-
                 await _emailService.SendEmailAsync(
-                    to: email,
-                    subject: "Your SkillSwap account has been deleted",
-                    body: deleteBody,
-                    isBodyHtml: true
-                );
+    to: email,
+    subject: "Your SkillSwap account has been deleted",
+    body: $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
+        SkillSwap
+      </td></tr>
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <p>Hi {firstName},</p>
+        <p>Your SkillSwap account (Email: {user.UserName}) has been <strong>permanently deleted</strong> by an administrator.</p>
+        <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
+           <strong>By:</strong> {User.Identity.Name}</p>
+        <p>If you need to reactivate or have questions, please reach out within 30 days at 
+           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+      </td></tr>
+      <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+        Thank you for being part of SkillSwap! — The SkillSwap Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>",
+    isBodyHtml: true
+);
                 TempData["SuccessMessage"] = $"User {user.Email} has been deleted.";
             }
             return RedirectToAction(nameof(Index));
@@ -377,33 +412,45 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
             // 2) Build and send the Super-Admin acknowledgement
             var loginUrl = Url.Action("Login", "Home", null, Request.Scheme);
-            var ackBody = $@"
-              <p>Hi {vm.FirstName},</p>
-              <p>Your account on <strong>SkillSwap</strong> has just been created by our Super-Admin team.</p>
-              <p>
-                <strong>Role:</strong> {roleName}<br/>
-                <strong>Login URL:</strong> <a href=""{loginUrl}"">{loginUrl}</a><br/>
-                <strong>Email:</strong> {vm.Email}<br/>
-                <strong>Temporary Password:</strong> {vm.Password}
-              </p>
-              <hr/>
-              <p style=""color:#c00;"">
-                ⚠️ <strong>Do not share</strong> these credentials with anyone. You are fully responsible for all actions taken with this account.
-              </p>
-              <p>
-                Please log in immediately and change your password. 
-                If you suspect any unauthorized use, contact us at 
-                <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
-              </p>
-              <p>— The SkillSwap Super-Admin Team</p>
-            ";
-
             await _emailService.SendEmailAsync(
-                to: vm.Email,
-                subject: "Your new SkillSwap account has been created",
-                body: ackBody,
-                isBodyHtml: true
-            );
+    to: vm.Email,
+    subject: "Your new SkillSwap account has been created",
+    body: $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
+        SkillSwap
+      </td></tr>
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <p>Hi {vm.FirstName},</p>
+        <p>Your account on <strong>SkillSwap</strong> has just been created by our Super-Admin team.</p>
+        <p>
+          <strong>Role:</strong> {roleName}<br/>
+          <strong>Login URL:</strong> <a href=""{loginUrl}"">{loginUrl}</a><br/>
+          <strong>Email:</strong> {vm.Email}<br/>
+          <strong>Temporary Password:</strong> {vm.Password}
+        </p>
+        <hr/>
+        <p style=""color:#c00;"">
+          ⚠️ <strong>Do not share</strong> these credentials with anyone.
+        </p>
+        <p>Please log in immediately and change your password. If you suspect any unauthorized use, contact 
+           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
+        </p>
+      </td></tr>
+      <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+        Thank you for being part of SkillSwap! — The SkillSwap Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>",
+    isBodyHtml: true
+);
 
             TempData["SuccessMessage"] = $"‘{vm.Email}’ registered and OTP sent.";
 

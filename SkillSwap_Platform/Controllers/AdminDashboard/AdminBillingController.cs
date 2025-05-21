@@ -190,15 +190,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                     // 3) build your body however you like
                     var status = sub.IsAutoRenew ? "enabled" : "disabled";
-                    var message = $@"Hello {user.FirstName},
-                        As per your request, our moderator team has {status} the auto-renew for your subscription (ID: {sub.Id}).
-                        Your next billing date remains {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}.
-                        
-                        If you have any questions or need further assistance, please reply to this email.
-                        
-                        Warm regards,
-                        The SkillSwap Admin Team";
-                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    var body = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00A88F;padding:20px;"">
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;"">
+            <h2 style=""margin:0 0 10px;color:#333;font-size:20px;"">{subject}</h2>
+            <p>Hello {user.FirstName},</p>
+            <p>Your subscription (ID: {sub.Id}) auto-renew has been <strong>{status}</strong>.</p>
+            <p>Next billing date: <strong>{sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}</strong>.</p>
+          </td>
+        </tr>
+        <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
                 }
                 var uname = user?.UserName ?? "(unknown)";
                 var fullname = user != null
@@ -248,15 +273,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] Your subscription has been renewed";
-                    var message = $@"Hello {user.FirstName},
-                        At your request, our moderator team has manually renewed your subscription (ID: {sub.Id}).
-                        Your new subscription period is from {start.ToLocalTime().ToString("MMMM d, yyyy")} to {end.ToLocalTime().ToString("MMMM d, yyyy")}.
-                        
-                        Thank you for continuing to choose SkillSwap.
-                        
-                        Best regards,
-                        The SkillSwap Admin Team";
-                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    var body = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00A88F;padding:20px;"">
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;"">
+            <h2 style=""margin:0 0 10px;color:#333;font-size:20px;"">{subject}</h2>
+            <p>Hi {user.FirstName},</p>
+            <p>Your subscription (ID: {sub.Id}) has been renewed.</p>
+            <p>Period: <strong>{start.ToLocalTime().ToString("MMMM d, yyyy")}</strong> – <strong>{end.ToLocalTime().ToString("MMMM d, yyyy")}</strong>.</p>
+          </td>
+        </tr>
+        <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
                 }
                 var uname = user?.UserName ?? "(unknown)";
                 var fullname = user != null
@@ -318,16 +368,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] Your subscription period has been adjusted";
                     var cycleText = sub.BillingCycle == "yearly" ? "year" : "month";
-                    var message = $@"Hello {user.FirstName},
-
-                        Per your request, our moderator team has reduced your subscription (ID: {sub.Id}) by one {cycleText}.
-                        Previously set to end on {oldEnd.ToLocalTime().ToString("MMMM d, yyyy")}, it will now end on {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
-                        
-                        If this isn’t correct, please let us know.
-                        
-                        Sincerely,
-                        The SkillSwap Admin Team";
-                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    var body = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00A88F;padding:20px;"">
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;"">
+            <h2 style=""margin:0 0 10px;color:#333;font-size:20px;"">{subject}</h2>
+            <p>Hello {user.FirstName},</p>
+            <p>We reduced your subscription (ID: {sub.Id}) by one {cycleText}.</p>
+            <p>Old end: {oldEnd.ToLocalTime().ToString("MMMM d, yyyy")}<br/>New end: {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+          </td>
+        </tr>
+        <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
                 }
                 var uname = user?.UserName ?? "(unknown)";
                 var fullname = user != null
@@ -415,16 +489,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] Your subscription has been downgraded";
-                    var message = $@"Hello {user.FirstName},
-
-                    As requested, our moderator team has downgraded your subscription (ID: {sub.Id}) from {oldPlan} to {newPlan}.
-                    Your subscription will now run until {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
-                    
-                    If you need to make further changes, feel free to contact us.
-                    
-                    Regards,
-                    The SkillSwap Admin Team";
-                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    var body = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00A88F;padding:20px;"">
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;"">
+            <h2 style=""margin:0 0 10px;color:#333;font-size:20px;"">{subject}</h2>
+            <p>Hi {user.FirstName},</p>
+            <p>Your subscription (ID: {sub.Id}) was downgraded from <strong>{oldPlan}</strong> to <strong>{newPlan}</strong>.</p>
+            <p>New end date: <strong>{newEnd.ToLocalTime().ToString("MMMM d, yyyy")}</strong>.</p>
+          </td>
+        </tr>
+        <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
                 }
                 var uname = user?.UserName ?? "(unknown)";
                 var fullname = user != null
@@ -506,16 +604,40 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] Your subscription has been updated";
-                    var message = $@"Hello {user.FirstName},
-
-                        Per your request, our moderator team has updated your subscription (ID: {sub.Id}) from {oldPlan} ({oldCycle}) to {newPlan} ({newCycle}).
-                        Your subscription will now expire on {newEnd.ToLocalTime().ToString("MMMM d, yyyy")}.
-                        
-                        Thank you for being part of SkillSwap.
-                        
-                        Best,
-                        The SkillSwap Admin Team";
-                    await _emailSender.SendEmailAsync(user.Email, subject, message);
+                    var body = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00A88F;padding:20px;"">
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;"">
+            <h2 style=""margin:0 0 10px;color:#333;font-size:20px;"">{subject}</h2>
+            <p>Hello {user.FirstName},</p>
+            <p>Your subscription (ID: {sub.Id}) was updated from <strong>{oldPlan} ({oldCycle})</strong> to <strong>{newPlan} ({newCycle})</strong>.</p>
+            <p>Expires on: <strong>{newEnd.ToLocalTime().ToString("MMMM d, yyyy")}</strong>.</p>
+          </td>
+        </tr>
+        <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailSender.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
                 }
                 var uname = user?.UserName ?? "(unknown)";
                 var fullname = user != null

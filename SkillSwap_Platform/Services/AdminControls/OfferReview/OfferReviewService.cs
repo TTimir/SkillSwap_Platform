@@ -407,21 +407,42 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Update on your review for “{review.Offer.Title}”";
                 var body = $@"
-                Hello {author.FirstName},<br/><br/>
-
-                We’ve completed our review of the report on your review for<br/>
-                <strong>“{review.Offer.Title}”</strong>.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                No further action is required. Thanks for being a valued member of our community!<br/><br/>
-
-                Warm regards,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <!-- header -->
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            SkillSwap Update
+          </td>
+        </tr>
+        <!-- message -->
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hello {author.FirstName},</h2>
+            <p>We’ve completed our review of the report on your review for<br/>
+               <strong>“{review.Offer.Title}”</strong>.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>No further action is required. Thanks for being a valued member of our community!</p>
+          </td>
+        </tr>
+        <!-- footer -->
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The SkillSwap Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
             }
 
@@ -431,21 +452,39 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(reporter.UserId);
                 var subject = $"[{label} · {sla}] Result of your report on “{review.Offer.Title}”";
                 var body = $@"
-                Hi {reporter.FirstName},<br/><br/>
-
-                Thank you for bringing this to our attention. We’ve reviewed the report on the review for<br/>
-                <strong>“{review.Offer.Title}”</strong> and found no violation.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                We appreciate your help maintaining a respectful marketplace!<br/><br/>
-
-                Sincerely,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            SkillSwap Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+            <p>Thank you for bringing this to our attention. We’ve reviewed the report on<br/>
+               <strong>“{review.Offer.Title}”</strong> and found no violation.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>We appreciate your help maintaining a respectful marketplace!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The SkillSwap Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
             }
         }
@@ -498,20 +537,38 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Update on your reply (ID: {replyId})";
                 var body = $@"
-                Hello {author.FirstName},<br/><br/>
-
-                We’ve reviewed the report on your reply under review “{reply.Review.Comments}” and found no violation.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                Thank you for contributing positively to our community!<br/><br/>
-
-                Best regards,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            SkillSwap Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hello {author.FirstName},</h2>
+            <p>We’ve reviewed the report on your reply and found no violation.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>Thank you for contributing positively to our community!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The SkillSwap Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
             }
 
@@ -521,21 +578,38 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Result of your report on a reply";
                 var body = $@"
-                Hi {reporter.FirstName},<br/><br/>
-
-                Thank you for reporting a reply that you felt violated our guidelines.  
-                We’ve carefully reviewed it and found that no action was necessary.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                We appreciate your vigilance in keeping SkillSwap respectful!<br/><br/>
-
-                Sincerely,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            SkillSwap Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+            <p>Thank you for reporting a reply. We’ve carefully reviewed it and found no action was necessary.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>We appreciate your vigilance in keeping SkillSwap respectful!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The SkillSwap Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
             }
         }
@@ -589,17 +663,49 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 if (author != null)
                 {
                     var subject = $"[{label} · {sla}] Notice: Your review has been removed";
-                    var body = $@"
-                        <p>Hi {author.FirstName},</p>
-                        <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
-                        <p><strong>Moderator’s note:</strong></p>
-                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                          {moderationNote}
-                        </blockquote>
-                        <p>If you’d like to appeal or learn more, just reply to this email.</p>
-                        <p>— The SkillSwap Support Team</p>
-                    ";
-                    await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
+                    var bodyRemovedReview = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Red for removal -->
+          <tr>
+            <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              SkillSwap Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {author.FirstName},</h2>
+              <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>If you’d like to appeal or learn more, just reply to this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The SkillSwap Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(author.Email, subject, bodyRemovedReview, isBodyHtml: true);
                 }
 
                 // 3b) Thank & inform the reporter
@@ -623,21 +729,53 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
                         // 3) prefix your subject
                         var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
-                        var body = $@"
-                            <p>Hi {reporter.FirstName},</p>
-                            <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
-                            <p><strong>Removed review:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {review.Comments}
-                            </blockquote>
-                            <p><strong>Moderator’s note:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {moderationNote}
-                            </blockquote>
-                            <p>Your help makes SkillSwap safer for everyone—thank you!</p>
-                            <p>— The SkillSwap Support Team</p>
-                        ";
-                        await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
+                        var bodyThankReview = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Green for thank-you -->
+          <tr>
+            <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              SkillSwap Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+              <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
+              <p><strong>Removed review:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {review.Comments}
+              </blockquote>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>Your help makes SkillSwap safer for everyone—thank you!</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The SkillSwap Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                        await _emailService.SendEmailAsync(reporter.Email, subject, bodyThankReview, isBodyHtml: true);
                     }
                 }
             }
@@ -682,17 +820,49 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 if (author != null)
                 {
                     var subject = $"[{label} · {sla}] Notice: Your reply has been removed";
-                    var body = $@"
-                        <p>Hi {author.FirstName},</p>
-                        <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
-                        <p><strong>Moderator’s note:</strong></p>
-                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                          {moderationNote}
-                        </blockquote>
-                        <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
-                        <p>— The SkillSwap Support Team</p>
-                    ";
-                    await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
+                    var bodyRemovedReply = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Red -->
+          <tr>
+            <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              SkillSwap Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {author.FirstName},</h2>
+              <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The SkillSwap Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(author.Email, subject, bodyRemovedReply, isBodyHtml: true);
                 }
 
                 // 3b) Thank & inform the reporter
@@ -716,21 +886,53 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
                         // 3) prefix your subject
                         var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
-                        var body = $@"
-                            <p>Hi {reporter.FirstName},</p>
-                            <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
-                            <p><strong>Removed reply content:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {reply.Comments}
-                            </blockquote>
-                            <p><strong>Moderator’s note:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {moderationNote}
-                            </blockquote>
-                            <p>Your help keeps SkillSwap safe—thank you!</p>
-                            <p>— The SkillSwap Support Team</p>
-                        ";
-                        await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
+                        var bodyThankReply = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Green -->
+          <tr>
+            <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              SkillSwap Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+              <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
+              <p><strong>Removed reply content:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {reply.Comments}
+              </blockquote>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>Your help keeps SkillSwap safe—thank you!</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The SkillSwap Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                        await _emailService.SendEmailAsync(reporter.Email, subject, bodyThankReply, isBodyHtml: true);
                     }
                 }
             }

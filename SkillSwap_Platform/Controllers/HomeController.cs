@@ -156,14 +156,55 @@ public class HomeController : Controller
 
             var subject = "Thanks for subscribing to SkillSwap!";
             var htmlBody = $@"
-                <p>Hi there,</p>
-                <p>🎉 Thank you for subscribing to the SkillSwap newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
-                <hr/>
-                <p>If you ever wish to unsubscribe, just click the link at the bottom of any newsletter.
-                    <a href=""{unsubscribeUrl}"">unsubscribe</a> at any time.
-                </p>
-                <p>Welcome aboard!<br/>— The SkillSwap Team</p>
-            ";
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
+
+          <!-- Header -->
+          <tr>
+            <td style=""background:#00A88F;padding:20px;"">
+              <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333;line-height:1.5;"">
+              <h2 style=""margin:0 0 15px;font-size:20px;color:#333;"">Welcome to the SkillSwap Community!</h2>
+              <p>Hi there,</p>
+              <p>🎉 Thank you for subscribing to the SkillSwap newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
+              <hr style=""border:none;border-top:1px solid #e0e0e0;margin:20px 0;"" />
+              <p>If you ever wish to unsubscribe, just click the link below:</p>
+              <p style=""text-align:center;margin:20px 0;"">
+                <a href=""{unsubscribeUrl}"" style=""color:#00A88F;text-decoration:underline;"">Unsubscribe from Newsletter</a>
+              </p>
+              <p>Welcome aboard!<br/>— The SkillSwap Team</p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
+              © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
+              <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+";
 
             await _emailService.SendEmailAsync(
                 to: email,
@@ -272,25 +313,30 @@ public class HomeController : Controller
 
             // fetch all reviews for those offers in one DB hit
             var tOfferIds = trendingOffers.Select(o => o.OfferId).ToList();
-            // build a comma‑separated list of parameters
-            var idParams = string.Join(", ", tOfferIds);
+            
+            List<ReviewAggregate> aggregates;
 
-            // your raw SQL—no CTE, just a plain GROUP BY
-            var sql = $@"
-                        SELECT 
-                            OfferId, 
-                            COUNT(*)           AS Count, 
-                            AVG(CAST(Rating AS float)) AS Avg 
-                          FROM TblReviews 
-                         WHERE OfferId IN ({idParams})
-                         GROUP BY OfferId;
-                    ";
-
-            var aggregates = await _dbcontext
-                .Set<ReviewAggregate>()              // a “keyless” DbSet<ReviewAggregate> you configure in your DbContext
-                .FromSqlRaw(sql)
-                .AsNoTracking()
-                .ToListAsync();
+            if (tOfferIds.Any())
+            {
+                var idParams = string.Join(", ", tOfferIds);
+                var sql = $@"
+                  SELECT OfferId,
+                         COUNT(*)           AS Count,
+                         AVG(CAST(Rating AS float)) AS Avg
+                    FROM TblReviews
+                   WHERE OfferId IN ({idParams})
+                   GROUP BY OfferId;
+                ";
+                aggregates = await _dbcontext
+                    .Set<ReviewAggregate>()
+                    .FromSqlRaw(sql)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            else
+            {
+                aggregates = new List<ReviewAggregate>();
+            }
 
             var tAggregates = aggregates.ToDictionary(x => x.OfferId);
 
@@ -1617,9 +1663,18 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ForgotPassword(string email)
     {
+        // 1) Basic validation
         if (string.IsNullOrWhiteSpace(email) || !ModelState.IsValidEmail(nameof(email)))
         {
             TempData["Error"] = "Please enter a valid email address.";
+            return View();
+        }
+
+        // 2) Does this email exist?
+        var user = await _userService.GetUserByUserNameOrEmailAsync(null, email);
+        if (user == null)
+        {
+            TempData["Error"] = "We couldn’t find an account with that email.";
             return View();
         }
 
@@ -1627,25 +1682,27 @@ public class HomeController : Controller
         {
             var origin = $"{Request.Scheme}://{Request.Host}";
             await _passwordReset.SendResetLinkAsync(email, origin);
-            TempData["Info"] = "If that email is in our system, you will receive a password reset link shortly.";
+            return RedirectToAction(nameof(ForgotPasswordConfirmation));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            TempData["Error"] = "An error occurred. Please try again later.";
+            // log if you like
+            ModelState.AddModelError("", "Something went wrong. Please try again later.");
+            return View();
         }
-
-        return RedirectToAction(nameof(ForgotPasswordConfirmation));
     }
 
     [HttpGet, AllowAnonymous]
     public IActionResult ForgotPasswordConfirmation() => View();
 
     [HttpGet, AllowAnonymous]
-    public IActionResult ResetPassword(string token)
+    public IActionResult ResetPassword(string token, string email)
     {
         if (string.IsNullOrEmpty(token))
             return RedirectToAction(nameof(ForgotPassword));
 
+        ViewBag.Email = email;
+        ModelState.Clear();
         return View(model: token);
     }
 
@@ -1664,6 +1721,40 @@ public class HomeController : Controller
             return View(model: token);
         }
 
+        // 1) Load the reset‐token entry
+        var resetEntry = await _dbcontext.TblPasswordResetTokens
+            .FirstOrDefaultAsync(t => t.Token == token && !t.IsUsed && t.Expiration > DateTime.UtcNow);
+        if (resetEntry == null)
+        {
+            ModelState.AddModelError("", "Invalid or expired reset link.");
+            return View(model: token);
+        }
+
+        // 2) Fetch the actual user
+        var user = await _userService.GetUserByIdAsync(resetEntry.UserId);
+        if (user == null)
+        {
+            ModelState.AddModelError("", "User not found.");
+            return View(model: token);
+        }
+
+        // 3) Prevent re-using your *own* current password
+        if (await _userService.ValidateUserCredentialsAsync(user.UserName, newPassword) != null)
+        {
+            ModelState.AddModelError(nameof(newPassword),
+                "Your new password must be different from your current one.");
+            return View(model: token);
+        }
+
+        // 4) Prevent using *any other* user’s current password
+        if (await _passwordReset.IsPasswordInUseAsync(newPassword, excludingUserId: user.UserId))
+        {
+            ModelState.AddModelError(nameof(newPassword),
+                "That password is already in use by another account. Please choose a different one.");
+            return View(model: token);
+        }
+
+        // 5) All checks passed—actually reset
         var (succeeded, error) = await _passwordReset.ResetPasswordAsync(token, newPassword);
         if (!succeeded)
         {

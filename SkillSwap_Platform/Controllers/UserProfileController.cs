@@ -698,19 +698,53 @@ namespace SkillSwap_Platform.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var confirmBody = $@"
-                    <p>Hi {user.FirstName},</p>
-                    <p>Your SkillSwap account email has now been successfully updated to <strong>{pendingEmail}</strong>.</p>
-                    <p>If you did not make this change, please contact our support immediately.</p>
-                    <p>Thanks for being with us!</p>
-                    <p><strong>The SkillSwap Team</strong></p>
-                   ";
-                await _emailService.SendEmailAsync(
-                    pendingEmail,
-                    "Your SkillSwap Email Has Been Updated",
-                    confirmBody,
-                    isBodyHtml: true
-                );
+                var htmlBody4 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap Account</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Email Updated</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{user.FirstName}</strong>, your email has been updated to <strong>{pendingEmail}</strong>.
+            </p>
+            <p style=""margin:0;"">
+              If you did not make this change, contact 
+              <a href=""mailto:skillswap360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">
+                support
+              </a> immediately.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                await _emailService.SendEmailAsync(pendingEmail, "Your SkillSwap Email Has Been Updated", htmlBody4, isBodyHtml: true);
+
                 TempData["SuccessMessage"] = "Your email address has been updated!";
                 return RedirectToAction(nameof(Index));
             }
@@ -754,26 +788,52 @@ namespace SkillSwap_Platform.Controllers
             user.EmailChangeExpires = DateTime.UtcNow.AddMinutes(10);
             await _context.SaveChangesAsync();
 
-            string htmlBody = $@"
-                <div style=""font-family:Arial, sans-serif; line-height:1.5; color:#333;"">
-                  <p>Hi {user.FirstName},</p>
-                  <p>We received a request to change your SkillSwap account email to this address. To complete the update, please use the code below:</p>
-                  <h2 style=""background:#f4f4f4; display:inline-block; padding:10px 20px; border-radius:4px;"">{otp}</h2>
-                  <p><small>This code expires in 10 minutes.</small></p>
-                  <p>If you did not request this change, simply ignore this message — no further action is needed.</p>
-                  <hr style=""border:none; border-top:1px solid #e0e0e0; margin:20px 0;"" />
-                  <p>Thanks for using SkillSwap!</p>
-                  <p><strong>The SkillSwap Team</strong></p>
-                </div>
-                ";
-
-            // send to the **new** address
-            await _emailService.SendEmailAsync(
-                newEmail,
-                "Please Confirm Your New SkillSwap Email Address",
-                body: htmlBody,
-                isBodyHtml: true
-            );
+            var htmlBody5 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap Verification</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Email Confirmation</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{user.FirstName}</strong>, please use the code below to confirm your new email:
+            </p>
+            <p style=""margin:0 0 15px;"">
+              <span style=""background:#f4f4f4;padding:10px 20px;border-radius:4px;font-size:18px;"">{otp}</span>
+            </p>
+            <p style=""margin:0;"">
+              This code expires in 10 minutes. If you didn’t request this, ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+            await _emailService.SendEmailAsync(newEmail, "Please Confirm Your New SkillSwap Email Address", htmlBody5, isBodyHtml: true);
 
             TempData["InfoMessage"] = "A code has been sent to " + newEmail;
             TempData["ShowOtpStep"] = true;

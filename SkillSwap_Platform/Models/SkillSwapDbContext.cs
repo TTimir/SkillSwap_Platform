@@ -155,6 +155,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.Subscription).WithMany(p => p.CancellationRequests)
                 .HasForeignKey(d => d.SubscriptionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_CancellationRequests_Subscriptions");
         });
 
@@ -168,6 +169,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.MiningLogs)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_MiningLog_User");
         });
 
@@ -213,10 +215,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.Property(e => e.Method).HasMaxLength(20);
             entity.Property(e => e.UserName).HasMaxLength(256);
-
-            entity.HasOne(d => d.User).WithMany(p => p.OtpAttempts)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_OtpAttempts_Users");
         });
 
         modelBuilder.Entity<PaymentLog>(entity =>
@@ -224,10 +222,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.OrderId).HasMaxLength(128);
             entity.Property(e => e.PaymentId).HasMaxLength(128);
             entity.Property(e => e.ProcessedAt).HasDefaultValueSql("(sysutcdatetime())");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PaymentLogs)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_PaymentLogs_Users");
         });
 
         modelBuilder.Entity<PrivacySensitiveWord>(entity =>
@@ -257,6 +251,11 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.IsAutoRenew).HasDefaultValue(true);
             entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PlanName).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Subscriptions_Users");
         });
 
         modelBuilder.Entity<TblBadge>(entity =>
@@ -299,11 +298,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Summary).HasMaxLength(2000);
             entity.Property(e => e.Tags).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(200);
-
-            entity.HasOne(d => d.Author).WithMany(p => p.TblBlogPosts)
-                .HasForeignKey(d => d.AuthorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_BlogPosts_TblUsers");
         });
 
         modelBuilder.Entity<TblContract>(entity =>
@@ -514,16 +508,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.ToTable("tblExchangeSkills");
 
             entity.Property(e => e.Role).HasMaxLength(50);
-
-            entity.HasOne(d => d.Exchange).WithMany(p => p.TblExchangeSkills)
-                .HasForeignKey(d => d.ExchangeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tblExchangeSkills_Exchange");
-
-            entity.HasOne(d => d.Skill).WithMany(p => p.TblExchangeSkills)
-                .HasForeignKey(d => d.SkillId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tblExchangeSkills_Skills");
         });
 
         modelBuilder.Entity<TblExperience>(entity =>
@@ -569,7 +553,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblInPersonMeetings)
                 .HasForeignKey(d => d.ExchangeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TblInPersonMeetings_TblExchanges");
+                .HasConstraintName("FK_TblInPersonMeeting_Exchange");
         });
 
         modelBuilder.Entity<TblInpersonMeetingProof>(entity =>
@@ -592,11 +576,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.UploadedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Exchange).WithMany(p => p.TblInpersonMeetingProofs)
-                .HasForeignKey(d => d.ExchangeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TblMeetingProof_TblExchanges");
         });
 
         modelBuilder.Entity<TblKycUpload>(entity =>
@@ -657,11 +636,6 @@ public partial class SkillSwapDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Scheduled");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Exchange).WithMany(p => p.TblMeetings)
-                .HasForeignKey(d => d.ExchangeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_tblMeetings_Exchange");
         });
 
         modelBuilder.Entity<TblMessage>(entity =>
@@ -688,7 +662,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.Offer).WithMany(p => p.TblMessages)
                 .HasForeignKey(d => d.OfferId)
-                .HasConstraintName("FK_TblMessages_Offers_OfferId");
+                .HasConstraintName("FK_tblMessages_Offers_OfferId");
 
             entity.HasOne(d => d.ReceiverUser).WithMany(p => p.TblMessageReceiverUsers)
                 .HasForeignKey(d => d.ReceiverUserId)
@@ -798,6 +772,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferFaqs)
                 .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblOfferFaq_TblOffer");
         });
 
@@ -825,6 +800,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.Offer).WithMany(p => p.TblOfferFlags)
                 .HasForeignKey(d => d.OfferId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblOfferFlag_TblOffer");
         });
 
@@ -867,6 +843,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.TblPasswordResetTokens)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TblPasswordResetTokens_TblUsers");
         });
 
@@ -899,10 +876,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.ReviewerId).HasColumnName("ReviewerID");
             entity.Property(e => e.ReviewerName).HasMaxLength(255);
 
-            entity.HasOne(d => d.DeletedByAdmin).WithMany(p => p.TblReviewDeletedByAdmins)
-                .HasForeignKey(d => d.DeletedByAdminId)
-                .HasConstraintName("FK_Reviews_DeletedByAdmin");
-
             entity.HasOne(d => d.Exchange).WithMany(p => p.TblReviews)
                 .HasForeignKey(d => d.ExchangeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -911,7 +884,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.HasOne(d => d.Offer).WithMany(p => p.TblReviews)
                 .HasForeignKey(d => d.OfferId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TblReview_Offer");
+                .HasConstraintName("FK_tblReviews_Offer");
 
             entity.HasOne(d => d.Reviewee).WithMany(p => p.TblReviewReviewees)
                 .HasForeignKey(d => d.RevieweeId)
@@ -922,11 +895,6 @@ public partial class SkillSwapDbContext : DbContext
                 .HasForeignKey(d => d.ReviewerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_tblReviews_Reviewer");
-
-            entity.HasOne(d => d.User).WithMany(p => p.TblReviewUsers)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TblReview_User");
         });
 
         modelBuilder.Entity<TblReviewModerationHistory>(entity =>
@@ -941,7 +909,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.HasOne(d => d.Admin).WithMany(p => p.TblReviewModerationHistories)
                 .HasForeignKey(d => d.AdminId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ReviewHist_Admin");
+                .HasConstraintName("FK_TblReviewModerationHistory_Admin");
 
             entity.HasOne(d => d.Reply).WithMany(p => p.TblReviewModerationHistories)
                 .HasForeignKey(d => d.ReplyId)
@@ -991,9 +959,7 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.ToTable("tblSkills");
 
-            entity.Property(e => e.SkillId)
-                .ValueGeneratedNever()
-                .HasColumnName("SkillID");
+            entity.Property(e => e.SkillId).HasColumnName("SkillID");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.SkillCategory).HasMaxLength(100);
             entity.Property(e => e.SkillName).HasMaxLength(100);
@@ -1220,16 +1186,16 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.AdminUser).WithMany(p => p.TblUserFlagAdminUsers)
                 .HasForeignKey(d => d.AdminUserId)
-                .HasConstraintName("FK_UserFlags_AdminUser");
+                .HasConstraintName("FK_TblUserFlag_AdminUser");
 
             entity.HasOne(d => d.FlaggedByUser).WithMany(p => p.TblUserFlagFlaggedByUsers)
                 .HasForeignKey(d => d.FlaggedByUserId)
-                .HasConstraintName("FK_UserFlags_FlaggedBy");
+                .HasConstraintName("FK_TblUserFlag_FlaggedByUser");
 
             entity.HasOne(d => d.FlaggedUser).WithMany(p => p.TblUserFlagFlaggedUsers)
                 .HasForeignKey(d => d.FlaggedUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserFlags_FlaggedUser");
+                .HasConstraintName("FK_TblUserFlag_FlaggedUser");
         });
 
         modelBuilder.Entity<TblUserHoldHistory>(entity =>
@@ -1246,7 +1212,8 @@ public partial class SkillSwapDbContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.TblUserHoldHistoryUsers)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_UserHoldHistories_Users");
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tblUserHoldHistories_Users");
         });
 
         modelBuilder.Entity<TblUserReport>(entity =>
@@ -1373,10 +1340,6 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.EmittedToday).HasColumnType("decimal(18, 4)");
             entity.Property(e => e.IsMiningAllowed).HasDefaultValue(true);
-
-            entity.HasOne(d => d.User).WithOne(p => p.UserMiningProgress)
-                .HasForeignKey<UserMiningProgress>(d => d.UserId)
-                .HasConstraintName("FK_UserMiningProgress_User");
         });
 
         modelBuilder.Entity<UserSensitiveWord>(entity =>

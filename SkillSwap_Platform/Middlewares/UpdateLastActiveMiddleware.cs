@@ -22,26 +22,31 @@ namespace SkillSwap_Platform.Middlewares
             var user = context.User;
             if (user?.Identity?.IsAuthenticated == true)
             {
+                // 1) get userId from the claims
                 var uidClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (int.TryParse(uidClaim, out var uid))
                 {
+                    // 2) fetch the last active timestamp
                     var lastActive = await db.TblUsers
                                              .Where(u => u.UserId == uid)
-                                             .Select(u => u.LastActive)
+                                             .Select(u => (DateTime?)u.LastActive)
                                              .FirstOrDefaultAsync();
 
+                    var now = DateTime.UtcNow;
                     if (lastActive == null
-                        || DateTime.UtcNow - lastActive > _minUpdateInterval)
+                        || now - lastActive > _minUpdateInterval)
                     {
-                        // attach only LastActive
-                        var stub = new TblUser { UserId = uid, LastActive = DateTime.UtcNow };
-                        db.TblUsers.Attach(stub);
-                        db.Entry(stub).Property(u => u.LastActive).IsModified = true;
-                        await db.SaveChangesAsync();
+                        // 3) raw SQL update: no concurrency token, no exception
+                        await db.Database.ExecuteSqlInterpolatedAsync($@"
+                            UPDATE dbo.tblUsers
+                               SET LastActive = {now}
+                             WHERE UserId     = {uid};
+                        ");
                     }
                 }
             }
 
+            // 4) continue the pipeline
             await _next(context);
         }
     }

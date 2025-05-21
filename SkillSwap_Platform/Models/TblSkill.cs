@@ -17,8 +17,6 @@ public partial class TblSkill
 
     public virtual ICollection<TblExchange> TblExchangeSkillIdRequesterNavigations { get; set; } = new List<TblExchange>();
 
-    public virtual ICollection<TblExchangeSkill> TblExchangeSkills { get; set; } = new List<TblExchangeSkill>();
-
     public virtual ICollection<TblUserCertificate> TblUserCertificates { get; set; } = new List<TblUserCertificate>();
 
     public virtual ICollection<TblUserSkill> TblUserSkills { get; set; } = new List<TblUserSkill>();

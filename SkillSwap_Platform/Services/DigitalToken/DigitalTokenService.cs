@@ -100,25 +100,101 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     Url = $"/UserDashboard/Exchanges/{exchangeId}"
                 });
 
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          SkillSwap
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            We’ve placed <strong>{cost}</strong> tokens in escrow for exchange 
+            <strong>#{exchangeId} – {ex.Offer.Title}</strong>.
+          </p>
+          <p style=""margin:0 0 15px;"">
+            You’ll see them returned if the exchange does not complete.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thanks for trusting SkillSwap — stay swapping!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
-                buyer.Email,
-                subject: $"Your tokens have been held in escrow",
-                body: $@"
-                    <p>Hi {buyer.UserName},</p>
-                    <p>We’ve placed <strong>{cost}</strong> tokens in escrow for exchange <strong>#{exchangeId} – {ex.Offer.Title}</strong>.</p>
-                    <p>You’ll see them returned if the exchange does not complete.</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
-            );
+                    buyer.Email,
+                    subject: "Your tokens have been held in escrow",
+                    body: htmlBody,
+                    isBodyHtml: true
+                );
 
                 // Email to seller
+                var htmlBody2 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          SkillSwap
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{seller.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            <strong>{cost}</strong> tokens have been held in escrow awaiting completion of exchange 
+            <strong>#{exchangeId} – {ex.Offer.Title}</strong>.
+          </p>
+          <p style=""margin:0 0 15px;"">
+            We’ll let you know when they’re released.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thanks for being part of SkillSwap!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     seller.Email,
-                    subject: $"Tokens held for your pending exchange",
-                    body: $@"
-                    <p>Hi {seller.UserName},</p>
-                    <p><strong>{cost}</strong> tokens have been held in escrow awaiting completion of exchange <strong>#{exchangeId} – {ex.Offer.Title}</strong>.</p>
-                    <p>We’ll let you know when they’re released.</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Tokens held for your pending exchange",
+                    body: htmlBody2,
+                    isBodyHtml: true
                 );
             }
             catch (Exception exn)
@@ -168,26 +244,108 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 await _db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
 
+                var subject = $"Funds released for exchange #{exchangeId}";
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI, sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          
+          <!-- Header -->
+          <tr>
+            <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+              SkillSwap
+            </td>
+          </tr>
+    
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <p style=""margin:0 0 15px;"">Hi <strong>{seller.UserName}</strong>,</p>
+              <p style=""margin:0 0 15px;"">
+                The <strong>{amount}</strong> tokens held in escrow for exchange 
+                <strong>#{exchangeId}</strong> have just been released to your account.
+              </p>
+              <p style=""margin:0;"">Thanks for using SkillSwap!</p>
+            </td>
+          </tr>
+    
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              Happy swapping — The SkillSwap Team
+            </td>
+          </tr>
+    
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+";
+
                 await _email.SendEmailAsync(
                     seller.Email,
-                    subject: $"Funds released for exchange #{exchangeId}",
-                    body: $@"
-                        <p>Hi {seller.UserName},</p>
-                        <p>The <strong>{amount}</strong> tokens held in escrow for exchange <strong>#{exchangeId}</strong> have just been released to your account.</p>
-                        <p>Thanks for using SkillSwap!</p>"
+                    subject: subject,
+                    body: htmlBody,
+                    isBodyHtml: true
                 );
 
                 var buyer = await _db.TblUsers.FindAsync(ex.OtherUserId)
                   ?? throw new KeyNotFoundException($"Buyer not found.");
 
                 // Email to buyer
+                var htmlBody3 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          SkillSwap
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            Your escrow of <strong>{amount}</strong> tokens for exchange 
+            <strong>#{exchangeId}</strong> has now been released.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Happy swapping!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     buyer.Email,
-                    subject: $"Your escrow has been released",
-                    body: $@"
-                    <p>Hi {buyer.UserName},</p>
-                    <p>Your escrow of <strong>{amount}</strong> tokens for exchange <strong>#{exchangeId}</strong> has now been released..</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Your escrow has been released",
+                    body: htmlBody3,
+                    isBodyHtml: true
                 );
             }
             catch (Exception exn)
@@ -370,10 +528,49 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     Message = $"{cost} tokens have been returned to your account for cancelled exchange #{exchangeId}.",
                     Url = $"/UserDashboard/Exchanges/{exchangeId}"
                 });
+                var htmlBody4 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          SkillSwap
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            Your <strong>{cost}</strong> tokens have been returned after cancelling exchange 
+            <strong>#{exchangeId}</strong>.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thank you for swapping with us!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     buyer.Email,
-                    subject: $"Your tokens have been refunded",
-                    body: $"<p>Hi {buyer.UserName},</p><p>Your {cost} tokens have been returned after cancelling exchange #{exchangeId}.</p><p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Your tokens have been refunded",
+                    body: htmlBody4,
+                    isBodyHtml: true
                 );
             }
             catch (Exception ex)
