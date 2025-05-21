@@ -40,7 +40,7 @@ namespace SkillSwap_Platform.HelperClass
                     LastName = "Bhingradiya",
                     ContactNo = "6352204102",
                     Designation = "Software Developer",
-                    AboutMe = "Developed a website called Skillswap which helps users to swap their known skill with eachother - Founder of skillswap"
+                    AboutMe = "Developed a website called Skillswap which helps users to swap their known skill with eachother - Founder of skillswap",
                     IsActive = true,
                     IsVerified = true,
                     IsHeld = false,

@@ -43,6 +43,8 @@ using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
 using SkillSwap_Platform.Services.Blogs;
 using SkillSwap_Platform.Services.AdminControls.AdminNotification;
+using Microsoft.AspNetCore.Authentication;
+using SkillSwap_Platform.HelperClass;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +148,7 @@ builder.Services.AddScoped<INewsletterTemplateService, NewsletterTemplateService
 builder.Services.AddScoped<IBlogService, BlogService>();
 builder.Services.AddScoped<TokenAdminService>();
 builder.Services.AddHostedService<AdminNotificationDispatcher>();
+builder.Services.AddScoped<IClaimsTransformation, RoleClaimsTransformer>();
 
 builder.Services.AddSingleton<AdminNotificationInterceptor>();
 builder.Services.AddDbContext<SkillSwapDbContext>((sp, opt) =>

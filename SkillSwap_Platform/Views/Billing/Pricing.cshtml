@@ -239,7 +239,11 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-    // 1) Toggle Monthly ↔ Yearly Prices (19.5% discount baked in)
+    // expose auth state and (optionally) login URL
+    const isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+    const loginUrl       = '@Url.Action("Login", "Home")';
+
+    // 1) Toggle Monthly ↔ Yearly Prices
     function togglePricing() {
       const yearly = document.getElementById('billingToggle').checked;
       document.querySelectorAll('.pricing_packages').forEach(pkg => {
@@ -255,92 +259,71 @@
 
     // 2) Kick off Razorpay Checkout for a given plan
     async function startPayment(plan) {
-        let clientPlan = plan;
-        if (plan === "Premium") clientPlan = "Plus";
-        const isYearly = document.getElementById('billingToggle').checked;
-        const clientCycle   = isYearly ? 'yearly' : 'monthly';
+      // at this point, we know user *is* authenticated
+      let clientPlan = plan === "Premium" ? "Plus" : plan;
+      const isYearly   = document.getElementById('billingToggle').checked;
+      const clientCycle= isYearly ? 'yearly' : 'monthly';
       try {
-        // Create the Razorpay order
         const res = await fetch('/Billing/Checkout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ plan, billingCycle: clientCycle })
         });
-        if (!res.ok) {
-          const err = await res.text();
-          return alert('Error creating order: ' + err);
-        }
+        if (!res.ok) throw new Error(await res.text());
         const { key, orderId, amount, currency, planName, billingCycle: serverCycle } = await res.json();
 
-        // Configure and open the Razorpay modal
         const options = {
-          key,             // Razorpay Key from server
-          amount,          // in paise
-          currency,
+          key, amount, currency,
           name: 'SkillSwap',
           description: `${planName} Plan (${serverCycle})`,
           order_id: orderId,
           handler(response) {
-            // 3) Verify payment server-side
-            const payload = {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id:   response.razorpay_order_id,
-              razorpay_signature:  response.razorpay_signature,
-              planName,
-              billingCycle: serverCycle
-            };
-            fetch('/Billing/Verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+            fetch('/Billing/Verify',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_signature:  response.razorpay_signature,
+                planName,
+                billingCycle: serverCycle
+              })
             })
             .then(r => r.json())
             .then(j => {
-              if (j.success) {
-                const msgDiv = document.getElementById('paymentMessage');
-                 msgDiv.classList.remove('d-none', 'alert-danger');
-                 msgDiv.classList.add('alert-success');
-                 msgDiv.textContent = '🎉 Payment successful! Redirecting you shortly…';
-                    // 2b) After a short pause, send them on their way
-                    setTimeout(() => {
-                      window.location.href = '/UserDashboard';
-                    }, 3000); // 3 seconds; adjust as you like              
-                } else {
-                  // on failure, show the error inline instead of alert()
-                  const msgDiv = document.getElementById('paymentMessage');
-                  msgDiv.classList.remove('d-none', 'alert-success');
-                  msgDiv.classList.add('alert-danger');
-                  msgDiv.textContent = j.message || "Payment succeeded but we couldn’t able could not able to update your account. 🙁";
-                }
-            })
-            .catch(err => {
               const msgDiv = document.getElementById('paymentMessage');
-              msgDiv.classList.remove('d-none', 'alert-success');
-              msgDiv.classList.add('alert-danger');
-              msgDiv.textContent = '✅ Payment successful and plan activated! Please wait while we redirect you to your billing dashboard…';
-              console.error(err);
+              msgDiv.classList.remove('d-none');
+              if (j.success) {
+                msgDiv.classList.add('alert-success');
+                msgDiv.textContent = '🎉 Payment successful! Redirecting…';
+                setTimeout(() => window.location.href='/UserDashboard',3000);
+              } else {
+                msgDiv.classList.add('alert-danger');
+                msgDiv.textContent = j.message
+                  || 'Payment succeeded but we couldn’t update your plan.';
+              }
+            })
+            .catch(() => {
+              const msgDiv = document.getElementById('paymentMessage');
+              msgDiv.classList.add('alert-success');
+              msgDiv.textContent = '✅ Payment successful! Redirecting…';
+              setTimeout(() => window.location.href='/UserDashboard',3000);
             });
           },
-          modal: {
-            ondismiss: () => {
-              console.log('Checkout closed');
-            }
-          }
+          modal:{ ondismiss:()=>console.log('Checkout closed') }
         };
-        const rzp = new Razorpay(options);
-        rzp.open();
-      } catch (e) {
-        console.error(e);
-        alert('Unexpected error, check console');
+        new Razorpay(options).open();
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // read current-plan from data-attributes
       const wrap    = document.getElementById('pricingSection');
-      const curPlan = wrap.dataset.currentPlan;    // “Plus”
-      const curCycle= wrap.dataset.currentCycle;   // “monthly”/“yearly”
-      const curEnd  = wrap.dataset.currentEnd;     // “2025-06-15”
+      const curPlan = wrap.dataset.currentPlan;
+      const curCycle= wrap.dataset.currentCycle;
+      const curEnd  = wrap.dataset.currentEnd;
 
       // modal elements
       const modalEl    = new bootstrap.Modal(document.getElementById('planChangeModal'));
@@ -355,19 +338,22 @@
       // intercept all Buy buttons
       document.querySelectorAll('.buy-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          pendingPlan = btn.dataset.plan;  // e.g. “Pro”
+          // **AUTH CHECK**
+          if (!isAuthenticated) {
+            return window.location.href = loginUrl;
+          }
 
-          // same-plan? or no logged-in plan? → go straight to checkout
-          if (!curPlan || curPlan === "Free" || pendingPlan === curPlan) {
+          pendingPlan = btn.dataset.plan;
+          // same-plan? go straight to checkout
+          if (!curPlan || curPlan==='Free' || pendingPlan===curPlan) {
             return startPayment(pendingPlan);
           }
 
-          // populate modal with details
+          // otherwise show confirmation modal
           curNameEl.textContent  = curPlan;
           curCycleEl.textContent = curCycle;
           curEndEl.textContent   = new Date(curEnd).toLocaleDateString();
           newNameEl.textContent  = pendingPlan;
-
           modalEl.show();
         });
       });
@@ -378,11 +364,12 @@
         startPayment(pendingPlan);
       });
 
-      // keep your togglePricing hookup too
+      // hook up the toggle switch
       document.getElementById('billingToggle')
               .addEventListener('change', togglePricing);
     });
 </script>
+
 
 <style>
     .recommend-ribbon {
