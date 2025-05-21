@@ -30,7 +30,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 // Log or handle as needed
                 // For now, redirect to error page
-                return RedirectToAction("Error", "Home");
+                return RedirectToAction("EP500", "EP");
             }
 
             ViewData["From"] = start.ToString("dd MMMM, yyyy");

@@ -444,7 +444,17 @@ namespace SkillSwap_Platform.Services.AdminControls
             var totalExec = await _db.TblExchanges.CountAsync(x => x.IsSuccessful);
             var totalInit = await _db.TblExchanges.CountAsync();
             var rate = totalInit > 0 ? (double)totalExec / totalInit * 100 : 0;
-            var avgValue = await _db.TblExchanges.Where(x => x.IsSuccessful).AverageAsync(x => x.TokensPaid);
+            decimal avgValue;
+            if (totalExec == 0)
+            {
+                avgValue = 0m;
+            }
+            else
+            {
+                avgValue = await _db.TblExchanges
+                    .Where(x => x.IsSuccessful)
+                    .AverageAsync(x => x.TokensPaid);
+            }
             return new SwapMetrics(totalExec, rate, avgValue);
         }
 

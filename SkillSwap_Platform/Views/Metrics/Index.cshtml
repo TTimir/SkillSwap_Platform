@@ -13,111 +13,6 @@
 </div>
 </div>
 
-<!-- ────────────── Metrics Guide ────────────── -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-light p-3">
-            <h5 class="mb-3">📊 Metrics Guide</h5>
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Full Name</th>
-                        <th>Meaning</th>
-                        <th>Calculation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Total Users</td>
-                        <td>–</td>
-                        <td>Total registered accounts</td>
-                        <td>Count of users where <code>IsHeld == false</code></td>
-                    </tr>
-                    <tr>
-                        <td>DAU</td>
-                        <td>Daily Active Users</td>
-                        <td>How many unique users signed in today</td>
-                        <td>Count of users with <code>LastActive ≥ today</code></td>
-                    </tr>
-                    <tr>
-                        <td>WAU</td>
-                        <td>Weekly Active Users</td>
-                        <td>Unique users active in past 7 days</td>
-                        <td>Count of users with <code>LastActive ≥ today–7d</code></td>
-                    </tr>
-                    <tr>
-                        <td>MAU</td>
-                        <td>Monthly Active Users</td>
-                        <td>Unique users active in past 30 days</td>
-                        <td>Count of users with <code>LastActive ≥ today–30d</code></td>
-                    </tr>
-                    <tr>
-                        <td>ARPU</td>
-                        <td>Average Revenue Per User</td>
-                        <td>Revenue generated per MAU</td>
-                        <td><code>TotalRevenueMonth ÷ MAU</code></td>
-                    </tr>
-                    <tr>
-                        <td>Day-1 Retention</td>
-                        <td>–</td>
-                        <td>% of yesterday’s new users who returned today</td>
-                        <td><code>(returnedDay1 ÷ newYesterday)×100</code></td>
-                    </tr>
-                    <tr>
-                        <td>Day-7 Retention</td>
-                        <td>–</td>
-                        <td>% of users who signed up 7d ago and used in last 7d</td>
-                        <td><code>(returnedDay7 ÷ cohort7dAgo)×100</code></td>
-                    </tr>
-                    <tr>
-                        <td>Swaps per MAU</td>
-                        <td>–</td>
-                        <td>Average successful swaps per monthly user</td>
-                        <td><code>successfulSwaps ÷ MAU</code></td>
-                    </tr>
-                    <tr>
-                        <td>Offers per 1k DAU</td>
-                        <td>–</td>
-                        <td>Offers created per 1,000 daily users</td>
-                        <td><code>(offersToday ÷ DAU)×1,000</code></td>
-                    </tr>
-                    <tr>
-                        <td>Cancel Rate</td>
-                        <td>–</td>
-                        <td>% of exchanges that were cancelled</td>
-                        <td><code>(cancelledExchanges ÷ totalExchanges)×100</code></td>
-                    </tr>
-                    <tr>
-                        <td>LTV</td>
-                        <td>Lifetime Value per User</td>
-                        <td>Average revenue per user over lifetime</td>
-                        <td><code>allPayments ÷ TotalUsers</code></td>
-                    </tr>
-                    <tr>
-                        <td>Churn Rate</td>
-                        <td>–</td>
-                        <td>% of last month’s active users who didn’t return</td>
-                        <td><code>((lastMthMAU – returned)÷lastMthMAU)×100</code></td>
-                    </tr>
-                    <tr>
-                        <td>Error Rate</td>
-                        <td>–</td>
-                        <td>% of failed requests (stubbed)</td>
-                        <td>From your error‐logging (stubbed=0)</td>
-                    </tr>
-                    <tr>
-                        <td>P95 Latency</td>
-                        <td>–</td>
-                        <td>95th percentile request latency (ms)</td>
-                        <td>From your APM tool (stubbed=0)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <!-- ────────────────────── Key Metrics Cards ────────────────────── -->
 <div class="row mb-4">
     <div class="col-md-3 mb-4">
@@ -272,7 +167,7 @@
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="navtab-style1">
                 <div class="d-sm-flex align-items-center justify-content-between">
-                    <h4 class="title fz17 mb20">Engagement Over Time</h4>
+                    <h4 class="title fz17 mb20">Engagement Over Time (Today · Last 7 Days · Last 30 Days)</h4>
                     @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
                         <select class="selectpicker show-tick">
                             <option>This Week</option>
@@ -289,7 +184,7 @@
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="navtab-style1">
                 <div class="d-sm-flex align-items-center justify-content-between">
-                    <h4 class="title fz17 mb20">Engagement Over Time</h4>
+                    <h4 class="title fz17 mb20">Key Metrics Snapshot (Today · Last 7 Days · Last 30 Days)</h4>
                     @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
                         <select class="selectpicker show-tick">
                             <option>This Week</option>
@@ -306,7 +201,7 @@
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="navtab-style1">
                 <div class="d-sm-flex align-items-center justify-content-between">
-                    <h4 class="title fz17 mb20">Feature Usage</h4>
+                    <h4 class="title fz17 mb20">Feature Usage (last 30 days)</h4>
                     @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
                         <select class="selectpicker show-tick">
                             <option>This Week</option>
@@ -323,7 +218,7 @@
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="navtab-style1">
                 <div class="d-sm-flex align-items-center justify-content-between">
-                    <h4 class="title fz17 mb20">Tokens & Exchanges</h4>
+                    <h4 class="title fz17 mb20">Tokens & Exchanges (All Time Totals)</h4>
                     @* <div class="page_control_shorting dark-color pr10 text-center text-md-end">
                         <select class="selectpicker show-tick">
                             <option>This Week</option>
@@ -355,13 +250,120 @@
     <div class="col-xl-4">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="bdrb1 pb15 mb50">
-                <h5 class="title">Churn vs. Retained</h5>
+                <h5 class="title">Churn vs. Retained (last 30 days)</h5>
             </div>
             <canvas id="churnPie" height="260px"></canvas>
         </div>
     </div>
 </div>
 </div>
+
+
+<!-- ────────────── Metrics Guide ────────────── -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light p-3">
+            <h5 class="mb-3">📊 Metrics Guide</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Full Name</th>
+                        <th>Meaning</th>
+                        <th>Calculation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total Users</td>
+                        <td>–</td>
+                        <td>Total registered accounts</td>
+                        <td>Count of users where <code>IsHeld == false</code></td>
+                    </tr>
+                    <tr>
+                        <td>DAU</td>
+                        <td>Daily Active Users</td>
+                        <td>How many unique users signed in today</td>
+                        <td>Count of users with <code>LastActive ≥ today</code></td>
+                    </tr>
+                    <tr>
+                        <td>WAU</td>
+                        <td>Weekly Active Users</td>
+                        <td>Unique users active in past 7 days</td>
+                        <td>Count of users with <code>LastActive ≥ today–7d</code></td>
+                    </tr>
+                    <tr>
+                        <td>MAU</td>
+                        <td>Monthly Active Users</td>
+                        <td>Unique users active in past 30 days</td>
+                        <td>Count of users with <code>LastActive ≥ today–30d</code></td>
+                    </tr>
+                    <tr>
+                        <td>ARPU</td>
+                        <td>Average Revenue Per User</td>
+                        <td>Revenue generated per MAU</td>
+                        <td><code>TotalRevenueMonth ÷ MAU</code></td>
+                    </tr>
+                    <tr>
+                        <td>Day-1 Retention</td>
+                        <td>–</td>
+                        <td>% of yesterday’s new users who returned today</td>
+                        <td><code>(returnedDay1 ÷ newYesterday)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Day-7 Retention</td>
+                        <td>–</td>
+                        <td>% of users who signed up 7d ago and used in last 7d</td>
+                        <td><code>(returnedDay7 ÷ cohort7dAgo)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Swaps per MAU</td>
+                        <td>–</td>
+                        <td>Average successful swaps per monthly user</td>
+                        <td><code>successfulSwaps ÷ MAU</code></td>
+                    </tr>
+                    <tr>
+                        <td>Offers per 1k DAU</td>
+                        <td>–</td>
+                        <td>Offers created per 1,000 daily users</td>
+                        <td><code>(offersToday ÷ DAU)×1,000</code></td>
+                    </tr>
+                    <tr>
+                        <td>Cancel Rate</td>
+                        <td>–</td>
+                        <td>% of exchanges that were cancelled</td>
+                        <td><code>(cancelledExchanges ÷ totalExchanges)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>LTV</td>
+                        <td>Lifetime Value per User</td>
+                        <td>Average revenue per user over lifetime</td>
+                        <td><code>allPayments ÷ TotalUsers</code></td>
+                    </tr>
+                    <tr>
+                        <td>Churn Rate</td>
+                        <td>–</td>
+                        <td>% of last month’s active users who didn’t return</td>
+                        <td><code>((lastMthMAU – returned)÷lastMthMAU)×100</code></td>
+                    </tr>
+                    <tr>
+                        <td>Error Rate</td>
+                        <td>–</td>
+                        <td>% of failed requests (stubbed)</td>
+                        <td>From your error‐logging (stubbed=0)</td>
+                    </tr>
+                    <tr>
+                        <td>P95 Latency</td>
+                        <td>–</td>
+                        <td>95th percentile request latency (ms)</td>
+                        <td>From your APM tool (stubbed=0)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 
 @section DynamicAdminScript {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
