@@ -134,7 +134,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     string dateTimePart = DateTime.Now.ToString("yyyyMMddHHmmss");
                     string token = UniqueIdGenerator.GenerateSixCharHexToken();
-                    model.ContractUniqueId = $"SkillSwap-CT-{dateTimePart}-{token}";
+                    model.ContractUniqueId = $"swapo-CT-{dateTimePart}-{token}";
                 }
 
                 var result = await _contractHandler.CreateContractAsync(model);
@@ -1282,14 +1282,14 @@ namespace SkillSwap_Platform.Controllers
                 string newTimestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
                 // Preserve the token (parts[3] and any extra parts, if any)
                 string tokenPart = string.Join("-", parts.Skip(3));
-                return $"SkillSwap-CT-{newTimestamp}-{tokenPart}";
+                return $"swapo-CT-{newTimestamp}-{tokenPart}";
             }
             else
             {
                 // Fallback: if not in expected format, generate a new unique id.
                 string newTimestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
                 string token = UniqueIdGenerator.GenerateSixCharHexToken();
-                return $"SkillSwap-CT-{newTimestamp}-{token}";
+                return $"swapo-CT-{newTimestamp}-{token}";
             }
         }
 

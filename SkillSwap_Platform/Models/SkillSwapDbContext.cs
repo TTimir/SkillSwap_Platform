@@ -1413,9 +1413,12 @@ public partial class SkillSwapDbContext : DbContext
 
         modelBuilder.Entity<TblUser>()
             .HasQueryFilter(u =>
-               u.Role != "Admin"    // exclude any user whose Role column is Admin
-            && !u.IsEscrowAccount        // exclude any escrow account
-       );
+                u.Role != "Admin"
+             && u.Role != "Moderator"
+             && !u.IsEscrowAccount
+             && !u.IsSupportAgent
+             && !u.IsSystemReserveAccount
+            );
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

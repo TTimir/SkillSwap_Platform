@@ -75,7 +75,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     };
 
                     // --- flagged‐owner email ---
-                    var subjectOfferReported = $"[{label} · {sla}] Notice: Your SkillSwap offer “{offer.Title}” has been reported";
+                    var subjectOfferReported = $"[{label} · {sla}] Notice: Your Swapo offer “{offer.Title}” has been reported";
                     var bodyOfferReported = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -85,7 +85,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <!-- Header: Orange -->
       <tr><td style=""background:#FB8C00;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-        SkillSwap Moderation
+        Swapo Moderation
       </td></tr>
       <!-- Body -->
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
@@ -98,7 +98,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       </td></tr>
       <!-- Footer -->
       <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-        — The SkillSwap Support Team
+        — The Swapo Support Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -120,12 +120,12 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <!-- Header: Green -->
       <tr><td style=""background:#388E3C;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-        SkillSwap Moderation
+        Swapo Moderation
       </td></tr>
       <!-- Body -->
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
         <h2 style=""margin-top:0;"">Hi {flagger.FirstName},</h2>
-        <p>Thanks for helping keep SkillSwap safe. We’ve received your report for:</p>
+        <p>Thanks for helping keep Swapo safe. We’ve received your report for:</p>
         <blockquote style=""margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;color:#555;"">
           “{offer.Title}”<br/>{reason}
         </blockquote>
@@ -133,7 +133,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       </td></tr>
       <!-- Footer -->
       <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-        — The SkillSwap Support Team
+        — The Swapo Support Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -247,7 +247,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <!-- Header: Gray -->
       <tr><td style=""background:#757575;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-        SkillSwap Moderation
+        Swapo Moderation
       </td></tr>
       <!-- Body -->
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
@@ -257,11 +257,11 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
         <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
           {reason}
         </blockquote>
-        <p>No further action is needed—thanks for keeping SkillSwap great!</p>
+        <p>No further action is needed—thanks for keeping Swapo great!</p>
       </td></tr>
       <!-- Footer -->
       <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-        — The SkillSwap Support Team
+        — The Swapo Support Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -294,7 +294,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <!-- Header: Green -->
       <tr><td style=""background:#388E3C;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-        SkillSwap Moderation
+        Swapo Moderation
       </td></tr>
       <!-- Body -->
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
@@ -308,7 +308,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       </td></tr>
       <!-- Footer -->
       <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-        — The SkillSwap Support Team
+        — The Swapo Support Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -362,7 +362,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       <!-- Header: Red -->
       <tr>
         <td style=""background:#D32F2F;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Moderation
+          Swapo Moderation
         </td>
       </tr>
 
@@ -374,7 +374,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
           <blockquote style=""color:#555555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
             “{offer.Title}”<br/>{reason}
           </blockquote>
-          <p><strong>Token update:</strong> Any tokens locked in pending exchanges for this offer will be automatically released and refunded within 24 hours. If you still see held tokens or need them released sooner, please reply or <a href=""mailto:skillswap360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
+          <p><strong>Token update:</strong> Any tokens locked in pending exchanges for this offer will be automatically released and refunded within 24 hours. If you still see held tokens or need them released sooner, please reply or <a href=""mailto:swapoorg360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
           <p>We understand this may be disappointing. If you believe this was a mistake or would like more information, simply reply to this email and we’ll assist you.</p>
         </td>
       </tr>
@@ -382,7 +382,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          — The SkillSwap Support Team
+          — The Swapo Support Team
         </td>
       </tr>
 
@@ -418,7 +418,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       <!-- Header: Green (gratitude) -->
       <tr>
         <td style=""background:#388E3C;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Moderation
+          Swapo Moderation
         </td>
       </tr>
 
@@ -430,7 +430,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
           <blockquote style=""color:#555555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
             “{offer.Title}”<br/>{reason}
           </blockquote>
-          <p>We’ve reviewed and removed the offer. Any tokens previously locked will be refunded within 24 hours. If you still see any held tokens or need them released sooner, please reply or <a href=""mailto:skillswap360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
+          <p>We’ve reviewed and removed the offer. Any tokens previously locked will be refunded within 24 hours. If you still see any held tokens or need them released sooner, please reply or <a href=""mailto:swapoorg360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
           <p>Your help keeps our community strong and secure—thank you!</p>
         </td>
       </tr>
@@ -438,7 +438,7 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          — The SkillSwap Support Team
+          — The Swapo Support Team
         </td>
       </tr>
 

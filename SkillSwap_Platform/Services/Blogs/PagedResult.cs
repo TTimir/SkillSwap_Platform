@@ -2,10 +2,9 @@
 {
     public class PagedResult<T>
     {
-        public IReadOnlyList<T> Items { get; init; }
-        public int Page { get; init; }
-        public int PageSize { get; init; }
-        public int TotalItems { get; init; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+        public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
+        public int TotalItems { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }

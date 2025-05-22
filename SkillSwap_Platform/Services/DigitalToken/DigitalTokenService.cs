@@ -111,7 +111,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Header -->
       <tr>
         <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-          SkillSwap
+          swapo
         </td>
       </tr>
 
@@ -132,7 +132,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Footer -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Thanks for trusting SkillSwap — stay swapping!  
+          Thanks for trusting swapo — stay swapping!  
         </td>
       </tr>
 
@@ -160,7 +160,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Header -->
       <tr>
         <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-          SkillSwap
+          swapo
         </td>
       </tr>
 
@@ -181,7 +181,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Footer -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Thanks for being part of SkillSwap!  
+          Thanks for being part of swapo!  
         </td>
       </tr>
 
@@ -261,7 +261,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
           <!-- Header -->
           <tr>
             <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-              SkillSwap
+              swapo
             </td>
           </tr>
     
@@ -273,14 +273,14 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 The <strong>{amount}</strong> tokens held in escrow for exchange 
                 <strong>#{exchangeId}</strong> have just been released to your account.
               </p>
-              <p style=""margin:0;"">Thanks for using SkillSwap!</p>
+              <p style=""margin:0;"">Thanks for using swapo!</p>
             </td>
           </tr>
     
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-              Happy swapping — The SkillSwap Team
+              Happy swapping — The swapo Team
             </td>
           </tr>
     
@@ -314,7 +314,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Header -->
       <tr>
         <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-          SkillSwap
+          swapo
         </td>
       </tr>
 
@@ -539,7 +539,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
       <!-- Header -->
       <tr>
         <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-          SkillSwap
+          swapo
         </td>
       </tr>
 

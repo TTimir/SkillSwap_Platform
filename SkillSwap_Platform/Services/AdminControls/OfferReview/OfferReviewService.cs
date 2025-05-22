@@ -416,7 +416,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         <!-- header -->
         <tr>
           <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-            SkillSwap Update
+            Swapo Update
           </td>
         </tr>
         <!-- message -->
@@ -435,7 +435,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         <!-- footer -->
         <tr>
           <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
-            — The SkillSwap Support Team
+            — The Swapo Support Team
           </td>
         </tr>
       </table>
@@ -460,7 +460,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-            SkillSwap Update
+            Swapo Update
           </td>
         </tr>
         <tr>
@@ -477,7 +477,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         </tr>
         <tr>
           <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
-            — The SkillSwap Support Team
+            — The Swapo Support Team
           </td>
         </tr>
       </table>
@@ -545,7 +545,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-            SkillSwap Update
+            Swapo Update
           </td>
         </tr>
         <tr>
@@ -561,7 +561,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
         </tr>
         <tr>
           <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
-            — The SkillSwap Support Team
+            — The Swapo Support Team
           </td>
         </tr>
       </table>
@@ -586,7 +586,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
-            SkillSwap Update
+            Swapo Update
           </td>
         </tr>
         <tr>
@@ -597,12 +597,12 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
               {notes}
             </blockquote>
-            <p>We appreciate your vigilance in keeping SkillSwap respectful!</p>
+            <p>We appreciate your vigilance in keeping Swapo respectful!</p>
           </td>
         </tr>
         <tr>
           <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
-            — The SkillSwap Support Team
+            — The Swapo Support Team
           </td>
         </tr>
       </table>
@@ -678,7 +678,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Header: Red for removal -->
           <tr>
             <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
-              SkillSwap Moderation
+              Swapo Moderation
             </td>
           </tr>
           <!-- Body -->
@@ -696,7 +696,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-              — The SkillSwap Support Team
+              — The Swapo Support Team
             </td>
           </tr>
         </table>
@@ -744,7 +744,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Header: Green for thank-you -->
           <tr>
             <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
-              SkillSwap Moderation
+              Swapo Moderation
             </td>
           </tr>
           <!-- Body -->
@@ -760,13 +760,13 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
               <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
                 {moderationNote}
               </blockquote>
-              <p>Your help makes SkillSwap safer for everyone—thank you!</p>
+              <p>Your help makes Swapo safer for everyone—thank you!</p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-              — The SkillSwap Support Team
+              — The Swapo Support Team
             </td>
           </tr>
         </table>
@@ -835,7 +835,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Header: Red -->
           <tr>
             <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
-              SkillSwap Moderation
+              Swapo Moderation
             </td>
           </tr>
           <!-- Body -->
@@ -853,7 +853,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-              — The SkillSwap Support Team
+              — The Swapo Support Team
             </td>
           </tr>
         </table>
@@ -901,7 +901,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
           <!-- Header: Green -->
           <tr>
             <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
-              SkillSwap Moderation
+              Swapo Moderation
             </td>
           </tr>
           <!-- Body -->
@@ -917,13 +917,13 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
               <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
                 {moderationNote}
               </blockquote>
-              <p>Your help keeps SkillSwap safe—thank you!</p>
+              <p>Your help keeps Swapo safe—thank you!</p>
             </td>
           </tr>
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-              — The SkillSwap Support Team
+              — The Swapo Support Team
             </td>
           </tr>
         </table>

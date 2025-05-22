@@ -73,7 +73,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                         };
 
                         // 2) prefix the subject
-                        var subject = $"[{label} · {sla}] Your SkillSwap profile has been reported";
+                        var subject = $"[{label} · {sla}] Your Swapo profile has been reported";
                         var htmlBody = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -83,7 +83,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -94,12 +94,12 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
             {reason}
           </blockquote>
           <p>Our moderation team is reviewing this report now. If you’d like to provide additional context, simply reply to this email or contact us at 
-             <a href=""mailto:skillswap360@gmail.com"" style=""color:#E76F51;"">skillswap360@gmail.com</a>.</p>
+             <a href=""mailto:swapoorg360@gmail.com"" style=""color:#E76F51;"">swapoorg360@gmail.com</a>.</p>
         </td>
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          Thank you for being part of SkillSwap—we appreciate your contributions!
+          Thank you for being part of Swapo—we appreciate your contributions!
         </td>
       </tr>
     </table>
@@ -149,7 +149,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -164,7 +164,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          Thanks for helping keep SkillSwap safe!
+          Thanks for helping keep Swapo safe!
         </td>
       </tr>
     </table>
@@ -275,7 +275,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -290,7 +290,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          Thanks for being part of SkillSwap!
+          Thanks for being part of Swapo!
         </td>
       </tr>
     </table>
@@ -332,7 +332,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -343,12 +343,12 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
           <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
             {adminReason}
           </blockquote>
-          <p>Your help keeps SkillSwap safe—thank you!</p>
+          <p>Your help keeps Swapo safe—thank you!</p>
         </td>
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          — The SkillSwap Support Team
+          — The Swapo Support Team
         </td>
       </tr>
     </table>
@@ -415,7 +415,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -433,7 +433,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          Thank you for being part of SkillSwap!
+          Thank you for being part of Swapo!
         </td>
       </tr>
     </table>
@@ -455,7 +455,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -472,7 +472,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          If you’d like to discuss this decision, reply or contact support at <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">skillswap360@gmail.com</a>.
+          If you’d like to discuss this decision, reply or contact support at <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">swapoorg360@gmail.com</a>.
         </td>
       </tr>
     </table>
@@ -513,25 +513,25 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
         <td style=""padding:20px;color:#333;line-height:1.5;"">
           <p>Hello <strong>{reported.FirstName}</strong>,</p>
-          <p>After reviewing a third report—and issuing two prior warnings—we have deactivated your SkillSwap account.</p>
+          <p>After reviewing a third report—and issuing two prior warnings—we have deactivated your Swapo account.</p>
           <p><strong>Moderator’s note:</strong></p>
           <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
             {adminReason}
           </blockquote>
           <p>This action is final. We’ve shared these reports with external networks; they’re reviewing them as well.</p>
           <p>If you believe this decision is in error or wish to appeal, reply or contact us at 
-             <a href=""mailto:skillswap360@gmail.com"" style=""color:#E76F51;text-decoration:underline;"">skillswap360@gmail.com</a> within 7 days.</p>
+             <a href=""mailto:swapoorg360@gmail.com"" style=""color:#E76F51;text-decoration:underline;"">swapoorg360@gmail.com</a> within 7 days.</p>
         </td>
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          We regret it has come to this, and we thank you for the time you spent with SkillSwap.
+          We regret it has come to this, and we thank you for the time you spent with Swapo.
         </td>
       </tr>
     </table>
@@ -570,7 +570,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr>
         <td style=""border-top:4px solid #E76F51;padding:20px;"">
-          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">SkillSwap Support</h1>
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
         </td>
       </tr>
       <tr>
@@ -581,7 +581,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
       </tr>
       <tr>
         <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
-          — The SkillSwap Support Team
+          — The Swapo Support Team
         </td>
       </tr>
     </table>

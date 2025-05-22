@@ -1,176 +1,103 @@
-﻿
-@{
-    Layout = null;
+﻿@{
+    ViewData["Title"] = "Privacy Policy";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkillSwap Cookie Policy</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter',sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #fff;
-            color: #333;
-        }
-
-        header {
-            background: #16a085;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
-
-        nav {
-            background: #f9f9f0;
-            border-bottom: 1px solid #ddd;
-        }
-
-            nav ul {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-            }
-
-            nav a {
-                padding: 12px 18px;
-                text-decoration: none;
-                color: #555;
-                font-weight: 600;
-            }
-
-                nav a.active, nav a:hover {
-                    color: #16a085;
-                }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2rem;
-            color: #16a085;
-        }
-
-        h2 {
-            margin-top: 2.5rem;
-            font-size: 1.5rem;
-            color: #16a085;
-        }
-
-        p, ul {
-            margin: 1rem 0;
-            line-height: 1.6;
-        }
-
-        .short-version {
-            background: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-        }
-
-            .short-version h2 {
-                margin-top: 0;
-            }
-
-        footer {
-            text-align: center;
-            margin: 50px 0;
-            font-size: 0.9rem;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>Cookie Policy</h1>
-        <p>Last updated: May 14, 2025</p>
-    </header>
-
-    <nav>
-        <ul>
-            <li><a href="#short" class="active">Short Version</a></li>
-            <li><a href="#1">1. What Are Cookies?</a></li>
-            <li><a href="#2">2. Types of Cookies</a></li>
-            <li><a href="#3">3. Third-Party Cookies</a></li>
-            <li><a href="#4">4. Managing Cookies</a></li>
-            <li><a href="#5">5. Contact</a></li>
-        </ul>
-    </nav>
-
+<section class="our-terms">
     <div class="container">
-
-        <!-- Short Version -->
-        <section id="short" class="short-version">
-            <h2>The Short Version</h2>
-            <p><strong>Cookies:</strong> Small text files placed on your device to store preferences, track usage, and enable core functionality.</p>
-            <p><strong>Why We Use Them:</strong> Essential site operation, performance analytics, and, with consent, marketing.</p>
-            <p><strong>Your Control:</strong> You can block or delete cookies via your browser settings—but essential features may break.</p>
-        </section>
-
-        <!-- 1. What Are Cookies? -->
-        <section id="1">
-            <h2>1. What Are Cookies?</h2>
-            <p>Cookies are small data files stored on your device when you visit a website. They help remember your settings (language, login status), understand how you use the site, and provide a smoother experience.</p>
-        </section>
-
-        <!-- 2. Types of Cookies -->
-        <section id="2">
-            <h2>2. Types of Cookies We Use</h2>
-            <ul>
-                <li><strong>Essential Cookies:</strong> Required for login, session management, and security.</li>
-                <li><strong>Performance Cookies:</strong> Collect anonymous statistics on site usage (via Google Analytics).</li>
-                <li><strong>Functional Cookies:</strong> Remember your preferences (language, display).</li>
-                <li><strong>Marketing Cookies:</strong> Track browsing to show relevant ads (third-party).</li>
-            </ul>
-        </section>
-
-        <!-- 3. Third-Party Cookies -->
-        <section id="3">
-            <h2>3. Third-Party Cookies</h2>
-            <p>We integrate features from partners (e.g., Stripe, Facebook). These third parties may set their own cookies; their use is governed by their own policies.</p>
-        </section>
-
-        <!-- 4. Managing Cookies -->
-        <section id="4">
-            <h2>4. Managing Cookies</h2>
-            <p>You can control or delete cookies through your browser settings:</p>
-            <ul>
-                <li>Chrome: Settings → Privacy → Cookies and other site data</li>
-                <li>Firefox: Options → Privacy & Security → Cookies</li>
-                <li>Edge: Settings → Privacy & Services → Cookies</li>
-            </ul>
-            <p>Disabling essential cookies may prevent the site from functioning properly.</p>
-        </section>
-
-        <!-- 5. Contact -->
-        <section id="5">
-            <h2>5. Contact Us</h2>
-            <p>Questions about this policy? Email  <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>.</p>
-        </section>
-
-        <footer>&copy; 2025 SkillSwap. All rights reserved.</footer>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="main-title">
+                    <h2>Cookie Policy</h2>
+                    <p class="text">Last updated: May 14, 2025</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3 col-lg-3 col-xl-2">
+                <div class="terms_condition_widget mb30-sm">
+                    <div class="widget_list">
+                        <nav>
+                            <div class="nav nav-tabs text-start" id="nav-tab" role="tablist">
+                                <button class="nav-link text-start active" id="nav-shortversion-tab" data-bs-toggle="tab" data-bs-target="#nav-shortversion" type="button" role="tab" aria-controls="nav-shortversion" aria-selected="true">Short Version</button>
+                                <button class="nav-link text-start" id="nav-what-tab" data-bs-toggle="tab" data-bs-target="#nav-what" type="button" role="tab" aria-controls="nav-what" aria-selected="false">What Are Cookies?</button>
+                                <button class="nav-link text-start" id="nav-type-tab" data-bs-toggle="tab" data-bs-target="#nav-type" type="button" role="tab" aria-controls="nav-type" aria-selected="false">Types of Cookies</button>
+                                <button class="nav-link text-start" id="nav-thirdparty-tab" data-bs-toggle="tab" data-bs-target="#nav-thirdparty" type="button" role="tab" aria-controls="nav-thirdparty" aria-selected="false">Third-Party Cookies</button>
+                                <button class="nav-link text-start" id="nav-manage-tab" data-bs-toggle="tab" data-bs-target="#nav-manage" type="button" role="tab" aria-controls="nav-manage" aria-selected="false">Managing Your Cookies</button>
+                                <button class="nav-link text-start" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Contact & Changes</button>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-9 col-xl-9 offset-xl-1">
+                <div class="terms_condition_grid text-start">
+                    <div class="tab-content" id="nav-tabContent">
+                        <div class="tab-pane fade show active" id="nav-shortversion" role="tabpanel" aria-labelledby="nav-shortversion-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. What cookies are</h4>
+                                <p class="mb25 text fz15">Cookies are small text files that are stored on your device when you visit a website. They record information about your browsing activity and preferences in order to improve your experience.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">2. Why we use them</h4>
+                                <p class="mb25 text fz15">We rely on cookies to enable essential site functions, gather anonymous analytics on performance, and—if you consent—deliver personalized marketing content.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">3. Your choices</h4>
+                                <p class="mb25 text fz15">You can delete or block cookies through your browser settings, but please be aware that disabling essential cookies may impair site functionality or prevent you from accessing certain features.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-what" role="tabpanel" aria-labelledby="nav-what-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. What Are Cookies?</h4>
+                                <p class="mb25 text fz15">Cookies are small alphanumeric files placed on your computer, smartphone, or other device when you access a website. They serve as your “digital memory” by storing information such as login status, language preferences, and other display settings. When you revisit the site, cookies help us recognize your device and recall your preferences, making your subsequent visits faster and more tailored to your needs.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-type" role="tabpanel" aria-labelledby="nav-type-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Essential Cookies</h4>
+                                <p class="mb25 text fz15">These cookies are strictly necessary to deliver core functionalities such as secure login, form submissions, and site navigation. Without them, certain features may not work correctly.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">2. Performance & Analytics Cookies</h4>
+                                <p class="mb25 text fz15"> We use these to collect aggregated and anonymous data about how visitors interact with our site—such as page views, load times, and error rates. This helps us identify areas for improvement.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">3. Functional Cookies</h4>
+                                <p class="mb25 text fz15">These remember your choices—like language selection or font size—so that you do not have to reconfigure them each time you visit.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">4. Marketing & Advertising Cookies</h4>
+                                <p class="mb25 text fz15">With your consent, these track your browsing habits across sites to show you relevant promotions and advertisements. They may be placed by us or by trusted third-party partners.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-thirdparty" role="tabpanel" aria-labelledby="nav-thirdparty-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Third-Party Cookies</h4>
+                                <p class="mb25 text fz15">We integrate services from external partners (such as analytics providers, payment processors, and social platforms) to enhance functionality. These partners may also place cookies on your device, subject to their own privacy and cookie policies. We recommend reviewing their policies to understand how they process your data.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-manage" role="tabpanel" aria-labelledby="nav-manage-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Managing Your Cookies</h4>
+                                <p class="mb25 text fz15">You have full control over cookies. You can choose to accept or decline them via your browser settings. Below are links to instructions for popular browsers:</p>
+                            </div>
+                            <ul>
+                                <li class="mb25 text fz15"><strong>Google Chrome:</strong> Go to Settings → Privacy and security → Cookies and other site data. From there, you can block all cookies or specify site exceptions.</li>
+                                <li class="mb25 text fz15"><strong>Mozilla Firefox:</strong> Navigate to Options → Privacy & Security → Cookies and Site Data. You can manage permissions, clear cookies, or set exceptions.</li>
+                                <li class="mb25 text fz15"><strong>Microsoft Edge:</strong> Select Settings → Cookies and site permissions → Manage and delete cookies and site data. Adjust as you prefer.</li>
+                                <li class="mb25 text fz15"><strong>Safari (macOS):</strong> Open Preferences → Privacy → Cookies and website data. You can choose to block or remove cookies from specific sites.</li>
+                            </ul>
+                            <p>Please note: if you disable or delete essential cookies, certain features of this site may not function properly or may become inaccessible.</p>
+                        </div>
+                        <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+                            <div class="grids mb90 mb40-md">
+                                <p>If you have any questions about our use of cookies or this Cookie Policy, please contact us at <a href="mailto:swapoorg360@gmail.com">swapoorg360@gmail.com</a>. We will be happy to assist you and address any concerns.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <script>
-        document.querySelectorAll('nav a').forEach(link => {
-          link.addEventListener('click', e => {
-            document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
-            e.target.classList.add('active');
-          });
-        });
-    </script>
-</body>
-</html>
+</section>

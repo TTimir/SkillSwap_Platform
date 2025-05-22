@@ -188,7 +188,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         <!-- header -->
         <tr>
           <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
-            SkillSwap
+            Swapo
           </td>
         </tr>
         
@@ -206,14 +206,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
               </a>
             </p>
             <p>If you have any questions, reply to this email or contact 
-               <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+               <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
           </td>
         </tr>
         
         <!-- footer -->
         <tr>
           <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-            Congratulations and happy swapping! — The SkillSwap Team
+            Congratulations and happy swapping! — The Swapo Team
           </td>
         </tr>
       
@@ -284,7 +284,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         <!-- header -->
         <tr>
           <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
-            SkillSwap
+            Swapo
           </td>
         </tr>
         
@@ -302,14 +302,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                style=""background:#dc3545;color:#fff;padding:10px 16px;text-decoration:none;border-radius:4px;"">
                View & Update
             </a> your certificate.</p>
-            <p>Questions? Reply to this email or <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+            <p>Questions? Reply to this email or <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
           </td>
         </tr>
         
         <!-- footer -->
         <tr>
           <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-            Thank you for keeping SkillSwap a trusted community. — The SkillSwap Team
+            Thank you for keeping Swapo a trusted community. — The Swapo Team
           </td>
         </tr>
       

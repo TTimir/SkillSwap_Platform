@@ -197,7 +197,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Header: Info Blue -->
       <tr>
         <td style=""background:#0288D1;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Escrow Update
+          Swapo Escrow Update
         </td>
       </tr>
 
@@ -217,7 +217,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          If you have any questions, contact <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">skillswap360@gmail.com</a>.
+          If you have any questions, contact <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">swapoorg360@gmail.com</a>.
         </td>
       </tr>
 
@@ -258,7 +258,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Header: Success Green -->
       <tr>
         <td style=""background:#388E3C;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Escrow Released
+          Swapo Escrow Released
         </td>
       </tr>
 
@@ -268,8 +268,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
           <p>Your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> has just been <strong>released</strong>!</p>
           <ul style=""padding-left:1em;margin:0;"">
-            <li><strong>Amount:</strong> {escrow.Amount:F2} tokens</li>
-            <li><strong>Released At:</strong> {localWhen:yyyy-MM-dd HH:mm} ({tzName})</li>
+            <li><strong>Amount:</strong> {escrow.Amount.ToString("F2")} tokens</li>
+            <li><strong>Released At:</strong> {localWhen.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})</li>
             <li><strong>Admin notes:</strong> {notes}</li>
           </ul>
         </td>
@@ -278,7 +278,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
+          Questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
         </td>
       </tr>
 
@@ -316,7 +316,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Header: Success Green -->
       <tr>
         <td style=""background:#388E3C;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Escrow Refunded
+          Swapo Escrow Refunded
         </td>
       </tr>
 
@@ -336,7 +336,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Need help? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
+          Need help? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
         </td>
       </tr>
 
@@ -373,7 +373,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Header: Warning Orange -->
       <tr>
         <td style=""background:#F57C00;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Escrow Dispute
+          Swapo Escrow Dispute
         </td>
       </tr>
 
@@ -394,7 +394,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Thank you for your patience—<a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">contact support</a> if needed.
+          Thank you for your patience—<a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">contact support</a> if needed.
         </td>
       </tr>
 
@@ -439,7 +439,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Header: Purple -->
       <tr>
         <td style=""background:#6A1B9A;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
-          SkillSwap Escrow Created
+          Swapo Escrow Created
         </td>
       </tr>
 
@@ -460,7 +460,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Any questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
+          Any questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact support</a>.
         </td>
       </tr>
 

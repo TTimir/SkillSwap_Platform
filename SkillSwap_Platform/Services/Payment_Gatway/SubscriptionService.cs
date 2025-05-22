@@ -111,7 +111,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
         <tr>
           <td style=""background-color:#299D8F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e6f4f1;font-size:14px;"">
-              Thank you for choosing <strong>SkillSwap</strong>!
+              Thank you for choosing <strong>Swapo</strong>!
             </p>
           </td>
         </tr>
@@ -231,7 +231,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
         <tr>
           <td style=""background-color:#299D8F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e6f4f1;font-size:14px;"">
-              Thanks for staying with <strong>SkillSwap</strong>!
+              Thanks for staying with <strong>Swapo</strong>!
             </p>
           </td>
         </tr>

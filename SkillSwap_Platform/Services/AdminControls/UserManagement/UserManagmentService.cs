@@ -133,11 +133,11 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 };
 
                 // 2) build a prefixed subject
-                var subject = $"[{supportLabel} · {sla}] Important: Your SkillSwap Account Is Temporarily On Hold";
+                var subject = $"[{supportLabel} · {sla}] Important: Your Swapo Account Is Temporarily On Hold";
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
-                    <p>We hope you’re doing well. We wanted to let you know that as of <strong>{user.HeldAt:dd MMM yyyy hh:mm tt} UTC</strong>, your SkillSwap account has been placed on hold for the following reason:</p>
+                    <p>We hope you’re doing well. We wanted to let you know that as of <strong>{user.HeldAt:dd MMM yyyy hh:mm tt} UTC</strong>, your Swapo account has been placed on hold for the following reason:</p>
 
                     <blockquote style=""border-left:4px solid #ccc; padding-left:1em; margin:1em 0;"">
                       {reason}
@@ -148,12 +148,12 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                     <p><strong>If our investigation finds no cause for concern, or once any identified violation of our Terms is resolved, your account will be released immediately and you’ll be able to log in again. We’ll notify you at that time.</strong></p>
 
                     <p>If you have questions or need further clarification, please reply directly to this email or reach out to our support team at 
-                    <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+                    <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
 
                     <p>Thank you for your patience and understanding.</p>
 
                     <p>Warm regards,<br/>
-                    The SkillSwap Team</p>";
+                    The Swapo Team</p>";
 
                 await _emailService.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
 
@@ -217,11 +217,11 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 };
 
                 // 2) build a prefixed subject
-                var subject = $"[{supportLabel} · {sla}] Good News: Your SkillSwap Account Hold Has Been Lifted";
+                var subject = $"[{supportLabel} · {sla}] Good News: Your Swapo Account Hold Has Been Lifted";
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
-                    <p>We’re pleased to let you know that as of <strong>{user.ReleasedAt:dd MMM yyyy hh:mm tt} UTC</strong>, the temporary hold on your SkillSwap account has been lifted.</p>
+                    <p>We’re pleased to let you know that as of <strong>{user.ReleasedAt:dd MMM yyyy hh:mm tt} UTC</strong>, the temporary hold on your Swapo account has been lifted.</p>
 
                     <p>You can now <a href=""/Home/Login"">log in</a> and resume all your swaps right away.</p>
 
@@ -230,10 +230,10 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                                       : $@"<p><strong>Administrator’s note:</strong> {reason}</p>")}
 
                     <p>If there’s anything else we can help with, don’t hesitate to contact us at 
-                    <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+                    <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
 
                     <p>Welcome back!<br/>
-                    — The SkillSwap Team</p>";
+                    — The Swapo Team</p>";
 
                 await _emailService.SendEmailAsync(user.Email, subject, body, isBodyHtml: true);
 
@@ -286,7 +286,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 };
 
                 // 2) build a prefixed subject
-                var subject = $"[{supportLabel} · {sla}] Your SkillSwap Account Hold Has Expired";
+                var subject = $"[{supportLabel} · {sla}] Your Swapo Account Hold Has Expired";
                 var body = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -314,7 +314,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
               Hi <strong>{user.FirstName}</strong>,
             </p>
             <p style=""margin:0 0 15px;"">
-              The temporary hold on your SkillSwap account has just expired as of 
+              The temporary hold on your Swapo account has just expired as of 
               <strong>{now.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")} UTC</strong>.
             </p>
           </td>
@@ -331,7 +331,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.

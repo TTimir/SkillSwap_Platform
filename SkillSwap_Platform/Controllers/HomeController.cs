@@ -154,7 +154,7 @@ public class HomeController : Controller
                 new { email = WebUtility.UrlEncode(email) },
                 protocol: Request.Scheme);
 
-            var subject = "Thanks for subscribing to SkillSwap!";
+            var subject = "Thanks for subscribing to Swapo!";
             var htmlBody = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -171,30 +171,30 @@ public class HomeController : Controller
           <!-- Header -->
           <tr>
             <td style=""background:#00A88F;padding:20px;"">
-              <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap</h1>
+              <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo</h1>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
             <td style=""padding:20px;color:#333;line-height:1.5;"">
-              <h2 style=""margin:0 0 15px;font-size:20px;color:#333;"">Welcome to the SkillSwap Community!</h2>
+              <h2 style=""margin:0 0 15px;font-size:20px;color:#333;"">Welcome to the Swapo Community!</h2>
               <p>Hi there,</p>
-              <p>🎉 Thank you for subscribing to the SkillSwap newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
+              <p>🎉 Thank you for subscribing to the Swapo newsletter! You’ll now be among the first to hear about new features, tips, and exclusive offers.</p>
               <hr style=""border:none;border-top:1px solid #e0e0e0;margin:20px 0;"" />
               <p>If you ever wish to unsubscribe, just click the link below:</p>
               <p style=""text-align:center;margin:20px 0;"">
                 <a href=""{unsubscribeUrl}"" style=""color:#00A88F;text-decoration:underline;"">Unsubscribe from Newsletter</a>
               </p>
-              <p>Welcome aboard!<br/>— The SkillSwap Team</p>
+              <p>Welcome aboard!<br/>— The Swapo Team</p>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-              © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-              <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+              © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+              <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
             </td>
           </tr>
 
@@ -837,7 +837,7 @@ public class HomeController : Controller
             var userBody = $@"
             <p>Hi {form.Name},</p>
 
-            <p>Thanks for reaching out to SkillSwap! We’ve received your message about “<b>{form.Subject}</b>” in the {form.Category} category:</p>
+            <p>Thanks for reaching out to Swapo! We’ve received your message about “<b>{form.Subject}</b>” in the {form.Category} category:</p>
 
             <blockquote style=""border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;"">
                 {form.Message}
@@ -846,7 +846,7 @@ public class HomeController : Controller
             <p>One of our team members will review your request and be in touch within 24 hours. We appreciate you being part of our community and look forward to helping you swap skills with confidence.</p>
 
             <p>Warm regards,<br/>
-            The SkillSwap Team</p>";
+            The Swapo Team</p>";
 
 
             await _emailService.SendEmailAsync(
@@ -1222,18 +1222,18 @@ public class HomeController : Controller
                   <p>Hi {loginUser.UserName},</p>
                   <p>Here’s your one‑time login code: <strong>{emailOtp}</strong></p>
                   <p>
-                    Enter this code on the SkillSwap login screen to access your account.<br/>
+                    Enter this code on the Swapo login screen to access your account.<br/>
                     The code is valid for the next 05 minutes.
                   </p>
                   <p>If you didn’t request this code, you can safely ignore this email.</p>
-                  <p>Thanks for being part of SkillSwap!<br/>
-                     The SkillSwap Team
+                  <p>Thanks for being part of Swapo!<br/>
+                     The Swapo Team
                   </p>
                 ";
 
             await _emailService.SendEmailAsync(
                 loginUser.Email,
-                "Your SkillSwap login code",
+                "Your Swapo login code",
                 htmlBody,
                 isBodyHtml: true    // or however your service flags an HTML payload
             );
@@ -1348,13 +1348,13 @@ public class HomeController : Controller
                     var localLockEnd = TimeZoneInfo.ConvertTimeFromUtc(utcLock, istZone);
 
                     // Notify by email
-                    var lockSubject = "Your SkillSwap Login Temporarily Locked";
+                    var lockSubject = "Your Swapo Login Temporarily Locked";
                     var lockBody = $@"
                         <p>Hi {user.FirstName},</p>
                         <p>Due to multiple unsuccessful login attempts, your account is locked for 15 minutes from now.</p>
                         <p>Please wait until <strong>{localLockEnd:dd MMM yyyy HH:mm tt} IST</strong> before trying again.</p>
-                        <p>If this wasn’t you, contact us at <a href=""mailto:support@skillswap.com"">support@skillswap.com</a>.</p>
-                        <p>— The SkillSwap Team</p>";
+                        <p>If this wasn’t you, contact us at <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
+                        <p>— The Swapo Team</p>";
                     await _emailService.SendEmailAsync(user.Email, lockSubject, lockBody, isBodyHtml: true);
                 }
 
@@ -1442,17 +1442,17 @@ public class HomeController : Controller
 
         var htmlBody = $@"
               <p>Hi {tempUser.UserName},</p>
-              <p>Thanks for joining <strong>SkillSwap</strong>! Here’s your one‑time verification code: <strong>{emailOtp}</strong></p>
+              <p>Thanks for joining <strong>Swapo</strong>! Here’s your one‑time verification code: <strong>{emailOtp}</strong></p>
               <p>Enter this code to verify your email and activate your account.<br/>
                  The code is valid for the next 05 minutes.</p>
               <p>If you didn’t request this, feel free to ignore this message.</p>
-              <p>Welcome aboard,<br/>The SkillSwap Team</p>
+              <p>Welcome aboard,<br/>The Swapo Team</p>
             ".Trim();
 
         // 2️⃣ Send it
         await _emailService.SendEmailAsync(
             tempUser.Email,
-            subject: "Your SkillSwap verification code",
+            subject: "Your Swapo verification code",
             htmlBody,
             isBodyHtml: true
             );
@@ -1619,7 +1619,7 @@ public class HomeController : Controller
 
         await _emailService.SendEmailAsync(
             loginUser.Email,
-            "Your new SkillSwap login code",
+            "Your new Swapo login code",
             htmlBody,
             isBodyHtml: true);
 
@@ -1656,41 +1656,42 @@ public class HomeController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult ForgotPassword() => View();
+    public IActionResult ForgotPassword()
+            => View(new ForgotPasswordVm());
 
-    [HttpPost]
-    [AllowAnonymous]
+
+    [HttpPost, AllowAnonymous]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ForgotPassword(string email)
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordVm vm)
     {
-        // 1) Basic validation
-        if (string.IsNullOrWhiteSpace(email) || !ModelState.IsValidEmail(nameof(email)))
-        {
-            TempData["Error"] = "Please enter a valid email address.";
-            return View();
-        }
+        if (!ModelState.IsValid)
+            return View(vm);
 
-        // 2) Does this email exist?
-        var user = await _userService.GetUserByUserNameOrEmailAsync(null, email);
+        var user = await _userService.GetUserByUserNameOrEmailAsync(null, vm.Email);
         if (user == null)
         {
-            TempData["Error"] = "We couldn’t find an account with that email.";
-            return View();
+            // pin the email back into the field and show an inline error:
+            ModelState.AddModelError(
+                nameof(vm.Email),
+                $"We couldn’t find an account with the email “{vm.Email}.”");
+            return View(vm);
         }
 
         try
         {
             var origin = $"{Request.Scheme}://{Request.Host}";
-            await _passwordReset.SendResetLinkAsync(email, origin);
+            await _passwordReset.SendResetLinkAsync(vm.Email, origin);
             return RedirectToAction(nameof(ForgotPasswordConfirmation));
         }
-        catch (Exception)
+        catch
         {
-            // log if you like
-            ModelState.AddModelError("", "Something went wrong. Please try again later.");
-            return View();
+            ModelState.AddModelError(
+                string.Empty,
+                "Something went wrong sending your reset link. Please try again later.");
+            return View(vm);
         }
     }
+
 
     [HttpGet, AllowAnonymous]
     public IActionResult ForgotPasswordConfirmation() => View();

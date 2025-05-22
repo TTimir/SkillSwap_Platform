@@ -45,8 +45,8 @@ namespace SkillSwap_Platform.Services
             // 2) Build the JSON payload
             var evt = new
             {
-                summary = $"SkillSwap Exchange #{exchangeId}",
-                description = "Your upcoming SkillSwap session",
+                summary = $"Swapo Exchange #{exchangeId}",
+                description = "Your upcoming Swapo session",
                 start = new { dateTime = startUtc.ToString("o"), timeZone = "UTC" },
                 end = new { dateTime = endUtc.ToString("o"), timeZone = "UTC" }
             };
@@ -96,7 +96,7 @@ namespace SkillSwap_Platform.Services
             var svc = new CalendarService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = GoogleCredential.FromAccessToken(tokenEntity.AccessToken),
-                ApplicationName = "SkillSwap",
+                ApplicationName = "Swapo",
             });
 
             var calList = await svc.CalendarList.List().ExecuteAsync();

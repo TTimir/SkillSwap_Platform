@@ -71,7 +71,7 @@
                                         var sr = (Model.Page - 1) * Model.PageSize + i + 1;
                                         <tr>
                                             <td class="vam">@sr</td>
-                                            <td class="vam"><span class="fz15 fw400">@log.AttemptedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@log.AttemptedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss tt") IST</span></td>
                                             <td class="vam">
                                                 @log.UserName (ID @log.UserId)
                                             </td>

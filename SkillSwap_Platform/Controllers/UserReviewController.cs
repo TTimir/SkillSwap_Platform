@@ -117,7 +117,7 @@ namespace SkillSwap_Platform.Controllers
         <!-- Header -->
         <tr>
           <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap</h1>
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo</h1>
           </td>
         </tr>
 
@@ -146,7 +146,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.
@@ -228,7 +228,7 @@ namespace SkillSwap_Platform.Controllers
                                   <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
                                     <tr>
                                       <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-                                        <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap.</h1>
+                                        <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo.</h1>
                                       </td>
                                     </tr>
                                     <tr>
@@ -242,7 +242,7 @@ namespace SkillSwap_Platform.Controllers
                                           {reply.Comments}
                                         </blockquote>
                                         <p style=""margin:0;"">
-                                          Thanks for keeping SkillSwap conversations going!
+                                          Thanks for keeping Swapo conversations going!
                                         </p>
                                       </td>
                                     </tr>
@@ -252,7 +252,7 @@ namespace SkillSwap_Platform.Controllers
                                     <tr>
                                       <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
                                         <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-                                          Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+                                          Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
                                         </p>
                                         <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
                                           We appreciate you—keep sharing your skills and inspiring others.
@@ -336,14 +336,14 @@ namespace SkillSwap_Platform.Controllers
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
         <tr>
           <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap. Moderation</h1>
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo. Moderation</h1>
           </td>
         </tr>
         <tr>
           <td style=""padding:20px;color:#333333;line-height:1.5;"">
             <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Flag Received</h2>
             <p style=""margin:0 0 15px;"">
-              Hi <strong>{flagger.UserName}</strong>, thanks for helping keep SkillSwap friendly.<br/>
+              Hi <strong>{flagger.UserName}</strong>, thanks for helping keep Swapo friendly.<br/>
               You flagged review <strong>#{review.ReviewId}</strong> on “<em>{review.Offer.Title}</em>.”
             </p>
             <p style=""margin:0;"">
@@ -357,7 +357,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.
@@ -437,7 +437,7 @@ namespace SkillSwap_Platform.Controllers
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
         <tr>
           <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap Moderation</h1>
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo Moderation</h1>
           </td>
         </tr>
         <tr>
@@ -455,7 +455,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.

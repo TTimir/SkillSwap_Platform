@@ -22,7 +22,7 @@ namespace SkillSwap_Platform.HelperClass
         /// ✅ **Generate a Secure QR Code URL**
         public static string GenerateQrCodeUrl(string secretKey, string userEmail)
         {
-            string issuer = "SkillSwap";
+            string issuer = "Swapo";
             string formattedSecret = secretKey.Trim().ToUpperInvariant();
             string otpAuthUri = $"otpauth://totp/{issuer}:{userEmail}?secret={formattedSecret}&issuer={issuer}";
             return $"https://quickchart.io/qr?text={WebUtility.UrlEncode(otpAuthUri)}&size=200";

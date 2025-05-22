@@ -36,7 +36,7 @@ namespace SkillSwap_Platform.Services
 
                     if (newFlags + newReviews + newMessages + pendingCerts + heldUsers > 0)
                     {
-                        var subject = "SkillSwap Admin Summary";
+                        var subject = "Swapo Admin Summary";
                         var body = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -53,7 +53,7 @@ namespace SkillSwap_Platform.Services
           <!-- Header -->
           <tr>
             <td style=""background:#00A88F;padding:20px;"">
-              <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+              <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
             </td>
           </tr>
 
@@ -69,7 +69,7 @@ namespace SkillSwap_Platform.Services
                 <li>{pendingCerts} pending verification certificate(s)</li>
                 <li>{heldUsers} newly held user(s)</li>
               </ul>
-              <p><em>— Your SkillSwap System</em></p>
+              <p><em>— Your Swapo System</em></p>
             </td>
           </tr>
 
@@ -83,8 +83,8 @@ namespace SkillSwap_Platform.Services
           <!-- Footer -->
           <tr>
             <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-              © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-              <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+              © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+              <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
             </td>
           </tr>
 

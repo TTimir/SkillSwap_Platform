@@ -57,11 +57,11 @@ namespace SkillSwap_Platform.Services.PasswordReset
                     <p>We received a request to reset your password. Click the link below to choose a new one:</p>
                     <p><a href=""{resetLink}"">Reset your password</a></p>
                     <p>This link will expire in 2 hours. If you didn't request this, you can safely ignore this email.</p>
-                    <p>— The SkillSwap Team</p>";
+                    <p>— The Swapo Team</p>";
 
                 await _emailService.SendEmailAsync(
                     to: user.Email,
-                    subject: "SkillSwap Password Reset",
+                    subject: "Swapo Password Reset",
                     body: htmlBody,
                     isBodyHtml: true
                 );
@@ -88,6 +88,8 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
             // 2) load the user
             var user = await _db.TblUsers
+                .IgnoreQueryFilters()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == resetEntry.UserId);
 
             if (user == null)
@@ -138,11 +140,11 @@ namespace SkillSwap_Platform.Services.PasswordReset
                             <!-- Main Card Container -->
                             <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
                               
-                              <!-- Header (glassy green bar + SkillSwap text) -->
+                              <!-- Header (glassy green bar + Swapo text) -->
                               <tr>
                                 <td style=""border-top:4px solid rgba(0, 168, 143, 0.8);padding:20px 20px 10px;"">
                                   <h1 style=""margin:0;font-size:24px;color:#00A88F;font-family:Arial,sans-serif;"">
-                                    SkillSwap
+                                    Swapo
                                   </h1>
                                 </td>
                               </tr>
@@ -151,19 +153,19 @@ namespace SkillSwap_Platform.Services.PasswordReset
                               <tr>
                                 <td style=""padding:20px;color:#333333;line-height:1.5;"">
                                   <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">
-                                    Your SkillSwap Password Has Changed
+                                    Your Swapo Password Has Changed
                                   </h2>
                                   <p style=""margin:0 0 10px;"">
                                     Dear <strong>{user.UserName}</strong>,
                                   </p>
                                   <p style=""margin:0 0 15px;"">
-                                    We wanted to let you know that your SkillSwap password was successfully changed on
+                                    We wanted to let you know that your Swapo password was successfully changed on
                                     <strong>{DateTime.UtcNow.ToLocalTime().ToString("MMMM d, yyyy hh:m tt")} IST</strong>.
                                   </p>
                                   <p style=""margin:0 0 15px;"">
                                     If you did not request this change, please
                                     <p style=""color:#00A88F;text-decoration:none;font-weight:bold;"">
-                                      contact our support team (skillswap360@gmail.com)
+                                      contact our support team (swapoorg360@gmail.com)
                                     </p>
                                     immediately.
                                   </p>
@@ -177,12 +179,12 @@ namespace SkillSwap_Platform.Services.PasswordReset
                                 </td>
                               </tr>
                     
-                              <!-- Footer Links (SkillSwap green) -->
+                              <!-- Footer Links (Swapo green) -->
                               <!-- Legal / Trademark Text -->
                               <tr>
                                 <td style=""background-color:#00A88F;padding:10px 20px;color:#e0f7f1;font-size:11px;line-height:1.4;text-align:center;"">
                                   <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-                                      Thank you for being a valued member of <strong>SkillSwap</strong>. 
+                                      Thank you for being a valued member of <strong>Swapo</strong>. 
                                       Your creativity and passion make our community thrive!
                                     </p>
                                     <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
@@ -201,7 +203,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
                 await _emailService.SendEmailAsync(
                     to: user.Email,
-                    subject: "Your SkillSwap password has changed",
+                    subject: "Your Swapo password has changed",
                     body: htmlBody,
                     isBodyHtml: true
                 );

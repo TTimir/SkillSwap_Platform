@@ -1029,7 +1029,7 @@ namespace SkillSwap_Platform.Controllers
         <!-- Header -->
         <tr>
           <td style=""border-top:4px solid rgba(91,187,123,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#5BBB7B;"">SkillSwap</h1>
+            <h1 style=""margin:0;font-size:24px;color:#5BBB7B;"">Swapo</h1>
           </td>
         </tr>
 
@@ -1038,7 +1038,7 @@ namespace SkillSwap_Platform.Controllers
           <td style=""padding:20px;color:#333333;line-height:1.5;"">
             <p>Hi <strong>{user.FirstName}</strong>,</p>
 
-            <p>Great news—you’ve successfully completed your onboarding on <strong>SkillSwap</strong>! Here’s a quick game plan to get rolling:</p>
+            <p>Great news—you’ve successfully completed your onboarding on <strong>Swapo</strong>! Here’s a quick game plan to get rolling:</p>
 
             <ul>
               <li>Give your profile a once-over. A friendly bio and clear photo help other swappers get to know you.</li>
@@ -1050,7 +1050,7 @@ namespace SkillSwap_Platform.Controllers
             <p>Before you jump in, take a moment to review your profile so it shines. Once you’re happy, dive right into the community and start creating meaningful connections.</p>
 
             <p>We can’t wait to see the connections you create.</p>
-            <p>Happy swapping!<br/>The SkillSwap Team</p>
+            <p>Happy swapping!<br/>The Swapo Team</p>
           </td>
         </tr>
 
@@ -1065,7 +1065,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#5BBB7B;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e6f9ee;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your passion keeps our community thriving!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your passion keeps our community thriving!
             </p>
           </td>
         </tr>
@@ -1186,7 +1186,7 @@ namespace SkillSwap_Platform.Controllers
             progress.TotalTokensGiven = total;
             await _context.SaveChangesAsync();
 
-            var subject = $"🎉 You’ve just earned {total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}!";
+            var subject = $"🎉 You’ve just earned {total:0.##} Swapo Token{(total > 1 ? "s" : "")}!";
             var htmlBody9 = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -1207,10 +1207,10 @@ namespace SkillSwap_Platform.Controllers
           <td style=""padding:20px;color:#333333;line-height:1.5;text-align:center;"">
             <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Congrats, {user.FirstName}! 🥳</h2>
             <p style=""margin:0 0 15px;"">
-              You’ve earned <strong>{total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}</strong>!
+              You’ve earned <strong>{total:0.##} Swapo Token{(total > 1 ? "s" : "")}</strong>!
             </p>
             <img src=""/template_assets/images/SSDToken.png"" 
-                 alt=""SkillSwap Token"" 
+                 alt=""Swapo Token"" 
                  style=""width:100px;height:100px;object-fit:contain;margin:0 0 15px;""/>
             <p style=""margin:0 0 15px;"">
               Your new balance is <strong>{user.DigitalTokenBalance:0.##}</strong>.

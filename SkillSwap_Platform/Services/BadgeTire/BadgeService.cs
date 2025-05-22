@@ -130,7 +130,7 @@ namespace SkillSwap_Platform.Services.BadgeTire
         <!-- header -->
         <tr>
           <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
-            SkillSwap
+            Swapo
           </td>
         </tr>
         
@@ -157,7 +157,7 @@ namespace SkillSwap_Platform.Services.BadgeTire
         <!-- footer -->
         <tr>
           <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-            View all your badges on your profile — The SkillSwap Team
+            View all your badges on your profile — The Swapo Team
           </td>
         </tr>
       

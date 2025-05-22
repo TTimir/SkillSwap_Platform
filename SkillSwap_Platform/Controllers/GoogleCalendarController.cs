@@ -124,7 +124,7 @@ namespace SkillSwap_Platform.Controllers
                 var calendarService = new CalendarService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = GoogleCredential.FromAccessToken(userToken.AccessToken),
-                    ApplicationName = "SkillSwapMeet"
+                    ApplicationName = "SwapoMeet"
                 });
 
                 // Build the event details.
@@ -324,8 +324,8 @@ namespace SkillSwap_Platform.Controllers
                 var endDt = ev.End?.DateTime ?? DateTime.Parse(ev.End.Date);
 
                 // identify a SkillSwap event by your summary or description convention
-                bool isSwap = ev.Summary?.StartsWith("SkillSwap Exchange #") == true
-                           || ev.Description?.Contains("Your upcoming SkillSwap session") == true;
+                bool isSwap = ev.Summary?.StartsWith("Swapo Exchange #") == true
+                           || ev.Description?.Contains("Your upcoming Swapo session") == true;
 
                 return new
                 {
@@ -334,7 +334,7 @@ namespace SkillSwap_Platform.Controllers
                     start = startDt.ToString("o"),
                     end = endDt.ToString("o"),
                     url = ev.HtmlLink,
-                    classNames = isSwap ? new[] { "skillswap-event" } : Array.Empty<string>()
+                    classNames = isSwap ? new[] { "swapo-event" } : Array.Empty<string>()
                 };
             });
 

@@ -129,7 +129,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 // 1) Build the hold‐notification email
                 await _emailService.SendEmailAsync(
     to: user.Email,
-    subject: "Your SkillSwap account has been put on hold",
+    subject: "Your Swapo account has been put on hold",
     body: $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -138,18 +138,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
-        SkillSwap
+        Swapo
       </td></tr>
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
         <p>Hi {user.FirstName},</p>
-        <p>Your SkillSwap account (Email: {user.UserName}) has just been <strong>placed on hold</strong> by an administrator.</p>
+        <p>Your Swapo account (Email: {user.UserName}) has just been <strong>placed on hold</strong> by an administrator.</p>
         <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
            <strong>By:</strong> {User.Identity.Name}</p>
         <p>If you believe this was done in error or have questions, please contact 
-           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+           <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
       </td></tr>
       <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-        Thank you for being part of SkillSwap! — The SkillSwap Team
+        Thank you for being part of Swapo! — The Swapo Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -174,7 +174,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                 await _emailService.SendEmailAsync(
     to: user.Email,
-    subject: "Your SkillSwap account hold has been lifted",
+    subject: "Your Swapo account hold has been lifted",
     body: $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -183,18 +183,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
-        SkillSwap
+        Swapo
       </td></tr>
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
         <p>Hi {user.FirstName},</p>
-        <p>Your SkillSwap account (Email: {user.UserName}) has been <strong>released from hold</strong>.</p>
+        <p>Your Swapo account (Email: {user.UserName}) has been <strong>released from hold</strong>.</p>
         <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
            <strong>By:</strong> {User.Identity.Name}</p>
         <p>You may now log in as usual. If you have any issues, contact 
-           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+           <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
       </td></tr>
       <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-        Thank you for being part of SkillSwap! — The SkillSwap Team
+        Thank you for being part of Swapo! — The Swapo Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -227,7 +227,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
                 await _emailService.SendEmailAsync(
     to: email,
-    subject: "Your SkillSwap account has been deleted",
+    subject: "Your Swapo account has been deleted",
     body: $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -236,18 +236,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
-        SkillSwap
+        Swapo
       </td></tr>
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
         <p>Hi {firstName},</p>
-        <p>Your SkillSwap account (Email: {user.UserName}) has been <strong>permanently deleted</strong> by an administrator.</p>
+        <p>Your Swapo account (Email: {user.UserName}) has been <strong>permanently deleted</strong> by an administrator.</p>
         <p><strong>When:</strong> {DateTime.UtcNow.ToLocalTime():dd MMM yyyy hh:mm tt} IST<br/>
            <strong>By:</strong> {User.Identity.Name}</p>
         <p>If you need to reactivate or have questions, please reach out within 30 days at 
-           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
+           <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
       </td></tr>
       <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-        Thank you for being part of SkillSwap! — The SkillSwap Team
+        Thank you for being part of Swapo! — The Swapo Team
       </td></tr>
     </table>
   </td></tr></table>
@@ -414,7 +414,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var loginUrl = Url.Action("Login", "Home", null, Request.Scheme);
             await _emailService.SendEmailAsync(
     to: vm.Email,
-    subject: "Your new SkillSwap account has been created",
+    subject: "Your new Swapo account has been created",
     body: $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -423,11 +423,11 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
     <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
       <tr><td style=""background:#00A88F;color:#fff;padding:15px;text-align:center;font-size:20px;"">
-        SkillSwap
+        Swapo
       </td></tr>
       <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
         <p>Hi {vm.FirstName},</p>
-        <p>Your account on <strong>SkillSwap</strong> has just been created by our Super-Admin team.</p>
+        <p>Your account on <strong>Swapo</strong> has just been created by our Super-Admin team.</p>
         <p>
           <strong>Role:</strong> {roleName}<br/>
           <strong>Login URL:</strong> <a href=""{loginUrl}"">{loginUrl}</a><br/>
@@ -439,11 +439,11 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
           ⚠️ <strong>Do not share</strong> these credentials with anyone.
         </p>
         <p>Please log in immediately and change your password. If you suspect any unauthorized use, contact 
-           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.
+           <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.
         </p>
       </td></tr>
       <tr><td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
-        Thank you for being part of SkillSwap! — The SkillSwap Team
+        Thank you for being part of Swapo! — The Swapo Team
       </td></tr>
     </table>
   </td></tr></table>

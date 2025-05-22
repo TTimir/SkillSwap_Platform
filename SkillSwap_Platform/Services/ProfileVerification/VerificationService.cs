@@ -378,7 +378,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subjectApproved = $"[{supportLabel} · {sla}] 🎉 You’re Verified on SkillSwap!";
+            var subjectApproved = $"[{supportLabel} · {sla}] 🎉 You’re Verified on Swapo!";
             var bodyApproved = $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -393,14 +393,14 @@ namespace SkillSwap_Platform.Services.ProfileVerification
       <!-- Header: Blue -->
       <tr>
         <td style=""background:#0066CC;color:#ffffff;padding:15px;font-size:18px;text-align:center;font-weight:bold;"">
-          SkillSwap Verification
+          Swapo Verification
         </td>
       </tr>
 
       <!-- Body -->
       <tr>
         <td style=""padding:20px;color:#333;line-height:1.5;"">
-          <h3 style=""margin-top:0;"">Your SkillSwap Verification Has Been Approved!</h3>
+          <h3 style=""margin-top:0;"">Your Swapo Verification Has Been Approved!</h3>
           <h2 style=""color:#0066CC;margin-bottom:15px;"">Congratulations, {user.FirstName}!</h2>
           <p>We’re thrilled to let you know that your verification request <strong>#{requestId}</strong> has been <span style=""color:green;"">approved</span>.</p>
 
@@ -418,7 +418,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+          Questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
         </td>
       </tr>
 
@@ -461,7 +461,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subjectUpdate = $"[{supportLabel} · {sla}] Update on Your SkillSwap Verification Request";
+            var subjectUpdate = $"[{supportLabel} · {sla}] Update on Your Swapo Verification Request";
             var commentSection = string.IsNullOrWhiteSpace(comments)
                 ? ""
                 : $@"<blockquote style=""border-left:3px solid #ccc;padding-left:10px;color:#555;margin:15px 0;"">
@@ -508,7 +508,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Need help? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+          Need help? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
         </td>
       </tr>
 
@@ -550,7 +550,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             };
 
             // 2) build a prefixed subject
-            var subjectRevoked = $"[{supportLabel} · {sla}] Important Update on Your SkillSwap Verification";
+            var subjectRevoked = $"[{supportLabel} · {sla}] Important Update on Your Swapo Verification";
             var commentSection = string.IsNullOrWhiteSpace(comments)
                 ? ""
                 : $@"<blockquote style=""border-left:3px solid #ccc;padding:10px;color:#555;margin:15px 0;"">
@@ -579,7 +579,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
       <tr>
         <td style=""padding:20px;color:#333;line-height:1.6;"">
           <h2 style=""margin-top:0;color:#CC3300;"">Hi {user.FirstName},</h2>
-          <p>We wanted to let you know that your verified status on SkillSwap (request <strong>#{requestId}</strong>) has been <span style=""color:#CC3300;"">revoked</span>.</p>
+          <p>We wanted to let you know that your verified status on Swapo (request <strong>#{requestId}</strong>) has been <span style=""color:#CC3300;"">revoked</span>.</p>
 
           {commentSection}
 
@@ -597,7 +597,7 @@ namespace SkillSwap_Platform.Services.ProfileVerification
       <!-- Footer: Green -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+          Questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
         </td>
       </tr>
 

@@ -708,7 +708,7 @@ namespace SkillSwap_Platform.Controllers
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
         <tr>
           <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap Account</h1>
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo Account</h1>
           </td>
         </tr>
         <tr>
@@ -719,7 +719,7 @@ namespace SkillSwap_Platform.Controllers
             </p>
             <p style=""margin:0;"">
               If you did not make this change, contact 
-              <a href=""mailto:skillswap360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">
+              <a href=""mailto:swapoorg360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">
                 support
               </a> immediately.
             </p>
@@ -731,7 +731,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.
@@ -743,7 +743,7 @@ namespace SkillSwap_Platform.Controllers
   </table>
 </body>
 </html>";
-                await _emailService.SendEmailAsync(pendingEmail, "Your SkillSwap Email Has Been Updated", htmlBody4, isBodyHtml: true);
+                await _emailService.SendEmailAsync(pendingEmail, "Your Swapo Email Has Been Updated", htmlBody4, isBodyHtml: true);
 
                 TempData["SuccessMessage"] = "Your email address has been updated!";
                 return RedirectToAction(nameof(Index));
@@ -798,7 +798,7 @@ namespace SkillSwap_Platform.Controllers
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
         <tr>
           <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">SkillSwap Verification</h1>
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo Verification</h1>
           </td>
         </tr>
         <tr>
@@ -821,7 +821,7 @@ namespace SkillSwap_Platform.Controllers
         <tr>
           <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
             <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
-              Thank you for being a valued member of <strong>SkillSwap</strong>. Your creativity and passion make our community thrive!
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
             </p>
             <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
               We appreciate you—keep sharing your skills and inspiring others.
@@ -833,7 +833,7 @@ namespace SkillSwap_Platform.Controllers
   </table>
 </body>
 </html>";
-            await _emailService.SendEmailAsync(newEmail, "Please Confirm Your New SkillSwap Email Address", htmlBody5, isBodyHtml: true);
+            await _emailService.SendEmailAsync(newEmail, "Please Confirm Your New Swapo Email Address", htmlBody5, isBodyHtml: true);
 
             TempData["InfoMessage"] = "A code has been sent to " + newEmail;
             TempData["ShowOtpStep"] = true;

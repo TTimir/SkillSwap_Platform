@@ -200,7 +200,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
       <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00A88F;padding:20px;"">
-            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
           </td>
         </tr>
         <tr>
@@ -214,8 +214,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
         <tr>
           <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+            <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
           </td>
         </tr>
       </table>
@@ -283,7 +283,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
       <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00A88F;padding:20px;"">
-            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
           </td>
         </tr>
         <tr>
@@ -297,8 +297,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
         <tr>
           <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+            <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
           </td>
         </tr>
       </table>
@@ -378,7 +378,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
       <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00A88F;padding:20px;"">
-            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
           </td>
         </tr>
         <tr>
@@ -392,8 +392,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
         <tr>
           <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+            <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
           </td>
         </tr>
       </table>
@@ -499,7 +499,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
       <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00A88F;padding:20px;"">
-            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
           </td>
         </tr>
         <tr>
@@ -513,8 +513,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
         <tr>
           <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+            <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
           </td>
         </tr>
       </table>
@@ -614,7 +614,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
       <table width=""600"" style=""background:#fff;border-collapse:collapse;"">
         <tr>
           <td style=""background:#00A88F;padding:20px;"">
-            <h1 style=""margin:0;color:#fff;font-size:24px;"">SkillSwap Admin</h1>
+            <h1 style=""margin:0;color:#fff;font-size:24px;"">Swapo Admin</h1>
           </td>
         </tr>
         <tr>
@@ -628,8 +628,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         <tr><td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;""></td></tr>
         <tr>
           <td style=""background:#00A88F;padding:10px;text-align:center;color:#e0f7f1;font-size:11px;"">
-            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} SkillSwap Inc. | 
-            <a href=""mailto:skillswap360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
+            © {DateTime.UtcNow.ToLocalTime().ToString("yyyy")} Swapo Inc. | 
+            <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">Support</a>
           </td>
         </tr>
       </table>

@@ -662,7 +662,7 @@ namespace SkillSwap_Platform.Controllers
       <!-- Header -->
       <tr>
         <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
-          SkillSwap
+          Swapo
         </td>
       </tr>
 
@@ -678,7 +678,7 @@ namespace SkillSwap_Platform.Controllers
           </blockquote>
           <p style=""margin:0 0 20px;"">
             <a href=""{conversationUrl}"" style=""color:#00A88F;text-decoration:underline;"">
-              View it on SkillSwap
+              View it on Swapo
             </a>
           </p>
         </td>
@@ -687,7 +687,7 @@ namespace SkillSwap_Platform.Controllers
       <!-- Footer -->
       <tr>
         <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
-          Have questions? <a href=""mailto:skillswap360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+          Have questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
         </td>
       </tr>
 
