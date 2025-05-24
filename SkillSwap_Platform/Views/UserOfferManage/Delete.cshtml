@@ -97,7 +97,7 @@
                                                     }
                                                 </div>
                                                 <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                    <h6 class="list-title mb-0"><a href="page-services-single.html">@Model.Title</a></h6>
+                                                    <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = Model.OfferId })">@Model.Title</a></h6>
                                                     <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                         <li>Time Commitment:  @Model.TimeCommitmentDays days </li>
                                                         <li>Availability Set: @Model.FreelanceType</li>

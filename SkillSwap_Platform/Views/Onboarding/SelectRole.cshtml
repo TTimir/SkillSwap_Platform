@@ -144,19 +144,19 @@
                 <div class="card-role" onclick="selectRole('Teacher', this)">
                     <input type="radio" name="SelectedRole" value="Teacher" @(Model.SelectedRole == "Teacher" ? "checked" : "") />
                     <img src="/template_assets/images/man_sitting.svg" alt="Teacher">
-                    <h5>Teacher</h5>
+                    <h5>Instructor/Teacher</h5>
                     <p>Offer your expertise to help others learn.</p>
                 </div>
                 <div class="card-role" onclick="selectRole('Student', this)">
                     <input type="radio" name="SelectedRole" value="Student" @(Model.SelectedRole == "Student" ? "checked" : "") />
                     <img src="/template_assets/images/Asset-8.svg" alt="Student">
-                    <h5>Student</h5>
+                    <h5>Apprentice/Learner</h5>
                     <p>Learn new skills and grow your knowledge.</p>
                 </div>
                 <div class="card-role" onclick="selectRole('Both', this)">
                     <input type="radio" name="SelectedRole" value="Both" @(Model.SelectedRole == "Both" ? "checked" : "") />
                     <img src="/template_assets/images/Right-bg-img.png" alt="Both">
-                    <h5>Both</h5>
+                    <h5>Instructor & Apprentice (Both)</h5>
                     <p>Offer your expertise while learning new skills.</p>
                 </div>
                 <span asp-validation-for="SelectedRole" class="text-danger"></span>

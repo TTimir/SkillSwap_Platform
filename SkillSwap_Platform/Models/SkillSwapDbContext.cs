@@ -249,6 +249,7 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.GatewayOrderId).HasMaxLength(200);
             entity.Property(e => e.GatewayPaymentId).HasMaxLength(200);
             entity.Property(e => e.IsAutoRenew).HasDefaultValue(true);
+            entity.Property(e => e.LastAutoRenewedAt).HasColumnType("datetime");
             entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PlanName).HasMaxLength(50);
 
@@ -1412,13 +1413,13 @@ public partial class SkillSwapDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<TblUser>()
-            .HasQueryFilter(u =>
-                u.Role != "Admin"
-             && u.Role != "Moderator"
-             && !u.IsEscrowAccount
-             && !u.IsSupportAgent
-             && !u.IsSystemReserveAccount
-            );
+           .HasQueryFilter(u =>
+               u.Role != "Admin"
+            && u.Role != "Moderator"
+            && !u.IsEscrowAccount
+            && !u.IsSupportAgent
+            && !u.IsSystemReserveAccount
+           );
 
         modelBuilder.Entity<ReviewAggregate>().HasNoKey().ToView(null);
 

@@ -26,6 +26,8 @@ public partial class Subscription
 
     public decimal? PaidAmount { get; set; }
 
+    public DateTime? LastAutoRenewedAt { get; set; }
+
     [NotMapped]
     public bool IsActive => EndDate > DateTime.UtcNow;
     public virtual ICollection<CancellationRequest> CancellationRequests { get; set; } = new List<CancellationRequest>();

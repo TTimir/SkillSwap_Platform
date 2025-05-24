@@ -352,6 +352,7 @@ namespace SkillSwap_Platform.Controllers
                     SkillNames = skillNames,
                     Device = offer.Device,
                     Tools = offer.Tools,
+                    AssistanceRounds = offer.AssistanceRounds ?? 0,
                     UserRating = userRating,
                     ReviewCount = reviewCount,
                     RecommendedPercentage = recommendedPercentage,  // e.g., "75.00"

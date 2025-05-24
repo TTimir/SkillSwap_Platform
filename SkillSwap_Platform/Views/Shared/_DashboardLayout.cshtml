@@ -51,6 +51,14 @@
         var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .token-balance {
             display: flex;
             align-items: center;
@@ -184,15 +192,14 @@
                                         balance = await TokenService.GetBalanceAsync(userId);
                                     }
                                 }
-                                <li class="d-none d-sm-block token-balance"
-                                    data-toggle="tooltip"
-                                    data-placement="bottom"
-                                    title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
+                                <li class="d-none d-sm-block token-balance mr5"
+                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                    title="" data-bs-original-title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
                                     <span id="mining-dot" class="mining-dot"></span>
                                     <img src="~/template_assets/images/SSDToken.png"
                                          alt="Tokens"
                                          width="32" height="32" />
-                                    <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
+                                    <span id="token-balance" title="@balance.ToString("0.00000")">@balance.ToString("0.00")</span>
                                 </li>
                                 <li class="user_setting">
                                     <div class="dropdown">
@@ -221,7 +228,7 @@
                                                 }
                                             }
                                             <div>
-                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
                                             </div>
                                         </a>
                                         <div class="dropdown-menu">
@@ -236,7 +243,7 @@
                                                         <i class="flaticon-goal mr10"></i> Admin Panel
                                                     </a>
                                                 }
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Swapo</a>
                                                 @if (PlusMember)
                                                 {
                                                     <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
@@ -245,7 +252,7 @@
                                                 <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                 <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
                                                 <a class="dropdown-item" href="@Url.Action("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr15"></i>Exchange Records</a>
-                                                <a class="dropdown-item" href="@Url.Action("Selectoffer","ExchangeDashboard")"><i class="flaticon-refresh mr15"></i> Share Resource</a>
+                                                <a class="dropdown-item" href="@Url.Action("Selectoffer","ResourceSharing")"><i class="flaticon-refresh mr15"></i> Share Resource</a>
                                                 <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
                                                 <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
                                                 <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
@@ -317,7 +324,7 @@
                     </li>
                 }
                 <li>
-                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Back to Skill-Swap</span></a>
+                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Back to Swapo</span></a>
                 </li>
                 <li>
                     <a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a>
@@ -399,7 +406,7 @@
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>My Profile</a>
+                        <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>Update Profile</a>
                     </div>
                     <div class="sidebar_list_item">
                         <!-- hidden logout form -->
@@ -452,7 +459,7 @@
                                         <li><a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr10"></i>Exchange Records</a></li>
                                         <li><a href="@Url.ActionLink("Selectoffer", "ResourceSharing")"><i class="flaticon-refresh mr10"></i>Share Resource</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
-                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a></li>
+                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>Update Profile</a></li>
                                         <li>
                                             <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()

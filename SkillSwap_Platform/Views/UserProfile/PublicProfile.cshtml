@@ -13,6 +13,14 @@
 }
 
 <style>
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 4px; /* make them circles */
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
     .tag {
     display: inline-block;
     padding: 5px 10px;
@@ -394,7 +402,7 @@
                                                     }
                                                     <div>
                                                         <vc:online-indicator user-id="@Model.UserId" />
-                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:100%;" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
                                                     </div>
                                                     @*<span class="online"></span>
                                                     <img class="rounded-circle w-100 wa-sm mb15-sm" src="/template_assets/images/team/fl-1.png" alt="Freelancer Photo"> *@

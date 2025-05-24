@@ -1,6 +1,8 @@
 ﻿@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 <!DOCTYPE html>
 <html lang="en">
@@ -37,6 +39,14 @@
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
 
     <style>
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .header-logo.logo1 {
             display: inline-flex;
             align-items: center; /* vertical centering */
@@ -194,15 +204,14 @@
                                                 balance = await TokenService.GetBalanceAsync(userId);
                                             }
                                         }
-                                        <li class="d-none d-sm-block token-balance"
-                                            data-toggle="tooltip"
-                                            data-placement="bottom"
-                                            title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
+                                        <li class="d-none d-sm-block token-balance mr5"
+                                            data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                            title="" data-bs-original-title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
                                             <span id="mining-dot" class="mining-dot"></span>
                                             <img src="~/template_assets/images/SSDToken.png"
                                                  alt="Tokens"
                                                  width="32" height="32" />
-                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
+                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.00")</span>
                                         </li>
                                         <li class="user_setting">
                                             <div class="dropdown">
@@ -231,7 +240,7 @@
                                                         }
                                                     }
                                                     <div>
-                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
                                                     </div>
                                                 </a>
                                                 <div class="dropdown-menu">
@@ -247,8 +256,15 @@
 
                                                             </a>
                                                         }
+                                                        @{
+                                                            var PlusMember = (await AuthZ.AuthorizeAsync(User, "PlusPlan")).Succeeded;
+                                                            var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
+                                                        }
                                                         <a class="dropdown-item" href="@Url.Action("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
-                                                        <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                        @if (PlusMember)
+                                                        {
+                                                            <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                        }
                                                         <a class="dropdown-item" href="@Url.Action("Index","UserWishlist")"><i class="flaticon-like mr10"></i>Saved Swaps</a>
                                                         <a class="dropdown-item" href="@Url.Action("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a>
                                                         <a class="dropdown-item" href="@Url.Action("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a>

@@ -34,170 +34,92 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             return await _db.Subscriptions
                 .Where(s => s.UserId == userId && s.EndDate > DateTime.UtcNow)
                 .OrderByDescending(s => s.EndDate)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
         }
 
-        public async Task CreateAsync(int userId, string planName, DateTime start, DateTime end)
+        public async Task UpsertAsync(int userId, string planName, string billingCycle, DateTime start, DateTime end, string gatewayOrderId, string gatewayPaymentId, decimal paidAmount, bool sendEmail = true)
         {
-            var sub = new Subscription
-            {
-                UserId = userId,
-                PlanName = planName,
-                BillingCycle = "initial",
-                StartDate = start,
-                EndDate = end,
-                IsAutoRenew = true
-            };
+            if (string.IsNullOrWhiteSpace(planName))
+                throw new ArgumentException("Plan required", nameof(planName));
+            if (string.IsNullOrWhiteSpace(billingCycle))
+                throw new ArgumentException("Cycle required", nameof(billingCycle));
+            if (end <= start)
+                throw new ArgumentException("End must be after start");
 
-            _db.Subscriptions.Add(sub);
-            await _db.SaveChangesAsync();
-
-            // NOTIFICATION
-            await _notif.AddAsync(new TblNotification
-            {
-                UserId = userId,
-                Title = "Subscription Activated",
-                Message = $"Your {planName} plan is now active until {end.ToLocalTime().ToString("MMMM d, yyyy")}.",
-                Url = "/UserDashboard/Index",
-                CreatedAt = DateTime.UtcNow
-            });
-
-            // --- EMAIL NOTIFICATION: ACTIVATION ---
-            var user = await _db.TblUsers.FindAsync(userId);
-            if (user != null)
-            {
-                // 1) figure out their active tier & SLA
-                var activeSub = await GetActiveAsync(user.UserId);
-                var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
-                {
-                    "Plus" => ("Plus Support", "72h SLA"),
-                    "Pro" => ("Pro Support", "48h SLA"),
-                    "Growth" => ("Growth Support", "24h SLA"),
-                    _ => ("Free Support", "120h SLA")
-                };
-
-                // 2) build a prefixed subject
-                var subject = $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!";
-                var htmlBody6 = $@"
-<!DOCTYPE html>
-<html lang=""en"">
-<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
-<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
-    <tr><td align=""center"" style=""padding:20px;"">
-      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
-        <tr>
-          <td style=""border-top:4px solid rgba(41,157,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#299D8F;"">Subscription Activated</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style=""padding:20px;color:#333333;line-height:1.5;"">
-            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">🎉 Hi {user.FirstName}, your subscription is live! 🎉</h2>
-            <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1em 0;"">
-              <p><strong>Subscription ID:</strong> {sub.Id}</p>
-              <p><strong>Plan:</strong> {planName}</p>
-              <p><strong>Start:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-              <p><strong>End:</strong> {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
-            </div>
-            <p style=""margin:0;"">
-              Manage your subscription anytime in your <a href=""/Account"" style=""color:#299D8F;text-decoration:underline;"">Account</a>.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
-        </tr>
-        <tr>
-          <td style=""background-color:#299D8F;padding:20px;text-align:center;"">
-            <p style=""margin:10px 0;color:#e6f4f1;font-size:14px;"">
-              Thank you for choosing <strong>Swapo</strong>!
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>
-";
-                await _emailSender.SendEmailAsync(user.Email, subject, htmlBody6, isBodyHtml: true);
-            }
-        }
-
-        public async Task UpsertAsync(int userId, string planName, string billingCycle, DateTime start, DateTime end)
-        {
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            using var tx = await _db.Database.BeginTransactionAsync().ConfigureAwait(false);
+            Subscription sub = await GetActiveAsync(userId).ConfigureAwait(false);
             try
             {
-                var existing = await GetActiveAsync(userId);
-                if (existing is null)
-                    _db.Subscriptions.Add(existing = new Subscription { UserId = userId });
-
                 // 2) Check if this is simply a renewal extension
-                bool isRenewalExtension = existing != null
-                    && string.Equals(existing.PlanName, planName, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(existing.BillingCycle, billingCycle, StringComparison.OrdinalIgnoreCase)
-                    && existing.EndDate > DateTime.UtcNow;
+                bool isRenewal = sub != null
+                    && string.Equals(sub.PlanName, planName, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(sub.BillingCycle, billingCycle, StringComparison.OrdinalIgnoreCase)
+                    && sub.EndDate > DateTime.UtcNow;
 
-                if (isRenewalExtension)
+                if (sub == null)
+                {
+                    sub = new Subscription { UserId = userId };
+                    _db.Subscriptions.Add(sub);
+                }
+
+                if (isRenewal)
                 {
                     // EXTENSION: extend the EndDate by one cycle
-                    var extensionStart = existing.EndDate;
-                    existing.EndDate = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
+                    var extensionStart = sub.EndDate;
+                    sub.EndDate = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
                         ? extensionStart.AddYears(1)
                         : extensionStart.AddMonths(1);
+
+                    sub.LastAutoRenewedAt = DateTime.UtcNow;
                 }
                 else
                 {
-                    // 3) Brand-new or different-plan subscription
-                    if (existing is null)
-                    {
-                        existing = new Subscription { UserId = userId };
-                        _db.Subscriptions.Add(existing);
-                    }
-
-                    existing.PlanName = planName;
-                    existing.BillingCycle = billingCycle;
-                    existing.StartDate = start;  // usually DateTime.UtcNow
-                    existing.EndDate = end;    // start.AddMonths or AddYears
+                    sub.PlanName = planName;
+                    sub.BillingCycle = billingCycle;
+                    sub.StartDate = start;
+                    sub.EndDate = end;
                 }
 
-                existing.IsAutoRenew = true;   // keep auto-renew on
+                sub.IsAutoRenew = true;
+                sub.GatewayOrderId = gatewayOrderId;
+                sub.GatewayPaymentId = gatewayPaymentId;
+                sub.PaidAmount = paidAmount;
+                await _db.SaveChangesAsync().ConfigureAwait(false);
+                await tx.CommitAsync().ConfigureAwait(false);
 
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
-
-                // NOTIFICATION
-                await _notif.AddAsync(new TblNotification
+                if (sendEmail)
                 {
-                    UserId = userId,
-                    Title = isRenewalExtension ? "Subscription Activated" : "Subscription Renewed",
-                    Message = isRenewalExtension
+                    // NOTIFICATION
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = userId,
+                        Title = isRenewal ? "Subscription Activated" : "Subscription Renewed",
+                        Message = isRenewal
                         ? $"Your {planName} plan is now active until {end.ToLocalTime().ToString("MMMM d, yyyy")}."
                         : $"Your {planName} plan has been renewed through {end.ToLocalTime().ToString("MMMM d, yyyy")}.",
-                    Url = "/UserDashboard/Index",
-                    CreatedAt = DateTime.UtcNow
-                });
+                        Url = "/UserDashboard/Index",
+                        CreatedAt = DateTime.UtcNow
+                    });
 
-                // --- EMAIL NOTIFICATION: RENEWAL or INITIAL ---
-                var user = await _db.TblUsers.FindAsync(userId);
-                if (user != null)
-                {
-                    // 1) figure out their active tier & SLA
-                    var activeSub = await GetActiveAsync(user.UserId);
-                    var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                    // --- EMAIL NOTIFICATION: RENEWAL or INITIAL ---
+                    var user = await _db.TblUsers.FindAsync(userId).ConfigureAwait(false);
+                    if (user != null)
                     {
-                        "Plus" => ("Plus Support", "72h SLA"),
-                        "Pro" => ("Pro Support", "48h SLA"),
-                        "Growth" => ("Growth Support", "24h SLA"),
-                        _ => ("Free Support", "120h SLA")
-                    };
-                    var action = isRenewalExtension ? "activated" : "renewed";
-                    var subject = isRenewalExtension
-                        ? $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!"
-                        : $"[{supportLabel} · {sla}] 🔁 Your {planName} subscription has been renewed!";
-                    var htmlBody7 = $@"
+                        // 1) figure out their active tier & SLA
+                        var activeSub = await GetActiveAsync(user.UserId);
+                        var (supportLabel, sla) = (activeSub?.PlanName ?? "Free") switch
+                        {
+                            "Plus" => ("Plus Support", "72h SLA"),
+                            "Pro" => ("Pro Support", "48h SLA"),
+                            "Growth" => ("Growth Support", "24h SLA"),
+                            _ => ("Free Support", "120h SLA")
+                        };
+                        var action = isRenewal ? "activated" : "renewed";
+                        var subject = isRenewal
+                            ? $"[{supportLabel} · {sla}] ✅ Your {planName} subscription is now active!"
+                            : $"[{supportLabel} · {sla}] 🔁 Your {planName} subscription has been renewed!";
+                        var htmlBody7 = $@"
 <!DOCTYPE html>
 <html lang=""en"">
 <head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
@@ -207,8 +129,9 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
       <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
         <tr>
           <td style=""border-top:4px solid rgba(41,157,143,0.8);padding:20px;"">
-            <h1 style=""margin:0;font-size:24px;color:#299D8F;"">{(isRenewalExtension ? "🎉" : "🔁")} Subscription {action}!</h1>
-          </td>
+            <h1 style=""margin:0;font-size:24px;color:#299D8F;"">{(isRenewal ? "🎉" : "🔁")} Subscription {action}!</h1>
+            <p>Thank you for your payment. Here are your invoice details:</p>          
+        </td>
         </tr>
         <tr>
           <td style=""padding:20px;color:#333333;line-height:1.5;"">
@@ -216,9 +139,12 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
               Your <strong>{planName}</strong> plan ({billingCycle}) has been {action}.
             </p>
             <div style=""background:#f0f4f8;border-radius:8px;padding:1em;margin:1em 0;"">
-              <p><strong>Subscription ID:</strong> {existing.Id}</p>
-              <p><strong>Start:</strong> {start:MMMM d, yyyy}</p>
-              <p><strong>End:</strong> {end:MMMM d, yyyy}</p>
+              <p><strong>Subscription ID:</strong> {sub.Id}</p>
+              <p><strong>Order ID:</strong> {gatewayOrderId}</p>
+              <p><strong>Payment ID:</strong> {gatewayPaymentId}</p>
+              <p><strong>Amount Paid:</strong> ₹{paidAmount.ToString("N2")}</p>
+              <p><strong>Period:</strong> {start.ToLocalTime().ToString("MMMM d, yyyy")} – {end.ToLocalTime().ToString("MMMM d, yyyy")}</p>
+              <p><strong>Invoice Date:</strong> {DateTime.UtcNow.ToLocalTime().ToString("MMMM d, yyyy")}</p>
             </div>
             <p style=""margin:0;"">
               Review or upgrade anytime in your <a href=""/Account"" style=""color:#299D8F;text-decoration:underline;"">Account</a>.
@@ -241,12 +167,13 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 </body>
 </html>
 ";
-                    await _emailSender.SendEmailAsync(user.Email, subject, htmlBody7, isBodyHtml: true);
+                        await _emailSender.SendEmailAsync(user.Email, subject, htmlBody7, isBodyHtml: true).ConfigureAwait(false);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
+                await tx.RollbackAsync().ConfigureAwait(false);
                 _logger.LogError(
                     ex,
                     "Error upserting subscription for user {UserId} plan {PlanName}",
@@ -257,10 +184,10 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
 
         public async Task CancelAutoRenewAsync(int userId, string reason)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            await using var tx = await _db.Database.BeginTransactionAsync().ConfigureAwait(false); ;
             try
             {
-                var sub = await GetActiveAsync(userId);
+                var sub = await GetActiveAsync(userId).ConfigureAwait(false);
                 if (sub == null || !sub.IsAutoRenew)
                     return;
 
@@ -268,16 +195,14 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                 sub.IsAutoRenew = false;
 
                 // 2) Record the cancellation reason
-                var cancel = new CancellationRequest
+                _db.CancellationRequests.Add(new CancellationRequest
                 {
                     SubscriptionId = sub.Id,
                     RequestedAt = DateTime.UtcNow,
                     Reason = reason
-                };
-                _db.CancellationRequests.Add(cancel);
-
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
+                });
+                await _db.SaveChangesAsync().ConfigureAwait(false);
+                await tx.CommitAsync().ConfigureAwait(false);
 
                 // NOTIFICATION
                 await _notif.AddAsync(new TblNotification
@@ -287,7 +212,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
                     Message = $"Your subscription will now end on {sub.EndDate.ToLocalTime().ToString("MMMM d, yyyy")}.",
                     Url = "/UserDashboard/Index",
                     CreatedAt = DateTime.UtcNow
-                });
+                }).ConfigureAwait(false); ;
 
                 // --- EMAIL NOTIFICATION: CANCELLATION ---
                 var user = await _db.TblUsers.FindAsync(userId);
@@ -367,9 +292,8 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
         {
             // 1) Find the subscription by GatewayOrderId
             var sub = await _db.Subscriptions
-                .Where(s => s.GatewayOrderId == orderId)
-                .OrderByDescending(s => s.StartDate)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(s => s.GatewayOrderId == orderId)
+                .ConfigureAwait(false);
 
             if (sub == null)
                 throw new InvalidOperationException($"No subscription found for order {orderId}");
@@ -377,23 +301,16 @@ namespace SkillSwap_Platform.Services.Payment_Gatway
             // 2) Record the payment details
             sub.GatewayPaymentId = paymentId;
             sub.PaidAmount = paidAmount;
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync().ConfigureAwait(false);
 
-            // 3) Upgrade/renew the subscription
-            // — only extend from EndDate if cycle hasn’t changed and sub still active
-            bool sameCycle =
-                    string.Equals(sub.BillingCycle, billingCycle, StringComparison.OrdinalIgnoreCase)
-                    && sub.EndDate > DateTime.UtcNow;
-
-            var start = sameCycle
-                    ? sub.EndDate
-                    : DateTime.UtcNow;
-
+            var start = (sub.EndDate > DateTime.UtcNow && sub.BillingCycle == billingCycle)
+                ? sub.EndDate
+                : DateTime.UtcNow;
             var end = billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
-                    ? start.AddYears(1)
-                    : start.AddMonths(1);
+                ? start.AddYears(1)
+                : start.AddMonths(1);
 
-            await UpsertAsync(sub.UserId, desiredPlanName, billingCycle, start, end);
+            await UpsertAsync(sub.UserId, desiredPlanName, billingCycle, start, end, orderId, paymentId, paidAmount).ConfigureAwait(false);
         }
 
         public async Task<bool> IsInPlanAsync(int userId, string planName)

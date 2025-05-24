@@ -118,7 +118,6 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         [DataType(DataType.Date)]
         [Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
-        [Required(ErrorMessage = "End date is needed!")]
         [DataType(DataType.Date)]
         [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
@@ -140,7 +139,6 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         [DataType(DataType.Date)]
         [Display(Name = "Start Date")]
         public DateTime? StartDate { get; set; }
-        [Required(ErrorMessage = "Select end date!")]
         [DataType(DataType.Date)]
         [Display(Name = "End Date")]
         public DateTime? EndDate { get; set; }
@@ -171,7 +169,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         public bool IsApproved { get; set; }
         public DateTime? ApprovedDate { get; set; }
         public DateTime? RejectionDate { get; set; }
-        public string RejectionReason { get; set; }
+        public string? RejectionReason { get; set; }
 
         // Flag for deletion.
         public bool IscertDeleted { get; set; }

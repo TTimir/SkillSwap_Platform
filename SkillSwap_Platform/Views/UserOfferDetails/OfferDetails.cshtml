@@ -331,7 +331,7 @@
                                                     {
                                                         <span class="online-badge"></span>
                                                     }
-                                                    <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:5%;" />
+                                                    <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Profile Photo" class="rounded-circle" width="80" height="80" style="max-width:100%;" />
                                                 }
                                             }
                                         </span>
@@ -380,10 +380,7 @@
                                                 <span>@lang.Proficiency</span>
                                             }
                                         }
-                                        else
-                                        {
-                                            <span>Learner</span>
-                                        }
+                                        <span>Learner</span>
                                     </p>
                                 </div>
                             </div>
@@ -618,7 +615,7 @@
                                             }
                                         </tr>
                                         <tr class="bgc-thm3">
-                                            <th scope="row">Exchange Success</th>
+                                            <th scope="row">Exch. Success</th>
                                             <td>@("%")@Model.JobSuccessRate.ToString("F2")</td>
                                             @foreach (var compareOffer in Model.CompareOffers)
                                             {
@@ -1019,7 +1016,7 @@
                                             {
                                                 <span class="online"></span>
                                             }
-                                            <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Freelancer Photo" class="rounded-circle" width="100" style="max-width:70%;" />
+                                            <img src="@(!string.IsNullOrEmpty(user.ProfileImage) ? user.ProfileImage : "/template_assets/images/No_Profile_img.png")" alt="Profile Photo" class="rounded-circle" width="70" height="70" style="max-width:100%;" />
                                         }
                                     }
                                 </div>

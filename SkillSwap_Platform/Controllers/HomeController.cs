@@ -1514,7 +1514,8 @@ public class HomeController : Controller
                 ContactNo = tempUser.ContactNo,
                 TotpSecret = tempUser.TotpSecret, // ✅ Store plain Base32 secret
                 IsOnboardingCompleted = false, // 🚀 Ensuring user lands on onboarding
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                IsActive = true,
             };
 
             var result = await _userService.RegisterUserAsync(newUser, password);

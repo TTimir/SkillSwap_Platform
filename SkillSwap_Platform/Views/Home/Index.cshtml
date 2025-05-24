@@ -9,6 +9,14 @@
 }
 
 <style>
+    .profile-avatar {
+        width: 50px;
+        height: 50px;
+        /* border-radius: 50%; /* make them circles */ */
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
     /* 1) make our “equal-height” row a flex container */
     .row.equal-height {
         display: flex;
@@ -402,51 +410,51 @@
 </section>
 
 <!-- Trending Services -->
-<section class="pt-0 pb100">
-    <div class="container">
-        <div class="row align-items-center wow fadeInUp">
-            <div class="col-lg-9">
-                <div class="main-title">
-                    <h2 class="title">Hot & Trending Swap Offers</h2>
-                    <p class="paragraph">See what everyone’s swapping right now</p>
+@if (Model.TrendingOffersByCategory != null && Model.TrendingOffersByCategory.Count > 0)
+{
+    <section class="pt-0 pb100">
+        <div class="container">
+            <div class="row align-items-center wow fadeInUp">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">Hot & Trending Swap Offers</h2>
+                        <p class="paragraph">See what everyone’s swapping right now</p>
+                    </div>
                 </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">All Swap Offers<i class="fal fa-arrow-right-long"></i></a>
+                <div class="col-lg-3">
+                    <div class="text-lg-end mb-3">
+                        <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">All Swap Offers<i class="fal fa-arrow-right-long"></i></a>
+                    </div>
                 </div>
-            </div>
-            <div class="col-xl-9">
-                <div class="navpill-style2 at-home9 mb50-lg">
-                    <ul class="nav nav-pills mb20 justify-content-xl-end" id="pills-tab" role="tablist">
-                        @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
-                        {
-                            var category = Model.TrendingOffersByCategory[i];
-                            bool isActive = (i == 0); // Make the first tab active by default
+                <div class="col-xl-9">
+                    <div class="navpill-style2 at-home9 mb50-lg">
+                        <ul class="nav nav-pills mb20 justify-content-xl-end" id="pills-tab" role="tablist">
+                            @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
+                            {
+                                var category = Model.TrendingOffersByCategory[i];
+                                bool isActive = (i == 0); // Make the first tab active by default
 
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link @(isActive ? "active" : "") fw500 dark-color"
-                                        id="pills-@category.CategorySlug-tab"
-                                        data-bs-toggle="pill"
-                                        data-bs-target="#pills-@category.CategorySlug"
-                                        type="button"
-                                        role="tab"
-                                        aria-controls="pills-@category.CategorySlug"
-                                        aria-selected="@isActive">
-                                    @category.CategoryName
-                                </button>
-                            </li>
-                        }
-                    </ul>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link @(isActive ? "active" : "") fw500 dark-color"
+                                            id="pills-@category.CategorySlug-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#pills-@category.CategorySlug"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="pills-@category.CategorySlug"
+                                            aria-selected="@isActive">
+                                        @category.CategoryName
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="row wow fadeInUp" data-wow-delay="300ms">
-            <div class="col-lg-12">
-                <div class="navpill-style2">
-                    <div class="tab-content" id="pills-tabContent">
-                        @if (Model.TrendingOffersByCategory != null && Model.TrendingOffersByCategory.Count > 0)
-                        {
+            <div class="row wow fadeInUp" data-wow-delay="300ms">
+                <div class="col-lg-12">
+                    <div class="navpill-style2">
+                        <div class="tab-content" id="pills-tabContent">
                             @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
                             {
                                 var category = Model.TrendingOffersByCategory[i];
@@ -571,10 +579,8 @@
                                                                 <!-- Example: Link to user profile -->
                                                                 <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })" target="_blank">
                                                                     <span class="position-relative mr10">
-                                                                        <img class="rounded-circle"
+                                                                        <img class="rounded-circle profile-avatar"
                                                                              src="@offer.UserProfileImage"
-                                                                             width="100"
-                                                                             style="max-width:25%"
                                                                              alt="Freelancer Photo" />
                                                                         <!-- Online status example (if you’re handling it) -->
                                                                         <!-- <span class="online-badge"></span> -->
@@ -606,17 +612,13 @@
 
                                 <!-- /.tab-pane -->
                             }
-                        }
-                        else
-                        {
-                            <p>No trending swap offers available.</p>
-                        }
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- CTA Banner -->
 <section class="p-0">
@@ -660,32 +662,33 @@
 </section>
 
 <!-- Highest Rated Freelancers -->
-<section class="pb90 pb30-md">
-    <div class="container">
-        <div class="row align-items-center wow fadeInUp">
-            <div class="col-lg-9">
-                <div class="main-title">
-                    <h2 class="title">Highest Rated Profile</h2>
-                    <p class="paragraph">Meet our community’s top-rated swappers</p>
+@if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
+{
+    <section class="pb90 pb30-md">
+        <div class="container">
+            <div class="row align-items-center wow fadeInUp">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">Highest Rated Profile</h2>
+                        <p class="paragraph">Meet our community’s top-rated swappers</p>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="text-lg-end mb-3">
+                        <a href="@Url.Action("PublicProfileList","UserProfileList")" class="ud-btn2">All Swappers <i class="fal fa-arrow-right-long"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-3">
-                <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("PublicProfileList","UserProfileList")" class="ud-btn2">All Swappers <i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="row wow fadeInUp swap-grid" data-wow-delay="300ms">
-            @if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
-            {
-                foreach (var freelancer in Model.HighestRatedFreelancers)
+            <div class="row wow fadeInUp swap-grid" data-wow-delay="300ms">
+
+                @foreach (var freelancer in Model.HighestRatedFreelancers)
                 {
                     <div class="col-sm-6 col-xl-3">
                         <div class="item">
                             <div class="listing-style1 text-center style3 offer-card hover-box-shadow">
                                 <div class="list-thumb">
                                     <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
-                                        <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" style="max-width:100%;" />
+                                        <img class="rounded-circle mx-auto profile-avatar" src="@freelancer.ProfileImage" alt="@freelancer.Name" />
                                         <vc:online-indicator user-id="@freelancer.UserId" />
                                     </div>
                                 </div>
@@ -747,16 +750,10 @@
                         </div>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="item">
-                    <p>No Swappers available.</p>
-                </div>
-            }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- CTA -->
 <section class="bgc-dark">

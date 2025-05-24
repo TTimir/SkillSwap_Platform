@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Razorpay.Api;
+using SkillSwap_Platform.Controllers.Payment_Gatway;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway;
 using SkillSwap_Platform.Models.ViewModels.PaymentGatway.POCO;
@@ -13,12 +14,16 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
     {
         private readonly RazorpaySettings _rzpSettings;
         private readonly PlanSettings _planSettings;
+        private readonly ILogger<RazorpayService> _logger;
+
         public RazorpayService(
             IOptions<RazorpaySettings> rzpOpts,
-            IOptions<PlanSettings> planOpts)
+            IOptions<PlanSettings> planOpts,
+            ILogger<RazorpayService> logger)
         {
             _rzpSettings = rzpOpts.Value;
             _planSettings = planOpts.Value;
+            _logger = logger;
         }
 
 
@@ -66,6 +71,7 @@ namespace SkillSwap_Platform.Services.Payment_Gatway.RazorPay
                     }
                     catch (Exception ex)
                     {
+                        _logger.LogWarning(ex, "Razorpay order creation attempt {Attempt} failed", attempt);
                         // Log the exception including any inner WebException info
                         await Task.Delay(TimeSpan.FromSeconds(attempt));
                     }

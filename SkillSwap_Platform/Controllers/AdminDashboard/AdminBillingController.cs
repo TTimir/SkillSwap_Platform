@@ -256,7 +256,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                             ? start.AddYears(1)
                             : start.AddMonths(1);
 
-                await _subs.UpsertAsync(sub.UserId, sub.PlanName, sub.BillingCycle, start, end);
+                await _subs.UpsertAsync(sub.UserId, sub.PlanName, sub.BillingCycle, start, end, gatewayOrderId: string.Empty, gatewayPaymentId: string.Empty, paidAmount: 0m, sendEmail: false);
 
                 var user = await _db.TblUsers.FindAsync(sub.UserId);
                 if (user != null)

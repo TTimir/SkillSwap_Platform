@@ -158,6 +158,14 @@
         var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .token-balance {
             display: flex;
             align-items: center;
@@ -307,13 +315,13 @@
                                                 }
                                             }
                                             <div>
-                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
                                             </div>
                                         </a>
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Swapo</a>
                                                 <a class="dropdown-item" href="@Url.ActionLink("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
                                                 <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()

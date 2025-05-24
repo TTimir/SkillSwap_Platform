@@ -216,7 +216,14 @@
                         </div>
                         <div class="col-sm-6" id="manualAddress">
                             <div class="mb20">
-                                <label asp-for="Address">Swap Location <span class="text-danger">*</span> (if you’d rather type than share GPS)</label>
+                                <label asp-for="Address">
+                                    Create Location <span class="text-danger">*</span>
+                                    <i class="fas fa-question-circle text-muted ms-1"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-html="true"
+                                       title="This helps identify where the offer was created. You can also enter it manually if you’re traveling or other reason, so others can find nearby swaps.">
+                                    </i>
+                                </label>
                                 <div class="input-group">
                                     <input asp-for="Address"
                                            class="form-control"
@@ -253,7 +260,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- FAQ Section -->
             <div class="ps-widget bgc-white bdrs12 p30 mb30">
                 <h5 class="list-title mb20">Frequently Asked Questions</h5>
@@ -284,7 +291,6 @@
 
                 <div class="accordion-style1 faq-page mb-4 mb-lg-5 mt30">
                     <div class="accordion" id="faqPreviewAccordion">
-
                     </div>
                 </div>
             </div>
@@ -303,7 +309,7 @@
                 </div>
                 <span id="uploadError" class="text-danger"></span>
                 <p class="text">
-                    Max file size is 1MB, Minimum dimension: 329x245 And Suitable files are .jpg & .png
+                    Max file size is 1MB, Suitable dimension: 329x245 And Suitable files are .jpg & .png
                 </p>
                 <div class="text-start">
                     @* <a class="ud-btn btn-thm" href="page-contact.html">Save & Publish<i class="fal fa-arrow-right-long"></i></a> *@
@@ -363,7 +369,7 @@
 
                     // Validate file size (5 MB maximum per image).
                     if (file.size > maxFileSize) {
-                        errorMessages.push(`"${file.name}": Maximum file size per image is 5 MB.`);
+                        errorMessages.push(`"${file.name}": Maximum file size per image is 1 MB.`);
                         filesProcessed++;
                         if (filesProcessed === files.length) {
                             $("#uploadImages")[0].files = dt.files;
