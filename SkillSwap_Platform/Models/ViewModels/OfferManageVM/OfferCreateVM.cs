@@ -60,8 +60,8 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         // Dropdown options for willing skills
         public List<SelectListItem> WillingSkillOptions { get; set; } = new List<SelectListItem>();
         // The selected willing skill value
-        [Required(ErrorMessage = "Willing Skill is required.")]
-        [Display(Name = "Intrested in")]
+        [Required(ErrorMessage = "this field is required.")]
+        [Display(Name = "Want to learn about")]
         public string SelectedWillingSkill { get; set; }
 
         [Display(Name = "Latitude")]

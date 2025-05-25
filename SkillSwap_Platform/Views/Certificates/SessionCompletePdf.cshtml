@@ -1,0 +1,209 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.CertificateVM
+@{
+    Layout = null;
+    var dateText = Model.CompletedAt.ToString("dd MMMM, yyyy");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillSwap Certificate of Completion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .certificate-container {
+            position: relative;
+            width: 1120px;
+            height: 792px;
+            margin: 40px auto;
+            padding: 60px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+            .certificate-container::before {
+                content: '';
+                position: absolute;
+                top: -20%;
+                left: -20%;
+                right: -20%;
+                bottom: -20%;
+                background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.04"><defs><pattern id="tex" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23000"/></pattern></defs><rect width="100%" height="100%" fill="url(%23tex)"/></svg>') no-repeat;
+                background-size: cover;
+                transform: scale(3);
+                z-index: 0;
+            }
+
+        .geo-shape {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(91,187,123,0.3), rgba(91,187,123,0));
+            clip-path: polygon(50% 0%, 100% 25%, 75% 100%, 25% 100%, 0% 25%);
+            top: -100px;
+            right: -150px;
+            z-index: 1;
+        }
+
+        .header {
+            position: relative;
+            text-align: center;
+            margin-bottom: 40px;
+            z-index: 2;
+        }
+
+            .header img {
+                height: 60px;
+            }
+
+            .header h1 {
+                font-family: 'Merriweather', serif;
+                font-size: 48px;
+                color: #5BBB7B;
+                margin: 10px 0 0;
+            }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 0 80px;
+        }
+
+            .content .subtitle {
+                font-size: 20px;
+                color: #777;
+                margin-bottom: 60px;
+                font-style: italic;
+            }
+
+            .content .recipient {
+                font-family: 'Merriweather', serif;
+                font-size: 36px;
+                font-weight: 700;
+                color: #333;
+                margin-bottom: 20px;
+            }
+
+            .content .details {
+                font-size: 18px;
+                color: #555;
+                line-height: 1.6;
+                margin-bottom: 60px;
+            }
+
+        .footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 80px;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+            .signature img {
+                height: 60px;
+            }
+
+            .signature .name {
+                font-family: 'Merriweather', serif;
+                font-size: 20px;
+                font-weight: 700;
+                color: #333;
+                margin: 8px 0 0;
+            }
+
+            .signature .title {
+                font-size: 14px;
+                color: #777;
+            }
+
+        .seal {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: url('/template_assets/images/seal.png') no-repeat center/contain;
+            opacity: 0.2;
+            z-index: 1;
+        }
+
+        .certificate-wrapper {
+            width: 180px;
+            height: 120px;
+        }
+
+        .certificate-frame.blur {
+            filter: blur(4px);
+        }
+
+        .cert-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .cert-overlay p {
+                margin: 0.25rem 0;
+            }
+
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="geo-shape"></div>
+
+        <div class="header">
+            <img src="@Model.LogoUrl" alt="SkillSwap Logo" />
+            <h1>Certificate of Completion</h1>
+        </div>
+
+        <div class="content">
+            <p class="subtitle">This certifies that</p>
+            <p class="recipient">@Model.RecipientName</p>
+            <p class="details">
+                has successfully completed the <strong>@Model.SessionTitle</strong><br />
+                on <strong>@dateText</strong>.
+            </p>
+        </div>
+
+        <div class="footer">
+            <!-- Left signature: Issuer -->
+            <div class="signature">
+                <img src="@Model.SignatureUrl" alt="Authorized Sign" />
+                <p class="name">Authorized Sign</p>
+            </div>
+
+            <!-- Right signature: Director of Learning -->
+            <div class="signature">
+                <!-- if you have a second signature image, use Model.DirectorSignatureUrl, otherwise omit -->
+                <p class="name">The Swapo Team</p>
+                <p class="name">Director of Learning</p>
+            </div>
+        </div>
+
+        <div class="seal"></div>
+    </div>
+</body>
+</html>

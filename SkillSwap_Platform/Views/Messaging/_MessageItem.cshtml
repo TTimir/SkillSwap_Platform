@@ -51,9 +51,9 @@
     <div class="d-flex align-items-center @(Model.IsSentByCurrent ? "justify-content-end" : "justify-content-start") mb15">
         @if (!Model.IsSentByCurrent)
         {
-            <img class="img-fluid rounded-circle align-self-start mr10"
+            <img class="img-fluid rounded-circle align-self-start mr10 msg-profile-avatar"
             src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-            alt="Profile" style="width:50px;" />
+            alt="Profile" />
         }
         <div class="title fz15">
             @if (Model.IsSentByCurrent)
@@ -69,9 +69,9 @@
         </div>
         @if (Model.IsSentByCurrent)
         {
-            <img class="img-fluid rounded-circle align-self-end ml10"
+            <img class="img-fluid rounded-circle align-self-end ml10 msg-profile-avatar"
             src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-            alt="Profile" style="width:50px;" />
+            alt="Profile" />
         }
     </div>
     @if (!string.IsNullOrEmpty(Model.ReplyPreview) && Model.ReplyMessageId.HasValue)
@@ -114,12 +114,12 @@
                                     }
                                     else
                                     {
-                                        <p class="nav-link fw500 dark-color text-muted">Contract invitation sent.</p>
+                                        <p class="nav-link fw500 dark-color text-muted" style="padding:8px;">Agreement invitation sent.</p>
                                     }
                                 }
                                 else
                                 {
-                                    <p class="text-muted mb-0">Contract invitation sent.</p>
+                                    <p class="text-muted mb-0" style="padding:8px;">Agreement invitation sent.</p>
                                 }
                             </li>
                         </ul>
@@ -171,7 +171,7 @@
                 {
                     <div class="contract-card">
                         <div class="contract-header">
-                            <h5>📄 Contract Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
+                            <h5>📄 Agreement Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
                         </div>
 
                         <div class="contract-details">
@@ -201,17 +201,17 @@
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                 class="btn btn-sm btn-primary" style="color:#fff">
-                                    <i class="fa fa-eye"></i> Review Contract
+                                    <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
                                 asp-controller="Contract"
                                 method="post"
                                 class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fa fa-times-circle"></i> Decline Contract
+                                        <i class="fa fa-times-circle"></i> Decline Agreement
                                     </button>
                                 </form>
                             }
@@ -219,14 +219,14 @@
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                 class="btn btn-sm btn-primary" style="color:#fff">
-                                    <i class="fa fa-eye"></i> Review Contract
+                                    <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
                                 asp-controller="Contract"
                                 method="post"
                                 class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Invite
@@ -245,9 +245,9 @@
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
                     {
-                        "Accepted" => "Your contract has been accepted",
-                        "Expired" => "This contract has expired",
-                        "Declined" => "This contract has been declined",
+                        "Accepted" => "Your agreement has been accepted",
+                        "Expired" => "This agreement has expired",
+                        "Declined" => "This agreement has been declined",
                         _ => ""
                     };
 
@@ -441,11 +441,11 @@
                                     {
                                         if (Model.ContractDetails != null && !Model.IsSentByCurrent)
                                         {
-                                            <p class="nav-link fw500 dark-color text-muted">Contract invitation received.</p>
+                                            <p class="nav-link fw500 dark-color text-muted" style="padding:8px;">Agreement invitation received.</p>
                                         }
                                         else
                                         {
-                                            <p class="nav-link fw500 dark-color text-muted">Contract invitation sent.</p>
+                                            <p class="nav-link fw500 dark-color text-muted" style="padding:8px;">Agreement invitation sent.</p>
                                         }
                                     }
                                 }
@@ -453,7 +453,7 @@
                                 {
                                     if (Model.ContractDetails != null && !Model.IsSentByCurrent)
                                     {
-                                        <p class="text-muted mb-0">Contract invite received.</p>
+                                        <p class="text-muted mb-0">Agreement invite received.</p>
                                     }
                                 }
                             </li>
@@ -506,7 +506,7 @@
                 {
                     <div class="contract-card">
                         <div class="contract-header">
-                            <h5>📄 Contract Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
+                            <h5>📄 Agreement Invitation <span class="version">@("v")@Model.ContractDetails.Version</span></h5>
                         </div>
 
                         <div class="contract-details">
@@ -534,17 +534,17 @@
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                 class="btn btn-sm btn-primary" style="color:#fff">
-                                    <i class="fa fa-eye"></i> Review Contract
+                                    <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
                                 asp-controller="Contract"
                                 method="post"
                                 class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fa fa-times-circle"></i> Decline Contract
+                                        <i class="fa fa-times-circle"></i> Decline Agreement
                                     </button>
                                 </form>
                             }
@@ -552,7 +552,7 @@
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
                                 class="btn btn-sm btn-primary" style="color:#fff">
-                                    <i class="fa fa-eye"></i> Review Contract
+                                    <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
@@ -578,9 +578,9 @@
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
                     {
-                        "Accepted" => "Your contract has been accepted",
-                        "Expired" => "This contract has expired",
-                        "Declined" => "This contract has been declined",
+                        "Accepted" => "Your agreement has been accepted",
+                        "Expired" => "This agreement has expired",
+                        "Declined" => "This agreement has been declined",
                         _ => ""
                     };
 
@@ -999,5 +999,12 @@
 
     .badge-modifiedbysender {
         background: #5bc0de;
+    }
+
+    .msg-profile-avatar {
+        width: 60px;
+        height: 60px;
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
     }
 </style>

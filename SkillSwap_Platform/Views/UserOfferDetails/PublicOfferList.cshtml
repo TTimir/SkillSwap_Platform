@@ -12,7 +12,14 @@
 }
 
 <style>
-    * 1) make the row a flex container */
+    .profile-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
+    /* 1) make the row a flex container */
     .row.equal-height {
         display: flex;
         flex-wrap: wrap;
@@ -447,7 +454,7 @@
                             <div class="list-meta d-flex justify-content-between align-items-center mt15">
                                 <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                     <span class="position-relative mr10">
-                                        <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
+                                        <img class="rounded-circle profile-avatar" src="@offer.UserProfileImage" alt="Freelancer Photo">
                                         <span class="online-badge"></span>
                                     </span>
                                     <span class="fz14">@offer.UserName</span>

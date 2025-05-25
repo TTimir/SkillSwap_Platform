@@ -411,7 +411,7 @@ namespace SkillSwap_Platform.Controllers
                     .Where(c =>
                         (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
                         (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
-                    .Include(c => c.Offer)
+                    .Include(c => c.Offer)  
                     .OrderByDescending(c => c.CreatedDate)
                     .ToListAsync();
 
@@ -445,7 +445,7 @@ namespace SkillSwap_Platform.Controllers
                         (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
                         (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
                     .Where(c => c.Status != "Declined")           // only “active” ones
-                    .OrderByDescending(c => c.UpdatedDate)        // or CreatedDate if you prefer
+                    .OrderByDescending(c => c.CreatedDate)        // CreatedDate if you prefer
                     .FirstOrDefaultAsync();
 
                 if (latestContract != null)

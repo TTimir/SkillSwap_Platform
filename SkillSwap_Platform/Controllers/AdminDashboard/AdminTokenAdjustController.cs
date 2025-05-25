@@ -16,8 +16,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
     {
         private readonly TokenAdminService _svc;
         private readonly SkillSwapDbContext _db;
-        private const int EscrowUserId = 1;
-        private const int SystemReserveUserId = 2;
+        private const int EscrowUserId = 2;
+        private const int SystemReserveUserId = 3;
 
         public AdminTokenAdjustController(TokenAdminService svc, SkillSwapDbContext db) { _svc = svc; _db = db; }
 
@@ -49,7 +49,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             var total = await query.CountAsync();
             var items = await query
                 .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
+                .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
@@ -75,17 +75,26 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AdminAdjustDto dto)
         {
+            if ((dto.NormalUserId.HasValue && dto.SystemUserId.HasValue) ||
+                (!dto.NormalUserId.HasValue && !dto.SystemUserId.HasValue))
+            {
+                ModelState.AddModelError("", "Please select exactly one user from either list.");
+            }
+
             if (!ModelState.IsValid)
             {
                 PopulateUserList();
                 return View(dto);
             }
 
+            // Decide which ID to use:
+            var targetUserId = dto.NormalUserId ?? dto.SystemUserId.Value;
+
             // dto: { UserId, Amount, Type, Reason }
             var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
             var tx = await _svc.AdjustBalanceAsync(dto.UserId, dto.Amount, dto.Type, dto.Reason, adminId);
 
-            TempData["Success"] = "Token adjustment saved successfully.";
+            TempData["Success"] = "Token adjusted and saved successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -109,18 +118,25 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
 
         private void PopulateUserList()
         {
-            ViewBag.UserList = new SelectList(
-                _db.TblUsers
+            var users = _db.TblUsers
                    .IgnoreQueryFilters()
                    .AsNoTracking()
-                   .Where(u => u.Role.ToLower() != "user")
+                   .Where(u => u.IsActive)
                    .Select(u => new {
                        u.UserId,
-                       Display = u.UserName + " (" + u.Email + ") — " + u.Role
+                       Display = $"{u.UserName} ({u.Email}) — {u.Role}",
+                       u.Role
                    })
-                   .ToList(),
-                "UserId",
-                "Display"
+                   .ToList();
+
+            ViewBag.NormalUsers = new SelectList(
+                users.Where(u => u.Role == "User"),
+                "UserId", "Display"
+            );
+
+            ViewBag.SystemUsers = new SelectList(
+                users.Where(u => u.Role != "User"),
+                "UserId", "Display"
             );
         }
     }

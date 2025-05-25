@@ -916,7 +916,7 @@ namespace SkillSwap_Platform.Controllers
                             TempData["ErrorMessage"] = $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.";
                             ModelState.AddModelError("",
                               $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
-                            return View("PreviewContract", new { contractId });
+                            return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
                         }
 
                         if (!string.IsNullOrWhiteSpace(newFinalContract.SenderSkill))
@@ -1425,16 +1425,11 @@ namespace SkillSwap_Platform.Controllers
             preparedModel.ReceiverAddress = model.ReceiverAddress;
             preparedModel.ReceiverEmail = model.ReceiverEmail;
             preparedModel.TokenOffer = model.TokenOffer;
-            preparedModel.Category = model.Category;
-            preparedModel.LearningObjective = model.LearningObjective;
-            preparedModel.OppositeExperienceLevel = model.OppositeExperienceLevel;
-            preparedModel.ModeOfLearning = model.ModeOfLearning;
-            preparedModel.OfferOwnerAvailability = model.OfferOwnerAvailability;
-            preparedModel.AssistanceRounds = model.AssistanceRounds;
             preparedModel.FlowDescription = model.FlowDescription;
             preparedModel.AdditionalTerms = model.AdditionalTerms;
             preparedModel.ContractDate = model.ContractDate;
             preparedModel.OfferedSkill = model.OfferedSkill;
+
             preparedModel.IsPreview = true;
             preparedModel.Status = "Preview";
 

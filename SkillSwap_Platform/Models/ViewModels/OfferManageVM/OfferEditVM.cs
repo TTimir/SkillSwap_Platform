@@ -61,8 +61,8 @@ namespace SkillSwap_Platform.Models.ViewModels.ExchangeVM
         [Display(Name = "Tools")] 
         public string Tools { get; set; }
         public List<SelectListItem> WillingSkillOptions { get; set; } = new List<SelectListItem>();
-        [Required(ErrorMessage = "Willing Skill is required.")]
-        [Display(Name = "Intrested in")]
+        [Required(ErrorMessage = "this field is required.")]
+        [Display(Name = "Want to learn about")]
         public string SelectedWillingSkill { get; set; }
 
 

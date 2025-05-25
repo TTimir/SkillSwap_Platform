@@ -9,8 +9,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
 {
     public class DigitalTokenService : IDigitalTokenService
     {
-        private const int EscrowUserId = 1;          // userId of escrow account
-        private const int SystemReserveUserId = 2;   // userId of platform reserve (for bonuses)
+        private const int EscrowUserId = 2;          // userId of escrow account
+        private const int SystemReserveUserId = 3;   // userId of platform reserve (for bonuses)
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<DigitalTokenService> _logger;
         private readonly INotificationService _notif;

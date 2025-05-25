@@ -29,7 +29,7 @@
         <div class="pdf-header">
             @if (Model.IsPreview || !(Model.SenderAgreementAccepted && Model.ReceiverAgreementAccepted))
             {
-                <p class="pdf-status preview">PREVIEW: This document is a draft and is not legally binding.</p>
+                <p class="pdf-status preview">PREVIEW: This document is a draft and is not legally bind.</p>
             }
             else if (Model.Version < 3)
             {
@@ -37,13 +37,13 @@
             }
             else if (Model.Version >= 3)
             {
-                <p class="pdf-status finalized">FINALIZED CONTRACT: This contract is legally binding.</p>
+                <p class="pdf-status finalized">FINALIZED Agreement: This agreement is legally bind.</p>
             }
         </div>
     }
 
     <p style="font-size: 14px; font-weight: bold;">
-        Contract Unique ID: @(Model.ContractUniqueId ?? "On Create")
+        Agreement Unique ID: @(Model.ContractUniqueId ?? "On Create")
     </p>
     <p style="display: flex; justify-content: space-between; align-items: center;">
         @{
@@ -60,8 +60,8 @@
                 displayVersion = Model.Version;
             }
         }
-        <span><strong>Contract Version:</strong> @("v")@displayVersion</span>
-        <span>(Agreement Initiated On: @((Model.OriginalCreatedDate ?? Model.ContractDate).Value.ToString("dd MMMM, yyyy")))</span>
+        <span><strong>Agreement Version:</strong> @("v")@displayVersion</span>
+        <span>(Agreement Initiated On: @((Model.OriginalCreatedDate ?? Model.ContractDate).Value.ToLocalTime().ToString("dd MMMM, yyyy")))</span>
     </p>
     <br />
     <h2>Swapo Trust Exchange Agreement</h2>
@@ -74,14 +74,14 @@
     <p>
         This Trust Exchange Agreement ("Agreement") is entered into on this
         <span class="inline-input" style="font-weight:600">
-            @effectiveDate.ToString("dd")
+            @effectiveDate.ToLocalTime().ToString("dd")
         </span>
         day of
         <span class="inline-input" style="font-weight:600">
-            @effectiveDate.ToString("MMMM")
+            @effectiveDate.ToLocalTime().ToString("MMMM")
         </span>,
         <span class="inline-input" style="font-weight:600">
-            @effectiveDate.ToString("yyyy")
+            @effectiveDate.ToLocalTime().ToString("yyyy")
         </span>, electronically through the Swapo Platform, by and between:
     </p>
     <p>
@@ -176,9 +176,9 @@
                 var contractDate = Model.ContractDate ?? DateTime.Now;
                 var completionDate = Model.CompletionDate ?? contractDate.AddDays(Model.LearningDays + 1);
             }
-            <span class="inline-input" style="font-weight:600;font-size:14px;">@contractDate.ToString("dd MMMM, yyyy")</span>
+            <span class="inline-input" style="font-weight:600;font-size:14px;">@contractDate.ToLocalTime().ToString("dd MMMM, yyyy")</span>
             and must be completed by the day of
-            <span class="inline-input" style="font-size:14px;">@completionDate.ToString("dd MMMM, yyyy").</span> <p style="display: inline;font-size:14px;">(This completion date is automatically calculated based on the Contract Signing Date plus the agreed Exchange Duration and an additional T+1 backup day...)</p>
+            <span class="inline-input" style="font-size:14px;">@completionDate.ToLocalTime().ToString("dd MMMM, yyyy").</span> <p style="display: inline;font-size:14px;">(This completion date is automatically calculated based on the Agreement Signing Date plus the agreed Exchange Duration and an additional T+1 backup day...)</p>
         </li>
         <br />
         <li>
@@ -218,7 +218,7 @@
             In the event of a breach, the following actions will be taken: 6.1 Immediate <br /> termination of services by the breaching Party.<br />
             6.2 Liability of the breaching Party for incurred damages.<br />
             6.3 Potential legal action within the jurisdiction of India, including adherence to all applicable
-            provisions of the Indian Contract Act, 1872, and the Information Technology Act, 2000,
+            provisions of the Indian Agreement Act, 1872, and the Information Technology Act, 2000,
             governing electronic agreements and digital transactions.<br />
             6.4 Reporting breaches to Swapo administration and professional platforms including LinkedIn,
             Facebook, Instagram, Twitter, and relevant forums.<br />
@@ -252,7 +252,7 @@
         <li>
             <strong>Governing Law:</strong><br />
             This Agreement shall be governed by and interpreted under the laws of India. Specifically,
-            this Agreement complies with the provisions of the Indian Contract Act, 1872, and
+            this Agreement complies with the provisions of the Indian Agreement Act, 1872, and
             the Information Technology Act, 2000.
         </li>
         <br />
@@ -370,7 +370,7 @@
                                 {
                                     <!-- Sender Acceptance Section -->
                                     <input asp-for="SenderAgreementAccepted" type="checkbox" id="senderAgreementCheckbox" />
-                                    <label for="senderAgreementCheckbox">I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</label>
+                                    <label for="senderAgreementCheckbox">I Agree, Date: @Model.SenderAcceptanceDate?.ToLocalTime().ToString("dd/MM/yyyy")</label>
                                     @Html.TextBox("SenderAcceptanceDate", null, new { id = "visibleSenderAcceptanceDate", @class = "inline-input", type = "date" })
                                     <span id="senderDateInfo" class="info-icon" style="margin-left:5px; position: relative;">
                                         <img src="~/template_assets/images/icons8-info.svg" />
@@ -381,7 +381,7 @@
                                 {
                                     if (Model.SenderAgreementAccepted && Model.SenderAcceptanceDate != null || Model.IsPdfDownload)
                                     {
-                                        <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToString("dd/MM/yyyy")</span>
+                                        <span class="inline-input">☑ I Agree, Date: @Model.SenderAcceptanceDate?.ToLocalTime().ToString("dd/MM/yyyy")</span>
                                     }
                                     else
                                     {
@@ -481,7 +481,7 @@
                                     }
                                     @Html.CheckBoxFor(m => m.ReceiverAgreementAccepted, checkboxAttrs)
                                     <label for="receiverAgreementCheckbox">I Agree, Date:</label>
-                                    @Html.TextBox("ReceiverAcceptanceDate", Model.ReceiverAcceptanceDate?.ToString("yyyy-MM-dd"), new { @class = "inline-input", type = "date", id = "visibleReceiverAcceptanceDate" })
+                                    @Html.TextBox("ReceiverAcceptanceDate", Model.ReceiverAcceptanceDate?.ToLocalTime().ToString("yyyy-MM-dd"), new { @class = "inline-input", type = "date", id = "visibleReceiverAcceptanceDate" })
                                     <span id="receiverdateInfo" class="info-icon" style="margin-left:5px; position: relative;">
                                         <img src="~/template_assets/images/icons8-info.svg" />
                                         <span class="tooltip">Enter today's date. (format: DD-MM-YYYY).</span>
@@ -491,7 +491,7 @@
                                 {
                                     if (Model.ReceiverAgreementAccepted && Model.ReceiverAcceptanceDate != null || Model.IsPdfDownload)
                                     {
-                                        <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToString("dd/MM/yyyy")</span>
+                                        <span class="inline-input">☑ I Agree, Date: @Model.ReceiverAcceptanceDate?.ToLocalTime().ToString("dd/MM/yyyy")</span>
                                     }
                                     else
                                     {
@@ -572,10 +572,10 @@
 
     <!-- Footer Section -->
     <footer style="margin-top: 40px; border-top: 2px solid #000; padding-top: 20px; font-size: 1em; background-color: #f9f9f9;">
-        <h4 style="text-align: center; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Important Notice &amp; Contract Index</h4>
+        <h4 style="text-align: center; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Important Notice &amp; Agreement Index</h4>
         <p style="margin: 10px 0; line-height: 1.5;">
             <strong>[Index 1] Version Declaration:</strong> <br />
-            This is version (@("v")@displayVersion) of the contract. All prior versions (e.g., v0, v1) are hereby nullified and shall no longer be considered valid or enforceable. A contract version becomes binding only upon acceptance by both Parties through confirmation and return. Only the most recently accepted version shall be considered legally binding.
+            This is version (@("v")@displayVersion) of the agreement. All prior versions (e.g., v0, v1) are hereby nullified and shall no longer be considered valid or enforceable. A agreement version becomes binding only upon acceptance by both Parties through confirmation and return. Only the most recently accepted version shall be considered legally binding.
         </p>
         <p style="margin: 10px 0; line-height: 1.5;">
             <strong>[Index 2] Legal Binding Clause:</strong> <br />
@@ -583,7 +583,7 @@
         </p>
         <p style="margin: 10px 0; line-height: 1.5;">
             <strong>[Index 3] Acceptance Confirmation:</strong> <br />
-            Provision of valid acceptance details, a valid signature, signing place, and today’s date, confirms acknowledgment of the contract terms and permits final execution of this agreement.
+            Provision of valid acceptance details, a valid signature, signing place, and today’s date, confirms acknowledgment of the agreement terms and permits final execution of this agreement.
         </p>
     </footer>
 

@@ -70,7 +70,7 @@
                             <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
                                 <div class="d-flex align-items-center position-relative">
                                      <vc:online-indicator user-id="@contact.UserID" />
-                                    <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
+                                    <img class="img-fluid float-start rounded-circle mr10 con-profile-avatar" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
                                     <div class="d-sm-flex">
                                         <div class="d-inline-block">
                                             <div class="fz15 fw500 dark-color ff-heading mb-0">@contact.UserName</div>
@@ -113,7 +113,7 @@
                 {
                     <div class="user_heading px-0 mx30">
                         <div class="wrap">
-                            <img class="img-fluid mr10 rounded-circle" src="@Model.OtherUserProfileImage" alt="Profile" style="width: 60px;" />
+                            <img class="img-fluid mr10 rounded-circle con-profile-avatar" src="@Model.OtherUserProfileImage" alt="Profile" />
                             <div class="meta d-sm-flex justify-content-sm-between align-items-center">
                                 <div class="authors">
                                     <h6 class="name mb-0">@Model.OtherUserName</h6>
@@ -137,7 +137,7 @@
                                                         <i class="fa fa-file-pdf"></i> View Stage PDF
                                                     </a>
                                                     <small class="text-muted">
-                                                        Contract ID: <code>@Model.LatestActiveOffer.ContractUniqueId</code> —
+                                                        Agreement ID: <code>@Model.LatestActiveOffer.ContractUniqueId</code> —
                                                         Status: <em>
                                                             <span class="badge
                                                                 @(Model.LatestActiveOffer.Status=="Completed" ? "bg-success"
@@ -281,7 +281,7 @@
                                         @if (offer.WillingSkills != null && offer.WillingSkills.Any())
                                         {
                                             <div>
-                                                <strong>Willing Skills: </strong>@string.Join(", ", offer.WillingSkills)
+                                                <strong>Want to learn about: </strong>@string.Join(", ", offer.WillingSkills)
                                             </div>
                                         }
                                     </div>
@@ -919,4 +919,13 @@
 
         });
     </script>
+    <style>
+        .con-profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+    </style>
     }

@@ -6,7 +6,7 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 <style>
-    .profile-avatar {
+    .edit-profile-avatar {
         width: 100px;
         height: 100px;
         border-radius: 4px; /* make them circles */
@@ -117,7 +117,7 @@
                 <div class="col-xl-7">
                     <div class="profile-box d-sm-flex align-items-center mb30">
                         <div class="profile-img mb20-sm">
-                            <img id="profileImage" class="wa-xs profile-avatar"
+                            <img id="profileImage" class="wa-xs edit-profile-avatar"
                                  src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/template_assets/images/No_Profile_img.png" : ViewData["UserProfileImage"])"
                                  alt="Profile Image">
                         </div>
@@ -337,6 +337,7 @@
                                         {
                                             <span class="skill-badge">
                                                 @skill
+                                                <i class="remove-skill far fa-times-circle ms-2" style="cursor:pointer"></i>
                                             </span>
                                         }
                                     }
@@ -347,7 +348,7 @@
 
                             <!-- Willing Skills Summary Section -->
                             <div class="mb-3">
-                                <label class="form-label">Willing Skills <span class="text-danger">*</span></label>
+                                <label class="form-label">Want to learn about <span class="text-danger">*</span></label>
                                 <input asp-for="Skills.WillingSkillSummary" type="text" id="willingSkillInput" class="form-control" placeholder="Enter willing skills (comma separated)" value="@(Model.Skills.WillingSkillSummary ?? "")" />
                                 <small class="form-text text-muted">
                                     Please enter skills separated by commas (e.g., <em>C#, JavaScript, UI Design</em>).
@@ -780,25 +781,16 @@
                                     reader.onload = function (e) {
                                       var tempImg = new Image();
                                       tempImg.onload = function () {
-                                        // 2. dimension check
-                                        if (tempImg.width < 330 || tempImg.height < 300) {
-                                          alert('Image must be at least 330 × 300 pixels.');
-                                          event.target.value = '';
-                                          label.text("Upload Images");
-                                          img.src = defaultSrc;
-                                          return;
-                                        }
-
                                         // 3. draw resized preview
                                         var canvas = document.createElement('canvas');
-                                        canvas.width  = 330;
-                                        canvas.height = 300;
+                                        canvas.width  = 200;
+                                        canvas.height = 200;
                                         var ctx = canvas.getContext('2d');
 
                                         // if you want to preserve aspect, you could center it:
                                         // ctx.drawImage(tempImg, dx, dy, dw, dh);
                                         // but here we just stretch:
-                                        ctx.drawImage(tempImg, 0, 0, 330, 300);
+                                        ctx.drawImage(tempImg, 0, 0, 200, 200);
 
                                         img.src = canvas.toDataURL();
                                         label.text(file.name);
@@ -815,22 +807,19 @@
                 },
 
                 // Skills module: handles clearing of individual skill rows.
-                skills: {
-                    init: function () {
-                        $('.clear-skill-btn').on('click', function () {
-                            var container = $(this).closest('.skill-row');
-                            container.find('.skill-name').val('');
-                            container.find('.skill-category, .skill-proficiency')
-                                .prop('selectedIndex', 0)
-                                .trigger('change')
-                                .selectpicker('refresh');
-                            container.find('.custom-category-input').hide().val('');
-
-                            // Immediately re-check offered skills after clearing a row.
-                            App.skillPreference.checkOfferedSkillsProfile();
-                        });
-                    }
-                },
+                 skills: {
+                   init: function () {
+                     $(document).on('click', '.clear-skill-btn', function () {
+                       var $row = $(this).closest('.skill-row');
+                       $row.find('.skill-name').val('');
+                       $row.find('.skill-category, .skill-proficiency')
+                           .prop('selectedIndex', 0)
+                           .trigger('change')
+                           .selectpicker('refresh');
+                       $row.find('.custom-category-input').hide().val('');
+                     });
+                   }
+                 },
 
                 // Education module: handles dynamic education entries.
                 education: {
@@ -1107,9 +1096,9 @@
                     },
                     init: function () {
                         // Re-check offered skills on every keyup or change in any skill row.
-                        $(document).on("keyup change", ".skill-name", function () {
-                            App.skillPreference.checkOfferedSkillsProfile();
-                        });
+                        // $(document).on("keyup change", ".skill-name", function () {
+                        //     App.skillPreference.checkOfferedSkillsProfile();
+                        // });
 
                         // Delegate removal of offered skill badges.
                         $(document).on("click", "#offeredSkillsContainer .skill-badge .remove-skill", function () {

@@ -59,7 +59,7 @@ namespace SkillSwap_Platform.Models.ViewModels.UserProfileMV
         [Display(Name = "Offered Skills")]
         public string? OfferedSkillSummary { get; set; }
 
-        [Display(Name = "Willing Skills")]
+        [Display(Name = "Want to learn about")]
         public string? WillingSkillSummary { get; set; }
 
         // Detailed skills to be edited individually.

@@ -29,8 +29,6 @@ namespace SkillSwap_Platform.Services.Contracts
 
         public async Task<(bool Success, string ErrorMessage)> CreateContractAsync(ContractCreationVM model)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
                 // Set required fields
@@ -239,13 +237,11 @@ namespace SkillSwap_Platform.Services.Contracts
                 contract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
                 return (true, null);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error creating contract.");
                 return (false, "An unexpected error occurred while creating the contract.");
             }

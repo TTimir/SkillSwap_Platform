@@ -205,10 +205,11 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
-          <p>Your escrow for <strong>Exchange #{e.ExchangeId}</strong> has been <strong>{newStatus}</strong> by our admin.</p>
+          <p>Your escrow for <strong>Exchange #{e.ExchangeId}</strong> on the offer 
+            <strong>{{ {{OfferTitle}} }}</strong>:</p> has been <strong>{newStatus}</strong> by our admin.</p>
           <p>
             <strong>Amount:</strong> {e.Amount.ToString("F2")} tokens<br/>
-            <strong>When:</strong> {localNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})
+            <strong>On Date:</strong> {localNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})
           </p>
           <p>Notes from admin:<br/>{notes}</p>
         </td>
@@ -225,8 +226,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
   </td></tr></table>
 </body>
 </html>";
-            await NotifyPartiesAsync(e, subjectUpdate, bodyUpdate, isBodyHtml: true);
-
+            var offerTitle = e.Exchange?.Offer?.Title ?? "your offer";
+            await NotifyPartiesAsync(
+                e,
+                subjectUpdate,
+                bodyUpdate,
+                offerTitle,
+                isBodyHtml: true
+            );
         }
 
         public async Task ReleaseAsync(int id, int adminId, string notes)
@@ -266,7 +273,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
-          <p>Your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> has just been <strong>released</strong>!</p>
+          <p>Your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> on the offer 
+            <strong>{{ {{OfferTitle}} }}</strong>:</p> has just been <strong>released</strong>!</p>
           <ul style=""padding-left:1em;margin:0;"">
             <li><strong>Amount:</strong> {escrow.Amount.ToString("F2")} tokens</li>
             <li><strong>Released At:</strong> {localWhen.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})</li>
@@ -286,8 +294,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
   </td></tr></table>
 </body>
 </html>";
-            await NotifyPartiesAsync(escrow, subjectReleased, bodyReleased, isBodyHtml: true);
-
+            var offerTitle = escrow.Exchange?.Offer?.Title ?? "your offer";
+            await NotifyPartiesAsync(
+                escrow,
+                subjectReleased,
+                bodyReleased,
+                offerTitle,
+                isBodyHtml: true
+            );
         }
 
         public async Task RefundAsync(int id, int adminId, string notes)
@@ -324,10 +338,11 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
-          <p>Your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> has been <strong>refunded</strong>.</p>
+          <p>Your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> on the offer 
+            <strong>{{ {{OfferTitle}} }}</strong></p> has been <strong>refunded</strong>.</p>
           <ul style=""padding-left:1em;margin:0;"">
-            <li><strong>Amount:</strong> {escrow.Amount:F2} tokens</li>
-            <li><strong>Refunded At:</strong> {localWhen:yyyy-MM-dd HH:mm} ({tzName})</li>
+            <li><strong>Amount:</strong> {escrow.Amount.ToString("F2")} tokens</li>
+            <li><strong>Refunded At:</strong> {localWhen.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})</li>
             <li><strong>Admin notes:</strong> {notes}</li>
           </ul>
         </td>
@@ -344,7 +359,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
   </td></tr></table>
 </body>
 </html>";
-            await NotifyPartiesAsync(escrow, subjectRefunded, bodyRefunded, isBodyHtml: true);
+            var offerTitle = escrow.Exchange?.Offer?.Title ?? "your offer";
+            await NotifyPartiesAsync(
+                escrow,
+                subjectRefunded,
+                bodyRefunded,
+                offerTitle,
+                isBodyHtml: true
+            );
         }
 
         public async Task DisputeAsync(int id, int adminId, string notes)
@@ -381,10 +403,11 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
-          <p>Our admin has <strong>opened a dispute</strong> on your escrow for <strong>Exchange #{escrow.ExchangeId}</strong>.</p>
+          <p>Our admin has <strong>opened a dispute</strong> on your escrow for <strong>Exchange #{escrow.ExchangeId}</strong> on the offer 
+            <strong>{{ {{OfferTitle}} }}</strong>:</p>
           <p>We’re reviewing the case now and will be in touch shortly.</p>
           <ul style=""padding-left:1em;margin:0;"">
-            <li><strong>When:</strong> {localWhen:yyyy-MM-dd HH:mm} ({tzName})</li>
+            <li><strong>On Date:</strong> {localWhen.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})</li>
             <li><strong>Admin notes:</strong> {notes}</li>
           </ul>
           <p>If you have any supporting documents, please reply to this email.</p>
@@ -402,8 +425,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
   </td></tr></table>
 </body>
 </html>";
-            await NotifyPartiesAsync(escrow, subjectDisputed, bodyDisputed, isBodyHtml: true);
-
+            var offerTitle = escrow.Exchange?.Offer?.Title ?? "your offer";
+            await NotifyPartiesAsync(
+                escrow,
+                subjectDisputed,
+                bodyDisputed,
+                offerTitle,
+                isBodyHtml: true
+            );
         }
 
         // Services/AdminControls/Escrow/EscrowService.cs
@@ -447,13 +476,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
           <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
-          <p>We’ve created an escrow for your <strong>Exchange #{escrow.ExchangeId}</strong>:</p>
+          <p>We’ve created an escrow for your <strong>Exchange #{escrow.ExchangeId}</strong> on the offer 
+            <strong>{{ {{OfferTitle}} }}</strong>:</p>
           <ul style=""padding-left:1em;margin:0;"">
-            <li><strong>Amount:</strong> {escrow.Amount:F2} tokens</li>
-            <li><strong>Status:</strong> Pending</li>
-            <li><strong>When:</strong> {localWhen:yyyy-MM-dd HH:mm} ({tzName})</li>
+            <li><strong>Amount:</strong> {escrow.Amount.ToString("F2")} tokens</li>
+            <li><strong>Status:</strong> Held on escrow A/C</li>
+            <li><strong>On Date:</strong> {localWhen.ToLocalTime().ToString("yyyy-MM-dd HH:mm")} ({tzName})</li>
           </ul>
-          <p>We’ll notify you as soon as the admin releases or refunds these tokens.</p>
+            <p>Your tokens are safely held in escrow until your exchange is complete—no action is required on your part. We’ll let you know as soon as the exchange completes and confirmed by both swapper.</p>
         </td>
       </tr>
 
@@ -468,21 +498,33 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
   </td></tr></table>
 </body>
 </html>";
-            await NotifyPartiesAsync(escrow, subjectCreated, bodyCreated, isBodyHtml: true);
-
+            var offerTitle = escrow.Exchange?.Offer?.Title ?? "your offer";
+            await NotifyPartiesAsync(
+                escrow,
+                subjectCreated,
+                bodyCreated,
+                offerTitle,
+                isBodyHtml: true
+            );
             return escrow;
         }
 
-        private async Task NotifyPartiesAsync(TblEscrow e, string subject, string htmlBody, bool isBodyHtml)
+        private async Task NotifyPartiesAsync(TblEscrow e, string subject, string htmlTemplate, string htmlBody, bool isBodyHtml)
         {
+            var offerTitle = e.Exchange?.Offer?.Title ?? "your offer";
+
             // Buyer
             var buyer = await _db.TblUsers.FindAsync(e.BuyerId);
             if (buyer != null)
             {
+                var personalizedBody = htmlTemplate
+                    .Replace("{PartyName}", buyer.UserName)
+                    .Replace("{OfferTitle}", offerTitle);
+
                 await _email.SendEmailAsync(
                     to: buyer.Email,
                     subject: subject,
-                    body: htmlBody.Replace("{Party}", "Buyer"),
+                    body: personalizedBody,
                     isBodyHtml: true
                 );
             }
@@ -497,10 +539,14 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
             var seller = await _db.TblUsers.FindAsync(e.SellerId);
             if (seller != null)
             {
+                var personalizedBody = htmlTemplate
+                    .Replace("{PartyName}", seller.UserName)
+                    .Replace("{OfferTitle}", offerTitle);
+
                 await _email.SendEmailAsync(
                     to: seller.Email,
                     subject: subject,
-                    body: htmlBody.Replace("{Party}", "Seller"),
+                    body: personalizedBody,
                     isBodyHtml: true
                 );
             }

@@ -1,7 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ContractCreationVM
 
 @{
-    ViewData["Title"] = "Contract Preview";
+    ViewData["Title"] = "Agreement Preview";
     if (Model.Mode != "Edit" && Model.Mode != "Sign" && Model.Status != "Accepted")
     {
         Model.IsPreview = true;
@@ -259,9 +259,9 @@
                 "Pending" => "DRAFT – Awaiting Final Signature",
                 "Accepted" => "EXECUTED – Signed & Verified by Swapo",
                 "ModifiedByReceiver" => isSender
-                ? "REVIEW NEEDED – Contract Updated"
+                ? "REVIEW NEEDED – Agreement Updated"
                 : "MODIFIED – Awaiting Final Review",
-                _ => "PREVIEW ONLY – Not Yet Legally Binding"
+                _ => "PREVIEW ONLY – Not Yet Legally Bind"
             };
         }
     }
@@ -318,7 +318,7 @@
             <img src="~/template_assets/images/C_Loader.gif" />
             <h3>Please wait...</h3>
             <p style="margin: 10px 0; font-size: 14px; color: #555;">
-                Your contract is being prepared and sent. Please do not close or refresh this window.
+                Your agreement is being prepared and sent. Please do not close or refresh this window.
             </p>
             <p style="margin: 5px 0; font-size: 13px; color: #888; font-style: italic;">
                 You’ll be redirected once it’s successfully sent.
@@ -331,14 +331,14 @@
         @if (Model.Version >= 3 && Model.Mode == "Review" && !Model.IsPdfDownload)
         {
             <div id="finalMessage" style="margin-bottom: 1em; font-weight: bold; color: red;">
-                This is the final version of the contract. No further modifications are allowed.
+                This is the final version of the agreement. No further modifications are allowed.
             </div>
             <!-- Render only the Sign button -->
             <form asp-action="SignContract" method="get">
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.ContractId)
                 @Html.Hidden("Mode", "Sign")
-                <button type="submit" class="btn btn-success">Review & Sign Contract</button>
+                <button type="submit" class="btn btn-success">Review & Sign Agreement</button>
             </form>
         }
         else if (Model.Mode == "Review" && !Model.IsPdfDownload)
@@ -355,7 +355,7 @@
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.ContractId)
                 @Html.Hidden("Mode", "Sign")
-                <button type="submit" class="btn btn-success mt-2">Review & Sign Contract</button>
+                <button type="submit" class="btn btn-success mt-2">Review & Sign Agreement</button>
             </form>
         }
 
@@ -694,7 +694,7 @@
                     }
 
                     const version = '@Model.Version';
-                    if (version === '2' && !confirm('Are you sure you want to finalize Contract Version 3? Once finalized, no further modifications are allowed. Signatures are still required for it to become legally binding.')) {
+                    if (version === '2' && !confirm('Are you sure you want to finalize Agreement Version 3? Once finalized, no further modifications are allowed. Signatures are still required for it to become legally binding.')) {
                         return false;
                     }
 
@@ -1113,7 +1113,7 @@
                 // Confirm final modification if required
                 var version = '@Model.Version';
                 if (version === '2') {
-                    if (!confirm('You are about to finalize the contract with version 3, after which no changes will be possible. Proceed?')) {
+                    if (!confirm('You are about to finalize the agreement with version 3, after which no changes will be possible. Proceed?')) {
                         return false; // User cancelled the action
                     }
                     document.getElementById('finalModConfirm').value = 'true';

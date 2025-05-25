@@ -45,6 +45,7 @@ using SkillSwap_Platform.Services.Blogs;
 using SkillSwap_Platform.Services.AdminControls.AdminNotification;
 using Microsoft.AspNetCore.Authentication;
 using SkillSwap_Platform.HelperClass;
+using Rotativa.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -257,6 +258,11 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+RotativaConfiguration.Setup(
+    app.Environment.WebRootPath,
+    "Rotativa"
+);
 
 app.UseRouting();
 

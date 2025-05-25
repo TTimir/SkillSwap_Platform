@@ -1,4 +1,6 @@
-﻿namespace SkillSwap_Platform.Services.DigitalToken
+﻿using System.Numerics;
+
+namespace SkillSwap_Platform.Services.DigitalToken
 {
     public interface IDigitalTokenService
     {
