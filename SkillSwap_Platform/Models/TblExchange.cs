@@ -85,6 +85,8 @@ public partial class TblExchange
 
     public virtual TblSkill? SkillIdRequesterNavigation { get; set; }
 
+    public virtual ICollection<TblCertificatePurchase> TblCertificatePurchases { get; set; } = new List<TblCertificatePurchase>();
+
     public virtual ICollection<TblEscrow> TblEscrows { get; set; } = new List<TblEscrow>();
 
     public virtual ICollection<TblExchangeHistory> TblExchangeHistories { get; set; } = new List<TblExchangeHistory>();

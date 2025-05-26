@@ -647,6 +647,18 @@ namespace SkillSwap_Platform.Controllers
                 if (originalContract == null)
                     return NotFound();
 
+                bool alreadyFinalized = originalContract.Status == "Accepted"
+                    || await _context.TblExchanges.AnyAsync(e => e.ContractId == contractId && e.IsSuccessful);
+                if (alreadyFinalized)
+                {
+                    TempData["WarningMessage"] = "This agreement has already been signed and processed.";
+                    // Adjust the otherUserId as appropriate
+                    int other = GetUserId() == originalContract.SenderUserId
+                        ? originalContract.ReceiverUserId
+                        : originalContract.SenderUserId;
+                    return RedirectToAction("Conversation", "Messaging", new { otherUserId = other });
+                }
+
                 int currentUserId = GetUserId();
                 bool isReceiver = currentUserId == originalContract.ReceiverUserId;
                 bool isSender = currentUserId == originalContract.SenderUserId;
@@ -679,6 +691,17 @@ namespace SkillSwap_Platform.Controllers
                 {
                     TempData["ErrorMessage"] = "Please provide your place of signing.";
                     return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
+                }
+
+                bool isFirstSignature = !originalContract.RequestDate.HasValue;
+                bool isSecondSignature = originalContract.RequestDate.HasValue && !originalContract.ResponseDate.HasValue;
+
+                if (!isFirstSignature && !isSecondSignature)
+                {
+                    // both dates set → already full signed
+                    TempData["WarningMessage"] = "This agreement has already been fully signed.";
+                    int other = isReceiver ? originalContract.SenderUserId : originalContract.ReceiverUserId;
+                    return RedirectToAction("Conversation", "Messaging", new { otherUserId = other });
                 }
 
                 // Create a new contract version with updated receiver details.
@@ -788,52 +811,10 @@ namespace SkillSwap_Platform.Controllers
                     //    newFinalContract.SignedBySender = true;
                     //}
 
-                    if (!originalContract.RequestDate.HasValue)
+                    if (isFirstSignature)
                     {
-                        // Nobody has signed yet → this is the *first* signature
-                        // Record RequestDate = now, and clear ResponseDate so it can be set later.
                         newFinalContract.RequestDate = DateTime.UtcNow;
-                        newFinalContract.ResponseDate = null;
-
-                        // Mark the agreement accepted and signature fields on the signer’s side:
-                        if (isSender)
-                        {
-                            newFinalContract.SenderAgreementAccepted = true;
-                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
-                            newFinalContract.SenderSignature = partySignature.Trim();
-                            newFinalContract.SenderPlace = partyPlace.Trim();
-                            newFinalContract.SignedBySender = true;
-                        }
-                        else // receiver is first‐signing
-                        {
-                            newFinalContract.ReceiverAgreementAccepted = true;
-                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
-                            newFinalContract.ReceiverSignature = partySignature.Trim();
-                            newFinalContract.ReceiverPlace = partyPlace.Trim();
-                            newFinalContract.SignedByReceiver = true;
-                        }
-                    }
-                    else if (!originalContract.ResponseDate.HasValue)
-                    {
-                        // First signature already recorded → this is the *second* signature
-                        // Carry forward RequestDate, set ResponseDate = now.
-                        newFinalContract.RequestDate = originalContract.RequestDate.Value;
-                        newFinalContract.ResponseDate = DateTime.UtcNow;
-
-                        // Preserve the first signer’s fields, and now set the second signer’s:
-                        newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
-                        newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
-                        newFinalContract.SenderSignature = originalContract.SenderSignature;
-                        newFinalContract.SenderPlace = originalContract.SenderPlace;
-                        newFinalContract.SignedBySender = originalContract.SignedBySender;
-
-                        newFinalContract.ReceiverAgreementAccepted = originalContract.ReceiverAgreementAccepted;
-                        newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
-                        newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
-                        newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
-                        newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
-
-                        // Now apply the new signature
+                        // set signer’s side
                         if (isSender)
                         {
                             newFinalContract.SenderAgreementAccepted = true;
@@ -851,10 +832,41 @@ namespace SkillSwap_Platform.Controllers
                             newFinalContract.SignedByReceiver = true;
                         }
                     }
-                    else
+                    else // second signature
                     {
-                        // Both timestamps are already set → contract is fully signed
-                        throw new InvalidOperationException("Contract has already been fully signed.");
+                        newFinalContract.RequestDate = originalContract.RequestDate.Value;
+                        newFinalContract.ResponseDate = DateTime.UtcNow;
+
+                        // preserve first signer’s fields
+                        newFinalContract.SenderAgreementAccepted = originalContract.SenderAgreementAccepted;
+                        newFinalContract.SenderAcceptanceDate = originalContract.SenderAcceptanceDate;
+                        newFinalContract.SenderSignature = originalContract.SenderSignature;
+                        newFinalContract.SenderPlace = originalContract.SenderPlace;
+                        newFinalContract.SignedBySender = originalContract.SignedBySender;
+
+                        newFinalContract.ReceiverAgreementAccepted = originalContract.ReceiverAgreementAccepted;
+                        newFinalContract.ReceiverAcceptanceDate = originalContract.ReceiverAcceptanceDate;
+                        newFinalContract.ReceiverSignature = originalContract.ReceiverSignature;
+                        newFinalContract.ReceiverPlace = originalContract.ReceiverPlace;
+                        newFinalContract.SignedByReceiver = originalContract.SignedByReceiver;
+
+                        // now apply new signature
+                        if (isSender)
+                        {
+                            newFinalContract.SenderAgreementAccepted = true;
+                            newFinalContract.SenderAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.SenderSignature = partySignature.Trim();
+                            newFinalContract.SenderPlace = partyPlace.Trim();
+                            newFinalContract.SignedBySender = true;
+                        }
+                        else
+                        {
+                            newFinalContract.ReceiverAgreementAccepted = true;
+                            newFinalContract.ReceiverAcceptanceDate = DateTime.UtcNow;
+                            newFinalContract.ReceiverSignature = partySignature.Trim();
+                            newFinalContract.ReceiverPlace = partyPlace.Trim();
+                            newFinalContract.SignedByReceiver = true;
+                        }
                     }
 
                     newFinalContract.Status = "Accepted";
@@ -862,13 +874,16 @@ namespace SkillSwap_Platform.Controllers
                     newFinalContract.FinalizedDate = DateTime.Now;
 
                     _context.TblContracts.Add(newFinalContract);
+
+                    originalContract.Status = "Accepted";
+                    originalContract.FinalizedDate = DateTime.Now;
+                    _context.TblContracts.Update(originalContract);
+
                     await _context.SaveChangesAsync();
 
                     // This code would go after the final contract has been created and saved.
                     if (newFinalContract.Status == "Accepted")
                     {
-                        var digitalTokenExchange = newFinalContract.TokenOffer;
-
                         // Create an exchange record.
                         var exchange = new TblExchange
                         {
@@ -884,10 +899,10 @@ namespace SkillSwap_Platform.Controllers
                             ExchangeMode = newFinalContract.ModeOfLearning,
                             IsSkillSwap = true,  // or false if applicable
                             TokensPaid = newFinalContract.TokenOffer ?? 0,
-                            Description = "Exchange finalized after both parties signed the agreement/ contract.",
+                            Description = "Exchange finalized after both swappers signed.",
                             LastStatusChangedBy = GetUserId(), // assuming current user is the one finalizing
-                            StatusChangeReason = "Final agreement/ contract signature from both parties",
-                            DigitalTokenExchange = digitalTokenExchange,  // update as needed
+                            StatusChangeReason = "Final agreement signature from both swappers",
+                            DigitalTokenExchange = newFinalContract.TokenOffer,
                             IsSuccessful = true,
                             RequestDate = newFinalContract.RequestDate,
                             ResponseDate = newFinalContract.ResponseDate
@@ -895,17 +910,6 @@ namespace SkillSwap_Platform.Controllers
 
                         _context.TblExchanges.Add(exchange);
                         await _context.SaveChangesAsync();
-
-                        if (exchange != null)
-                            await _tokenService.HoldTokensAsync(exchange.ExchangeId);
-
-                        // 4) Create the actual escrow record
-                        await _escrowService.CreateAsync(
-                            exchange.ExchangeId,    // link back to your newly-created exchange
-                            exchange.OfferOwnerId ?? 0,  // buyer
-                            exchange.OtherUserId ?? 0,   // seller
-                            exchange.TokensPaid     // amount
-                        );
 
                         var openerId = isReceiver
                             ? originalContract.SenderUserId
@@ -918,6 +922,17 @@ namespace SkillSwap_Platform.Controllers
                               $"User @{openerId} has insufficient tokens to pay {newFinalContract.TokenOffer:F2}.");
                             return RedirectToAction("Review", new { contractId, mode = MODE_SIGN });
                         }
+
+                        if (exchange != null)
+                            await _tokenService.HoldTokensAsync(exchange.ExchangeId);
+
+                        // 4) Create the actual escrow record
+                        await _escrowService.CreateAsync(
+                            exchange.ExchangeId,    // link back to your newly-created exchange
+                            exchange.OfferOwnerId ?? 0,  // buyer
+                            exchange.OtherUserId ?? 0,   // seller
+                            exchange.TokensPaid     // amount
+                        );
 
                         if (!string.IsNullOrWhiteSpace(newFinalContract.SenderSkill))
                         {
@@ -966,7 +981,7 @@ namespace SkillSwap_Platform.Controllers
                             ChangedStatus = "Finalized",
                             ChangedBy = GetUserId(),
                             ChangeDate = DateTime.Now,
-                            Reason = "The agreement has been finalized and officially signed by both parties."
+                            Reason = "The agreement has been finalized and officially signed by both swappers."
                         };
 
                         _context.TblExchangeHistories.Add(exchangeHistory);
@@ -1003,8 +1018,8 @@ namespace SkillSwap_Platform.Controllers
                     await _notif.AddAsync(new TblNotification
                     {
                         UserId = GetUserId(),
-                        Title = "Aggreement Signed",
-                        Message = "You’ve signed the contract and your tokens have been transferred.",
+                        Title = "Agreement Signed",
+                        Message = "You’ve signed the agreement and your tokens has been held.",
                         Url = Url.Action("Index", "ExchangeDashboard"),
                     });
 

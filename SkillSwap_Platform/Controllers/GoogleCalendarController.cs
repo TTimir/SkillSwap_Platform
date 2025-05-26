@@ -42,18 +42,9 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 // Get current user id
-                int userId = 0;
-                var userClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (userClaim != null && int.TryParse(userClaim.Value, out int parsedUserId))
-                {
-                    userId = parsedUserId;
-                }
-                else
-                {
-                    _logger.LogError("Unable to retrieve user id from claims.");
+                var userClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userClaim, out int userId))
                     return Unauthorized();
-                }
-
 
                 var exchange = await _dbContext.TblExchanges
                     .Include(e => e.Offer)
@@ -69,6 +60,14 @@ namespace SkillSwap_Platform.Controllers
                 {
                     TempData["ErrorMessage"] = "Offer not found.";
                     return RedirectToAction("EP404", "EP");
+                }
+
+                var organizer = await _dbContext.TblUsers.FindAsync(userId);
+                var participant = await _dbContext.TblUsers.FindAsync(otherUserId);
+                if (organizer?.Email == null || participant?.Email == null)
+                {
+                    _logger.LogError("Missing email for organizer or participant");
+                    return RedirectToAction("EP500", "EP");
                 }
 
                 if (!string.IsNullOrEmpty(exchange.ExchangeMode) &&
@@ -107,7 +106,7 @@ namespace SkillSwap_Platform.Controllers
                 var userToken = await _dbContext.UserGoogleTokens.FirstOrDefaultAsync(t => t.UserId == userId);
                 if (userToken == null)
                 {
-                    return RedirectToAction("EP404", "EP");
+                    return RedirectToAction(nameof(Connect));
                 }
 
                 // If token is expired, refresh it.
@@ -143,6 +142,11 @@ namespace SkillSwap_Platform.Controllers
                         DateTime = DateTime.Now.AddMinutes(60),
                         TimeZone = "UTC"
                     },
+                    Attendees = new List<EventAttendee>
+                    {
+                        new() { Email = organizer.Email },
+                        new() { Email = participant.Email }
+                    },
                     // Configure Google Meet conference data.
                     ConferenceData = new ConferenceData
                     {
@@ -159,6 +163,7 @@ namespace SkillSwap_Platform.Controllers
 
                 // Insert the event into the primary calendar.
                 var request = calendarService.Events.Insert(newEvent, "primary");
+                request.SendUpdates = EventsResource.InsertRequest.SendUpdatesEnum.All;
                 request.ConferenceDataVersion = 1;
                 var createdEvent = await request.ExecuteAsync();
 
@@ -304,8 +309,73 @@ namespace SkillSwap_Platform.Controllers
         [HttpGet]
         public IActionResult Connect()
         {
-            // Simple view with a “Connect Calendar” button
-            return View();
+            string clientId = _configuration["Authentication:Google:ClientId"];
+            var redirectUri = Url.Action("OAuth2Callback", "GoogleAuth", null, Request.Scheme);
+            string state = "connect";
+            string scope = "https://www.googleapis.com/auth/calendar";
+
+            var url =
+                "https://accounts.google.com/o/oauth2/v2/auth"
+                + "?response_type=code"
+                + $"&client_id={Uri.EscapeDataString(clientId)}"
+                + $"&redirect_uri={Uri.EscapeDataString(redirectUri)}"
+                + $"&scope={Uri.EscapeDataString(scope)}"
+                + "&access_type=offline"
+                + "&prompt=consent"
+                + $"&state={Uri.EscapeDataString(state)}";
+
+            return Redirect(url);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AuthorizeMeet(int exchangeId, int otherUserId)
+        {
+            // 1) Who is calling?
+            var uidClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(uidClaim, out int userId))
+                return Challenge();
+
+            // 2) Do we have a stored Google token?
+            var userToken = await _dbContext.UserGoogleTokens
+                                            .FirstOrDefaultAsync(t => t.UserId == userId);
+
+            // 3) If we do, is it still valid (or refreshable)?
+            if (userToken != null)
+            {
+                if (userToken.ExpiresAt <= DateTime.UtcNow)
+                {
+                    userToken = await RefreshAccessTokenAsync(userToken);
+                    // if refresh failed, userToken will be null
+                }
+
+                if (userToken != null)
+                {
+                    // **Token is good** → go straight to CreateEvent
+                    return RedirectToAction(
+                        actionName: "CreateEvent",
+                        controllerName: "GoogleCalendar",
+                        routeValues: new { exchangeId, otherUserId }
+                    );
+                }
+            }
+
+            // 4) No token (or refresh failed) → kick off OAuth
+            string clientId = _configuration["Authentication:Google:ClientId"];
+            var redirectUri = Url.Action("OAuth2Callback", "GoogleAuth", null, Request.Scheme);
+            string state = $"{exchangeId}|{otherUserId}";
+            string scope = "https://www.googleapis.com/auth/calendar.events";
+
+            var url =
+                "https://accounts.google.com/o/oauth2/v2/auth"
+              + "?response_type=code"
+              + $"&client_id={Uri.EscapeDataString(clientId)}"
+              + $"&redirect_uri={Uri.EscapeDataString(redirectUri)}"
+              + $"&scope={Uri.EscapeDataString(scope)}"
+              + "&access_type=offline"
+              + "&prompt=consent"
+              + $"&state={Uri.EscapeDataString(state)}";
+
+            return Redirect(url);
         }
 
 

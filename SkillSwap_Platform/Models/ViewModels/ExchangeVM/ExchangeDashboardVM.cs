@@ -12,6 +12,7 @@
         public int DeclinedTotalPages { get; set; }
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
+        public List<int> PurchasedCertificates { get; set; } = new();
     }
 
     public class ExchangeDashboardItemVM

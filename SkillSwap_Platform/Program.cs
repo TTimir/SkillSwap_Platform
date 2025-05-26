@@ -45,7 +45,6 @@ using SkillSwap_Platform.Services.Blogs;
 using SkillSwap_Platform.Services.AdminControls.AdminNotification;
 using Microsoft.AspNetCore.Authentication;
 using SkillSwap_Platform.HelperClass;
-using Rotativa.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -243,6 +242,7 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 
@@ -259,17 +259,13 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-RotativaConfiguration.Setup(
-    app.Environment.WebRootPath,
-    "Rotativa"
-);
-
 app.UseRouting();
 
 // ✅ Ensure authentication and session middleware are registered in correct order
 app.UseSession();
 app.UseAuthentication();  // 🔴 Must be before Authorization
 app.UseAuthorization();
+
 app.UseMiddleware<UpdateLastActiveMiddleware>();
 
 app.MapControllers();

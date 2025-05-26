@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "ExchangeHistory";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
- 
+
     var tokens = antiforgery.GetAndStoreTokens(ViewContext.HttpContext);
 }
 
@@ -143,24 +143,39 @@
                                                     <td>
                                                         <!-- For completed exchanges, you might display just the details or a "Completed" label -->
                                                         <span class="pending-style style4" data-bs-toggle="tooltip" title="Exchange Completed">
-                                                            Completed <i class="fal fa-check"></i>
+                                                            Completed
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <div class="certificate-wrapper position-relative" data-exchange="@item.Exchange.ExchangeId">
-                                                            <!-- blurred iframe -->
-                                                            <iframe class="certificate-frame blur"
-                                                                    src="@Url.Action("SessionCompletePdf","Certificates", new { exchangeId = item.Exchange.ExchangeId })"
-                                                                    width="180" height="120"
-                                                                    sandbox="allow-scripts allow-same-origin"></iframe>
+                                                        @{
+                                                            var pdfUrl = Url.Action("SessionCompletePdf", "Certificates", new { exchangeId = item.Exchange.ExchangeId });
+                                                            bool unlocked = Model.PurchasedCertificates.Contains(item.Exchange.ExchangeId);
+                                                            var thumbnail = Url.Content("~/template_assets/images/cert-thumb.png");
+                                                        }
+                                                        @if (unlocked)
+                                                        {
+                                                            <!-- already paid: show only Download -->
+                                                            <a href="@pdfUrl" target="_blank" class="ud-btn btn-thm me-4">
+                                                                Download <i class="fal fa-arrow-right-long"></i>
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="certificate-wrapper position-relative" data-exchange="@item.Exchange.ExchangeId">
+                                                                <!-- 1) show a plain <img> -->
+                                                                <img class="certificate-thumb blur"
+                                                                     src="@thumbnail"
+                                                                     width="180" height="120"
+                                                                     style="object-fit:cover; display:block;" />
 
-                                                            <!-- overlay with “Pay 0.5 tokens” button -->
-                                                            <div class="cert-overlay d-flex flex-column justify-content-center align-items-center">
-                                                                <p>Unlock for <strong>0.5 Tokens</strong></p>
-                                                                <button class="btn btn-sm btn-thm buy-cert">Unlock</button>
-                                                                <p class="text-danger small mt-1 buy-error" style="display:none;"></p>
+                                                                <!-- 2) overlay your unlock button -->
+                                                                <div class="cert-overlay d-flex flex-column justify-content-center align-items-center">
+                                                                    <p>Unlock for <strong>1.2 Tokens</strong></p>
+                                                                    <button class="ud-btn btn-thm2 buy-cert" style="border:0">Unlock <i class="fal fa-arrow-right-long"></i></button>
+                                                                    <p class="text-danger small mt-1 buy-error" style="display:none;"></p>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        }
                                                     </td>
                                                 </tr>
                                             }
@@ -318,8 +333,8 @@
                                                     </td>
                                                     <td>
                                                         <!-- For completed exchanges, you might display just the details or a "Completed" label -->
-                                                        <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Completed">
-                                                            Declined <i class="fal fa-check"></i>
+                                                        <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Declined">
+                                                            Declined
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -398,65 +413,71 @@
 
 @section DynamicScript {
     <script>
-        // Grab the CSRF token we generated server-side
-        const csrfToken = '@tokens.RequestToken';
+        document.addEventListener('DOMContentLoaded', () => {
+          // URL of your POST endpoint
+          const purchaseUrl = '@Url.Action("PurchaseCertificate", "Certificates")';
+          // Anti-forgery token
+          const csrfToken   = '@tokens.RequestToken';
 
-        // Attach click-handlers to every “Unlock” button
-        document.querySelectorAll('.buy-cert').forEach(btn => {
-          btn.addEventListener('click', async e => {
-            e.preventDefault();
+          document.querySelectorAll('.buy-cert').forEach(btn => {
+            btn.addEventListener('click', async e => {
+              e.preventDefault();
 
-            const wrapper = e.target.closest('.certificate-wrapper');
-            const exchangeId = wrapper.dataset.exchange;
-            const errorEl = wrapper.querySelector('.buy-error');
+              const wrapper    = e.target.closest('.certificate-wrapper');
+              const exchangeId = wrapper.dataset.exchange;
+              const errorEl    = wrapper.querySelector('.buy-error');
 
-            // Reset any prior error
-            errorEl.style.display = 'none';
+              // reset UI
+              errorEl.style.display = 'none';
+              btn.disabled          = true;
+              btn.textContent       = 'Processing…';
 
-            // Disable button & show spinner text
-            e.target.disabled = true;
-            e.target.textContent = 'Processing…';
-
-            try {
-              const resp = await fetch(
-                '@Url.Action("PurchaseCertificate", "Certificates")', {
+              try {
+                const resp = await fetch(purchaseUrl, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': csrfToken
                   },
                   body: JSON.stringify({ exchangeId })
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                  // 1️⃣ Always open the PDF in a new tab
+                  window.open(data.downloadUrl, '_blank');
+
+                  // 2️⃣ If this was a *new* purchase, update the thumbnail
+                  if (!data.already) {
+                    // remove blur from the <img>
+                    const thumb = wrapper.querySelector('.certificate-thumb');
+                    thumb.classList.remove('blur');
+
+                    // remove the overlay
+                    wrapper.querySelector('.cert-overlay').remove();
+
+                    // add a “Download PDF” link
+                    const link = document.createElement('a');
+                    link.href       = data.downloadUrl;
+                    link.target     = '_blank';
+                    link.className  = 'btn btn-sm btn-success mt-2';
+                    link.textContent= 'Download PDF';
+                    wrapper.appendChild(link);
+                  }
+                } else {
+                  // show error message
+                  errorEl.textContent   = data.message;
+                  errorEl.style.display = 'block';
+                  btn.disabled          = false;
+                  btn.textContent       = 'Unlock';
                 }
-              );
-
-              const data = await resp.json();
-
-              if (data.success) {
-                // 1) Remove the blur filter
-                wrapper.querySelector('.certificate-frame').classList.remove('blur');
-                // 2) Remove the overlay entirely
-                wrapper.querySelector('.cert-overlay').remove();
-
-                // 3) Append a “Download PDF” link
-                const link = document.createElement('a');
-                link.href = `@Url.Action("SessionCompletePdf", "Certificates")?exchangeId=${exchangeId}`;
-                link.target = '_blank';
-                link.className = 'btn btn-sm btn-success mt-2';
-                link.textContent = 'Download PDF';
-                wrapper.appendChild(link);
-              } else {
-                // Show the error message under button
-                errorEl.textContent = data.message;
+              } catch (err) {
+                errorEl.textContent   = 'An unexpected error occurred.';
                 errorEl.style.display = 'block';
-                e.target.disabled = false;
-                e.target.textContent = 'Unlock';
+                btn.disabled          = false;
+                btn.textContent       = 'Unlock';
               }
-            } catch (err) {
-              errorEl.textContent = 'An unexpected error occurred.';
-              errorEl.style.display = 'block';
-              e.target.disabled = false;
-              e.target.textContent = 'Unlock';
-            }
+            });
           });
         });
     </script>

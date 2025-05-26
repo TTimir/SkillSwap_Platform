@@ -274,10 +274,10 @@
                                         </div>
                                         <div class="flex-grow-1 ml20">
                                             <a href="@Url.Action(
-      "PublicProfileByUsername",
-      "UserProfile",
-      new { username = user.Name }
-    )">
+                                                  "PublicProfileByUsername",
+                                                  "UserProfile",
+                                                  new { username = user.Name }
+                                                )">
                                                 @user.Name
                                             </a>
                                             <p class="fz14 mb-0">@user.Designation</p>
@@ -292,13 +292,13 @@
                             @if (topUser != null)
                             {
                                 <div class="freelancer-style1 about-page-style text-center d-none d-lg-block">
-                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle"><img class="rounded-circle mx-auto" src="@topUser.ProfileImage" alt="@topUser.Name" style="max-width:100%;"><span class="online"></span></div>
+                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle"><img class="rounded-circle mx-auto" src="@topUser.ProfileImage" alt="@topUser.Name" style="max-width:100%;"></div>
                                     <div class="details">
                                         <a href="@Url.Action(
-      "PublicProfileByUsername",
-      "UserProfile",
-      new { username = topUser.Name }
-    )">
+                                              "PublicProfileByUsername",
+                                              "UserProfile",
+                                              new { username = topUser.Name }
+                                            )">
                                             @topUser.Name
                                         </a>
                                         <p class="mb-0">@topUser.Designation</p>

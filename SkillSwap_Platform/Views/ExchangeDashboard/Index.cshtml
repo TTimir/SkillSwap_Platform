@@ -42,6 +42,21 @@
     </div>
 }
 
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <strong>Note for online meets:</strong><br />
+            <strong>Step 1:</strong> The host must click “Launch Online Meet” below and stay connected first.<br />
+            <strong>Step 2:</strong> Then your partner can click the same link and will be admitted immediately.
+        </div>
+        <div class="alert alert-info">
+            <strong>Note for in-person meetings:</strong><br />
+            <strong>Step 1:</strong> Click “Schedule In-Person Meet” below to pick date, time, and location.<br />
+            <strong>Step 2:</strong> Meet in person at the scheduled slot.<br />
+            <strong>Step 3:</strong> After you finish, click “Enter Meeting End Details” to confirm completion.
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-xl-12">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
@@ -145,9 +160,9 @@
                                                 {
                                                     @if (item.CanLaunchMeeting)
                                                     {
-                                                        <a asp-controller="GoogleCalendar" asp-action="CreateEvent" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
-                                                           class="ud-btn btn-light-thm me-4"
-                                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                                        <a asp-controller="GoogleCalendar" asp-action="AuthorizeMeet" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
+                                                           class="ud-btn btn-light-thm"
+                                                           data-bs-toggle="tooltip" data-bs-placement="bottom"
                                                            title="Launch Online Meet (Session @(item.RecentMeetingLaunchCount + 1))">
                                                             Online Meet (S# @(item.RecentMeetingLaunchCount + 1)) <i class="fal fa-arrow-right-long"></i>
                                                         </a>
@@ -239,7 +254,7 @@
                                                     <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                        <button type="submit" class="ud-btn btn-thm2 me-4 mb10"
+                                                        <button type="submit" class="ud-btn btn-thm2 mb10"
                                                                 data-bs-toggle="tooltip" data-bs-placement="top"
                                                                 title="Mark this exchange as completed">
                                                             I’m Done <i class="fal fa-check" style="transform:rotate(0deg)"></i>
@@ -249,7 +264,7 @@
                                                 else if (!bothConfirmed)
                                                 {
                                                     <span class="text-info">
-                                                        Waiting on the other party to confirm…
+                                                        Waiting for the other partner to confirm…
                                                     </span>
                                                 }
                                                 else
@@ -258,13 +273,14 @@
                                                         ✅ Completed
                                                     </span>
                                                 }
-                                                @if (!item.Exchange.IsCompleted)
+                                                @if (!item.Exchange.IsCompleted && !hasConfirmed)
                                                 {
                                                     <form asp-action="CancelExchange" asp-controller="ExchangeDashboard" method="post">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                        <button type="submit" class="ud-btn btn-danger" title="Cancel this exchange">
-                                                            Cancel Exchange <i class="fal fa-times" style="transform:rotate(0deg)"></i>
+                                                        <button type="submit" class="ud-btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                                                title="Cancel this exchange">
+                                                            Cancel <i class="fal fa-times" style="transform:rotate(0deg)"></i>
                                                         </button>
                                                     </form>
                                                 }

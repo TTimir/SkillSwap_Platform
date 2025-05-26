@@ -128,6 +128,8 @@ public partial class TblUser
 
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
+    public virtual ICollection<TblCertificatePurchase> TblCertificatePurchases { get; set; } = new List<TblCertificatePurchase>();
+
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
     public virtual ICollection<TblContract> TblContractSenderUsers { get; set; } = new List<TblContract>();

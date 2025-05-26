@@ -212,7 +212,7 @@ namespace SkillSwap_Platform.Services.DigitalToken
             {
                 var ex = await _db.TblExchanges
                     .Include(e => e.Offer).ThenInclude(o => o.User)
-                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId, ct);
                 if (ex == null) throw new KeyNotFoundException($"Exchange #{exchangeId} not found.");
 
                 if (!ex.TokensHeld)
@@ -222,17 +222,19 @@ namespace SkillSwap_Platform.Services.DigitalToken
                               ?? throw new KeyNotFoundException($"Offer owner not found.");
 
                 var holdTx = await _db.TblTokenTransactions
-                    .FirstOrDefaultAsync(t => t.ExchangeId == exchangeId && t.TxType == "Hold" && !t.IsReleased);
+                    .FirstOrDefaultAsync(t => t.ExchangeId == exchangeId && t.TxType == "Hold" && !t.IsReleased, ct);
                 if (holdTx == null) throw new InvalidOperationException("No outstanding hold.");
 
                 decimal amount = holdTx.Amount;
-                var escrow = await GetUserAsync(EscrowUserId, "Escrow", ct);
+                var escrow = await GetEscrowUserAsync();
 
                 // 1) release original tokens
                 await ReleaseOriginalAsync(escrow, seller, holdTx, amount, exchangeId, ct);
 
+                var reserve = await GetSystemReserveUserAsync();
+
                 // 2) calculate & credit boost
-                await ApplyBoostAsync(seller.UserId, amount, exchangeId, ct);
+                await ApplyBoostAsync(seller.UserId, amount, exchangeId, ct, reserve);
 
                 // 3) finalize exchange record
                 ex.TokensHeld = false;
@@ -401,21 +403,21 @@ namespace SkillSwap_Platform.Services.DigitalToken
             int sellerUserId,
             decimal originalAmount,
             int exchangeId,
-            CancellationToken ct)
+            CancellationToken ct,
+            TblUser reserve)
         {
             var multiplier = await GetBoostMultiplierAsync(sellerUserId, ct);
             var bonusTotal = Math.Floor(originalAmount * (multiplier - 1));
             if (bonusTotal <= 0) return;
 
-            var reserve = await GetUserAsync(SystemReserveUserId, "System reserve", ct);
             if (reserve.DigitalTokenBalance < bonusTotal)
                 throw new InvalidOperationException(
                     $"System reserve {reserve.DigitalTokenBalance} insufficient to pay bonus {bonusTotal}.");
 
+            reserve.DigitalTokenBalance -= bonusTotal; 
             var seller = await _db.TblUsers.FindAsync(new object[] { sellerUserId }, ct)
                          ?? throw new KeyNotFoundException("Seller not found.");
 
-            reserve.DigitalTokenBalance -= bonusTotal;
             seller.DigitalTokenBalance += bonusTotal;
             _db.TblUsers.UpdateRange(reserve, seller);
 
@@ -442,8 +444,11 @@ namespace SkillSwap_Platform.Services.DigitalToken
         private async Task<decimal> GetBoostMultiplierAsync(int userId, CancellationToken ct)
         {
             var sub = await _db.Subscriptions
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(s => s.UserId == userId && s.IsActive, ct);
+                      .AsNoTracking()
+                      .FirstOrDefaultAsync(s => s.UserId == userId, ct);
+
+            if (sub == null || !sub.IsActive)
+                return 1.00m;
 
             return sub?.PlanName switch
             {
@@ -452,14 +457,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 "Growth" => 2.00m,   // 50% boost
                 _ => 1.00m
             };
-        }
-
-        private async Task<TblUser> GetUserAsync(int userId, string roleDescription, CancellationToken ct)
-        {
-            var u = await _db.TblUsers.FindAsync(new object[] { userId }, ct);
-            if (u == null)
-                throw new KeyNotFoundException($"{roleDescription} account (UserId={userId}) is missing.");
-            return u;
         }
 
         public async Task RefundTokensAsync(int exchangeId, CancellationToken ct = default)
@@ -620,6 +617,20 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 throw new InvalidOperationException(
                     $"Escrow account (UserId={EscrowUserId}) is missing!");
             return escrow;
+        }
+
+        private async Task<TblUser> GetSystemReserveUserAsync()
+        {
+            var reserve = await _db.TblUsers
+                .IgnoreQueryFilters()
+                .SingleOrDefaultAsync(u =>
+                    u.UserId == SystemReserveUserId &&
+                    u.IsSystemReserveAccount);
+
+            if (reserve == null)
+                throw new InvalidOperationException(
+                    $"System-reserve account (UserId={SystemReserveUserId}) is missing!");
+            return reserve;
         }
     }
 }

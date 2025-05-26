@@ -347,6 +347,11 @@ namespace SkillSwap_Platform.Controllers
                     .Take(pageSize)
                     .ToList();
 
+                var purchasedExchangeIds = await _context.TblCertificatePurchases
+                    .Where(c => c.UserId == currentUserId)
+                    .Select(c => c.ExchangeId)
+                    .ToListAsync();
+
                 // For simplicity, assume paging only on one set if needed.
                 // Here, we build the view model without paging controls.
                 var viewModel = new ExchangeDashboardVM
@@ -357,7 +362,8 @@ namespace SkillSwap_Platform.Controllers
                     CompletedCurrentPage = completedPage,
                     CompletedTotalPages = (int)Math.Ceiling(totalCompleted / (double)pageSize),
                     DeclinedCurrentPage = declinedPage,
-                    DeclinedTotalPages = (int)Math.Ceiling(totalDeclined / (double)pageSize)
+                    DeclinedTotalPages = (int)Math.Ceiling(totalDeclined / (double)pageSize),
+                    PurchasedCertificates = purchasedExchangeIds
                 };
 
                 return View("ExchangeHistory", viewModel);
@@ -635,7 +641,6 @@ namespace SkillSwap_Platform.Controllers
             // 2) Flip the flag for the current user
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (currentUserId == exchange.OfferOwnerId)
@@ -685,7 +690,6 @@ namespace SkillSwap_Platform.Controllers
                     TempData["SuccessMessage"] = "Your completion has been recorded. Waiting on the other party.";
                 }
                 await _context.SaveChangesAsync();
-                await tx.CommitAsync();
 
                 // Award *all* exchange‐based badges (First Exchange, 5 Exchanges,
                 // Category Explorer, Skill Master, Performance Champion.) for both participants:
@@ -708,7 +712,6 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error marking exchange {ExchangeId} as completed", exchangeId);
                 TempData["ErrorMessage"] = "An error occurred while marking the exchange as completed.";
                 return RedirectToAction("EP500", "EP");
@@ -719,7 +722,6 @@ namespace SkillSwap_Platform.Controllers
         [HttpPost]
         public async Task<IActionResult> CancelExchange(int exchangeId)
         {
-            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 // 1) Verify the exchange exists and is not already completed/declined
@@ -765,7 +767,6 @@ namespace SkillSwap_Platform.Controllers
                     ChangedBy = userId
                 });
                 await _context.SaveChangesAsync();
-                await tx.CommitAsync();
 
                 // 4) Notify the user(s)
                 await _notif.AddAsync(new TblNotification
@@ -781,7 +782,6 @@ namespace SkillSwap_Platform.Controllers
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
                 _logger.LogError(ex, "Error cancelling exchange {ExchangeId}", exchangeId);
                 TempData["ErrorMessage"] = "An error occurred while cancelling the exchange.";
                 return RedirectToAction("EP500", "EP");

@@ -43,6 +43,8 @@ public partial class SkillSwapDbContext : DbContext
 
     public virtual DbSet<TblBlogPost> TblBlogPosts { get; set; }
 
+    public virtual DbSet<TblCertificatePurchase> TblCertificatePurchases { get; set; }
+
     public virtual DbSet<TblContract> TblContracts { get; set; }
 
     public virtual DbSet<TblEducation> TblEducations { get; set; }
@@ -299,6 +301,23 @@ public partial class SkillSwapDbContext : DbContext
             entity.Property(e => e.Summary).HasMaxLength(2000);
             entity.Property(e => e.Tags).HasMaxLength(500);
             entity.Property(e => e.Title).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<TblCertificatePurchase>(entity =>
+        {
+            entity.HasKey(e => e.PurchaseId).HasName("PK__TblCerti__6B0A6BBE15008DA1");
+
+            entity.ToTable("TblCertificatePurchase");
+
+            entity.HasOne(d => d.Exchange).WithMany(p => p.TblCertificatePurchases)
+                .HasForeignKey(d => d.ExchangeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CertificatePurchase_Exchange");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TblCertificatePurchases)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CertificatePurchase_User");
         });
 
         modelBuilder.Entity<TblContract>(entity =>

@@ -1,10 +1,22 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
-using Rotativa.AspNetCore;
+using Org.BouncyCastle.Asn1.X509;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
+using QuestPDF.Fluent;
+using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
 using SkillSwap_Platform.Services.DigitalToken;
+using SkillSwap_Platform.Services.PDF;
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Security.Claims;
 
@@ -13,104 +25,206 @@ namespace SkillSwap_Platform.Controllers
     [Authorize]
     public class CertificatesController : Controller
     {
-        private readonly SkillSwapDbContext _context;
+        private readonly SkillSwapDbContext _db;
+        private readonly IRazorViewEngine _viewEngine;
+        private readonly ITempDataProvider _tempDataProvider;
+        private readonly IWebHostEnvironment _env;
+        private const decimal CertificateCost = 1.2m;
+        private const int SystemReserveUserId = 3;
 
         public CertificatesController(
-            SkillSwapDbContext db)
+        SkillSwapDbContext db,
+        IRazorViewEngine viewEngine,
+        ITempDataProvider tempDataProvider,
+        IWebHostEnvironment env           
+    )
         {
-            _context = db;
+            _db = db;
+            _viewEngine = viewEngine;
+            _tempDataProvider = tempDataProvider;
+            _env = env;           
         }
 
+        // GET: /Certificates/SessionCompletePdf?exchangeId=123
         [HttpGet]
         public async Task<IActionResult> SessionCompletePdf(int exchangeId)
         {
-            // 1️⃣ Load the exchange (our “session”)
-            var exchange = await _context.TblExchanges
-                .Include(e => e.Offer)    // if you want the offer title
-                .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+            // 1) must be logged in
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
+                return Unauthorized();
 
-            if (exchange == null)
-                return NotFound();
+            // 2) verify purchase
+            var bought = await _db.TblCertificatePurchases
+                                 .AnyAsync(c => c.ExchangeId == exchangeId && c.UserId == userId);
+            if (!bought)
+                return Forbid();
 
-            // 2️⃣ Figure out who the “recipient” is
-            //    If the current user kicked off this request, they’re one party;
-            //    we’ll award to the opposite.
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            int recipientUserId = (exchange.OfferOwnerId == currentUserId)
-                                  ? exchange.OtherUserId!.Value
-                                  : exchange.OfferOwnerId!.Value;
+            // 3) load exchange + offer to fill your VM
+            var ex = await _db.TblExchanges
+                              .Include(e => e.Offer)
+                              .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+            if (ex == null) return NotFound();
 
-            // 3️⃣ Load that user’s name
-            var recipient = await _context.TblUsers
-                .FirstOrDefaultAsync(u => u.UserId == recipientUserId);
-            if (recipient == null)
-                return NotFound();
-
-            // 4️⃣ Build your view-model
+            string origin = $"{Request.Scheme}://{Request.Host}";
             var vm = new CertificateVM
             {
-                RecipientName = recipient.UserName,    // or FirstName + LastName
-                SessionTitle = exchange.Offer?.Title ?? "Skill Swap Session",
-                CompletedAt = exchange.CompletionDate ?? exchange.ExchangeDate
+                RecipientName = User.Identity.Name!,
+                SessionTitle = ex.Offer!.Title,
+                CompletedAt = ex.CompletionDate ?? DateTime.UtcNow,
             };
 
-            // 5️⃣ Render as PDF via Rotativa
-            return new ViewAsPdf("SessionComplete", vm)
-            {
-                PageSize = Rotativa.AspNetCore.Options.Size.A4,
-                PageOrientation = Rotativa.AspNetCore.Options.Orientation.Landscape,
-                CustomSwitches = "--disable-smart-shrinking"
-            };
+            var logoPath = Path.Combine(_env.WebRootPath, "template_assets", "images", "header-logo-dark.png");
+            var logoBytes = System.IO.File.ReadAllBytes(logoPath);
+            vm.LogoUrl = $"data:image/png;base64,{Convert.ToBase64String(logoBytes)}";
+
+            var sigPath = Path.Combine(_env.WebRootPath, "template_assets", "images", "signature.png");
+            var sigBytes = System.IO.File.ReadAllBytes(sigPath);
+            vm.SignatureUrl = $"data:image/png;base64,{Convert.ToBase64String(sigBytes)}";
+
+            string html = await RenderViewToStringAsync("SessionCompletePdf", vm);
+
+
+            byte[] pdfBytes = await GeneratePdfFromHtmlAsync(html);
+
+            return File(pdfBytes,
+                        contentType: "application/pdf",
+                        fileDownloadName: $"certificate-{exchangeId}.pdf");
         }
 
-        public class PurchaseCertRequest { public int ExchangeId { get; set; } }
+        private async Task<string> RenderViewToStringAsync(string viewName, object model)
+        {
+            var actionContext = new ActionContext(
+                HttpContext, RouteData, ControllerContext.ActionDescriptor, ModelState);
+
+            var viewResult = _viewEngine.FindView(actionContext, viewName, isMainPage: false);
+            if (!viewResult.Success)
+                throw new InvalidOperationException($"View '{viewName}' not found.");
+
+            var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), ModelState)
+            {
+                Model = model
+            };
+            var tempData = new TempDataDictionary(HttpContext, _tempDataProvider);
+
+            await using var sw = new StringWriter();
+            var viewContext = new ViewContext(
+                actionContext,
+                viewResult.View,
+                viewData,
+                tempData,
+                sw,
+                new HtmlHelperOptions()
+            );
+
+            await viewResult.View.RenderAsync(viewContext);
+            return sw.ToString();
+        }
+
+        // Uses PuppeteerSharp to generate PDF bytes from an HTML string
+        private async Task<byte[]> GeneratePdfFromHtmlAsync(string html)
+        {
+            // Download Chromium if needed
+            await new BrowserFetcher().DownloadAsync();
+
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true
+            });
+
+            await using var page = await browser.NewPageAsync();
+            // Set the HTML and wait until network idle (to load images/CSS)
+            await page.SetContentAsync(html, new NavigationOptions
+            {
+                WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+            });
+
+            // Generate PDF
+            return await page.PdfDataAsync(new PdfOptions
+            {
+                Format = PaperFormat.Letter,
+                PrintBackground = true
+            });
+        }
+
+        public class PurchaseCertRequest
+        {
+            public int ExchangeId { get; set; }
+        }
+
+        // POST: /Certificates/PurchaseCertificate
         [HttpPost]
-        [Authorize]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> PurchaseCertificate([FromBody] PurchaseCertRequest req)
         {
-            var userId = GetUserId();
-            var exchangeId = req.ExchangeId;
-            decimal fee = 1.2m;
+            if (req == null || req.ExchangeId <= 0)
+                return Json(new { success = false, message = "Invalid request." });
 
-            // 1) Check balance
-            var user = await _context.TblUsers.FindAsync(userId);
-            if (user == null) return Json(new { success = false, message = "User not found." });
-            if (user.DigitalTokenBalance < fee)
-                return Json(new { success = false, message = "Insufficient tokens." });
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
+                return Json(new { success = false, message = "Not logged in." });
 
-            // 2) Deduct
-            user.DigitalTokenBalance -= fee;
-
-            // 3) Credit to system reserve (userId = 3)
-            const int systemReserveUserId = 3;
-            var reserve = await _context.TblUsers.FindAsync(systemReserveUserId);
-            if (reserve != null)
+            // already?
+            var already = await _db.TblCertificatePurchases
+                                   .AnyAsync(c => c.ExchangeId == req.ExchangeId && c.UserId == userId);
+            if (!already)
             {
-                reserve.DigitalTokenBalance += fee;
+                // debit buyer
+                var buyer = await _db.TblUsers.FindAsync(userId)
+                            ?? throw new Exception("User missing");
+                if (buyer.DigitalTokenBalance < CertificateCost)
+                    return Json(new { success = false, message = "Insufficient tokens." });
+                buyer.DigitalTokenBalance -= CertificateCost;
+
+                // credit system reserve
+                var reserve = await _db.TblUsers
+                                       .IgnoreQueryFilters()
+                                       .SingleOrDefaultAsync(u => u.UserId == SystemReserveUserId && u.IsSystemReserveAccount)
+                            ?? throw new Exception("Reserve account missing");
+                reserve.DigitalTokenBalance += CertificateCost;
+
+                // ledger row
+                _db.TblTokenTransactions.Add(new TblTokenTransaction
+                {
+                    ExchangeId = req.ExchangeId,
+                    FromUserId = userId,
+                    ToUserId = reserve.UserId,
+                    Amount = CertificateCost,
+                    TxType = "CertificatePurchase",
+                    Description = $"Cert for exchange #{req.ExchangeId}",
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // mark purchase
+                _db.TblCertificatePurchases.Add(new TblCertificatePurchase
+                {
+                    ExchangeId = req.ExchangeId,
+                    UserId = userId,
+                    PurchasedAt = DateTime.UtcNow
+                });
+
+                await _db.SaveChangesAsync();
             }
 
-            // 4) Record the transaction
-            _context.TblTokenTransactions.Add(new TblTokenTransaction
-            {
-                FromUserId = userId,
-                ToUserId = systemReserveUserId,
-                Amount = fee,
-                TxType = "Purchase-Certificate",
-                CreatedAt = DateTime.UtcNow,
-                Description = $"Unlock certificate for exchange #{exchangeId}"
-            });
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true });
+            // return URL for real PDF
+            var downloadUrl = Url.Action(nameof(SessionCompletePdf), new { exchangeId = req.ExchangeId });
+            return Json(new { success = true, already, downloadUrl });
         }
 
-        private int GetUserId()
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult PreviewCertificate()
         {
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out int userId))
-                return userId;
-            throw new Exception("User ID not found in claims.");
-        }
+            // hard-coded demo data
+            var vm = new CertificateVM
+            {
+                RecipientName = "Jane Doe",
+                SessionTitle = "Mastering C# in 24 Hours",
+                CompletedAt = new DateTime(2025, 1, 15),
+                LogoUrl = Url.Content("~/template_assets/images/header-logo-dark.png"),
+                SignatureUrl = Url.Content("~/template_assets/images/signature.png")
+            };
 
+            // render the same CertificateView Razor page into PDF
+            return View("SessionCompletePdf", vm);
+        }
     }
 }
