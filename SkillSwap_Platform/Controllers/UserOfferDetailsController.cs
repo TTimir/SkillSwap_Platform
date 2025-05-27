@@ -177,7 +177,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     // Fetch comparable offers from the database (raw data without processing)
                     var comparableOfferEntities = await _context.TblOffers
-                        .Where(o => o.OfferId != offerId && o.Category == offer.Category)
+                        .Where(o => o.OfferId != offerId && o.Category == offer.Category && o.IsActive && !o.IsDeleted)
                         .Include(o => o.User)
                         .OrderByDescending(o => o.JobSuccessRate)
                         .ThenByDescending(o => o.TokenCost)

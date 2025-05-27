@@ -69,8 +69,9 @@ namespace SkillSwap_Platform.Services.Contracts
                     // only consider “real” contracts (not declined, not children of other contracts)
                     && c.ParentContractId == null
                     // only if it’s still live or being reviewed
-                    && c.Status != "Declined"
-                    && c.Status != "Expired"
+                    && (c.Status == "Pending" || c.Status == "Review")
+                    && c.Status == "Declined"
+                    && c.Status == "Expired"
                 );
 
                 if (baseContractExists)

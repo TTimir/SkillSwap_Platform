@@ -51,7 +51,7 @@
         var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
-        .profile-avatar {
+        .main-profile-avatar {
             width: 60px;
             height: 60px;
             border-radius: 4px; /* make them circles */
@@ -177,7 +177,8 @@
                                 </li>
                                 <li class="d-none d-sm-block">
                                     <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                        <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                        <span class="flaticon-mail"></span>
+                                        @await Component.InvokeAsync("NotificationBadge", new { type = "message" })
                                     </a>
                                     @await Component.InvokeAsync("MessageNotification")
                                 </li>
@@ -228,7 +229,7 @@
                                                 }
                                             }
                                             <div>
-                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="main-profile-avatar" />
                                             </div>
                                         </a>
                                         <div class="dropdown-menu">

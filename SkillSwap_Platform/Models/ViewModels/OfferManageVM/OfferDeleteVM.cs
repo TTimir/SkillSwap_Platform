@@ -8,6 +8,7 @@
         public int TimeCommitmentDays { get; set; }
         public string Category { get; set; }
         public string FreelanceType { get; set; }
+        public string CollaborationMethod { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? DeletedDate { get; set; }
         // This property will hold the JSON string of portfolio URLs,

@@ -116,7 +116,7 @@
                                                         <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
                                                         <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
                                                             <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
-                                                            <li>Availability Set: @offer.FreelanceType</li>
+                                                            <li>Mode Set: @offer.CollaborationMethod</li>
                                                             <li>Created Date: @offer.CreatedDate.ToLocalTime().ToString("MMMM dd,yyyy")</li>
                                                             <li style="list-style:none">
                                                                 <div class="switch-style1">

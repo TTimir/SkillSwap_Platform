@@ -40,10 +40,10 @@
 
 <style>
     .offered-skill {
-    background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
-    color: #2ecc71 !important;
-    border: 1px solid rgba(46, 204, 113, 0.3) !important;
-    backdrop-filter: blur(5px);
+        background: rgba(46, 204, 113, 0.15) !important; /* Green Glass Effect */
+        color: #2ecc71 !important;
+        border: 1px solid rgba(46, 204, 113, 0.3) !important;
+        backdrop-filter: blur(5px);
     }
 </style>
 
@@ -52,8 +52,8 @@
         @if (!Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-start mr10 msg-profile-avatar"
-            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-            alt="Profile" />
+                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+                 alt="Profile" />
         }
         <div class="title fz15">
             @if (Model.IsSentByCurrent)
@@ -70,8 +70,8 @@
         @if (Model.IsSentByCurrent)
         {
             <img class="img-fluid rounded-circle align-self-end ml10 msg-profile-avatar"
-            src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
-            alt="Profile" />
+                 src="@(!string.IsNullOrEmpty(Model.SenderProfileImage) ? Url.Content(Model.SenderProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))"
+                 alt="Profile" />
         }
     </div>
     @if (!string.IsNullOrEmpty(Model.ReplyPreview) && Model.ReplyMessageId.HasValue)
@@ -108,7 +108,7 @@
                                     if (Model.ContractDetails == null)
                                     {
                                         <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
-                                        class="nav-link fw500 dark-color">
+                                           class="nav-link fw500 dark-color">
                                             Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
                                         </a>
                                     }
@@ -146,7 +146,7 @@
                                     : fallbackImage;
                                 }
                                 <img src="@imgSrc"
-                                class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
+                                     class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
                                 <div>
                                     <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
                                     <small class="text-muted d-block mb-1">
@@ -189,26 +189,26 @@
 
                         <div class="contract-actions">
                             <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                            class="btn btn-outline-primary" target="_blank">
+                               class="btn btn-outline-primary" target="_blank">
                                 <i class="fa fa-file-pdf"></i> Download PDF
                             </a>
 
 
                             @if ((Model.ContractDetails != null) &&
-                          (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                          (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                          (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                           (Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                class="btn btn-sm btn-primary" style="color:#fff">
+                                   class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                asp-controller="Contract"
-                                method="post"
-                                class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
+                                      asp-controller="Contract"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Agreement
@@ -218,15 +218,15 @@
                             else if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                class="btn btn-sm btn-primary" style="color:#fff">
+                                   class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                asp-controller="Contract"
-                                method="post"
-                                class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
+                                      asp-controller="Contract"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Invite
@@ -238,9 +238,9 @@
                 }
                 @* Example: Show a custom message divider after the invite card *@
                 @if (Model.ContractDetails != null &&
-              (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
-              Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
-              Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
                 {
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
@@ -282,8 +282,8 @@
                         {
                             <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
                             <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
-                            class="ud-btn btn-light-thm mb25 me-4"
-                            style="border:none;" disabled>
+                                    class="ud-btn btn-light-thm mb25 me-4"
+                                    style="border:none;" disabled>
                                 Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
                             </button>
                         }
@@ -433,7 +433,7 @@
                                     if (Model.ContractDetails == null)
                                     {
                                         <a href="@Url.Action("Create", "Contract", new { messageId = Model.MessageId })"
-                                        class="nav-link fw500 dark-color">
+                                           class="nav-link fw500 dark-color">
                                             Send Invite <i class="fal fa-arrow-right-long ms-1"></i>
                                         </a>
                                     }
@@ -479,9 +479,9 @@
                                     string imgSrc = portfolioImages.Any()
                                     ? Url.Content(portfolioImages.First())
                                     : fallbackImage;
-                                }   
+                                }
                                 <img src="@imgSrc"
-                                class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
+                                     class="offer-thumbnail me-3" alt="Offer Thumbnail" style="border-radius:4px;max-width:55%" />
                                 <div>
                                     <h5 class="offer-title line-clamp2 mb-1">@offer.Title</h5>
                                     <small class="text-muted d-block mb-1">
@@ -524,24 +524,24 @@
 
                         <div class="contract-actions">
                             <a href="@Url.Action("DownloadPdf", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                            class="btn btn-outline-primary" target="_blank">
+                               class="btn btn-outline-primary" target="_blank">
                                 <i class="fa fa-file-pdf"></i> Download PDF
                             </a>
 
                             @if ((Model.ContractDetails.Status == "Pending" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId) ||
-                          (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
-                          (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
+                           (Model.ContractDetails.Status == "ModifiedByReceiver" && Model.CurrentUserID == Model.ContractDetails.SenderUserId) ||
+                           (Model.ContractDetails.Status == "ModifiedBySender" && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId))
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                class="btn btn-sm btn-primary" style="color:#fff">
+                                   class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                asp-controller="Contract"
-                                method="post"
-                                class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this agreement?');">
+                                      asp-controller="Contract"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to decline this agreement?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Agreement
@@ -551,15 +551,15 @@
                             else if (Model.IsContractPending && Model.CurrentUserID == Model.ContractDetails.ReceiverUserId)
                             {
                                 <a href="@Url.Action("Review", "Contract", new { contractId = Model.ContractDetails.ContractId })"
-                                class="btn btn-sm btn-primary" style="color:#fff">
+                                   class="btn btn-sm btn-primary" style="color:#fff">
                                     <i class="fa fa-eye"></i> Review Agreement
                                 </a>
 
                                 <form asp-action="DeclineContract"
-                                asp-controller="Contract"
-                                method="post"
-                                class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to decline this contract?');">
+                                      asp-controller="Contract"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to decline this contract?');">
                                     <input type="hidden" name="contractId" value="@Model.ContractDetails.ContractId" />
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fa fa-times-circle"></i> Decline Invite
@@ -571,9 +571,9 @@
                 }
                 @* Example: Show a custom message divider after the invite card *@
                 @if (Model.ContractDetails != null &&
-              (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
-              Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
-              Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
+               (Model.ContractDetails.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Expired", StringComparison.OrdinalIgnoreCase) ||
+               Model.ContractDetails.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)))
                 {
                     // Define your custom message. For example, you might set it based on the status.
                     var customMessage = Model.ContractDetails.Status switch
@@ -615,8 +615,8 @@
                         {
                             <p class="text-danger">Meeting session expired. OTP verification failed and submission is not allowed.</p>
                             <button id="showOtpBtn" data-exchange-id="@Model.Exchange.ExchangeId"
-                            class="ud-btn btn-light-thm mb25 me-4"
-                            style="border:none;" disabled>
+                                    class="ud-btn btn-light-thm mb25 me-4"
+                                    style="border:none;" disabled>
                                 Show OTP (Expired) <i class="fal fa-arrow-right-long"></i>
                             </button>
                         }
@@ -779,6 +779,8 @@
         </div>
     }
 </div>
+
+
 <style>
     .contract-card {
         background: #f9f9f9;
@@ -1002,8 +1004,8 @@
     }
 
     .msg-profile-avatar {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         object-fit: cover; /* crop to fill without distortion */
         display: inline-block; /* or block/inline-block as needed */
     }

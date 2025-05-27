@@ -156,23 +156,25 @@
                                                         {
                                                             <!-- already paid: show only Download -->
                                                             <a href="@pdfUrl" target="_blank" class="ud-btn btn-thm me-4">
-                                                                Download <i class="fal fa-arrow-right-long"></i>
+                                                                Download
                                                             </a>
                                                         }
                                                         else
                                                         {
-                                                            <div class="certificate-wrapper position-relative" data-exchange="@item.Exchange.ExchangeId">
+                                                            <div class="certificate-wrapper" data-exchange="@item.Exchange.ExchangeId">
                                                                 <!-- 1) show a plain <img> -->
-                                                                <img class="certificate-thumb blur"
+                                                                <!-- blurred thumbnail -->
+                                                                <img class="certificate-thumb"
                                                                      src="@thumbnail"
-                                                                     width="180" height="120"
-                                                                     style="object-fit:cover; display:block;" />
+                                                                     width="180"
+                                                                     height="120"
+                                                                     alt="Certificate thumbnail" />
 
-                                                                <!-- 2) overlay your unlock button -->
-                                                                <div class="cert-overlay d-flex flex-column justify-content-center align-items-center">
-                                                                    <p>Unlock for <strong>1.2 Tokens</strong></p>
-                                                                    <button class="ud-btn btn-thm2 buy-cert" style="border:0">Unlock <i class="fal fa-arrow-right-long"></i></button>
-                                                                    <p class="text-danger small mt-1 buy-error" style="display:none;"></p>
+                                                                <!-- overlay -->
+                                                                <div class="cert-overlay">
+                                                                    <p>Unlock for <strong>1 Tokens <img src="~/template_assets/images/SSDToken.png" width="24" height="24" /></strong></p>
+                                                                    <button class="buy-cert ud-btn btn-thm2" type="button">Unlock <i class="fal fa-arrow-right-long"></i></button>
+                                                                    <p class="buy-error text-danger small" style="display:none;"></p>
                                                                 </div>
                                                             </div>
                                                         }
@@ -481,4 +483,49 @@
           });
         });
     </script>
+
+    <style>
+        .certificate-wrapper {
+            position: relative;
+            display: inline-block; /* shrink‐wraps to image size */
+        }
+
+        /* the blurred thumbnail */
+        .certificate-thumb {
+            filter: blur(0px);
+            transition: filter 0.2s;
+            display: block;
+        }
+
+            /* when “unlocked” you can remove the blur class to restore sharp */
+            .certificate-thumb.unblur {
+                filter: none;
+            }
+
+        /* the overlay: centered, semi-transparent background */
+        .cert-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.75);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .cert-overlay p {
+                margin: 0;
+            }
+
+            .cert-overlay .buy-cert {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+                line-height: 1;
+                border-radius: 0.25rem;
+            }
+    </style>
 }

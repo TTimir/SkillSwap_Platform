@@ -36,7 +36,7 @@ namespace SkillSwap_Platform.ViewComponents
                 var list = await _db.TblNotifications
                     .Where(n => n.UserId == userId)
                     .OrderByDescending(n => n.CreatedAt)
-                    .Take(5)
+                    .Take(3)
                     .ToListAsync();
 
                 // … your existing fetch & projection …
@@ -47,7 +47,7 @@ namespace SkillSwap_Platform.ViewComponents
                         UserId = n.UserId,
                         Title = n.Title,
                         Message = !string.IsNullOrEmpty(n.Message) && n.Message.Length > 80
-                            ? n.Message.Substring(0, 80).TrimEnd() + "…"
+                            ? n.Message.Substring(0, 50).TrimEnd() + "…"
                             : n.Message,
                         Url = n.Url,
                         CreatedAt = n.CreatedAt,

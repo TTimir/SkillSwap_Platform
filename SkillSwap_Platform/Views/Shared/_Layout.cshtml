@@ -39,7 +39,7 @@
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
 
     <style>
-        .profile-avatar {
+        .main-profile-avatar {
             width: 60px;
             height: 60px;
             border-radius: 4px; /* make them circles */
@@ -189,7 +189,8 @@
                                         </li>
                                         <li class="d-none d-sm-block">
                                             <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                                <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                                <span class="flaticon-mail"></span>
+                                                @await Component.InvokeAsync("NotificationBadge", new { type = "message" })
                                             </a>
                                             @await Component.InvokeAsync("MessageNotification")
                                         </li>
@@ -240,7 +241,7 @@
                                                         }
                                                     }
                                                     <div>
-                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="profile-avatar" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="main-profile-avatar" />
                                                     </div>
                                                 </a>
                                                 <div class="dropdown-menu">
@@ -269,7 +270,7 @@
                                                         <a class="dropdown-item" href="@Url.Action("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a>
                                                         <a class="dropdown-item" href="@Url.Action("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p>
-                                                        <a class="dropdown-item" href="@Url.Action("Create","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Create Swap Offer</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr10"></i>Active Exchanges</a>
                                                         <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
                                                         <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>

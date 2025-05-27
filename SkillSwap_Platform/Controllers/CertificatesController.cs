@@ -3,21 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Asn1.X509;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
-using QuestPDF.Fluent;
-using SkillSwap_Platform.HelperClass;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels;
-using SkillSwap_Platform.Services.DigitalToken;
-using SkillSwap_Platform.Services.PDF;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Numerics;
 using System.Security.Claims;
 
 namespace SkillSwap_Platform.Controllers
@@ -29,7 +20,7 @@ namespace SkillSwap_Platform.Controllers
         private readonly IRazorViewEngine _viewEngine;
         private readonly ITempDataProvider _tempDataProvider;
         private readonly IWebHostEnvironment _env;
-        private const decimal CertificateCost = 1.2m;
+        private const decimal CertificateCost = 1m;
         private const int SystemReserveUserId = 3;
 
         public CertificatesController(
@@ -53,6 +44,12 @@ namespace SkillSwap_Platform.Controllers
             if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
                 return Unauthorized();
 
+            var user = await _db.TblUsers
+                        .Where(u => u.UserId == userId)
+                        .Select(u => new { u.FirstName, u.LastName })
+                        .FirstOrDefaultAsync();
+            if (user == null) return Unauthorized();
+
             // 2) verify purchase
             var bought = await _db.TblCertificatePurchases
                                  .AnyAsync(c => c.ExchangeId == exchangeId && c.UserId == userId);
@@ -68,7 +65,7 @@ namespace SkillSwap_Platform.Controllers
             string origin = $"{Request.Scheme}://{Request.Host}";
             var vm = new CertificateVM
             {
-                RecipientName = User.Identity.Name!,
+                RecipientName = $"{user.FirstName} {user.LastName}",
                 SessionTitle = ex.Offer!.Title,
                 CompletedAt = ex.CompletionDate ?? DateTime.UtcNow,
             };

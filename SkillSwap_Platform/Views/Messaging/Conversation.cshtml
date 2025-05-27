@@ -1,6 +1,8 @@
 ﻿@using Humanizer
 @using SkillSwap_Platform.Models.ViewModels
 @model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 @{
     ViewData["Title"] = "Conversations";
@@ -69,7 +71,7 @@
                         <div class="list-item pt5">
                             <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
                                 <div class="d-flex align-items-center position-relative">
-                                     <vc:online-indicator user-id="@contact.UserID" />
+                                    <vc:online-indicator user-id="@contact.UserID" />
                                     <img class="img-fluid float-start rounded-circle mr10 con-profile-avatar" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
                                     <div class="d-sm-flex">
                                         <div class="d-inline-block">
@@ -115,7 +117,7 @@
                         <div class="wrap">
                             <img class="img-fluid mr10 rounded-circle con-profile-avatar" src="@Model.OtherUserProfileImage" alt="Profile" />
                             <div class="meta d-sm-flex justify-content-sm-between align-items-center">
-                                <div class="authors">
+                                <div class="authors" style="padding-top:5px;">
                                     <h6 class="name mb-0">@Model.OtherUserName</h6>
                                     <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
                                 </div>
@@ -129,7 +131,7 @@
                                             {
                                                 <div class="dropdown-item d-flex flex-column">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                       Active: <strong class="line-clamp2">@Model.LatestActiveOffer.Title</strong>
+                                                        Active: <strong class="line-clamp2">@Model.LatestActiveOffer.Title</strong>
                                                     </div>
                                                     <a href="@Url.Content(Model.LatestActiveOffer.CurrentStagePdfUrl)"
                                                        class="btn btn-sm btn-outline-primary mb-2"
@@ -199,11 +201,18 @@
                                                 }
                                             </div>
                                         </li>
-                                        <li>
-                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Calendar")" title="Schedule a meeting on your calendar">
-                                                <i class="fa fa-calendar"></i> Calendar Schedule
-                                            </a>
-                                        </li>
+                                        @{
+                                            // synchronously evaluate once per render
+                                            var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
+                                        }
+                                        @if (ProMember)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Index", "GoogleCalendar")" title="Schedule a meeting on your calendar">
+                                                    <i class="fa fa-calendar"></i> Calendar Schedule
+                                                </a>
+                                            </li>
+                                        }
                                         <li>
                                             <form asp-action="DeleteConversation"
                                                   asp-controller="Messaging"
@@ -546,8 +555,8 @@
 
             // 1) Load your keywords from the server
             var privacyKeywords = @Html.Raw(
-          Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
-        );
+      Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
+    );
 
             // 2) Declare the timer variable
             let debounceTimer;

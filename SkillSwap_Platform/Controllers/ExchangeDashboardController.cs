@@ -9,6 +9,8 @@ using SkillSwap_Platform.Services.NotificationTrack;
 using SkillSwap_Platform.Services.DigitalToken;
 using Newtonsoft.Json;
 using SkillSwap_Platform.Services.BadgeTire;
+using Google.Apis.Calendar.v3.Data;
+using SkillSwap_Platform.Models.ViewModels;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -48,9 +50,12 @@ namespace SkillSwap_Platform.Controllers
                     .OrderByDescending(e => e.ExchangeDate)
                     .ToListAsync();
 
+                var excludedStatuses = new[] { "Declined", "Cancellation Requested", "Cancelled" };
+
                 // Filter active exchanges only.
                 exchanges = exchanges
-                    .Where(e => !e.IsCompleted && !e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                    .Where(e => !e.IsCompleted
+                             && !excludedStatuses.Contains(e.Status, StringComparer.OrdinalIgnoreCase))
                     .ToList();
                 var dashboardItems = new List<ExchangeDashboardItemVM>();
 
@@ -148,6 +153,9 @@ namespace SkillSwap_Platform.Controllers
 
                     var offer = exchange.Offer;
 
+                    var proof = await _context.TblInpersonMeetingProofs
+                        .FirstOrDefaultAsync(p => p.ExchangeId == exchange.ExchangeId);
+
                     // new:
                     bool isDeleted = offer?.IsDeleted ?? false;
 
@@ -172,10 +180,14 @@ namespace SkillSwap_Platform.Controllers
                         Category = exchange.Offer.Category,
                         Token = contract.TokenOffer,
                         IsOnlineMeetingCompleted = isOnlineCompleted,
-                        IsMeetingEnded = exchange.IsMeetingEnded,
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
                         InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes,
-                        OfferIsDeleted = isDeleted
+                        InPersonOwnerVerified = meetingRecord?.IsInpersonMeetingVerifiedByOfferOwner ?? false,
+                        InPersonOtherPartyVerified = meetingRecord?.IsInpersonMeetingVerifiedByOtherParty ?? false,
+                        IsMeetingEnded = meetingRecord?.IsMeetingEnded ?? false,
+                        OfferIsDeleted = isDeleted,
+                        StatusChangeReason = exchange.StatusChangeReason,
+                        StatusChangeBy = exchange.LastStatusChangedBy
                     };
                     dashboardItem.OfferImageUrl = offerImageUrl;
                     dashboardItems.Add(dashboardItem);
@@ -233,7 +245,8 @@ namespace SkillSwap_Platform.Controllers
                     .ToList();
 
                 var declinedExchanges = exchanges
-                    .Where(e => e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase))
+                    .Where(e => e.Status.Equals("Declined", StringComparison.OrdinalIgnoreCase)
+                             || e.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 // Build dashboard items for both lists.
@@ -700,7 +713,7 @@ namespace SkillSwap_Platform.Controllers
                 await _notif.AddAsync(new TblNotification
                 {
                     UserId = GetCurrentUserId(),
-                    Title = "Exchange Marked as Comepleted",
+                    Title = "Exchange Marked as Completed",
                     Message = "You successfully completed your exchange.",
                     Url = Url.Action("Index", "ExchangeDashboard"),
                 });
@@ -720,13 +733,13 @@ namespace SkillSwap_Platform.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CancelExchange(int exchangeId)
+        public async Task<IActionResult> CancelExchange(RequestCancelVM vm)
         {
             try
             {
                 // 1) Verify the exchange exists and is not already completed/declined
                 var exchange = await _context.TblExchanges
-                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+                    .FirstOrDefaultAsync(e => e.ExchangeId == vm.ExchangeId);
 
                 if (exchange == null)
                 {
@@ -734,58 +747,138 @@ namespace SkillSwap_Platform.Controllers
                     return RedirectToAction("EP404", "EP");
                 }
 
+                // 1) If we are here with a "Cancellation Requested" _and_ it's the OTHER party approving:
+                if (exchange.Status == "Cancellation Requested"
+                    && exchange.LastStatusChangedBy.HasValue
+                    && exchange.LastStatusChangedBy.Value != GetCurrentUserId())
+                {
+                    // partner has approved your cancellation request => finalize cancellation
+                    exchange.Status = "Cancelled";
+                    exchange.LastStatusChangedBy = null;
+                    exchange.StatusChangeReason = null;
+
+                    // refund tokens, log history, notify both parties...
+                    await _tokenService.RefundTokensAsync(exchange.ExchangeId);
+
+                    _context.TblExchangeHistories.Add(new TblExchangeHistory
+                    {
+                        ExchangeId = exchange.ExchangeId,
+                        OfferId = exchange.OfferId,
+                        ChangeDate = DateTime.UtcNow,
+                        ChangedStatus = "Cancelled",
+                        Reason = "Cancellation approved by partner.",
+                        ChangedBy = GetCurrentUserId()
+                    });
+
+                    await _context.SaveChangesAsync();
+
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = GetCurrentUserId(),
+                        Title = "Exchange Cancelled",
+                        Message = $"Exchange #{exchange.ExchangeId} cancellation approved.",
+                        Url = Url.Action("Index", "ExchangeDashboard")
+                    });
+
+                    TempData["SuccessMessage"] = "Cancellation approved and token held in escrow will refunded to original account.";
+                    return RedirectToAction("Index");
+                }
+
+                // 2) Otherwise this is the _first_ click: the user is _requesting_ a cancellation
                 if (exchange.IsCompleted || exchange.Status == "Cancelled")
                 {
                     TempData["ErrorMessage"] = "This exchange cannot be cancelled.";
                     return RedirectToAction("Index");
                 }
 
-                // 1) Mark it cancelled
-                exchange.Status = "Cancelled";
+                exchange.Status = "Cancellation Requested";
+                exchange.LastStatusChangedBy = GetCurrentUserId();
+                exchange.StatusChangeReason = vm.Reason;
                 await _context.SaveChangesAsync();
 
-                // 2) Refund the held tokens
-                try
-                {
-                    await _tokenService.RefundTokensAsync(exchangeId);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    _logger.LogWarning(ex, "No tokens to refund for exchange {ExchangeId}.", exchangeId);
-                    return RedirectToAction("EP500", "EP");
-                }
-
-                // 3) Record an exchange‐history entry
-                var userId = GetCurrentUserId();
                 _context.TblExchangeHistories.Add(new TblExchangeHistory
                 {
-                    ExchangeId = exchangeId,
+                    ExchangeId = exchange.ExchangeId,
                     OfferId = exchange.OfferId,
                     ChangeDate = DateTime.UtcNow,
-                    ChangedStatus = "Cancelled",
-                    Reason = "Exchange was cancelled and tokens refunded.",
-                    ChangedBy = userId
+                    ChangedStatus = "Cancellation Requested",
+                    Reason = vm.Reason,
+                    ChangedBy = GetCurrentUserId()
                 });
                 await _context.SaveChangesAsync();
 
-                // 4) Notify the user(s)
                 await _notif.AddAsync(new TblNotification
                 {
-                    UserId = userId,
-                    Title = "Exchange Cancelled",
-                    Message = $"You cancelled exchange #{exchangeId}. Your tokens have been refunded.",
-                    Url = Url.Action("Index")
+                    UserId = GetCurrentUserId(),
+                    Title = "Cancellation Requested",
+                    Message = $"You requested cancellation for exchange #{exchange.ExchangeId}.",
+                    Url = Url.Action("Index", "ExchangeDashboard")
                 });
 
-                TempData["SuccessMessage"] = "Exchange successfully cancelled. Your tokens have been refunded.";
+                TempData["SuccessMessage"] =
+                    "Cancellation requested. Your partner will need to approve it before it’s final.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error cancelling exchange {ExchangeId}", exchangeId);
+                _logger.LogError(ex, "Error cancelling exchange {ExchangeId}", vm.ExchangeId);
                 TempData["ErrorMessage"] = "An error occurred while cancelling the exchange.";
                 return RedirectToAction("EP500", "EP");
             }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> DenyCancellation(RequestCancelVM vm)
+        {
+            var exchange = await _context.TblExchanges
+                .FirstOrDefaultAsync(e => e.ExchangeId == vm.ExchangeId);
+            if (exchange == null)
+            {
+                TempData["ErrorMessage"] = "Exchange not found.";
+                return RedirectToAction("Index");
+            }
+
+            var me = GetCurrentUserId();
+
+            // only allow deny if there is a pending request by the other party
+            if (exchange.Status == "Cancellation Requested"
+                && exchange.LastStatusChangedBy.HasValue
+                && exchange.LastStatusChangedBy.Value != me)
+            {
+                // reset back to active
+                exchange.Status = "In Progress";
+                exchange.LastStatusChangedBy = null;
+                exchange.StatusChangeReason = null;
+                await _context.SaveChangesAsync();
+
+                _context.TblExchangeHistories.Add(new TblExchangeHistory
+                {
+                    ExchangeId = exchange.ExchangeId,
+                    OfferId = exchange.OfferId,
+                    ChangeDate = DateTime.UtcNow,
+                    ChangedStatus = "Cancellation Denied",
+                    Reason = "Partner denied cancellation.",
+                    ChangedBy = me
+                });
+                await _context.SaveChangesAsync();
+
+                await _notif.AddAsync(new TblNotification
+                {
+                    UserId = me,
+                    Title = "Cancellation Denied",
+                    Message = $"You denied cancellation for exchange #{exchange.ExchangeId}.",
+                    Url = Url.Action("Index")
+                });
+
+                TempData["SuccessMessage"] = "Cancellation request denied, back to normal flow.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "No pending cancellation request to deny.";
+            }
+
+            return RedirectToAction("Index");
         }
         #endregion
 

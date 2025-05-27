@@ -686,6 +686,7 @@ namespace SkillSwap_Platform.Controllers
                     TimeCommitmentDays = offer.TimeCommitmentDays,
                     Category = offer.Category,
                     FreelanceType = offer.FreelanceType,
+                    CollaborationMethod = offer.CollaborationMethod,
                     CreatedDate = offer.CreatedDate,
                     // Optionally, include first portfolio image (if available)
                     ThumbnailUrl = !string.IsNullOrWhiteSpace(offer.Portfolio)
