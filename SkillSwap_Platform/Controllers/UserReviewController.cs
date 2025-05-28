@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ReviewReplyVm;
@@ -194,7 +195,9 @@ namespace SkillSwap_Platform.Controllers
             {
                 try
                 {
-                    var review = await _context.TblReviews.FindAsync(reviewId);
+                    var review = await _context.TblReviews
+                        .Include(r => r.Offer)
+                        .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
                     if (review == null)
                         return RedirectToAction("EP404", "EP");
 
@@ -278,7 +281,7 @@ namespace SkillSwap_Platform.Controllers
 
                     await tx.CommitAsync();
                     TempData["SuccessMessage"] = "Your response has been posted!";
-                    return View();
+                    return RedirectToAction("Index", "UserReview", new { offerId = review.OfferId });
                 }
                 catch (Exception ex)
                 {
@@ -298,12 +301,13 @@ namespace SkillSwap_Platform.Controllers
             {
                 var review = await _context.TblReviews
                                    .AsNoTracking()
+                                   .Include(r => r.Offer)
                                    .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
                 if (review == null) return NotFound();
 
                 int currentUserId = GetUserId();
 
-                if (review.UserId == currentUserId)
+                if (review.ReviewerId == currentUserId)
                     return BadRequest("You cannot flag your own review.");
 
                 review.IsFlagged = true;
@@ -499,6 +503,20 @@ namespace SkillSwap_Platform.Controllers
             }
         }
         #endregion
+
+        public async Task<IActionResult> MyReviews()
+        {
+            var userId = GetUserId();
+            var myReviews = await _context.TblReviews
+        .Where(r => r.ReviewerId == userId)
+        .Include(r => r.Offer)                                  // so we can show offer.Title
+        .Include(r => r.TblReviewReplies!)                     // grab the replies
+            .ThenInclude(rr => rr.ReplierUser)                 // …and who replied
+        .OrderByDescending(r => r.CreatedDate)
+        .ToListAsync();
+
+            return View(myReviews);
+        }
 
         #region Helper Class
         /// <summary>

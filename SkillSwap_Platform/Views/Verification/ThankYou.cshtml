@@ -2,9 +2,121 @@
     ViewData["Title"] = "Thank You";
     Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] – SkillSwap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        /* Base reset + full‐screen flex centering */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-<div class="ps-widget bgc-white bdrs4 p30 mb30">
-    <h2>Thanks for Applying!</h2>
-    <p>We’ve received your documents and will get back to you within 48 hours.</p>
-    <a href="@Url.Action("Index", "UserDashboard")" class="ud-btn btn-thm">Back to Dashboard</a>
-</div>
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F5FCFA;
+            position: relative;
+            overflow: hidden;
+        }
+            /* background blobs */
+            body::before, body::after {
+                content: "";
+                position: absolute;
+                border-radius: 50%;
+                opacity: 0.3;
+            }
+
+            body::before {
+                width: 500px;
+                height: 500px;
+                background: radial-gradient(circle at center, #00A88F, transparent 70%);
+                top: -200px;
+                right: -200px;
+            }
+
+            body::after {
+                width: 400px;
+                height: 400px;
+                background: radial-gradient(circle at center, #A3F2E6, transparent 70%);
+                bottom: -150px;
+                left: -150px;
+            }
+
+        /* Card */
+        .thank-you-card {
+            position: relative; /* above blobs */
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+            max-width: 360px;
+            width: 90%;
+            padding: 40px 30px;
+            text-align: center;
+            z-index: 1;
+        }
+            /* Animated check */
+            .thank-you-card .icon {
+                font-size: 64px;
+                color: #00A88F;
+                margin-bottom: 20px;
+                animation: pop 0.5s ease-out;
+            }
+
+        .thank-you-card h2 {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .thank-you-card p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .thank-you-card .btn {
+            display: inline-block;
+            background: #00A88F;
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+            .thank-you-card .btn:hover {
+                background: #028f7a;
+                transform: translateY(-2px);
+            }
+    </style>
+</head>
+<body>
+    <div class="thank-you-card">
+        <div class="icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2>Thank You!</h2>
+        <p>
+            We’ve received your documents and will review them within <strong>72 hours</strong>.
+            You’ll get an email as soon as it’s done.
+        </p>
+        <a href="@Url.Action("Index","UserDashboard")" class="btn">Back to Dashboard</a>
+    </div>
+</body>
+</html>

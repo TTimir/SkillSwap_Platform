@@ -607,6 +607,9 @@ namespace SkillSwap_Platform.Controllers
                     CertificateFilePath = c.CertificateFilePath,
                     CertificateDate = c.SubmittedDate,
                     IsApproved = c.IsApproved,
+                    ApprovedDate = c.ApprovedDate,
+                    RejectionDate = c.RejectDate,
+                    RejectionReason = c.RejectionReason,
                     IscertDeleted = false
                 }).ToList();
             if (!certificateEntries.Any())

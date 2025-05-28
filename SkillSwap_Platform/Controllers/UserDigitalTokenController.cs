@@ -18,39 +18,130 @@ namespace SkillSwap_Platform.Controllers
         {
             int currentUserId = GetCurrentUserId();
 
-            // 1) load all transactions involving this user
-            var allTx = await _db.TblTokenTransactions
-                .AsNoTracking()
-                .Where(t => t.FromUserId == currentUserId || t.ToUserId == currentUserId)
-                .Include(t => t.FromUser)
-                .Include(t => t.ToUser)
-                .OrderByDescending(t => t.CreatedAt)
-                .ToListAsync();
+            // 1) Load everything: your sent/received txns + only escrow txns for exchanges you own/requested
+            var txWithUsers = await (
+                from t in _db.TblTokenTransactions.AsNoTracking()
 
-            // 2) project into our view-model
-            var txVms = allTx
-                        .Select(t =>
-                        {
-                            // decide which side is the counterparty
-                            var isOutgoing = t.FromUserId == currentUserId;
-                            var counterparty = isOutgoing
-                                ? t.ToUser           // make sure ToUser isn't null 
-                                : t.FromUser;        // likewise for FromUser
+                    // bring in the exchange (if any)
+                join ex in _db.TblExchanges on t.ExchangeId equals ex.ExchangeId into exG
+                from exch in exG.DefaultIfEmpty()
 
-                            return new TokenTransactionVm
-                            {
-                                Date = t.CreatedAt,
-                                Type = t.TxType,
-                                Detail = t.Description,
-                                Amount = t.Amount,
-                                Highlight = false,
-                                CounterpartyId = isOutgoing
-                                                      ? t.ToUserId.GetValueOrDefault()
-                                                      : t.FromUserId.GetValueOrDefault(),
-                                CounterpartyName = counterparty?.UserName ?? "—"
-                            };
-                        })
-                        .ToList();
+                    // only include:
+                    //  - any txn where you're the sender or receiver
+                    //  OR
+                    //  - escrow txns (Hold/Release) for exchanges you either own or requested
+                where
+                    t.FromUserId == currentUserId
+                 || t.ToUserId == currentUserId
+                 || ((t.TxType == "Hold" || t.TxType == "Release")
+                     && exch != null
+                     && (exch.OfferOwnerId == currentUserId
+                      || exch.OtherUserId == currentUserId))
+
+                // bring in the two “normal” users
+                join fu in _db.TblUsers on t.FromUserId equals fu.UserId into fuG
+                from fromUser in fuG.DefaultIfEmpty()
+
+                join tu in _db.TblUsers on t.ToUserId equals tu.UserId into tuG
+                from toUser in tuG.DefaultIfEmpty()
+
+                    // bring in offer-owner & requester for escrow
+                join ow in _db.TblUsers on exch.OfferOwnerId equals ow.UserId into owG
+                from offerOwner in owG.DefaultIfEmpty()
+
+                join rq in _db.TblUsers on exch.OtherUserId equals rq.UserId into rqG
+                from requester in rqG.DefaultIfEmpty()
+
+                orderby t.CreatedAt descending
+
+                select new
+                {
+                    Tx = t,
+                    FromUser = fromUser,
+                    ToUser = toUser,
+                    Exchange = exch,
+                    OfferOwner = offerOwner,
+                    Requester = requester
+                }
+            ).ToListAsync();
+
+            // 2) Map into your VM, special-casing escrow
+            var txVms = txWithUsers.Select(x =>
+            {
+                var t = x.Tx;
+                var ex = x.Exchange;
+
+                // Non-escrow: use normal from↔to
+                if (t.TxType != "Hold" && t.TxType != "Release")
+                {
+                    bool outgoing = t.FromUserId == currentUserId;
+                    var cp = outgoing ? x.ToUser : x.FromUser;
+                    return new TokenTransactionVm
+                    {
+                        Date = t.CreatedAt,
+                        Type = t.TxType,
+                        Detail = t.Description,
+                        Amount = t.Amount,
+                        CounterpartyId = cp?.UserId ?? 0,
+                        CounterpartyName = cp?.UserName ?? "—"
+                    };
+                }
+
+                // Hold: always show the service-owner
+                if (t.TxType == "Hold")
+                {
+                    return new TokenTransactionVm
+                    {
+                        Date = t.CreatedAt,
+                        Type = t.TxType,
+                        Detail = t.Description,
+                        Amount = t.Amount,
+                        CounterpartyId = x.OfferOwner?.UserId ?? 0,
+                        CounterpartyName = x.OfferOwner?.UserName ?? "—"
+                    };
+                }
+
+                // Release: owner sees outgoing → requester; requester sees incoming ← owner
+                bool isOwner = ex != null && ex.OfferOwnerId == currentUserId;
+                bool isRequester = ex != null && ex.OtherUserId == currentUserId;
+
+                if (t.TxType == "Release" && isOwner)
+                {
+                    return new TokenTransactionVm
+                    {
+                        Date = t.CreatedAt,
+                        Type = t.TxType,
+                        Detail = t.Description,
+                        Amount = t.Amount,
+                        CounterpartyId = x.Requester?.UserId ?? 0,
+                        CounterpartyName = x.Requester?.UserName ?? "—"
+                    };
+                }
+                else if (t.TxType == "Release" && isRequester)
+                {
+                    return new TokenTransactionVm
+                    {
+                        Date = t.CreatedAt,
+                        Type = t.TxType,
+                        Detail = t.Description,
+                        Amount = t.Amount,
+                        CounterpartyId = x.OfferOwner?.UserId ?? 0,
+                        CounterpartyName = x.OfferOwner?.UserName ?? "—"
+                    };
+                }
+
+                // Fallback
+                return new TokenTransactionVm
+                {
+                    Date = t.CreatedAt,
+                    Type = t.TxType,
+                    Detail = t.Description,
+                    Amount = t.Amount,
+                    CounterpartyId = 0,
+                    CounterpartyName = "—"
+                };
+            })
+            .ToList();
 
             // 1) Sum of everything ever credited to this user
             decimal totalReceived = await _db.TblTokenTransactions
@@ -84,49 +175,11 @@ namespace SkillSwap_Platform.Controllers
                 .Select(u => (decimal?)u.DigitalTokenBalance)
                 .SingleOrDefaultAsync()) ?? 0m;
 
-            var baseQuery = _db.TblTokenTransactions
-                .AsNoTracking()
-                .Where(t => t.FromUserId == currentUserId || t.ToUserId == currentUserId);
-
-            // total rows for pager
-            int totalCount = await baseQuery.CountAsync();
-
-            // fetch only the current page
-            var query =
-                from t in _db.TblTokenTransactions
-                join fu in _db.TblUsers on t.FromUserId equals fu.UserId
-                join tu in _db.TblUsers on t.ToUserId equals tu.UserId
-                join ex in _db.TblExchanges on t.ExchangeId equals ex.ExchangeId into exg
-                from ex in exg.DefaultIfEmpty()
-                join owner in _db.TblUsers on ex.OfferOwnerId equals owner.UserId into owng
-                from owner in owng.DefaultIfEmpty()
-                where t.FromUserId == currentUserId || t.ToUserId == currentUserId
-                orderby t.CreatedAt descending
-                select new TokenTransactionVm
-                {
-                    Date = t.CreatedAt,
-                    Type = t.TxType,
-                    Detail = t.Description,
-                    Amount = t.Amount,
-                    Highlight = false,
-
-                    CounterpartyId = (t.TxType == "Hold" || t.TxType == "Release")
-                                        // cast the nullable to int
-                                        ? ex.OfferOwnerId.Value
-                                        : (t.FromUserId == currentUserId
-                                            ? t.ToUserId.Value
-                                            : t.FromUserId.Value),
-
-                    CounterpartyName = (t.TxType == "Hold" || t.TxType == "Release")
-                                       ? owner.UserName
-                                       : (t.FromUserId == currentUserId ? tu.UserName : fu.UserName)
-                };
-
-            // apply paging
-            var pagedTx = await query
+            var totalCount = txVms.Count;
+            var pagedTx = txVms
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
 
             // 5) assemble the VM
             var model = new TokenStatementVM

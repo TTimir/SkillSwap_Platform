@@ -28,7 +28,7 @@ namespace SkillSwap_Platform.Services.AdminControls
             try
             {
                 return await _db.TblUserCertificates
-                                .CountAsync(c => c.ApprovedDate == null);
+                                .CountAsync(c => c.ApprovedDate == null && c.RejectDate == null);
             }
             catch (Exception ex)
             {
@@ -86,8 +86,8 @@ namespace SkillSwap_Platform.Services.AdminControls
         {
             try
             {
-                return await _db.TblTokenTransactions
-                            .Where(tx => !tx.IsReleased
+                return await _db.TblEscrows
+                            .Where(tx => tx.RefundedAt == null && tx.ReleasedAt == null && tx.DisputedAt == null
                                       && tx.CreatedAt >= _CutoffUtc)
                             .CountAsync();
             }
@@ -167,6 +167,7 @@ namespace SkillSwap_Platform.Services.AdminControls
                             .Where(m =>
                                    m.IsFlagged
                                 && !m.IsApproved
+                                && m.ApprovedDate == null
                                 && m.SentDate >= _CutoffUtc)
                             .CountAsync();
             }
@@ -493,7 +494,8 @@ namespace SkillSwap_Platform.Services.AdminControls
     .Where(o => !o.IsDeleted)
     .OrderByDescending(o => o.Views)
     .Take(take)
-    .Select(o => new {
+    .Select(o => new
+    {
         o.OfferId,
         o.Title,
         o.Portfolio,
@@ -507,7 +509,8 @@ namespace SkillSwap_Platform.Services.AdminControls
     "/template_assets/images/listings/No_Offer_img_2.jpg"
 };
 
-            return raw.Select(o => {
+            return raw.Select(o =>
+            {
                 // try to parse the JSON portfolio field
                 List<string> urls = new();
                 if (!string.IsNullOrWhiteSpace(o.Portfolio))

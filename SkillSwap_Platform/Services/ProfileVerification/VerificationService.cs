@@ -32,6 +32,20 @@ namespace SkillSwap_Platform.Services.ProfileVerification
             _subs = subscriptions;
         }
 
+        public async Task<bool> HasPendingAsync(string userId)
+        {
+            return await _db.VerificationRequests
+                            .AnyAsync(v => v.UserId == userId
+                                        && v.Status == 0);
+        }
+
+        public async Task<bool> IsVerifiedAsync(string userId)
+        {
+            return await _db.VerificationRequests
+                            .AnyAsync(v => v.UserId == userId
+                                        && v.Status == 1);
+        }
+
         public async Task SubmitAsync(string userId, SubmitRequestVm vm)
         {
             var uid = int.Parse(userId);

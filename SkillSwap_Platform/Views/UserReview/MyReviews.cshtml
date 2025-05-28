@@ -1,0 +1,126 @@
+﻿@using System.Security.Claims
+@model IEnumerable<SkillSwap_Platform.Models.TblReview>
+
+@{
+    ViewData["Title"] = "Reviews You’ve Written";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var mine = Model.Where(r => r.ReviewerId == currentUserId);
+
+    // Group by offer (or by ExchangeId if you have that)
+    var grouped = Model
+        .Where(r => r.ReviewerId == currentUserId)
+        .GroupBy(r => r.Offer)
+        .OrderBy(g => g.Key.Title);
+}
+
+<div class="col-lg-12">
+    <div class="dashboard_title_area">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+</div>
+</div>
+
+<div class="row">
+    <div class="col-xl-12">
+
+        @if (!grouped.Any())
+        {
+            <p class="text-center text-muted">You haven’t written any reviews yet.</p>
+        }
+        else
+        {
+            foreach (var offerGroup in grouped)
+            {
+                <div class="mb-4">
+                    <h4 class="fw600 mb-3">On “@offerGroup.Key.Title”</h4>
+
+                    @foreach (var r in offerGroup)
+                    {
+                        <div class="ps-widget bgc-white bdrs4 p30 mb-3">
+                            <div class="d-sm-flex align-items-center mb-2">
+                                <img src="@Url.Content(r.Reviewer.ProfileImageUrl ?? "~/template_assets/images/No_Profile_img.png")"
+                                     class="me-3 rounded-circle"
+                                     style="width:48px;height:48px;"
+                                     alt="@r.Reviewer.UserName" />
+
+                                <div>
+                                    <div class="d-flex align-items-center">
+                                        <h6 class="mb-0 me-2">@r.ReviewerName</h6>
+                                        <small class="text-muted">
+                                            @r.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
+                                        </small>
+                                    </div>
+                                    <div class="mb-1">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            var filled = i <= r.Rating;
+                                            <i class="me-1 @(filled ? "fas fa-star text-warning" : "far fa-star text-muted")"></i>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="ms-auto">
+                                    <span class="flaticon-flag @(r.IsFlagged ? "text-danger" : "text-muted")"
+                                          title="@(r.IsFlagged ? "This review has been reported" : "Not reported")">
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="mt-2 mb-3">@r.Comments</p>
+
+                            @if (r.TblReviewReplies?.Any() == true)
+                            {
+                                <div class="ps-4 mb-2">
+                                    @foreach (var reply in r.TblReviewReplies)
+                                    {
+                                        <div class="mb-2">
+                                            <strong>@reply.ReplierUser.UserName</strong>
+                                            <small class="text-muted ms-2">
+                                                @reply.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")
+                                            </small>
+                                            <p class="mb-1">@reply.Comments</p>
+
+                                            <div class="ms-auto">
+                                                @* if it’s already flagged, show red flag *@
+                                                @if (reply.IsFlagged)
+                                                {
+                                                    <span class="flaticon-flag text-danger"
+                                                          title="This reply has been reported"></span>
+                                                }
+                                                else if (reply.ReplierUserId != currentUserId)
+                                                {
+                                                    @* show a POST form to flag *@
+                                                    <form asp-controller="UserReview"
+                                                          asp-action="FlagReply"
+                                                          method="post"
+                                                          class="d-inline">
+                                                        <input type="hidden" name="replyId" value="@reply.ReplyId" />
+                                                        <button type="submit"
+                                                                class="btn btn-link p-0 text-muted"
+                                                                title="Report this reply">
+                                                            <span class="flaticon-flag"></span>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    @* your own reply — greyed out flag *@
+                                                    <span class="flaticon-flag text-muted"
+                                                          title="You can’t flag your own report"></span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <hr class="my-4" />
+                </div>
+            }
+        }
+    </div>
+</div>
+</div>

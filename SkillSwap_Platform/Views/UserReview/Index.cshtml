@@ -65,29 +65,40 @@
                                                 max-width: 100%;
                                                 width: 6%;
                                                 border-radius: 100%;
-                                                ">
+                                                    ">
+                                            @{
+                                                // once-per-loop:
+                                                var isMine = r.ReviewerId == currentUserId;
+                                                var isFlagged = r.IsFlagged;
+                                            }
                                             <div class="ml20 ml0-xs mt20-xs">
-                                                @if (!r.IsFlagged && r.UserId != currentUserId)
-                                                {
-                                                    <div class="del-edit" title="Review flagged">
-                                                        <span class="flaticon-flag text-danger"></span>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <div class="del-edit" title="Flag this review">
-                                                        <form asp-controller="UserReview"
-                                                              asp-action="Flag"
-                                                              method="post"
-                                                              style="display:inline">
-                                                            <input type="hidden" name="reviewId" value="@r.ReviewId" />
-                                                            <input type="hidden" name="offerId" value="@ViewBag.CurrentOfferId" />
-                                                            <button type="submit" class="btn btn-link p-0 text-muted">
-                                                                <span class="flaticon-flag"></span>
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                }
+                                                <div class="del-edit" title="Review flagged">
+                                                    @if (isMine)
+                                                    {
+                                                        <!-- you wrote this review, so we grey out the flag -->
+                                                        <span class="flaticon-flag text-muted" title="You can’t report your own review"></span>
+                                                    }
+                                                    else if (isFlagged)
+                                                    {
+                                                        <!-- someone else already flagged it -->
+                                                        <span class="flaticon-flag text-danger" title="This review has been reported"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="del-edit" title="Flag this review">
+                                                            <form asp-controller="UserReview"
+                                                                  asp-action="Flag"
+                                                                  method="post"
+                                                                  style="display:inline">
+                                                                <input type="hidden" name="reviewId" value="@r.ReviewId" />
+                                                                <input type="hidden" name="offerId" value="@ViewBag.CurrentOfferId" />
+                                                                <button type="submit" class="btn btn-link p-0 text-muted">
+                                                                    <span class="flaticon-flag"></span>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    }
+                                                </div>
                                                 <h6 class="mt-0 mb-1">@r.ReviewerName</h6>
                                                 <div class="d-flex align-items-center">
                                                     <div>
@@ -97,7 +108,7 @@
                                                             <i class="@starClass me-1"></i>
                                                         }
                                                         @* <i class="fas fa-star vam fz10 review-color me-2"></i><span class="fz15 fw500">4.98</span> *@
-                                                        </div>
+                                                    </div>
                                                     <div class="ms-3"><span class="fz14 text">@r.CreatedDate.ToLocalTime().ToString("MMM d, yyyy")</span></div>
                                                 </div>
                                             </div>
@@ -106,6 +117,17 @@
 
                                         @if (r.TblReviewReplies?.Any() == true)
                                         {
+                                            // pick a tooltip:
+                                            var tooltip = isFlagged
+                                            ? "This review has been reported"
+                                            : isMine
+                                            ? "Your own review"
+                                            : "Not yet reported";
+                                            // pick a CSS class:
+                                            var cssClass = isFlagged
+                                            ? "text-danger"   // red
+                                            : "text-muted";   // gray
+
                                             <div class="replies ps-4 mb-3">
                                                 @foreach (var reply in r.TblReviewReplies)
                                                 {
@@ -117,6 +139,9 @@
                                                             </small>
                                                         </div>
                                                         <p class="mb-1">@reply.Comments</p>
+                                                        <div class="ms-auto" title="@tooltip">
+                                                            <span class="flaticon-flag @cssClass"></span>
+                                                        </div>
                                                     </div>
                                                 }
                                             </div>

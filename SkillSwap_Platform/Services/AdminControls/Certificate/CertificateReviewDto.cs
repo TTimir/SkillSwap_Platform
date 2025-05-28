@@ -10,14 +10,18 @@
         public string CertificateFilePath { get; set; }
         public DateTime SubmittedDate { get; set; }
 
-        // NEW: status only for all-certs view
-        public string Status
-            => !ApprovedDate.HasValue
-         ? "Pending"
-         : (IsApproved == true ? "Approved" : "Rejected");
-
         // bring these along from the EF entity
         public bool? IsApproved { get; set; }
         public DateTime? ApprovedDate { get; set; }
+        public DateTime? RejectDate { get; set; }   
+
+        public ReviewStatus Status { get; set; }  
+
+        public enum ReviewStatus
+        {
+            Pending,
+            Approved,
+            Rejected
+        }
     }
 }

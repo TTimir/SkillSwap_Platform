@@ -29,6 +29,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
         public async Task<PagedResult<TblEscrow>> GetAllAsync(int page, int pageSize)
         {
             var q = _db.TblEscrows
+                        .Where(e => e.ReleasedAt == null && e.RefundedAt == null)
                        .Include(e => e.Buyer)
                        .Include(e => e.Seller)
                        .OrderByDescending(e => e.CreatedAt);

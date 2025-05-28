@@ -7,64 +7,64 @@
 }
 <style>
     .edit-profile-avatar {
-        width: 100px;
-        height: 100px;
-        border-radius: 4px; /* make them circles */
-        object-fit: cover; /* crop to fill without distortion */
-        display: inline-block; /* or block/inline-block as needed */
+    width: 100px;
+    height: 100px;
+    border-radius: 4px; /* make them circles */
+    object-fit: cover; /* crop to fill without distortion */
+    display: inline-block; /* or block/inline-block as needed */
     }
 
     .skill-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 12px;
-        margin: 5px 5px 5px 0;
-        background: rgba(46, 204, 113, 0.15); /* glassed green effect */
-        color: #2ecc71;
-        border-radius: 20px;
-        border: 1px solid rgba(46, 204, 113, 0.3);
-        backdrop-filter: blur(5px);
-        font-size: 14px;
-        transition: 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    margin: 5px 5px 5px 0;
+    background: rgba(46, 204, 113, 0.15); /* glassed green effect */
+    color: #2ecc71;
+    border-radius: 20px;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    backdrop-filter: blur(5px);
+    font-size: 14px;
+    transition: 0.3s ease;
     }
 
-        .skill-badge:hover {
-            background: rgba(46, 204, 113, 0.25);
-        }
+    .skill-badge:hover {
+    background: rgba(46, 204, 113, 0.25);
+    }
 
-        .skill-badge .remove-skill {
-            margin-left: 8px;
-            cursor: pointer;
-        }
+    .skill-badge .remove-skill {
+    margin-left: 8px;
+    cursor: pointer;
+    }
 
-            .skill-badge .remove-skill:hover {
-                color: #e74c3c;
-            }
+    .skill-badge .remove-skill:hover {
+    color: #e74c3c;
+    }
 
     .approved-tag {
-        background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
-        color: #2ecc71;
-        border-left: 5px solid #2ecc71;
-        border-right: 0.1px solid #2ecc71;
-        border-top: 0.1px solid #2ecc71;
-        border-bottom: 0.1px solid #2ecc71;
+    background: rgba(46, 204, 113, 0.3); /* Light Green Glass Effect */
+    color: #2ecc71;
+    border-left: 5px solid #2ecc71;
+    border-right: 0.1px solid #2ecc71;
+    border-top: 0.1px solid #2ecc71;
+    border-bottom: 0.1px solid #2ecc71;
     }
 
     .not-approved-tag {
-        background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
-        color: #e74c3c;
-        border-left: 5px solid #e74c3c;
-        border-right: 0.1px solid #e74c3c;
-        border-top: 0.1px solid #e74c3c;
-        border-bottom: 0.1px solid #e74c3c;
+    background: rgba(231, 76, 60, 0.3); /* Light Red Glass Effect */
+    color: #e74c3c;
+    border-left: 5px solid #e74c3c;
+    border-right: 0.1px solid #e74c3c;
+    border-top: 0.1px solid #e74c3c;
+    border-bottom: 0.1px solid #e74c3c;
     }
 
     .approved-tag i {
-        color: #2ecc71; /* Green for approved */
+    color: #2ecc71; /* Green for approved */
     }
 
     .not-approved-tag i {
-        color: #e74c3c; /* Red for not approved */
+    color: #e74c3c; /* Red for not approved */
     }
 </style>
 <div class="col-lg-9">
@@ -118,8 +118,8 @@
                     <div class="profile-box d-sm-flex align-items-center mb30">
                         <div class="profile-img mb20-sm">
                             <img id="profileImage" class="wa-xs edit-profile-avatar"
-                                 src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/template_assets/images/No_Profile_img.png" : ViewData["UserProfileImage"])"
-                                 alt="Profile Image">
+                            src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/template_assets/images/No_Profile_img.png" : ViewData["UserProfileImage"])"
+                            alt="Profile Image">
                         </div>
                         <div class="profile-content ml20 ml0-xs">
                             <div class="d-flex align-items-center mx-3 mb-2">
@@ -162,13 +162,13 @@
                                 <label asp-for="PersonalDetails.Email" class="heading-color ff-heading fw500 mb10">Email Address <span class="text-danger">*</span></label>
                                 <div class="d-flex align-items-center">
                                     <input asp-for="PersonalDetails.Email"
-                                           type="email"
-                                           class="form-control flex-grow-1"
-                                           placeholder="you@example.com" />
+                                    type="email"
+                                    class="form-control flex-grow-1"
+                                    placeholder="you@example.com" />
 
                                     <a asp-action="ConfirmEmailChange"
-                                       asp-controller="UserProfile"
-                                       class="ud-btn btn-thm ms-2 d-flex align-items-center" style="padding:11px 22px;" data-bs-toggle="tooltip" data-bs-placement="right" title="Change Email Address">
+                                    asp-controller="UserProfile"
+                                    class="ud-btn btn-thm ms-2 d-flex align-items-center" style="padding:11px 22px;" data-bs-toggle="tooltip" data-bs-placement="right" title="Change Email Address">
                                         <i class="fal fa-envelope-open-text" style="transform:rotate(0deg); margin-left:0;"></i>
                                     </a>
                                 </div>
@@ -270,15 +270,15 @@
                                                     }
                                                 }
                                                 @Html.DropDownListFor(m => m.Skills.AllSkills[i].Category,
-                                                         unionCategories,
-                                                         "Choose Category",
-                                                         new { @class = "selectpicker skill-category" })
+                                                                  unionCategories,
+                                                                  "Choose Category",
+                                                                  new { @class = "selectpicker skill-category" })
                                                 <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
                                                 <!-- Custom category input, hidden by default -->
                                                 <input type="text" class="form-control custom-category-input"
-                                                       name="Skills.AllSkills[@i].CustomCategory"
-                                                       placeholder="Enter custom category"
-                                                       style="display:none;" />
+                                                name="Skills.AllSkills[@i].CustomCategory"
+                                                placeholder="Enter custom category"
+                                                style="display:none;" />
                                                 <span asp-validation-for="Skills.AllSkills[i].Category" class="text-danger"></span>
                                             </div>
                                         </div>
@@ -401,7 +401,7 @@
                                     <div class="d-flex">
                                         @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
                                         <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Delete" aria-label="Delete" onclick="markEducationDeleted(@i)">
+                                        title="Delete" aria-label="Delete" onclick="markEducationDeleted(@i)">
                                             <span class="flaticon-delete"></span>
                                         </button>
                                     </div>
@@ -411,9 +411,9 @@
                                         <div class="mb20">
                                             <label asp-for="EducationEntries[i].StartDate" class="heading-color ff-heading fw500 mb10">Start Date</label>
                                             <input asp-for="EducationEntries[i].StartDate"
-                                                   type="date"
-                                                   class="form-control"
-                                                   value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
+                                            type="date"
+                                            class="form-control"
+                                            value="@((Model.EducationEntries[i].StartDate == DateTime.MinValue) ? "" : Model.EducationEntries[i].StartDate.ToString("yyyy-MM-dd"))" />
                                             <span asp-validation-for="EducationEntries[i].StartDate" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -438,7 +438,7 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="mb20">
-                                            <label asp-for="EducationEntries[i].DegreeName" class="heading-color ff-heading fw500 mb10">Degree Name</label>
+                                            <label asp-for="EducationEntries[i].DegreeName" class="heading-color ff-heading fw500 mb10">Domain</label>
                                             <input asp-for="EducationEntries[i].DegreeName" type="text" class="form-control" placeholder="i will">
                                             <span asp-validation-for="EducationEntries[i].DegreeName" class="text-danger"></span>
                                         </div>
@@ -486,7 +486,7 @@
                                     <div class="d-flex">
                                         @* <a href="#!delete" class="icon" onclick="markEducationDeleted(@i)" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-bs-original-title="Delete" aria-label="Delete"><span class="flaticon-delete"></span></a> *@
                                         <button type="button" class="btn btn-link icon" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                title="Delete" aria-label="Delete" onclick="markExperienceDeleted(@i)">
+                                        title="Delete" aria-label="Delete" onclick="markExperienceDeleted(@i)">
                                             <span class="flaticon-delete"></span>
                                         </button>
                                     </div>
@@ -572,13 +572,19 @@
                                     @if (Model.CertificateEntries[i].IsApproved)
                                     {
                                         <span class="">
-                                            <i class="fas fa-check-circle"></i> Approved on @Model.CertificateEntries[i].IsApproved
+                                            <i class="fas fa-check-circle"></i> Approved on <b>@Model.CertificateEntries[i].ApprovedDate?.ToLocalTime().ToString("MMMM d yyyy")</b>
+                                        </span>
+                                    }
+                                    else if (Model.CertificateEntries[i].RejectionDate.HasValue)
+                                    {
+                                        <span class="">
+                                            <i class="fas fa-ban"></i> Rejected on <b>@Model.CertificateEntries[i].RejectionDate?.ToLocalTime().ToString("MMMM d yyyy"),</b> <br /> with reason <b>@Model.CertificateEntries[i].RejectionReason</b>
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="">
-                                            <i class="fas fa-check-circle"></i> Not Approved Yet
+                                            Not Reviewed Yet
                                         </span>
                                     }
                                     <div class="del-edit">
@@ -614,7 +620,7 @@
                                             <input asp-for="CertificateEntries[i].CertificateDate"
                                                    type="date"
                                                    class="form-control"
-                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate.Value.ToLocalTime().ToString("yyyy-MM-dd"))" />                                            
+                                                   value="@((Model.CertificateEntries[i].CertificateDate == DateTime.MinValue) ? "" : Model.CertificateEntries[i].CertificateDate?.ToLocalTime().ToString("yyyy-MM-dd"))" />                                            
                                                    <span asp-validation-for="CertificateEntries[@i].CertificateDate" class="text-danger"></span>
                                             <span asp-validation-for="CertificateEntries[i].CertificateDate" class="text-danger"></span>
                                         </div>

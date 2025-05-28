@@ -309,23 +309,23 @@
                                                         </div>
                                                     </th>
                                                     <td>
-                                                        <h5 class="@(item.Status == "Finalized"
-                                                    ? "pending-style style1"
-                                                    : item.Status == "Completed"
-                                                        ? "pending-style style2"
-                                                        : item.Status == "Declined"
-                                                            ? "pending-style style3"
-                                                            : "")">
-                                                            @item.Status
-                                                        </h5>
+                                                        @{
+                                                            string statusClass = item.Status switch
+                                                            {
+                                                                "Finalized" => "pending-style style1",
+                                                                "Completed" => "pending-style style2",
+                                                                "Declined" => "pending-style style3",
+                                                                "Cancelled" => "pending-style style3",
+                                                                _ => ""
+                                                            };
+                                                        }
+                                                        <h5 class="@statusClass">@item.Status</h5>
                                                     </td>
                                                     <td>
                                                         <div class="d-flex">
                                                             @if (item.LastStatusChangedByName != null)
                                                             {
-                                                                @("@")
-
-                                                                @item.LastStatusChangedByName
+                                                                @("@")@item.LastStatusChangedByName
                                                             }
                                                             else
                                                             {
@@ -334,10 +334,18 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <!-- For completed exchanges, you might display just the details or a "Completed" label -->
-                                                        <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Declined">
-                                                            Declined
-                                                        </span>
+                                                        @if (item.Status == "Cancelled" && !string.IsNullOrWhiteSpace(item.StatusChangeReason))
+                                                        {
+                                                            <div>
+                                                                <p class="mt-1 mb-0"><strong>Cancelled Reason:</strong> @item.StatusChangeReason</p>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="pending-style style3" data-bs-toggle="tooltip" title="Exchange Declined">
+                                                                Declined
+                                                            </span>
+                                                        }
                                                     </td>
                                                 </tr>
                                             }

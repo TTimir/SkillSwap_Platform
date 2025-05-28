@@ -13,7 +13,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         private readonly ISubscriptionService _subs;
         public CertificateReviewService(
             SkillSwapDbContext db,
-            ILogger<CertificateReviewService> logger, 
+            ILogger<CertificateReviewService> logger,
             IEmailService emailService,
             ISubscriptionService subscription)
         {
@@ -45,6 +45,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         {
             var baseQuery = from cert in _db.TblUserCertificates
                             where cert.ApprovedDate == null
+                             && cert.RejectDate == null
                             join user in _db.TblUsers
                               on cert.UserId equals user.UserId
                             select new CertificateReviewDto
@@ -76,7 +77,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                                 CertificateName = cert.CertificateName,
                                 SubmittedDate = cert.SubmittedDate,
                                 IsApproved = cert.IsApproved,
-                                ApprovedDate = cert.ApprovedDate
+                                ApprovedDate = cert.ApprovedDate,
+                                Status = CertificateReviewDto.ReviewStatus.Approved
                             };
 
             return GetPagedAsync(baseQuery, page, pageSize);
@@ -85,7 +87,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         public Task<PagedResult<CertificateReviewDto>> GetRejectedCertificatesAsync(int page, int pageSize)
         {
             var baseQuery = from cert in _db.TblUserCertificates
-                            where cert.ApprovedDate != null && cert.IsApproved == false
+                            where cert.RejectDate != null && cert.IsApproved == false
                             join user in _db.TblUsers
                               on cert.UserId equals user.UserId
                             select new CertificateReviewDto
@@ -96,7 +98,10 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                                 CertificateName = cert.CertificateName,
                                 SubmittedDate = cert.SubmittedDate,
                                 IsApproved = cert.IsApproved,
-                                ApprovedDate = cert.ApprovedDate
+                                ApprovedDate = cert.ApprovedDate,
+                                RejectDate = cert.RejectDate,
+                                Status = CertificateReviewDto.ReviewStatus.Rejected
+
                             };
 
             return GetPagedAsync(baseQuery, page, pageSize);
@@ -127,12 +132,16 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                             IsApproved = cert.IsApproved,
                             ApprovedDate = cert.ApprovedDate,
                             Status = cert.IsApproved
-                                        ? CertificateDetailDto.ReviewStatus.Approved
-                                        : (!string.IsNullOrEmpty(cert.RejectionReason)
-                                            ? CertificateDetailDto.ReviewStatus.Rejected
-                                            : CertificateDetailDto.ReviewStatus.Pending),
-                            ProcessedDateUtc = cert.ApprovedDate,
-                            RejectionReason = cert.RejectionReason
+                                ? CertificateDetailDto.ReviewStatus.Approved
+                                : cert.RejectDate != null
+                                    ? CertificateDetailDto.ReviewStatus.Rejected
+                                    : CertificateDetailDto.ReviewStatus.Pending,
+                            ProcessedDateUtc = cert.IsApproved
+                                    ? cert.ApprovedDate
+                                    : cert.RejectDate,
+                            RejectDate = cert.RejectDate,
+                            RejectionReason = cert.RejectionReason,
+                            CertificateFilePath = cert.CertificateFilePath
                         }
                     )
                     .FirstOrDefaultAsync();
@@ -251,7 +260,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                 // Flag it as reviewed but not approved
                 cert.IsApproved = false;
                 cert.ApprovedByAdminId = adminUserId;
-                cert.ApprovedDate = DateTime.UtcNow;
+                cert.RejectDate = DateTime.UtcNow;
                 cert.RejectionReason = reason;
 
                 _db.TblUserCertificates.Update(cert);

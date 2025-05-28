@@ -329,7 +329,8 @@ namespace SkillSwap_Platform.Controllers
                         IsMeetingEnded = exchange.IsMeetingEnded,
                         MeetingScheduledDateTime = meetingRecord?.MeetingScheduledDateTime,
                         InpersonMeetingDurationMinutes = meetingRecord?.InpersonMeetingDurationMinutes,
-                        OfferIsDeleted = isDeleted
+                        OfferIsDeleted = isDeleted,
+                        StatusChangeReason = exchange.StatusChangeReason
                     };
                 };
 
@@ -616,6 +617,8 @@ namespace SkillSwap_Platform.Controllers
                 return RedirectToAction("EP404", "EP");
             }
 
+            var currentUserId = GetCurrentUserId();
+
             // 1) Ensure any meeting requirements are met...
             if (exchange.ExchangeMode.Equals("online", StringComparison.OrdinalIgnoreCase))
             {
@@ -651,9 +654,6 @@ namespace SkillSwap_Platform.Controllers
                 }
             }
 
-            // 2) Flip the flag for the current user
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-
             try
             {
                 if (currentUserId == exchange.OfferOwnerId)
@@ -674,6 +674,16 @@ namespace SkillSwap_Platform.Controllers
 
                     // release held tokens
                     await _tokenService.ReleaseTokensAsync(exchangeId);
+
+                    var escrow = await _context.TblEscrows
+                           .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+                    if (escrow != null)
+                    {
+                        escrow.Status = "Released";
+                        escrow.ReleasedAt = DateTime.UtcNow;
+                        _context.TblEscrows.Update(escrow);
+                        await _context.SaveChangesAsync();
+                    }
 
                     // log a full‐exchange history entry
                     _context.TblExchangeHistories.Add(new TblExchangeHistory
@@ -718,6 +728,12 @@ namespace SkillSwap_Platform.Controllers
                     Url = Url.Action("Index", "ExchangeDashboard"),
                 });
 
+                if (currentUserId == exchange.OfferOwnerId)
+                {
+                    TempData["SuccessMessage"] = "🎉 Hooray! You’ve completed your exchange.";
+                    return RedirectToAction("Index", "ExchangeDashboard");
+                }
+
                 TempData["SuccessMessage"] = "Exchange marked as completed.";
 
                 // Redirect to the review page for that exchange.
@@ -759,6 +775,16 @@ namespace SkillSwap_Platform.Controllers
 
                     // refund tokens, log history, notify both parties...
                     await _tokenService.RefundTokensAsync(exchange.ExchangeId);
+
+                    var escrow = await _context.TblEscrows
+                           .FirstOrDefaultAsync(e => e.ExchangeId == vm.ExchangeId);
+                    if (escrow != null)
+                    {
+                        escrow.Status = "Refunded";
+                        escrow.RefundedAt = DateTime.UtcNow;
+                        _context.TblEscrows.Update(escrow);
+                        await _context.SaveChangesAsync();
+                    }
 
                     _context.TblExchangeHistories.Add(new TblExchangeHistory
                     {
@@ -893,6 +919,13 @@ namespace SkillSwap_Platform.Controllers
             {
                 TempData["ErrorMessage"] = "Exchange not found.";
                 return RedirectToAction("EP404", "EP");
+            }
+
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == exchange.OfferOwnerId)
+            {
+                TempData["SuccessMessage"] = "🎉 You’ve already wrapped up this swap!";
+                return RedirectToAction("Index", "ExchangeDashboard");
             }
 
             // Check if cookies for reviewer details exist.

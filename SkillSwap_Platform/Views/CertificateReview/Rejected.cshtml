@@ -1,4 +1,5 @@
 ﻿@using SkillSwap_Platform.Services.AdminControls
+@using static SkillSwap_Platform.Services.AdminControls.Certificate.CertificateReviewDto
 @model PagedResult<SkillSwap_Platform.Services.AdminControls.Certificate.CertificateReviewDto>
 
 @{
@@ -82,10 +83,16 @@
                                             <td class="vam"><span class="fz15 fw400">@cert.UserName <i>(@cert.LoginName)</i></span></td>
                                             <td class="vam"><span class="fz14 fw400">@cert.SubmittedDate.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")</span></td>
                                             <td class="vam">
-                                                <span class="badge bg-@(
-            cert.Status == "Pending"  ? "secondary" :
-            cert.Status == "Approved" ? "success" : "danger")">
-                                                    @cert.Status
+                                                @{
+                                                    string badgeClass = cert.Status switch
+                                                    {
+                                                        ReviewStatus.Approved => "success",
+                                                        ReviewStatus.Rejected => "danger",
+                                                        _ => "secondary",
+                                                    };
+                                                }
+                                                <span class="badge bg-@badgeClass">
+                                                    @cert.Status  
                                                 </span>
                                             </td>
                                             <td>
