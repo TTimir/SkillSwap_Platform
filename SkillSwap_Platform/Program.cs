@@ -119,6 +119,7 @@ builder.Services.AddScoped<BadgeService>();
 builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IPaymentLogService, PaymentLogService>();
+builder.Services.AddHostedService<MeetingReminderHostedService>();
 
 
 // Admin Services

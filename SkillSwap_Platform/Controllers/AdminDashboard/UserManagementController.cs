@@ -31,11 +31,12 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         }
 
         // GET: /Admin/UserManagement/Manage
-        public async Task<IActionResult> Manage(int page = 1)
+        public async Task<IActionResult> Manage(int page = 1, string term = "")
         {
             try
             {
-                var activeUsers = await _usermanageService.GetActiveUsersAsync(page, PageSize);
+                ViewBag.Term = term;
+                var activeUsers = await _usermanageService.GetActiveUsersAsync(page, PageSize, term);
                 return View(activeUsers);
             }
             catch (Exception ex)
@@ -46,11 +47,12 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
         }
 
         // GET: /Admin/UserManagement/Index
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(int page = 1, string term = "")
         {
             try
             {
-                var heldUsers = await _usermanageService.GetHeldUsersAsync(page, PageSize);
+                ViewBag.Term = term;
+                var heldUsers = await _usermanageService.GetHeldUsersAsync(page, PageSize, term);
                 return View(heldUsers);
             }
             catch (Exception ex)
@@ -75,18 +77,18 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 return RedirectToAction(nameof(Manage));
             }
 
-            var untilUtc = (heldUntil ?? DateTime.UtcNow.AddMonths(3))
+            var untilUtc = (heldUntil ?? DateTime.UtcNow.AddMonths(1))
                   .ToUniversalTime();
 
             try
             {
-                var utcHeld = DateTime.SpecifyKind(heldUntil.Value, DateTimeKind.Utc);
+                var utcHeld = DateTime.SpecifyKind(untilUtc, DateTimeKind.Utc);
                 var istZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kolkata");
                 var localHeld = TimeZoneInfo.ConvertTimeFromUtc(utcHeld, istZone);
 
                 var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 if (await _usermanageService.HoldUserAsync(id, category, reason, heldUntil, adminId))
-                    TempData["Success"] = $"User held until {localHeld:dd MMMM, yyyy hh:mm tt} IST";
+                    TempData["Success"] = $"User held until {localHeld.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")} IST";
                 else
                     TempData["Error"] = "Failed to hold user.";
                 return RedirectToAction(nameof(Index));

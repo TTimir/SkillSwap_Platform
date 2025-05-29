@@ -52,9 +52,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="@Url.ActionLink("Reviews","OfferReview")" class="nav-link @(mode=="Reviews"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Reviews</a>
-                        <a href="@Url.ActionLink("Replies","OfferReview")" class="nav-link @(mode=="Replies"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flagged Reviews Replies</a>
-                        <a href="@Url.ActionLink("History","OfferReview")" class="nav-link @(mode=="History"?"active":"") fw500" id="nav-item2-tab" type="button" aria-selected="false">Flag History</a>
+                        <a href="@Url.ActionLink("ActiveFlags","OfferReview")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Flagged Reviews</a>
+                        <a class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Flag History</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -67,12 +66,13 @@
                                         <th scope="col">Type</th>
                                         <th scope="col">Review ID</th>
                                         <th scope="col">Offer</th>
+                                        <th scope="col">User</th>
                                         <th scope="col">Reported By</th>
-                                        <th scope="col">Reported Date</th>
+                                        <th scope="col">Reported On</th>
                                         <th scope="col">Admin</th>
                                         <th scope="col">Admin Action</th>
-                                        <th scope="col">Action On</th>
-                                        <th scope="col">Admin Notes</th>
+                                        <th scope="col">Action Date</th>
+                                        <th scope="col">Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody class="t-body">
@@ -87,14 +87,21 @@
                                             <td class="vam"><span class="fz15 fw400">@h.EntityType</span></td>
                                             <td class="vam"><span class="fz15 fw400">@h.EntityId</span></td>
                                             <td class="vam">
+                                                @{
+                                                    // limit to 10 chars + “…” if longer
+                                                    var displayTitle = h.OfferTitle.Length > 10
+                                                    ? h.OfferTitle.Substring(0, 10) + "…"
+                                                    : h.OfferTitle;
+                                                }
                                                 <a asp-controller="UserOfferDetails"
                                                    asp-action="OfferDetails"
                                                    asp-route-offerId="@h.OfferId"
                                                    target="_blank"
                                                    class="fz15 fw400 text-decoration-none">
-                                                    @h.OfferTitle <small>(ID @h.OfferId)</small>
+                                                    @displayTitle <small>(ID @h.OfferId)</small>
                                                 </a>
                                             </td>
+                                            <td class="vam">@h.ReviewAuthorUserName</td>
                                             <td class="vam"><span class="fz15 fw400">@(h.FlaggedByUserName ?? "Admin")</span></td>
                                             <td class="vam"><span class="fz15 fw400">@h.FlaggedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</span></td>
                                             <td class="vam"><span class="fz15 fw400">@(h.AdminUserName ?? "-")</span></td>

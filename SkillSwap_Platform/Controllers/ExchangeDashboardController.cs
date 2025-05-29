@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using SkillSwap_Platform.Services.BadgeTire;
 using Google.Apis.Calendar.v3.Data;
 using SkillSwap_Platform.Models.ViewModels;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -18,14 +19,16 @@ namespace SkillSwap_Platform.Controllers
     public class ExchangeDashboardController : Controller
     {
         private readonly SkillSwapDbContext _context;
+        private readonly IMemoryCache _cache;
         private readonly ILogger<ExchangeDashboardController> _logger;
         private readonly INotificationService _notif;
         private readonly IDigitalTokenService _tokenService;
         private readonly BadgeService _badgeService;
 
-        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif, IDigitalTokenService tokenService, BadgeService badgeService)
+        public ExchangeDashboardController(SkillSwapDbContext context, ILogger<ExchangeDashboardController> logger, INotificationService notif, IDigitalTokenService tokenService, BadgeService badgeService, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
             _logger = logger;
             _notif = notif;
             _tokenService = tokenService;
@@ -1057,6 +1060,14 @@ namespace SkillSwap_Platform.Controllers
                 return userId;
             }
             throw new Exception("User ID not found in claims.");
+        }
+
+        [HttpGet]
+        public IActionResult SnoozeReminder(int exchangeId)
+        {
+            // store a 24 h “snoozed” flag
+            _cache.Set($"snooze-{exchangeId}", true, TimeSpan.FromHours(24));
+            return RedirectToAction("Index");
         }
     }
 }

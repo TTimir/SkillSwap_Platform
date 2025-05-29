@@ -368,6 +368,7 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                  {
                      x.UserId,
                      x.UserName,
+                     x.Designation,
                      x.Email,
                      x.CreatedDate,
                      x.LastActive,
@@ -375,6 +376,9 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                      x.IsVerified,
                      x.IsHeld,
                      x.HeldAt,
+                     x.HeldReason,
+                     x.ReleasedAt,
+                     x.ReleaseReason,
                      x.FailedOtpAttempts,
                      x.DigitalTokenBalance
                  }).FirstOrDefaultAsync();
@@ -386,12 +390,16 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                 UserId = u.UserId,
                 UserName = u.UserName,
                 Email = u.Email,
+                Designation = u.Designation,
                 CreatedDate = u.CreatedDate,
                 LastLoginDate = u.LastActive,
                 IsActive = u.IsActive,
                 IsVerified = u.IsVerified,
                 IsHeld = u.IsHeld,
                 HeldAt = u.HeldAt,
+                HeldReason = u.HeldReason,
+                ReleaseAt = u.ReleasedAt,
+                ReleaseReason = u.ReleaseReason,
                 FailedOtpAttempts = u.FailedOtpAttempts ?? 0,
                 IsLockedOut = u.IsHeld,
                 RegistrationDate = u.CreatedDate
@@ -548,16 +556,32 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                 }).ToListAsync();
 
             // 8) Token transactions
-            dto.TokenTransactions = await _db.TblTokenTransactions.AsNoTracking()
-                .Where(t => t.FromUserId == userId || t.ToUserId == userId)
-                .OrderByDescending(t => t.CreatedAt).Take(20)
+            dto.TokenTransactions = await _db.TblTokenTransactions
+                .AsNoTracking()
+                .Where(t =>
+                    // always include anything you sent or received:
+                    t.FromUserId == userId
+                 || t.ToUserId == userId
+
+                 // plus: include *all* Release txns for exchanges you own or requested
+                 || (t.TxType == "Release"
+                     && t.ExchangeId != null
+                     && _db.TblExchanges.Any(ex =>
+                           ex.ExchangeId == t.ExchangeId
+                        && (ex.OfferOwnerId == userId
+                         || ex.OtherUserId == userId)
+                     ))
+                )
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(20)
                 .Select(t => new TokenTransactionDto
                 {
                     TransactionId = t.TransactionId,
                     Type = t.TxType,
                     Amount = t.Amount,
                     CreatedAt = t.CreatedAt
-                }).ToListAsync();
+                })
+                .ToListAsync();
 
             // 9b) Skills
             dto.Skills = await (

@@ -333,16 +333,15 @@
                                                 </label>
                                             </div>
                                             <div class="col-md-10">
-                                                <!-- Hidden file input supporting multiple selection -->
-                                                <input type="file" id="fileInput" name="attachments" multiple style="display:none" />
-                                                <!-- Main text input -->
-                                                <textarea id="messageInput"
-                                                          class="form-control"
-                                                          name="content"
-                                                          placeholder="Type a Message"
-                                                          rows="1"
-                                                          style="overflow:hidden; resize:none; margin-bottom:10px; width:90%"></textarea>
-                                                <small id="charCount" class="text-muted ms-2">0/200 chars</small>
+                                                <div class="textarea-with-counter">
+                                                    <!-- 2) Full-width textarea with extra padding -->
+                                                    <textarea id="messageInput"
+                                                              class="form-control"
+                                                              placeholder="Type a message…"
+                                                              rows="3"></textarea>
+                                                    <!-- 3) Overlayed counter -->
+                                                    <span id="innerCharCount" class="char-count">0/200</span>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
                                                 <!-- Send button -->
@@ -446,6 +445,30 @@
     button[disabled] {
         cursor: not-allowed;
         opacity: 0.65; /* Optional: to visually indicate disabled state */
+    }
+
+    .textarea-with-counter {
+        position: relative;
+        display: inline-block; /* Shrinks to fit content if you like */
+        width: 100%; /* Or whatever width you need */
+    }
+
+        /* Ensure textarea fills the wrapper and has room for the counter */
+        .textarea-with-counter textarea {
+            width: 90%;
+            padding-right: 3.5em; /* space for counter on the right */
+            box-sizing: border-box; /* include padding in width */
+        }
+
+    /* This looks like placeholder text inside */
+    .char-count {
+        position: absolute;
+        bottom: 0.5em; /* adjust to sit just above the bottom padding */
+        right: 5em; /* align with the right padding */
+        font-size: 0.85em;
+        color: rgba(0,0,0,0.4);
+        pointer-events: none; /* clicks go through */
+        user-select: none;
     }
 </style>
 
@@ -935,28 +958,25 @@
         });
     </script>
     <script>
-        $(document).ready(function(){
-          var $msg      = $('#messageInput');
-          var $counter  = $('#charCount');
-          var maxChars  = 200;
+        $(function(){
+          var $ta = $('#messageInput'),
+              $ct = $('#innerCharCount'),
+              max = 200;
 
-          // initial resize & count
-          $msg.css('height', $msg.prop('scrollHeight') + 'px');
-          $counter.text('0/' + maxChars + ' chars');
-
-          $msg.on('input', function(){
-            // 1) auto-resize
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
-
-            // 2) enforce & display char limit
-            var text = $msg.val();
-            if (text.length > maxChars) {
-              text = text.substring(0, maxChars);
-              $msg.val(text);
+          function update(){
+            var len = $ta.val().length;
+            if (len > max) {
+              $ta.val($ta.val().slice(0, max));
+              len = max;
             }
-            $counter.text(text.length + '/' + maxChars + ' chars');
-          });
+            $ct.text(len + '/' + max);
+          }
+
+          // init
+          update();
+
+          // on input
+          $ta.on('input', update);
         });
     </script>
 

@@ -129,6 +129,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             try
             {
                 await _offre.DismissReviewFlagsAsync(reviewId, flagId, adminId, notes);
+                tx.Complete();
                 TempData["Success"] = "Flag dismissed successfully.";
                 return RedirectToAction(nameof(Reviews));
             }
@@ -158,6 +159,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             try
             {
                 await _offre.DismissReplyFlagsAsync(replyId, adminId, notes);
+                tx.Complete();
                 TempData["Success"] = "Reply-flag dismissed.";
                 return RedirectToAction(nameof(Reviews));
             }
@@ -188,12 +190,13 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             try
             {
                 await _offre.ModerateAndWarnAsync(
-                contentId: id,
-                isReply: isReply,
-                adminId: adminId,
-                moderationNote: note,
-                warningMessage: warning
-            );
+                    contentId: id,
+                    isReply: isReply,
+                    adminId: adminId,
+                    moderationNote: note,
+                    warningMessage: warning
+                );
+                tx.Complete();
 
                 TempData["Success"] = "Content removed and user warned.";
                 return RedirectToAction(nameof(Reviews));

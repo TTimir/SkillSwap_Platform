@@ -10,8 +10,8 @@
 
 <style>
     .profile-avatar {
-        width: 50px;
-        height: 50px;
+        width: 100px;
+        height: 100px;
         /* border-radius: 50%; /* make them circles */ */
         object-fit: cover; /* crop to fill without distortion */
         display: inline-block; /* or block/inline-block as needed */
@@ -737,7 +737,7 @@
                                         </a>
                                         <a class="meta fw500 text-start">
                                             Exchange Success<br>
-                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess</span>
+                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess?.ToString("0.##")</span>
                                         </a>
                                     </div>
                                     <div class="d-grid mt15">

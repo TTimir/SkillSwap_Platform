@@ -650,8 +650,15 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 await _db.SaveChangesAsync();
 
                 var author = await _db.TblUsers.FindAsync(review.ReviewerId);
-                // prefix again
-                (string label, string sla) = _subs.GetActiveAsync(author.UserId).Result.PlanName switch
+
+                // 1) fetch the subscription async
+                var activeSub = await _subs.GetActiveAsync(author.UserId);
+
+                // 2) null‐coalesce the PlanName to “Free” if none exists
+                var planName = activeSub?.PlanName ?? "Free";
+
+                // 3) map into label/SLA
+                (string label, string sla) = planName switch
                 {
                     "Plus" => ("Plus Support", "72h SLA"),
                     "Pro" => ("Pro Support", "48h SLA"),
@@ -954,85 +961,102 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                     EntityId = r.ReviewId,
                     OfferId = r.OfferId,
                     OfferTitle = r.Offer.Title,
-
-                    // the person who wrote it
                     ReviewAuthorUserName = r.ReviewerName,
-                    // who reported it
                     FlaggedByUserName = _db.TblUsers
-                                           .Where(u => u.UserId == r.FlaggedByUserId)
-                                           .Select(u => u.UserName)
-                                           .FirstOrDefault() ?? "Unknown",
-
-                    AdminAction = "Flagged",
-                    FlaggedDate = r.FlaggedDate!.Value,
-
-                    // no admin yet
+                                                .Where(u => u.UserId == r.FlaggedByUserId)
+                                                .Select(u => u.UserName)
+                                                .FirstOrDefault() ?? "Unknown",
                     AdminUserName = null,
+                    AdminAction = "Flagged",
                     AdminReason = null,
-                    AdminActionDate = null
+                    AdminActionDate = null,
+                    FlaggedDate = r.FlaggedDate!.Value
                 })
                 .ToListAsync();
 
             // 2) Initial flag events on replies
-            var replyFlags = await _db.TblReviewReplies
+            var replyFlags = (await _db.TblReviewReplies
                 .Where(rr => rr.FlaggedDate != null)
                 .Include(rr => rr.Review).ThenInclude(r => r.Offer)
-                .Select(rr => new FlagHistoryVm
-                {
-                    EntityType = "Reply",
-                    EntityId = rr.ReplyId,
-                    OfferId = rr.Review.OfferId,
-                    OfferTitle = rr.Review.Offer.Title,
+                .Include(rr => rr.ReplierUser)
+                .ToListAsync())
+              .Select(rr => new FlagHistoryVm
+              {
+                  EntityType = "Reply",
+                  EntityId = rr.ReplyId,
+                  OfferId = rr.Review.OfferId,
+                  OfferTitle = rr.Review.Offer.Title,
+                  ReviewAuthorUserName = rr.ReplierUser.UserName,
+                  FlaggedByUserName = _db.TblUsers
+                                             .Where(u => u.UserId == rr.FlaggedByUserId)
+                                             .Select(u => u.UserName)
+                                             .FirstOrDefault() ?? "Unknown",
+                  AdminUserName = null,
+                  AdminAction = "Flagged",
+                  AdminReason = null,
+                  AdminActionDate = null,
+                  FlaggedDate = rr.FlaggedDate!.Value
+              })
+              .ToList();
 
-                    ReviewAuthorUserName = rr.ReplierUser.UserName,
-                    FlaggedByUserName = _db.TblUsers
-                                           .Where(u => u.UserId == rr.FlaggedByUserId)
-                                           .Select(u => u.UserName)
-                                           .FirstOrDefault() ?? "Unknown",
 
-                    AdminAction = "Flagged",
-                    FlaggedDate = rr.FlaggedDate!.Value,
+            // 3a) Moderation logs for **reviews** (ReplyId == null)
+            var reviewMod = from h in _db.TblReviewModerationHistories.AsNoTracking()
+                            where h.ReplyId == null
+                            join admin in _db.TblUsers.AsNoTracking()
+                                 on h.AdminId equals admin.UserId into admins
+                            from a in admins.DefaultIfEmpty()
+                            join r in _db.TblReviews
+                                       .Include(r => r.Offer)
+                                       .AsNoTracking()
+                                 on h.ReviewId equals r.ReviewId
+                            select new FlagHistoryVm
+                            {
+                                EntityType = "Review",
+                                EntityId = r.ReviewId,
+                                OfferId = r.OfferId,
+                                OfferTitle = r.Offer.Title,
+                                ReviewAuthorUserName = r.ReviewerName,
+                                FlaggedByUserName = null,
+                                AdminUserName = a.UserName,
+                                AdminAction = h.Action,
+                                AdminReason = h.Notes,
+                                AdminActionDate = h.CreatedAt,
+                                FlaggedDate = h.CreatedAt
+                            };
 
-                    AdminUserName = null,
-                    AdminReason = null,
-                    AdminActionDate = null
-                })
-                .ToListAsync();
+            // 3b) Moderation logs for **replies** (ReplyId != null)
+            var replyMod = from h in _db.TblReviewModerationHistories.AsNoTracking()
+                           where h.ReplyId != null
+                           join admin in _db.TblUsers.AsNoTracking()
+                                on h.AdminId equals admin.UserId into admins
+                           from a in admins.DefaultIfEmpty()
+                           join rr in _db.TblReviewReplies
+                                       .Include(rr => rr.Review).ThenInclude(r => r.Offer)
+                                       .Include(rr => rr.ReplierUser)
+                                       .AsNoTracking()
+                                on h.ReplyId equals rr.ReplyId
+                           select new FlagHistoryVm
+                           {
+                               EntityType = "Reply",
+                               EntityId = rr.ReplyId,
+                               OfferId = rr.Review.OfferId,
+                               OfferTitle = rr.Review.Offer.Title,
+                               ReviewAuthorUserName = rr.ReplierUser.UserName,
+                               FlaggedByUserName = null,
+                               AdminUserName = a.UserName,
+                               AdminAction = h.Action,
+                               AdminReason = h.Notes,
+                               AdminActionDate = h.CreatedAt,
+                               FlaggedDate = h.CreatedAt
+                           };
 
-            // 3) Moderation history entries (dismissals/deletions)
-            var modLogs = await _db.TblReviewModerationHistories
-                .Include(h => h.Admin)
-                .Include(h => h.Review).ThenInclude(r => r.Offer)
-                .Include(h => h.Reply).ThenInclude(rr => rr.Review).ThenInclude(r => r.Offer)
-                .Select(h => new FlagHistoryVm
-                {
-                    EntityType = h.ReplyId != null ? "Reply" : "Review",
-                    EntityId = h.ReplyId ?? h.ReviewId,
-                    OfferId = (h.ReplyId != null
-                                          ? h.Reply.Review.OfferId
-                                          : h.Review.OfferId),
-                    OfferTitle = (h.ReplyId != null
-                                          ? h.Reply.Review.Offer.Title
-                                          : h.Review.Offer.Title),
+            var modLogs = (await reviewMod
+                                .Union(replyMod)
+                                .OrderByDescending(x => x.FlaggedDate)
+                                .ToListAsync());
 
-                    // who originally wrote it
-                    ReviewAuthorUserName = (h.ReplyId != null
-                                          ? h.Reply.ReplierUser.UserName
-                                          : h.Review.ReviewerName),
-
-                    // admin who took this action
-                    AdminUserName = h.Admin.UserName,
-                    AdminAction = h.Action,           // e.g. "DismissedFlag", "DeletedReview"…
-                    AdminReason = h.Notes,
-                    AdminActionDate = h.CreatedAt,
-
-                    // for a moderation log we leave Reporter empty
-                    FlaggedByUserName = null,
-                    FlaggedDate = h.CreatedAt
-                })
-                .ToListAsync();
-
-            // 4) Merge, sort, and page
+            // 4) Merge everything & page
             var all = reviewFlags
                 .Concat(replyFlags)
                 .Concat(modLogs)
@@ -1047,7 +1071,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             return new PagedResult<FlagHistoryVm>
             {
                 Items = pagedItems,
-                TotalCount = all.Count(),
+                TotalCount = all.Count,
                 Page = page,
                 PageSize = pageSize
             };

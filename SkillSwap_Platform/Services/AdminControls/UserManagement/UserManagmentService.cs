@@ -42,10 +42,23 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
         }
 
         public Task<PagedResult<UserManagementDto>> GetActiveUsersAsync(
-            int page, int pageSize)
+            int page, int pageSize, string term)
         {
-            var baseQuery = _db.TblUsers
-                .Where(u => !u.IsHeld)    // only those not held
+            // 1) Base: only un-held users
+            var query = _db.TblUsers
+                .Where(u => !u.IsHeld);
+
+            // 2) Term filter
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                term = term.Trim();
+                query = query.Where(u =>
+                    u.UserName.Contains(term) ||
+                    u.Email.Contains(term));
+            }
+
+            // 3) Projection
+            var baseQuery = query
                 .Select(u => new UserManagementDto
                 {
                     UserId = u.UserId,
@@ -58,15 +71,29 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                     HeldAt = u.LockoutEndTime
                 });
 
+            // 4) Paging
             return GetPagedAsync(baseQuery, page, pageSize);
         }
 
         // 3) Held users, paged
         public Task<PagedResult<UserManagementDto>> GetHeldUsersAsync(
-            int page, int pageSize)
+            int page, int pageSize, string term)
         {
-            var baseQuery = _db.TblUsers
-                .Where(u => u.IsHeld)
+            // start with held users
+            var query = _db.TblUsers
+                .Where(u => u.IsHeld);
+
+            // if a search term was provided, filter on username or email
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                term = term.Trim();
+                query = query.Where(u =>
+                    u.UserName.Contains(term) ||
+                    u.Email.Contains(term));
+            }
+
+            // now project into DTO
+            var baseQuery = query
                 .Select(u => new UserManagementDto
                 {
                     UserId = u.UserId,
@@ -81,6 +108,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                     TotalHolds = _db.TblUserHoldHistories.Count(h => h.UserId == u.UserId)
                 });
 
+            // and finally page it
             return GetPagedAsync(baseQuery, page, pageSize);
         }
 
@@ -119,7 +147,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
 
                 // send notification
                 var holdUntilText = until.HasValue
-                    ? until.Value.ToString("dd MMM yyyy hh:mm tt") + " UTC"
+                    ? until.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") + " IST"
                     : "until further notice";
                 // ——— In HoldUserAsync ———
                 // 1) figure out their active tier & SLA
@@ -137,13 +165,13 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
-                    <p>We hope you’re doing well. We wanted to let you know that as of <strong>{user.HeldAt:dd MMM yyyy hh:mm tt} UTC</strong>, your Swapo account has been placed on hold for the following reason:</p>
+                    <p>We hope you’re doing well. We wanted to let you know that as of <strong>{user.HeldAt?.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")} IST</strong>, your Swapo account has been placed on hold for the following reason:</p>
 
                     <blockquote style=""border-left:4px solid #ccc; padding-left:1em; margin:1em 0;"">
                       {reason}
                     </blockquote>
 
-                    <p>This hold will remain in effect until <strong>{holdUntilText}</strong>. We understand this may disrupt your workflow, and we sincerely apologize for any inconvenience.</p>
+                    <p>This hold will remain in effect <strong>{holdUntilText}</strong>. We understand this may disrupt your workflow, and we sincerely apologize for any inconvenience.</p>
 
                     <p><strong>If our investigation finds no cause for concern, or once any identified violation of our Terms is resolved, your account will be released immediately and you’ll be able to log in again. We’ll notify you at that time.</strong></p>
 
@@ -221,7 +249,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
                 var body = $@"
                     <p>Hi {user.FirstName},</p>
 
-                    <p>We’re pleased to let you know that as of <strong>{user.ReleasedAt:dd MMM yyyy hh:mm tt} UTC</strong>, the temporary hold on your Swapo account has been lifted.</p>
+                    <p>We’re pleased to let you know that as of <strong>{user.ReleasedAt?.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")} IST</strong>, the temporary hold on your Swapo account has been lifted.</p>
 
                     <p>You can now <a href=""/Home/Login"">log in</a> and resume all your swaps right away.</p>
 
@@ -315,7 +343,7 @@ namespace SkillSwap_Platform.Services.AdminControls.UserManagement
             </p>
             <p style=""margin:0 0 15px;"">
               The temporary hold on your Swapo account has just expired as of 
-              <strong>{now.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")} UTC</strong>.
+              <strong>{now.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")} IST</strong>.
             </p>
           </td>
         </tr>

@@ -372,8 +372,13 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
                 IsEscrowAccount = false,
                 IsSupportAgent = false,
                 IsFlagged = false,
-                Role = vm.SelectedRoleId.ToString()
+                Role = vm.SelectedRoleId.ToString(),
             };
+
+            if (string.IsNullOrEmpty(user.TotpSecret))
+            {
+                user.TotpSecret = TotpHelper.GenerateSecretKey();
+            }
 
             if (vm.ProfileImage != null)
             {

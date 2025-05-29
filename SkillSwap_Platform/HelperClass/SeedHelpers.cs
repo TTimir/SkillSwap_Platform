@@ -48,6 +48,7 @@ namespace SkillSwap_Platform.HelperClass
                     IsOnboardingCompleted = true,
                     DigitalTokenBalance = 0m,
                     Role = "Admin",
+                    TotpSecret = TotpHelper.GenerateSecretKey(),
                     Salt = salt,
                     PasswordHash = hash,
                     CreatedDate = DateTime.UtcNow,

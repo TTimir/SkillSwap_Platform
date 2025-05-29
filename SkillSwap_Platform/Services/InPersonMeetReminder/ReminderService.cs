@@ -54,7 +54,7 @@ namespace SkillSwap_Platform.Services.InPersonMeetReminder
             await _emails.SendEmailAsync(otherUser.Email, subject, body, isBodyHtml: true);
         }
 
-        public async Task SendMissingEndProofReminder(int exchangeId)
+        public async Task SendMissingEndProofReminder(int exchangeId, bool isFinal = false)
         {
             // load the in‐person meeting + exchange + users
             var meeting = await _db.TblInPersonMeetings
@@ -71,14 +71,20 @@ namespace SkillSwap_Platform.Services.InPersonMeetReminder
             if (ownerUser == null || otherUser == null) return;
 
             var when = meeting.MeetingScheduledDateTime?.ToLocalTime().ToString("f");
-            var subject = "🤗 Gentle Nudge: Don’t forget your end-meeting proof";
-            var body = $@"
-                <p>Hello!</p>
-                <p>We hope your in-person meeting on <strong>{when}</strong> went well.</p>
-                <p>When you have a moment, please return to the website and submit your end-meeting proof so we can finalize everything.</p>
-                <p>Thanks for helping us keep things moving smoothly!</p>
-                <p>Warm regards,<br/>The Swapo Team</p>
-            ";
+            var subject = isFinal
+                ? "⚠️ Final Reminder: Please submit your end-meeting proof"
+                : "🤗 Gentle Nudge: Don’t forget your end-meeting proof";
+
+            var body = isFinal
+              ? $@"<p>Hi there,</p>
+           <p>This is our <strong>final</strong> reminder to submit your end-meeting proof for your session on <strong>{when}</strong>. 
+           After this, your exchange will be marked incomplete.</p>
+           <p>— The Swapo Team</p>"
+              : $@"<p>Hello!</p>
+           <p>We hope your in-person meeting on <strong>{when}</strong> went well. When you have a moment, 
+           please submit</a> your end-meeting proof.</p>
+           <p>Thanks!</p>
+           <p>— The Swapo Team</p>";
 
             await _emails.SendEmailAsync(ownerUser.Email, subject, body, isBodyHtml: true);
             await _emails.SendEmailAsync(otherUser.Email, subject, body, isBodyHtml: true);

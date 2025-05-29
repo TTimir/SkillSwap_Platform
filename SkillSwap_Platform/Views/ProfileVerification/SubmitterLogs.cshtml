@@ -140,7 +140,7 @@
                                         <!-- Previous -->
                                         <li class="page-item @(page == 1 ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="History"
+                                               asp-action="SubmitterLogs"
                                                asp-route-page="@(page - 1)"
                                                asp-route-search="@filter">
                                                 <span class="fas fa-angle-left"></span>
@@ -152,7 +152,7 @@
                                         {
                                             <li class="page-item @(p == page ? "active" : "")">
                                                 <a class="page-link"
-                                                   asp-action="History"
+                                                   asp-action="SubmitterLogs"
                                                    asp-route-page="@p">@p</a>
                                             </li>
                                         }
@@ -160,7 +160,7 @@
                                         <!-- Next -->
                                         <li class="page-item @(page == totalPages ? "disabled" : "")">
                                             <a class="page-link"
-                                               asp-action="History"
+                                               asp-action="SubmitterLogs"
                                                asp-route-page="@(page + 1)"
                                                asp-route-search="@filter">
                                                 <span class="fas fa-angle-right"></span>

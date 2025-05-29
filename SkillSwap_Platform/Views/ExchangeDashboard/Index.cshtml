@@ -1,5 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.ExchangeDashboardVM
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@using Microsoft.Extensions.Caching.Memory
+@inject IMemoryCache Cache
 
 @{
     ViewData["Title"] = "Exchange Details";
@@ -86,7 +88,7 @@
                                                 If you haven’t yet completed or closed this exchange, please
                                                 <a href="mailto:swapoorg360@gmail.com">contact our support team</a>.
                                                 Otherwise, you can manage your remaining listings in
-                                                <a href="@Url.Action("Index", "ExchangeDashboard")">My Exchanges</a>.
+                                                <a href="@Url.Action("Index", "ExchangeDashboard")">My Active Exchanges</a>.
                                             </div>
                                         </td>
                                     </tr>
@@ -216,13 +218,37 @@
                                                         Meeting Details <i class="fal fa-arrow-right-long"></i>
                                                     </a>
                                                 }
+
+                                                // show only in the ~5-minute window after the "30 min-before" reminder fires
+                                                bool showSnooze = false;
+                                                if (item.MeetingScheduledDateTime.HasValue)
+                                                {
+                                                    var leadUtc = item.MeetingScheduledDateTime.Value.ToUniversalTime().AddMinutes(-30);
+                                                    var nowUtc = DateTime.UtcNow;
+                                                    var windowEnd = leadUtc.AddMinutes(5);
+                                                    bool inWindow = nowUtc >= leadUtc && nowUtc <= windowEnd;
+
+                                                    bool snoozed = Cache.TryGetValue($"snooze-{item.Exchange.ExchangeId}", out _);
+                                                    showSnooze = inWindow && !snoozed && !item.IsMeetingEnded;
+                                                }
+
+                                                @if (showSnooze)
+                                                {
+                                                    <a asp-action="SnoozeReminder"
+                                                       asp-route-exchangeId="@item.Exchange.ExchangeId"
+                                                       class="ud-btn btn-outline-secondary mb10"
+                                                       title="Pause all reminders for 24 hours">
+                                                        💤 Snooze reminders for 24 h
+                                                    </a>
+                                                }
                                             }
                                         </td>
                                         @{
                                             var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
                                             bool iAskedCancel = item.StatusChangeBy == currentUserId;
                                             bool partnerAsked = item.StatusChangeBy != null && item.StatusChangeBy != currentUserId;
-                                            bool isPendingCancel = item.Exchange.Status == "Cancellation Requested";
+                                            var isPendingCancel = item.Exchange.Status.Equals(
+                                            "Cancellation Requested", StringComparison.OrdinalIgnoreCase);
 
                                             bool isOfferOwner = currentUserId == item.Exchange.OfferOwnerId;
                                             bool hasConfirmed = isOfferOwner
@@ -237,77 +263,72 @@
                                             && item.IsMeetingEnded);
                                         }
                                         <td>
-                                            @if (meetingDone)
+                                            @if (isPendingCancel)
                                             {
-                                                @if (!isPendingCancel)
+                                                <span class="badge bg-warning">
+                                                    Cancellation requested, waiting for partner…
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @* 2) Otherwise, show your normal “I’m Done” / “Waiting for partner” / “Completed” flow *@
+                                                @if (!hasConfirmed)
                                                 {
-                                                    @if (!hasConfirmed)
-                                                    {
-                                                        <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                            <button type="submit" class="ud-btn btn-thm2 mb10"
-                                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                    title="Mark this exchange as completed">
-                                                                I’m Done
-                                                            </button>
-                                                        </form>
-                                                    }
-                                                    else if (!bothConfirmed)
-                                                    {
-                                                        <span class="text-info">
-                                                            Waiting for the other partner to confirm…
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-success">
-                                                            ✅ Completed
-                                                        </span>
-                                                    }
+                                                    <form asp-action="MarkExchangeCompleted"
+                                                          asp-controller="ExchangeDashboard"
+                                                          method="post"
+                                                          style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
+                                                        <button type="submit"
+                                                                class="ud-btn btn-thm2 mb10"
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top"
+                                                                title="Mark this exchange as completed">
+                                                            I’m Done
+                                                        </button>
+                                                    </form>
                                                 }
-
-                                                @if (iAskedCancel)
+                                                else if (!bothConfirmed)
                                                 {
-                                                    <span class="badge bg-warning">
-                                                        Cancellation requested, waiting for partner…
+                                                    <span class="text-info">
+                                                        Waiting for the other partner to confirm…
                                                     </span>
                                                 }
-                                                @* 2) If *they* asked cancellation… *@
-                                                else if (partnerAsked)
-                                                {
-                                                    <div>
-                                                        <p>
-                                                            <strong>Partner’s reason:</strong><br />
-                                                            @item.StatusChangeReason
-                                                        </p>
-                                                        <div class="d-flex">
-                                                            <form asp-action="CancelExchange" method="post" class="me-2">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
-                                                                <button type="submit" class="ud-btn btn-thm">
-                                                                    Approve
-                                                                </button>
-                                                            </form>
-                                                            <form asp-action="DenyCancellation" method="post">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
-                                                                <button type="submit" class="ud-btn btn-light-thm" style="border:0">
-                                                                    Deny
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                }
-                                                @* 3) Otherwise, show the “Request Cancellation” button *@
                                                 else
                                                 {
-                                                    <button type="button"
-                                                            class="ud-btn btn-danger btn-request-cancel"
-                                                            data-exchange-id="@item.Exchange.ExchangeId">
-                                                        No, Cancel
-                                                    </button>
+                                                    <span class="badge bg-success">
+                                                        ✅ Completed
+                                                    </span>
                                                 }
+
+                                                @* 3) And still allow them to “No, Cancel” if they change their mind *@
+                                                <button type="button"
+                                                        class="ud-btn btn-danger btn-request-cancel"
+                                                        data-exchange-id="@item.Exchange.ExchangeId">
+                                                    No, Cancel
+                                                </button>
+                                            }
+
+                                            @if (partnerAsked)
+                                            {
+                                                <div class="mt-2">
+                                                    <p><strong>Partner’s reason:</strong><br />@item.StatusChangeReason</p>
+                                                    <div class="d-flex">
+                                                        <form asp-action="CancelExchange" method="post" class="me-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
+                                                            <button type="submit" class="ud-btn btn-thm">Approve</button>
+                                                        </form>
+                                                        <form asp-action="DenyCancellation" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
+                                                            <button type="submit" class="ud-btn btn-light-thm" style="border:0">
+                                                                Deny
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                             }
                                         </td>
                                     </tr>

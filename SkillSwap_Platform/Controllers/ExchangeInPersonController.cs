@@ -135,10 +135,22 @@ namespace SkillSwap_Platform.Controllers
                     .AddMinutes(model.MeetingDurationMinutes)
                     .AddMinutes(5); // give them a 5-minute grace period
 
-                // schedule the “forgot proof” reminder
+                // 1) 30-minute-before reminder:
                 BackgroundJob.Schedule<IReminderService>(
-                    svc => svc.SendMissingEndProofReminder(model.ExchangeId),
+                    svc => svc.SendEndMeetingReminder(model.ExchangeId),
+                    model.ScheduledDateTime.AddMinutes(-30)
+                );
+
+                // 2) first “forgot proof” nudge:
+                BackgroundJob.Schedule<IReminderService>(
+                    svc => svc.SendMissingEndProofReminder(model.ExchangeId, false),
                     endTime
+                );
+
+                // 3) final “last nudge” (e.g. 2 days later):
+                BackgroundJob.Schedule<IReminderService>(
+                    svc => svc.SendMissingEndProofReminder(model.ExchangeId, true),
+                    endTime.AddDays(2)
                 );
 
                 // log notification:
