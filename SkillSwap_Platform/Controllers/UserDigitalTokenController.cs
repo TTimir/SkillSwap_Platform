@@ -196,6 +196,16 @@ namespace SkillSwap_Platform.Controllers
                 TotalCount = totalCount
             };
 
+            bool isGrowthUser = await _db.Subscriptions
+                .AsNoTracking()
+                .AnyAsync(s =>
+                    s.UserId == currentUserId
+                    && s.PlanName == "Growth"
+                    && (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                );
+
+            model.IsGrowthUser = isGrowthUser;
+
             return View(model);
         }
 

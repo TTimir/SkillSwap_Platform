@@ -281,13 +281,22 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
                 };
             }).ToList();
 
+            bool isGrowthUser = await _db.Subscriptions
+                .AsNoTracking()
+                .AnyAsync(s =>
+                    s.UserId == userId.Value
+                 && s.PlanName == "Growth"
+                 && (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                );
+
             // 6) build and return VM
             var vm = new BillingHistoryVM
             {
                 BillingHistory = items,
                 Page = page,
                 PageSize = pageSize,
-                TotalItems = total
+                TotalItems = total,
+                IsGrowthUser = isGrowthUser
             };
 
             return View(vm);

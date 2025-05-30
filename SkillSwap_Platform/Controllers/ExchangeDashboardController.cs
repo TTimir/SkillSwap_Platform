@@ -383,6 +383,14 @@ namespace SkillSwap_Platform.Controllers
                     PurchasedCertificates = purchasedExchangeIds
                 };
 
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == currentUserId
+                     && s.PlanName == "Growth"
+                     && (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 return View("ExchangeHistory", viewModel);
             }
             catch (Exception ex)

@@ -66,119 +66,225 @@
                 }
                 else
                 {
+
+                    <script>
+                        // lower-case so JS sees a boolean
+                        window.isGrowthUser = @Model.IsGrowthUser.ToString().ToLower();
+                    </script>
+
                     <div class="tab-content" id="nav-tabContent">
                         <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
                             <div class="packages_table table-responsive">
-                                <table class="table-style3 table at-savesearch">
-                                    <thead class="t-head">
-                                        <tr>
-                                            <th scope="col">#</th>
-                                            <th scope="col">Period</th>
-                                            <th scope="col">Plan</th>
-                                            <th scope="col">Cycle</th>
-                                            <th scope="col">Auto-renew</th>
-                                            <th scope="col">Cancelled?</th>
-                                            @if (current != null && current.IsAutoRenew)
-                                            {
+                                @if (Model.IsGrowthUser)
+                                {
+                                    <table id="billingHistory" class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">Period</th>
+                                                <th scope="col">Plan</th>
+                                                <th scope="col">Cycle</th>
+                                                <th scope="col">Auto-renew</th>
+                                                <th scope="col">Cancelled?</th>
                                                 <th scope="col">Action</th>
-                                            }
-                                        </tr>
-                                    </thead>
-                                    <tbody class="t-body">
-                                        @if (current != null)
-                                        {
-                                            <tr class="table-active">
-                                                <td>
-                                                    <span class="badge bg-success ms-2">Current Membership</span>
-                                                </td>
-                                                <td>
-                                                    @current.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
-                                                    <i>to</i> @current.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
-                                                </td>
-                                                <td>
-                                                    @current.PlanName
-                                                </td>
-                                                <td class="text-capitalize">@current.BillingCycle</td>
-                                                <td>
-                                                    @if (current.IsAutoRenew)
-                                                    {
-                                                        <span class="pending-style style2">Yes</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="pending-style style3">No</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    @if (current.CancelReason != null)
-                                                    {
-                                                        <small title="@current.CancelReason">
-                                                            cancelled @current.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
-                                                        </small>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">N/A</span>
-                                                    }
-                                                </td>
-                                                @if (current.IsAutoRenew)
-                                                {
+                                            </tr>
+                                        </thead>
+                                        <tbody class="t-body">
+                                            @if (current != null)
+                                            {
+                                                <tr class="table-active">
                                                     <td>
-                                                        <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
-                                                                style="border:0"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#cancelModal">
-                                                            Cancel Plan
-                                                        </button>
+                                                        <span class="badge bg-success ms-2">Current Membership</span>
                                                     </td>
-                                                }
-                                            </tr>
+                                                    <td>
+                                                        @current.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                        <i>to</i> @current.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                    </td>
+                                                    <td>
+                                                        @current.PlanName
+                                                    </td>
+                                                    <td class="text-capitalize">@current.BillingCycle</td>
+                                                    <td>
+                                                        <span class="pending-style @(current.IsAutoRenew ? "style2" : "style3")">
+                                                            @(current.IsAutoRenew ? "Yes" : "No")
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (current.CancelReason != null)
+                                                        {
+                                                            <small title="@current.CancelReason">
+                                                                cancelled @current.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
+                                                            </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">N/A</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (current.IsAutoRenew)
+                                                        {
+                                                            <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
+                                                            style="border:0"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#cancelModal">
+                                                                Cancel Plan
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
 
-                                            @* 2) A separator row *@
-                                            <tr>
-                                                <td colspan="6" class="fw-bold text-center bg-light">
-                                                    Past Subscriptions
-                                                </td>
-                                            </tr>
-                                        }
+                                                @* 2) A separator row *@
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td class="fw-bold text-center bg-light">Past Subscriptions</td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            }
 
-                                        @* 3) All the past subscriptions *@
-                                        @foreach (var item in past)
-                                        {
+                                            @* 3) All the past subscriptions *@
+                                            @foreach (var item in past)
+                                            {
+                                                <tr>
+                                                    <td>@(serial++)</td>
+                                                    <td>
+                                                        @item.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                        <i>to</i> @item.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                    </td>
+                                                    <td>@item.PlanName</td>
+                                                    <td class="text-capitalize">@item.BillingCycle</td>
+                                                    <td>
+                                                        <span class="pending-style @(item.IsAutoRenew ? "style2" : "style3")">
+                                                            @(item.IsAutoRenew ? "Yes" : "No")
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (item.CancelReason != null)
+                                                        {
+                                                            <small title="@item.CancelReason">
+                                                                cancelled @item.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
+                                                            </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">N/A</span>
+                                                        }
+                                                    </td>
+                                                    <td>&nbsp;</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <table class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
                                             <tr>
-                                                <td>@(serial++)</td>
-                                                <td>
-                                                    @item.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
-                                                    <i>to</i> @item.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
-                                                </td>
-                                                <td>@item.PlanName</td>
-                                                <td class="text-capitalize">@item.BillingCycle</td>
-                                                <td>
-                                                    @if (item.IsAutoRenew)
-                                                    {
-                                                        <span class="pending-style style2">Yes</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="pending-style style3">No</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    @if (item.CancelReason != null)
-                                                    {
-                                                        <small title="@item.CancelReason">
-                                                            cancelled @item.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
-                                                        </small>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted">N/A</span>
-                                                    }
-                                                </td>
+                                                <th scope="col">#</th>
+                                                <th scope="col">Period</th>
+                                                <th scope="col">Plan</th>
+                                                <th scope="col">Cycle</th>
+                                                <th scope="col">Auto-renew</th>
+                                                <th scope="col">Cancelled?</th>
+                                                <th scope="col">Action</th>
                                             </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody class="t-body">
+                                            @if (current != null)
+                                            {
+                                                <tr class="table-active">
+                                                    <td>
+                                                        <span class="badge bg-success ms-2">Current Membership</span>
+                                                    </td>
+                                                    <td>
+                                                        @current.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                        <i>to</i> @current.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                    </td>
+                                                    <td>
+                                                        @current.PlanName
+                                                    </td>
+                                                    <td class="text-capitalize">@current.BillingCycle</td>
+                                                    <td>
+                                                        <span class="pending-style @(current.IsAutoRenew ? "style2" : "style3")">
+                                                            @(current.IsAutoRenew ? "Yes" : "No")
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (current.CancelReason != null)
+                                                        {
+                                                            <small title="@current.CancelReason">
+                                                                cancelled @current.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
+                                                            </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">N/A</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (current.IsAutoRenew)
+                                                        {
+                                                            <button class="ud-btn btn-outline-thm mb-2 mb-md-0"
+                                                                    style="border:0"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#cancelModal">
+                                                                Cancel Plan
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
+
+                                                @* 2) A separator row *@
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td class="fw-bold text-center bg-light">Past Subscriptions</td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            }
+
+                                            @* 3) All the past subscriptions *@
+                                            @foreach (var item in past)
+                                            {
+                                                <tr>
+                                                    <td>@(serial++)</td>
+                                                    <td>
+                                                        @item.StartDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                        <i>to</i> @item.EndDate.ToLocalTime().ToString("MMMM d, yyyy")
+                                                    </td>
+                                                    <td>@item.PlanName</td>
+                                                    <td class="text-capitalize">@item.BillingCycle</td>
+                                                    <td>
+                                                        <span class="pending-style @(item.IsAutoRenew ? "style2" : "style3")">
+                                                            @(item.IsAutoRenew ? "Yes" : "No")
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (item.CancelReason != null)
+                                                        {
+                                                            <small title="@item.CancelReason">
+                                                                cancelled @item.CancelledAt?.ToLocalTime().ToString("MMMM d, yyyy")
+                                                            </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">N/A</span>
+                                                        }
+                                                    </td>
+                                                    <td>&nbsp;</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
 
                                 <!-- Modal markup -->
                                 <div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
@@ -258,4 +364,28 @@
 </div>
 </div>
 
+@section DynamicScript {
+    <script>
+        $(function() {
+          // only Growth users get DataTables with the built-in toolbar
+          if (!window.isGrowthUser) return;
 
+          $('#billingHistory').DataTable({
+            dom:        'Bfrtip',           // B = Buttons, f = filter, r = processing, t = table, i = info, p = pagination
+            buttons: [
+              'copy',
+              { extend: 'excelHtml5', title: 'Billing_History' },
+              {
+                extend: 'pdfHtml5',
+                title: 'Billing_History',
+                orientation: 'landscape',
+                pageSize: 'A4'
+              },
+              'print'
+            ],
+            pageLength: @Model.PageSize,
+            order:      [[1, 'desc']]
+          });
+        });
+    </script>
+}

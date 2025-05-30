@@ -803,6 +803,14 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = totalPages
                 };
 
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -891,7 +899,7 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 int userId = GetUserId();
-                int pageSize = 5; // 5 offers per page
+                int pageSize = 5;
 
                 var totalOffers = await _context.TblOffers.Where(o => o.UserId == userId && !o.IsDeleted).CountAsync();
                 var totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
@@ -909,8 +917,17 @@ namespace SkillSwap_Platform.Controllers
                 {
                     Offers = offers,
                     CurrentPage = page,
-                    TotalPages = totalPages
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
                 };
+
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
 
                 return View(viewModel);
             }
@@ -955,6 +972,14 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = totalPages
                 };
 
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -993,6 +1018,14 @@ namespace SkillSwap_Platform.Controllers
                     CurrentPage = page,
                     TotalPages = totalPages
                 };
+
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
 
                 return View(viewModel);
             }

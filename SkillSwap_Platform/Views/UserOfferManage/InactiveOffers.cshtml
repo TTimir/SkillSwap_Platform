@@ -57,92 +57,186 @@
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <script>
+                            window.isGrowthUser = @Model.IsGrowthUser.ToString().ToLower();
+                        </script>
                         <div class="packages_table table-responsive">
-                            <table class="table-style3 table at-savesearch">
-                                <thead class="t-head">
-                                    <tr>
-                                        <th scope="col">Title</th>
-                                        <th scope="col">Category</th>
-                                        <th scope="col">Tokens/Cost</th>
-                                        <th scope="col">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="t-body">
-                                    @foreach (var offer in Model.Offers)
-                                    {
-                                        <tr>
-                                            <th class="dashboard-img-service" scope="row">
-                                                <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
-                                                    <div class="list-thumb flex-shrink-0 bdrs4 mb10-lg">
-                                                        @* Display the first portfolio image as thumbnail if available *@
-                                                        @{
-                                                            List<string> portfolioImages = new List<string>();
-                                                            if (!string.IsNullOrWhiteSpace(offer.Portfolio))
-                                                            {
-                                                                try
+                            @if (Model.IsGrowthUser)
+                            {
+                                <table id="inactiveOffersTable" class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>    
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Category</th>
+                                            <th scope="col">Tokens/Cost</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        @foreach (var offer in Model.Offers)
+                                        {
+                                            <tr>
+                                                <th class="dashboard-img-service" scope="row">
+                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                        <div class="list-thumb flex-shrink-0 bdrs4 mb10-lg">
+                                                            @* Display the first portfolio image as thumbnail if available *@
+                                                            @{
+                                                                List<string> portfolioImages = new List<string>();
+                                                                if (!string.IsNullOrWhiteSpace(offer.Portfolio))
                                                                 {
-                                                                    portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
-                                                                    ?? new List<string>();
+                                                                    try
+                                                                    {
+                                                                        portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
+                                                                        ?? new List<string>();
+                                                                    }
+                                                                    catch { /* If deserialization fails, leave portfolioImages empty. */ }
                                                                 }
-                                                                catch { /* If deserialization fails, leave portfolioImages empty. */ }
-                                                            }
 
-                                                            // Define the list of default images.
-                                                            var defaultImages = new List<string>
+                                                                // Define the list of default images.
+                                                                var defaultImages = new List<string>
                                                     {
                                                     Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
                                                     Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
                                                     };
 
-                                                            // You can choose between a random image or a deterministic one.
-                                                            // For a random default image, use:
-                                                            // var random = new Random();
-                                                            // int index = random.Next(defaultImages.Count);
+                                                                // You can choose between a random image or a deterministic one.
+                                                                // For a random default image, use:
+                                                                // var random = new Random();
+                                                                // int index = random.Next(defaultImages.Count);
 
-                                                            // For a deterministic but varied selection based on the offer id:
-                                                            int index = offer.OfferId % defaultImages.Count;
-                                                            var selectedImage = defaultImages[index];
-                                                        }
+                                                                // For a deterministic but varied selection based on the offer id:
+                                                                int index = offer.OfferId % defaultImages.Count;
+                                                                var selectedImage = defaultImages[index];
+                                                            }
 
-                                                        @if (portfolioImages.Any())
-                                                        {
-                                                            <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Swap Image">
-                                                        }
-                                                        else
-                                                        {
-                                                            <img src="@selectedImage" class="card-img-top w-100" alt="Default Swap Image">
-                                                        }
-                                                    </div>
-                                                    <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                        <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
-                                                        <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
-                                                            <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
-                                                            <li>Mode Set: @offer.CollaborationMethod</li>
-                                                            <li>Created Date: @offer.CreatedDate.ToLocalTime().ToString("MMMM dd,yyyy")</li>
-                                                            <li style="list-style:none">
-                                                                <div class="switch-style1">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input active-toggle" type="checkbox" data-offer-id="@offer.OfferId" @(offer.IsActive ? "checked" : "")>
-                                                                        <span class="status-text mx-3">@((offer.IsActive ? "Active" : "Inactive"))</span>
+                                                            @if (portfolioImages.Any())
+                                                            {
+                                                                <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Swap Image">
+                                                            }
+                                                            else
+                                                            {
+                                                                <img src="@selectedImage" class="card-img-top w-100" alt="Default Swap Image">
+                                                            }
+                                                        </div>
+                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                            <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
+                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
+                                                                <li>Mode Set: @offer.CollaborationMethod</li>
+                                                                <li>Created Date: @offer.CreatedDate.ToLocalTime().ToString("MMMM dd,yyyy")</li>
+                                                                <li style="list-style:none">
+                                                                    <div class="switch-style1">
+                                                                        <div class="form-check form-switch">
+                                                                            <input class="form-check-input active-toggle" type="checkbox" data-offer-id="@offer.OfferId" @(offer.IsActive ? "checked" : "")>
+                                                                            <span class="status-text mx-3">@((offer.IsActive ? "Active" : "Inactive"))</span>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </th>
-                                            <td class="align-top"><span class="fz15 fw400">@offer.Category</span></td>
-                                            <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
-                                            <td class="align-top">
-                                                <div class="d-flex">
-                                                    <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
-                                                    <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
-                                                </div>
-                                            </td>
+                                                </th>
+                                                <td class="align-top"><span class="fz15 fw400">@offer.Category</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
+                                                <td class="align-top">
+                                                    <div class="d-flex">
+                                                        <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                        <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <table class="table-style3 table at-savesearch">
+                                    <thead class="t-head">
+                                        <tr>
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Category</th>
+                                            <th scope="col">Tokens/Cost</th>
+                                            <th scope="col">Actions</th>
                                         </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody class="t-body">
+                                        @foreach (var offer in Model.Offers)
+                                        {
+                                            <tr>
+                                                <th class="dashboard-img-service" scope="row">
+                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                        <div class="list-thumb flex-shrink-0 bdrs4 mb10-lg">
+                                                            @* Display the first portfolio image as thumbnail if available *@
+                                                            @{
+                                                                List<string> portfolioImages = new List<string>();
+                                                                if (!string.IsNullOrWhiteSpace(offer.Portfolio))
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        portfolioImages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(offer.Portfolio)
+                                                                        ?? new List<string>();
+                                                                    }
+                                                                    catch { /* If deserialization fails, leave portfolioImages empty. */ }
+                                                                }
+
+                                                                // Define the list of default images.
+                                                                var defaultImages = new List<string>
+                                                    {
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                                    Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                                    };
+
+                                                                // You can choose between a random image or a deterministic one.
+                                                                // For a random default image, use:
+                                                                // var random = new Random();
+                                                                // int index = random.Next(defaultImages.Count);
+
+                                                                // For a deterministic but varied selection based on the offer id:
+                                                                int index = offer.OfferId % defaultImages.Count;
+                                                                var selectedImage = defaultImages[index];
+                                                            }
+
+                                                            @if (portfolioImages.Any())
+                                                            {
+                                                                <img src="@portfolioImages.First()" class="card-img-top w-100" alt="Swap Image">
+                                                            }
+                                                            else
+                                                            {
+                                                                <img src="@selectedImage" class="card-img-top w-100" alt="Default Swap Image">
+                                                            }
+                                                        </div>
+                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                            <h6 class="list-title mb-0"><a href="@Url.Action("OfferDetails", "UserOfferDetails", new { offerId = offer.OfferId })">@offer.Title</a></h6>
+                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                <li>Time Commitment:  @offer.TimeCommitmentDays days </li>
+                                                                <li>Mode Set: @offer.CollaborationMethod</li>
+                                                                <li>Created Date: @offer.CreatedDate.ToLocalTime().ToString("MMMM dd,yyyy")</li>
+                                                                <li style="list-style:none">
+                                                                    <div class="switch-style1">
+                                                                        <div class="form-check form-switch">
+                                                                            <input class="form-check-input active-toggle" type="checkbox" data-offer-id="@offer.OfferId" @(offer.IsActive ? "checked" : "")>
+                                                                            <span class="status-text mx-3">@((offer.IsActive ? "Active" : "Inactive"))</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                                <td class="align-top"><span class="fz15 fw400">@offer.Category</span></td>
+                                                <td class="align-top"><span class="fz14 fw400">@offer.TokenCost</span></td>
+                                                <td class="align-top">
+                                                    <div class="d-flex">
+                                                        <a href="@Url.Action("Edit", "UserOfferManage", new { offerId = offer.OfferId })" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><span class="flaticon-pencil"></span></a>
+                                                        <a href="@Url.Action("Delete", "UserOfferManage", new { offerId = offer.OfferId })" class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"><span class="flaticon-delete"></span></a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
                             @if (Model.CurrentPage > 1)
                             {
                                 <div class="mbp_pagination text-center mt30">
@@ -231,6 +325,29 @@
                     }
                 });
             });
+        });
+    </script>
+    <script>
+        $(function(){
+          // only Growth users get DataTables search/paging/buttons
+          if (!window.isGrowthUser) return;
+
+          $('#inactiveOffersTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+              'copy',
+              { extend: 'excelHtml5', title: 'Active_Swap_Offers' },
+              {
+                extend: 'pdfHtml5',
+                title: 'Active_Swap_Offers',
+                orientation: 'landscape',
+                pageSize: 'A4'
+              },
+              'print'
+            ],
+            pageLength: 5,   // match your server-side paging
+            order:      [[0,'asc']]
+          });
         });
     </script>
 }

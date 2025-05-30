@@ -21,6 +21,8 @@
         public List<OfferDeleteVM> DeletedOffers { get; set; } = new List<OfferDeleteVM>();
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
+        public bool IsGrowthUser { get; set; }
+
     }
 
 }

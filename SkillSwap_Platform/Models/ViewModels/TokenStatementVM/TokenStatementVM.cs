@@ -8,7 +8,7 @@
         public decimal AvailableForWithdrawal { get; set; }
 
         public decimal FutureReceivedCount { get; set; }
-
+        public bool IsGrowthUser { get; set; }
         public List<TokenTransactionVm> Transactions { get; set; }
 
         public int CurrentPage { get; set; }
