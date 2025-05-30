@@ -55,50 +55,103 @@
 </div>
 <div class="row">
     <div class="col-xl-12">
+        <script>
+            // lowercase true/false so JS can use it directly
+            window.isGrowthUser = @Model.IsGrowthUser.ToString().ToLower();
+        </script>
+
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
             <div class="packages_table table-responsive">
-                <table class="table-style3 table at-savesearch">
-                    <thead class="t-head">
-                        <tr>
-                            <th scope="col">Transaction Date</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Description</th>
-                            <th scope="col">To Exchange Partner</th>
-                            <th scope="col">Token Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody class="t-body">
-                        @foreach (var tx in Model.Transactions)
-                        {
-                            var badgeClass = tx.Type switch
+                @if (Model.IsGrowthUser)
+                {
+                    <table id="tokenStatements" class="table-style3 table at-savesearch">
+                        <thead class="t-head">
+                            <tr>
+                                <th scope="col">Transaction Date</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">To Exchange Partner</th>
+                                <th scope="col">Token Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="t-body">
+                            @foreach (var tx in Model.Transactions)
                             {
-                                "Topup" => "style5",
-                                "Hold" => "style4",
-                                "Release" => "style5",
-                                "Spend" => "style4",
-                                _ => "style4"
-                            };
-                            <tr class="@(tx.Highlight ? "active" : "")">
-                                <th scope="row">@tx.Date.ToLocalTime().ToString("MMMM d, yyyy")</th>
-                                <td class="vam"><span class="pending-style @badgeClass">@tx.Type</span></td>
-                                <td class="vam">@tx.Detail</td>
-                                <td class="vam">
-                                    <a href="@Url.Action(
+                                var badgeClass = tx.Type switch
+                                {
+                                    "Topup" => "style5",
+                                    "Hold" => "style4",
+                                    "Release" => "style5",
+                                    "Spend" => "style4",
+                                    _ => "style4"
+                                };
+                                <tr class="@(tx.Highlight ? "active" : "")">
+                                    <th scope="row">@tx.Date.ToLocalTime().ToString("MMMM d, yyyy")</th>
+                                    <td class="vam"><span class="pending-style @badgeClass">@tx.Type</span></td>
+                                    <td class="vam">@tx.Detail</td>
+                                    <td class="vam">
+                                        <a href="@Url.Action(
                                         "PublicProfileByUsername",
                                         "UserProfile",
                                         new { username = tx.CounterpartyName })">
-                                        <i>@("@")@tx.CounterpartyName</i>
-                                    </a>
-                                </td>
-                                <td class="vam">
-                                    <img src="~/template_assets/images/SSDToken.png"
-                                         alt="Tokens"
-                                         width="32" height="32" />@tx.Amount.ToString("0.00")
-                                </td>
+                                            <i>@tx.CounterpartyName</i>
+                                        </a>
+                                    </td>
+                                    <td class="vam">
+                                        <img src="~/template_assets/images/SSDToken.png"
+                                        alt="Tokens"
+                                        width="32" height="32" />@tx.Amount.ToString("0.00")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <table class="table-style3 table at-savesearch">
+                        <thead class="t-head">
+                            <tr>
+                                <th scope="col">Transaction Date</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">To Exchange Partner</th>
+                                <th scope="col">Token Cost</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="t-body">
+                            @foreach (var tx in Model.Transactions)
+                            {
+                                var badgeClass = tx.Type switch
+                                {
+                                    "Topup" => "style5",
+                                    "Hold" => "style4",
+                                    "Release" => "style5",
+                                    "Spend" => "style4",
+                                    _ => "style4"
+                                };
+                                <tr class="@(tx.Highlight ? "active" : "")">
+                                    <th scope="row">@tx.Date.ToLocalTime().ToString("MMMM d, yyyy")</th>
+                                    <td class="vam"><span class="pending-style @badgeClass">@tx.Type</span></td>
+                                    <td class="vam">@tx.Detail</td>
+                                    <td class="vam">
+                                        <a href="@Url.Action(
+                                        "PublicProfileByUsername",
+                                        "UserProfile",
+                                        new { username = tx.CounterpartyName })">
+                                            <i>@tx.CounterpartyName</i>
+                                        </a>
+                                    </td>
+                                    <td class="vam">
+                                        <img src="~/template_assets/images/SSDToken.png"
+                                             alt="Tokens"
+                                             width="32" height="32" />@tx.Amount.ToString("0.00")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
                 @{
                     int totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
                     int currentPage = Model.CurrentPage;
@@ -195,3 +248,34 @@
 </div>
 </div>
 
+
+@section DynamicScript {
+    <script>
+        $(function() {
+          var options = {
+            pageLength: @Model.PageSize,
+            order: [[0, 'desc']]
+          };
+
+          if (window.isGrowthUser) {
+            options.dom     = 'Bfrtip';
+            options.buttons = [
+              'copy',
+              {
+                extend: 'excelHtml5',
+                title: 'Token_Transactions'
+              },
+              {
+                extend: 'pdfHtml5',
+                title: 'Token_Transactions',
+                orientation: 'landscape',
+                pageSize: 'A4'
+              },
+              'print'
+            ];
+          }
+
+          $('#tokenStatements').DataTable(options);
+        });
+    </script>
+}

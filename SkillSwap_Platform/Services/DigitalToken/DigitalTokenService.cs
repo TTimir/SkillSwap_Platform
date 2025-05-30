@@ -9,8 +9,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
 {
     public class DigitalTokenService : IDigitalTokenService
     {
-        private const int EscrowUserId = 1;          // userId of escrow account
-        private const int SystemReserveUserId = 2;   // userId of platform reserve (for bonuses)
+        private const int EscrowUserId = 2;          // userId of escrow account
+        private const int SystemReserveUserId = 3;   // userId of platform reserve (for bonuses)
         private readonly SkillSwapDbContext _db;
         private readonly ILogger<DigitalTokenService> _logger;
         private readonly INotificationService _notif;
@@ -30,7 +30,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         public async Task HoldTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
@@ -48,7 +47,33 @@ namespace SkillSwap_Platform.Services.DigitalToken
                               ?? throw new KeyNotFoundException($"Offer owner not found.");
 
                 var cost = ex.TokensPaid;
-                if (cost <= 0) throw new InvalidOperationException("Nothing to hold.");
+                if (cost <= 0)
+                {
+                    // just mark held & notify
+                    ex.TokensHeld = true;
+                    ex.TokenHoldDate = DateTime.UtcNow;
+                    _db.TblExchanges.Update(ex);
+                    await _db.SaveChangesAsync(ct);
+
+                    // in‐app notifications
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = buyer.UserId,
+                        Title = "Exchange initiated",
+                        Message = $"Exchange #{exchangeId} has been initiated (no tokens required).",
+                        Url = $"/UserDashboard/Exchanges/{exchangeId}"
+                    });
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = seller.UserId,
+                        Title = "You’ve been invited to swap",
+                        Message = $"Exchange #{exchangeId} has been initiated (no tokens required).",
+                        Url = $"/UserDashboard/Exchanges/{exchangeId}"
+                    });
+
+                    return;
+                }
+
                 if (buyer.DigitalTokenBalance < cost)
                     throw new InvalidOperationException("Insufficient balance.");
 
@@ -81,7 +106,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(ex);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -100,30 +124,105 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     Url = $"/UserDashboard/Exchanges/{exchangeId}"
                 });
 
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          swapo
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            We’ve placed <strong>{cost}</strong> tokens in escrow for exchange 
+            <strong>#{exchangeId} – {ex.Offer.Title}</strong>.
+          </p>
+          <p style=""margin:0 0 15px;"">
+            You’ll see them returned if the exchange does not complete.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thanks for trusting swapo — stay swapping!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
-                buyer.Email,
-                subject: $"Your tokens have been held in escrow",
-                body: $@"
-                    <p>Hi {buyer.UserName},</p>
-                    <p>We’ve placed <strong>{cost}</strong> tokens in escrow for exchange <strong>#{exchangeId} – {ex.Offer.Title}</strong>.</p>
-                    <p>You’ll see them returned if the exchange does not complete.</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
-            );
+                    buyer.Email,
+                    subject: "Your tokens have been held in escrow",
+                    body: htmlBody,
+                    isBodyHtml: true
+                );
 
                 // Email to seller
+                var htmlBody2 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          swapo
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{seller.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            <strong>{cost}</strong> tokens have been held in escrow awaiting completion of exchange 
+            <strong>#{exchangeId} – {ex.Offer.Title}</strong>.
+          </p>
+          <p style=""margin:0 0 15px;"">
+            We’ll let you know when they’re released.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thanks for being part of swapo!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     seller.Email,
-                    subject: $"Tokens held for your pending exchange",
-                    body: $@"
-                    <p>Hi {seller.UserName},</p>
-                    <p><strong>{cost}</strong> tokens have been held in escrow awaiting completion of exchange <strong>#{exchangeId} – {ex.Offer.Title}</strong>.</p>
-                    <p>We’ll let you know when they’re released.</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Tokens held for your pending exchange",
+                    body: htmlBody2,
+                    isBodyHtml: true
                 );
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error holding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -131,12 +230,11 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         public async Task ReleaseTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
                     .Include(e => e.Offer).ThenInclude(o => o.User)
-                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId);
+                    .FirstOrDefaultAsync(e => e.ExchangeId == exchangeId, ct);
                 if (ex == null) throw new KeyNotFoundException($"Exchange #{exchangeId} not found.");
 
                 if (!ex.TokensHeld)
@@ -146,17 +244,19 @@ namespace SkillSwap_Platform.Services.DigitalToken
                               ?? throw new KeyNotFoundException($"Offer owner not found.");
 
                 var holdTx = await _db.TblTokenTransactions
-                    .FirstOrDefaultAsync(t => t.ExchangeId == exchangeId && t.TxType == "Hold" && !t.IsReleased);
+                    .FirstOrDefaultAsync(t => t.ExchangeId == exchangeId && t.TxType == "Hold" && !t.IsReleased, ct);
                 if (holdTx == null) throw new InvalidOperationException("No outstanding hold.");
 
                 decimal amount = holdTx.Amount;
-                var escrow = await GetUserAsync(EscrowUserId, "Escrow", ct);
+                var escrow = await GetEscrowUserAsync();
 
                 // 1) release original tokens
                 await ReleaseOriginalAsync(escrow, seller, holdTx, amount, exchangeId, ct);
 
+                var reserve = await GetSystemReserveUserAsync();
+
                 // 2) calculate & credit boost
-                await ApplyBoostAsync(seller.UserId, amount, exchangeId, ct);
+                await ApplyBoostAsync(seller.UserId, amount, exchangeId, ct, reserve);
 
                 // 3) finalize exchange record
                 ex.TokensHeld = false;
@@ -166,33 +266,113 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(ex);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
+
+                var subject = $"Funds released for exchange #{exchangeId}";
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI, sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          
+          <!-- Header -->
+          <tr>
+            <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+              swapo
+            </td>
+          </tr>
+    
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <p style=""margin:0 0 15px;"">Hi <strong>{seller.UserName}</strong>,</p>
+              <p style=""margin:0 0 15px;"">
+                The <strong>{amount}</strong> tokens held in escrow for exchange 
+                <strong>#{exchangeId}</strong> have just been released to your account.
+              </p>
+              <p style=""margin:0;"">Thanks for using swapo!</p>
+            </td>
+          </tr>
+    
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              Happy swapping — The swapo Team
+            </td>
+          </tr>
+    
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+";
 
                 await _email.SendEmailAsync(
                     seller.Email,
-                    subject: $"Funds released for exchange #{exchangeId}",
-                    body: $@"
-                        <p>Hi {seller.UserName},</p>
-                        <p>The <strong>{amount}</strong> tokens held in escrow for exchange <strong>#{exchangeId}</strong> have just been released to your account.</p>
-                        <p>Thanks for using SkillSwap!</p>"
+                    subject: subject,
+                    body: htmlBody,
+                    isBodyHtml: true
                 );
 
                 var buyer = await _db.TblUsers.FindAsync(ex.OtherUserId)
                   ?? throw new KeyNotFoundException($"Buyer not found.");
 
                 // Email to buyer
+                var htmlBody3 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          swapo
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            Your escrow of <strong>{amount}</strong> tokens for exchange 
+            <strong>#{exchangeId}</strong> has now been released.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Happy swapping!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     buyer.Email,
-                    subject: $"Your escrow has been released",
-                    body: $@"
-                    <p>Hi {buyer.UserName},</p>
-                    <p>Your escrow of <strong>{amount}</strong> tokens for exchange <strong>#{exchangeId}</strong> has now been released..</p>
-                    <p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Your escrow has been released",
+                    body: htmlBody3,
+                    isBodyHtml: true
                 );
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error releasing tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -243,21 +423,21 @@ namespace SkillSwap_Platform.Services.DigitalToken
             int sellerUserId,
             decimal originalAmount,
             int exchangeId,
-            CancellationToken ct)
+            CancellationToken ct,
+            TblUser reserve)
         {
             var multiplier = await GetBoostMultiplierAsync(sellerUserId, ct);
             var bonusTotal = Math.Floor(originalAmount * (multiplier - 1));
             if (bonusTotal <= 0) return;
 
-            var reserve = await GetUserAsync(SystemReserveUserId, "System reserve", ct);
             if (reserve.DigitalTokenBalance < bonusTotal)
                 throw new InvalidOperationException(
                     $"System reserve {reserve.DigitalTokenBalance} insufficient to pay bonus {bonusTotal}.");
 
+            reserve.DigitalTokenBalance -= bonusTotal; 
             var seller = await _db.TblUsers.FindAsync(new object[] { sellerUserId }, ct)
                          ?? throw new KeyNotFoundException("Seller not found.");
 
-            reserve.DigitalTokenBalance -= bonusTotal;
             seller.DigitalTokenBalance += bonusTotal;
             _db.TblUsers.UpdateRange(reserve, seller);
 
@@ -284,8 +464,11 @@ namespace SkillSwap_Platform.Services.DigitalToken
         private async Task<decimal> GetBoostMultiplierAsync(int userId, CancellationToken ct)
         {
             var sub = await _db.Subscriptions
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(s => s.UserId == userId && s.IsActive, ct);
+                      .AsNoTracking()
+                      .FirstOrDefaultAsync(s => s.UserId == userId, ct);
+
+            if (sub == null || !sub.IsActive)
+                return 1.00m;
 
             return sub?.PlanName switch
             {
@@ -296,17 +479,8 @@ namespace SkillSwap_Platform.Services.DigitalToken
             };
         }
 
-        private async Task<TblUser> GetUserAsync(int userId, string roleDescription, CancellationToken ct)
-        {
-            var u = await _db.TblUsers.FindAsync(new object[] { userId }, ct);
-            if (u == null)
-                throw new KeyNotFoundException($"{roleDescription} account (UserId={userId}) is missing.");
-            return u;
-        }
-
         public async Task RefundTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 // 1) Find the original “hold” transaction
@@ -361,7 +535,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(exchange);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -370,15 +543,53 @@ namespace SkillSwap_Platform.Services.DigitalToken
                     Message = $"{cost} tokens have been returned to your account for cancelled exchange #{exchangeId}.",
                     Url = $"/UserDashboard/Exchanges/{exchangeId}"
                 });
+                var htmlBody4 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          swapo
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{buyer.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            Your <strong>{cost}</strong> tokens have been returned after cancelling exchange 
+            <strong>#{exchangeId}</strong>.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Thank you for swapping with us!  
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+
                 await _email.SendEmailAsync(
                     buyer.Email,
-                    subject: $"Your tokens have been refunded",
-                    body: $"<p>Hi {buyer.UserName},</p><p>Your {cost} tokens have been returned after cancelling exchange #{exchangeId}.</p><p>Thanks,<br/>The SkillSwap Team</p>"
+                    subject: "Your tokens have been refunded",
+                    body: htmlBody4,
+                    isBodyHtml: true
                 );
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Error refunding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -423,6 +634,20 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 throw new InvalidOperationException(
                     $"Escrow account (UserId={EscrowUserId}) is missing!");
             return escrow;
+        }
+
+        private async Task<TblUser> GetSystemReserveUserAsync()
+        {
+            var reserve = await _db.TblUsers
+                .IgnoreQueryFilters()
+                .SingleOrDefaultAsync(u =>
+                    u.UserId == SystemReserveUserId &&
+                    u.IsSystemReserveAccount);
+
+            if (reserve == null)
+                throw new InvalidOperationException(
+                    $"System-reserve account (UserId={SystemReserveUserId}) is missing!");
+            return reserve;
         }
     }
 }

@@ -54,7 +54,7 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             {
                 ViewBag.SenderUserId = senderUserId;
                 ViewBag.SenderUserName = (await _mod
-                    .GetFlaggedUserSummariesAsync(1, int.MaxValue))   // quick lookup
+                    .GetFlaggedUserSummariesAsync(1, int.MaxValue))
                     .Items
                     .FirstOrDefault(u => u.SenderUserId == senderUserId)?
                     .SenderUserName

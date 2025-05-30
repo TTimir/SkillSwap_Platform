@@ -646,10 +646,14 @@ namespace SkillSwap_Platform.Controllers
                 .ToList();
 
             // Process dynamic offered skill rows.
-            var offeredSkillNames = Request.Form["skill[name][]"].ToArray();
-            var offeredSkillCategories = Request.Form["skill[category][]"].ToArray();
-            var offeredSkillCustomCategories = Request.Form["skill[customCategory][]"].ToArray();
-            var offeredSkillLevels = Request.Form["skill[level][]"].ToArray();
+            var names = Request.Form["skill[name][]"].ToArray();
+            var cats = Request.Form["skill[category][]"].ToArray();
+            var custom = Request.Form["skill[customCategory][]"].ToArray();
+            var lvls = Request.Form["skill[level][]"].ToArray();
+            var offeredSet = new HashSet<string>(
+                offeredRaw.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          .Select(s => s.Trim().ToLowerInvariant())
+            );
 
             // Get existing skills for duplication check.
             var existingUserSkills = await _context.TblUserSkills
@@ -657,39 +661,65 @@ namespace SkillSwap_Platform.Controllers
                 .Select(s => new { s.Skill.SkillName, s.Skill.SkillCategory }) // Get only relevant fields
                 .ToListAsync();
 
-            var toInsertSkills = new List<TblSkill>();
-            var toInsertUserSkills = new List<TblUserSkill>();
             var duplicateErrors = new List<string>();
 
             // Preload all existing global skills into a dictionary for quick lookup
-            var allGlobalSkills = await _context.TblSkills
-                .ToListAsync();
-            var globalSkillLookup = allGlobalSkills
-                .ToDictionary(s => (s.SkillName.ToLower(), s.SkillCategory.ToLower()), s => s);
+            var allGlobal = await _context.TblSkills
+                         .AsNoTracking()
+                         .ToListAsync();
+            var lookup = allGlobal
+                .ToDictionary(
+                    s => (s.SkillName.Trim().ToLower(), s.SkillCategory.Trim().ToLower()),
+                    s => s
+                );
 
-            for (int i = 0; i < offeredSkillNames.Length; i++)
+            // Collect new ones
+            var toInsertSkills = new List<TblSkill>();
+            for (int i = 0; i < names.Length; i++)
             {
-                string skillName = offeredSkillNames[i]?.Trim();
-                if (string.IsNullOrWhiteSpace(skillName))
-                    continue;
+                var nm = names[i]?.Trim();
+                if (string.IsNullOrEmpty(nm)) continue;
 
-                // Determine category (use custom value if "Other" was selected).
-                string category = offeredSkillCategories.ElementAtOrDefault(i)?.Trim();
-                if (category == "Other")
+                // decide category
+                var ct = cats.ElementAtOrDefault(i);
+                if (ct == "Other") ct = custom.ElementAtOrDefault(i)?.Trim();
+                if (string.IsNullOrEmpty(ct)) continue;
+
+                var key = (nm.ToLower(), ct.ToLower());
+                if (!lookup.ContainsKey(key))
                 {
-                    category = offeredSkillCustomCategories.ElementAtOrDefault(i)?.Trim();
+                    var sk = new TblSkill
+                    {
+                        SkillName = nm,
+                        SkillCategory = ct
+                    };
+                    toInsertSkills.Add(sk);
+                    lookup[key] = sk;
                 }
+            }
 
-                if (existingUserSkills.Any(x =>
-                    x.SkillName.Equals(skillName, StringComparison.OrdinalIgnoreCase) &&
-                    x.SkillCategory.Equals(category, StringComparison.OrdinalIgnoreCase)))
-                {
-                    duplicateErrors.Add($"{skillName} ({category})");
-                    continue;
-                }
+            // Save new skills so they get real SkillId values
+            if (toInsertSkills.Any())
+            {
+                _context.TblSkills.AddRange(toInsertSkills);
+                await _context.SaveChangesAsync();
+            }
 
-                // Map proficiency
-                int? prof = offeredSkillLevels.ElementAtOrDefault(i) switch
+            var toInsertUserSkills = new List<TblUserSkill>();
+            for (int i = 0; i < names.Length; i++)
+            {
+                var nm = names[i]?.Trim();
+                if (string.IsNullOrEmpty(nm)) continue;
+
+                var ct = cats.ElementAtOrDefault(i);
+                if (ct == "Other") ct = custom.ElementAtOrDefault(i)?.Trim();
+                if (string.IsNullOrEmpty(ct)) continue;
+
+                var key = (nm.ToLower(), ct.ToLower());
+                var skillEntity = lookup[key];  // now has valid SkillId
+
+                // map proficiency
+                int? prof = lvls.ElementAtOrDefault(i) switch
                 {
                     "Basic" => 1,
                     "Intermediate" => 2,
@@ -697,26 +727,13 @@ namespace SkillSwap_Platform.Controllers
                     _ => (int?)null
                 };
 
-                // Lookup or stage new global skill
-                TblSkill skillEntity;
-                var key = (skillName.ToLower(), category.ToLower());
-                if (!globalSkillLookup.TryGetValue(key, out skillEntity))
-                {
-                    skillEntity = new TblSkill { SkillName = skillName, SkillCategory = category };
-                    globalSkillLookup[key] = skillEntity;
-                    toInsertSkills.Add(skillEntity);
-                }
-
-                // Create the user-skill link
+                // only set the FK
                 toInsertUserSkills.Add(new TblUserSkill
                 {
                     UserId = userId,
-                    Skill = skillEntity,           // EF will wire up the FK
+                    SkillId = skillEntity.SkillId,
                     ProficiencyLevel = prof,
-                    IsOffering = offeredRaw
-                                      .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                      .Select(s => s.Trim().ToLower())
-                                      .Contains(skillName.ToLower())
+                    IsOffering = offeredSet.Contains(nm.ToLower())
                 });
             }
 
@@ -728,14 +745,17 @@ namespace SkillSwap_Platform.Controllers
             }
 
             // Add all new entities in one go
-            if (toInsertSkills.Any())
-                _context.TblSkills.AddRange(toInsertSkills);
-            _context.TblUserSkills.AddRange(toInsertUserSkills);
+            if (toInsertUserSkills.Any())
+            {
+                _context.TblUserSkills.AddRange(toInsertUserSkills);
+                await _context.SaveChangesAsync();
+            }
 
             try
             {
                 // mark progress
-                var prog = await _context.TblOnboardingProgresses.FirstOrDefaultAsync(p => p.UserId == userId)
+                var prog = await _context.TblOnboardingProgresses
+                             .FirstOrDefaultAsync(p => p.UserId == userId)
                            ?? new TblOnboardingProgress { UserId = userId };
                 prog.SkillPreferencesSet = true;
                 if (_context.Entry(prog).State == EntityState.Detached)
@@ -995,32 +1015,74 @@ namespace SkillSwap_Platform.Controllers
 
                 // 🎉 Fire off the "onboarding complete" email
                 var htmlBody = $@"
-                      <p>Hi {user.FirstName},</p>
-                    
-                      <p>Great news—you’ve successfully completed your onboarding on <strong>SkillSwap</strong>! Here’s a quick game plan to get rolling:</p>
-                    
-                      <ul>
-                        <li>Give your profile a once‑over. A friendly bio and clear photo help other swappers get to know you.</li>
-                        <li>Post your first offer or request. It takes just a minute, and it puts your skills on the map.</li>
-                        <li>Browse the marketplace. Spot something cool? Say hello and kick‑off your first swap.</li>
-                        <li>And more…</li>
-                      </ul>
-                    
-                      <p>Before you jump in, take a moment to review your profile so it shines. Once you’re happy, dive right into the community and start creating meaningful connections.</p>
-                    
-                      <p>🔗 <a href="">Jump back in here</a></p>
-                    
-                      <p> We can’t wait to see the connections you create.</ p >
-                    
-                      <p> Happy swapping! < br /> The SkillSwap Team</ p >
-                    ".Trim();
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        
+        <!-- Header -->
+        <tr>
+          <td style=""border-top:4px solid rgba(91,187,123,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#5BBB7B;"">Swapo</h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <p>Hi <strong>{user.FirstName}</strong>,</p>
+
+            <p>Great news—you’ve successfully completed your onboarding on <strong>Swapo</strong>! Here’s a quick game plan to get rolling:</p>
+
+            <ul>
+              <li>Give your profile a once-over. A friendly bio and clear photo help other swappers get to know you.</li>
+              <li>Post your first offer or request. It takes just a minute, and it puts your skills on the map.</li>
+              <li>Browse the marketplace. Spot something cool? Say hello and kick-off your first swap.</li>
+              <li>And more…</li>
+            </ul>
+
+            <p>Before you jump in, take a moment to review your profile so it shines. Once you’re happy, dive right into the community and start creating meaningful connections.</p>
+
+            <p>We can’t wait to see the connections you create.</p>
+            <p>Happy swapping!<br/>The Swapo Team</p>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr>
+          <td style=""padding:0 20px;"">
+            <hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style=""background-color:#5BBB7B;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e6f9ee;font-size:14px;"">
+              Thank you for being a valued member of <strong>Swapo</strong>. Your passion keeps our community thriving!
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+".Trim();
 
                 await _emailService.SendEmailAsync(
                     user.Email,
                     $"You’re all set! Ready to Start Swapping, {user.FirstName}? 🎉",
                     htmlBody,
                     isBodyHtml: true
-                    );
+                );
             }
             catch (Exception ex)
             {
@@ -1124,33 +1186,54 @@ namespace SkillSwap_Platform.Controllers
             progress.TotalTokensGiven = total;
             await _context.SaveChangesAsync();
 
-            var subject = $"🎉 You’ve just earned {total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}!";
-            var htmlBody = $@"
-                <div style=""font-family:sans-serif;line-height:1.4;color:#333;"">
-                  <h2>Congrats, {user.FirstName}! 🥳</h2>
-                  <p>Because you completed every onboarding step, we’ve just deposited <strong>{total:0.##} SkillSwap Token{(total > 1 ? "s" : "")}</strong> into your account.</p>
-                  <img src=""/template_assets/images/SSDToken.png"" 
-                       alt=""SkillSwap Token"" 
-                       style=""width:100px;height:100px;object-fit:contain;"" />
-                  <p>
-                    Your new balance is now <strong>{user.DigitalTokenBalance:0.##}</strong> tokens.
-                    Use them to post offers, request help, or explore the community—your next big swap is just a click away!
-                  </p>
-                  <blockquote style=""border-left:4px solid #5BBB7B;padding-left:1em;color:#444;margin:1em 0;"">
-                    “Tokens aren’t just currency—they’re the fuel for your next achievement!”  
-                  </blockquote>
-                  <p>
-                    <a href=""{Url.Action("Profile", "User")}"">View your profile</a> to see them in action.
-                  </p>
-                  <p style=""margin-top:2em;"">— Happy swapping,<br/>The SkillSwap Team</p>
-                </div>";
-
-            await _emailService.SendEmailAsync(
-                user.Email,
-                subject,
-                htmlBody,
-                isBodyHtml: true
-            );
+            var subject = $"🎉 You’ve just earned {total:0.##} Swapo Token{(total > 1 ? "s" : "")}!";
+            var htmlBody9 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(91,187,123,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#5BBB7B;"">Onboarding Complete!</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;text-align:center;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Congrats, {user.FirstName}! 🥳</h2>
+            <p style=""margin:0 0 15px;"">
+              You’ve earned <strong>{total:0.##} Swapo Token{(total > 1 ? "s" : "")}</strong>!
+            </p>
+            <img src=""/template_assets/images/SSDToken.png"" 
+                 alt=""Swapo Token"" 
+                 style=""width:100px;height:100px;object-fit:contain;margin:0 0 15px;""/>
+            <p style=""margin:0 0 15px;"">
+              Your new balance is <strong>{user.DigitalTokenBalance:0.##}</strong>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#5BBB7B;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e6f9ee;font-size:14px;"">
+              Tokens fuel your next achievement—go swap something great!
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
+            await _emailService.SendEmailAsync(user.Email, subject, htmlBody9, isBodyHtml: true);
         }
 
         #region Helper Methods

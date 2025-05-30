@@ -19,7 +19,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="keywords" content="bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hiring, job board, job portal, job posting, jobs marketplace, peopleperhour, proposals, sell services, upwork">
-    <meta name="description" content="SkillSwap - Freelance Marketplace">
+    <meta name="description" content="Swapo - Swap. Share. SkillUp.">
     <meta name="CreativeLayers" content="ATFN">
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
@@ -36,10 +36,12 @@
     <link rel="stylesheet" href="/template_assets/css/ud-custom-spacing.css">
     <link rel="stylesheet" href="/template_assets/css/dashbord_navitaion.css">
     <link rel="stylesheet" href="~/css/tokenstyle.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
-    <title>SkillSwap - Your Skills, Your Community</title>
+    <title>Swapo - Your Skills, Your Community</title>
     <!-- Favicon -->
     <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
     <!-- Apple Touch Icon -->
@@ -51,6 +53,14 @@
         var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
+        .main-profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .token-balance {
             display: flex;
             align-items: center;
@@ -144,7 +154,7 @@
                                 <a class="header-logo logo1" href="@Url.Action("Index","Home")">
                                     <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
                                     <span class="logo-text">
-                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                        Swapo<span style="color:#5BBB7B">.</span>
                                     </span>
                                 </a>
                             </div>
@@ -152,12 +162,12 @@
                                 <a href="#" class="dashboard_sidebar_toggle_icon vam"><img src="/template_assets/images/dashboard-navicon.svg" alt=""></a>
                             </div>
                             <a class="login-info d-block d-xl-none ml40 vam" data-bs-toggle="modal" href="#exampleModalToggle" role="button"><span class="flaticon-loupe"></span></a>
-                            <div class="ml40 d-none d-xl-block">
+                            @* <div class="ml40 d-none d-xl-block">
                                 <div class="search_area dashboard-style">
                                     <input type="text" class="form-control border-0" placeholder="What service are you looking for today?">
                                     <label><span class="flaticon-loupe"></span></label>
                                 </div>
-                            </div>
+                            </div> *@
                         </div>
                     </div>
                     <div class="col-6 col-lg-auto">
@@ -169,7 +179,8 @@
                                 </li>
                                 <li class="d-none d-sm-block">
                                     <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                        <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                        <span class="flaticon-mail"></span>
+                                        @await Component.InvokeAsync("NotificationBadge", new { type = "message" })
                                     </a>
                                     @await Component.InvokeAsync("MessageNotification")
                                 </li>
@@ -184,12 +195,14 @@
                                         balance = await TokenService.GetBalanceAsync(userId);
                                     }
                                 }
-                                <li class="d-none d-sm-block token-balance">
+                                <li class="d-none d-sm-block token-balance mr5"
+                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                    title="" data-bs-original-title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
                                     <span id="mining-dot" class="mining-dot"></span>
                                     <img src="~/template_assets/images/SSDToken.png"
                                          alt="Tokens"
                                          width="32" height="32" />
-                                    <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
+                                    <span id="token-balance" title="@balance.ToString("0.00000")">@balance.ToString("0.00")</span>
                                 </li>
                                 <li class="user_setting">
                                     <div class="dropdown">
@@ -218,7 +231,7 @@
                                                 }
                                             }
                                             <div>
-                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="main-profile-avatar" />
                                             </div>
                                         </a>
                                         <div class="dropdown-menu">
@@ -233,7 +246,7 @@
                                                         <i class="flaticon-goal mr10"></i> Admin Panel
                                                     </a>
                                                 }
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Swapo</a>
                                                 @if (PlusMember)
                                                 {
                                                     <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
@@ -242,7 +255,7 @@
                                                 <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                 <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
                                                 <a class="dropdown-item" href="@Url.Action("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr15"></i>Exchange Records</a>
-                                                <a class="dropdown-item" href="@Url.Action("Selectoffer","ExchangeDashboard")"><i class="flaticon-refresh mr15"></i> Share Resource</a>
+                                                <a class="dropdown-item" href="@Url.Action("Selectoffer","ResourceSharing")"><i class="flaticon-refresh mr15"></i> Share Resource</a>
                                                 <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
                                                 <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
                                                 <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
@@ -314,7 +327,7 @@
                     </li>
                 }
                 <li>
-                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Back to Skill-Swap</span></a>
+                    <a class="list-item" href="@Url.ActionLink("Index","Home")"><span class="title">Back to Swapo</span></a>
                 </li>
                 <li>
                     <a class="list-item" href="@Url.ActionLink("PublicOfferList","UserOfferDetails")"><span class="title">Swap Offers</span></a>
@@ -374,7 +387,12 @@
                     <div class="sidebar_list_item">
                         <a href="@Url.ActionLink("Submit","Verification")" class="items-center @(currentController == "Verification" && currentAction == "Submit" ? "-is-active" : "")"><i class="flaticon-like-1 mr15"></i>Apply for Verification</a>
                     </div>
-                    <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offers and Manage</p>
+                    <p class="fz15 fw400 ff-heading pl30 mt30">Swap Offers and Manage
+                        <i class="fas fa-info-circle text-muted ms-1"
+                           data-bs-toggle="tooltip"
+                           data-bs-placement="right"
+                           title="Here you can create, edit, and view all of your swap-offers."></i>
+                    </p>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("ActiveOffers","UserOfferManage")" class="items-center @(currentController == "UserOfferManage" && currentAction == "ActiveOffers" ? "-is-active" : "")"><i class="flaticon-presentation mr15"></i>Active Swap Offers</a>
                     </div>
@@ -384,7 +402,13 @@
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("Create","UserOfferManage")" class="items-center @(currentController == "UserOfferManage" && currentAction == "Create" ? "-is-active" : "")"><i class="flaticon-document mr15"></i>Create Swap Offer</a>
                     </div>
-                    <p class="fz15 fw400 ff-heading pl30 mt30">Exchanges and History</p>
+                    <p class="fz15 fw400 ff-heading pl30 mt30">
+                        Exchanges and History
+                        <i class="fas fa-info-circle text-muted ms-1"
+                           data-bs-toggle="tooltip"
+                           data-bs-placement="right"
+                           title="Track your active swaps, browse past exchanges, and share resources via an exchange-specific offer."></i>
+                    </p>
                     <div class="sidebar_list_item ">
                         <a href="@Url.ActionLink("Index","ExchangeDashboard")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Index" ? "-is-active" : "")"><i class="flaticon-presentation mr15"></i>Active Exchanges</a>
                     </div>
@@ -392,11 +416,11 @@
                         <a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "ExchangeHistory" ? "-is-active" : "")"><i class="flaticon-content mr15"></i>Exchange Records</a>
                     </div>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("Selectoffer", "ResourceSharing")" class="items-center @(currentController == "ExchangeDashboard" && currentAction == "Selectoffer" ? "-is-active" : "")"><i class="flaticon-refresh mr15"></i>Share Resource</a>
+                        <a href="@Url.ActionLink("Selectoffer", "ResourceSharing")" class="items-center @(currentController == "ResourceSharing" && currentAction == "Selectoffer" ? "-is-active" : "")"><i class="flaticon-refresh mr15"></i>Share Resource</a>
                     </div>
                     <p class="fz15 fw400 ff-heading pl30 mt30">Account</p>
                     <div class="sidebar_list_item ">
-                        <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>My Profile</a>
+                        <a href="@Url.ActionLink("EditProfile","UserProfile")" class="items-center @(currentController == "UserProfile" && currentAction == "EditProfile" ? "-is-active" : "")"><i class="flaticon-photo mr15"></i>Update Profile</a>
                     </div>
                     <div class="sidebar_list_item">
                         <!-- hidden logout form -->
@@ -449,7 +473,7 @@
                                         <li><a href="@Url.ActionLink("ExchangeHistory","ExchangeDashboard")"><i class="flaticon-content mr10"></i>Exchange Records</a></li>
                                         <li><a href="@Url.ActionLink("Selectoffer", "ResourceSharing")"><i class="flaticon-refresh mr10"></i>Share Resource</a></li>
                                         <li><p class="fz15 fw400 ff-heading mt30 pl30">Account</p></li>
-                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a></li>
+                                        <li class="active"><a href="@Url.ActionLink("EditProfile","UserProfile")"><i class="flaticon-photo mr10"></i>Update Profile</a></li>
                                         <li>
                                             <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
@@ -475,7 +499,7 @@
                     <div class="row align-items-center justify-content-center justify-content-md-end">
                         <div class="col-auto">
                             <div class="copyright-widget">
-                                <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
+                                <p class="mb-md-0">© Swapo. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         @* <div class="col-auto">
@@ -517,6 +541,14 @@
         <script src="/template_assets/js/chart-custome.js"></script>
         <script src="/template_assets/js/jquery-scrolltofixed-min.js"></script>
         <script src="/template_assets/js/dashboard-script.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
         <!-- Custom script for all pages -->
         <script src="/template_assets/js/script.js"></script>
         @if (User.Identity.IsAuthenticated)

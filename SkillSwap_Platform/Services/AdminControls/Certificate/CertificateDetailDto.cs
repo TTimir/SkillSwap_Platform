@@ -12,6 +12,7 @@
         public enum ReviewStatus { Pending, Approved, Rejected }
         public ReviewStatus Status { get; set; }
         public DateTime? ProcessedDateUtc { get; set; }
+        public DateTime? RejectDate { get; set; }
         public string RejectionReason { get; set; }
     }
 }

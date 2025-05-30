@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - SkillSwap</title>
+    <title>@ViewData["Title"] - Swapo</title>
     <!-- CSS Files -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/template_assets/css/fontawesome.css">
@@ -40,6 +40,29 @@
             padding: 15px 0;
             margin-top: 50px;
         }
+
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+        .header-logo.logo1 img {
+            border-radius: 14px;
+            width: 40px;
+            height: auto;
+        }
+
+        .header-logo.logo1 .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -47,8 +70,11 @@
     <header class="header-nav">
         <div class="container-custom d-flex justify-content-between align-items-center py-3">
             <div class="logo mx-3">
-                <a href="/index">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        Swapo<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
         </div>
@@ -60,7 +86,7 @@
             <!-- Icon / Illustration -->
             <img src="/template_assets/images/pending-approval-01.svg" alt="Approval Pending" class="approval-icon">
             <h1 class="mt-4">Your Account is Under Review</h1>
-            <p class="lead">Thank you for joining SkillSwap! Your account is currently pending approval. We are reviewing your details and will notify you via email once your account has been activated.</p>
+            <p class="lead">Thank you for joining Swapo! Your account is currently pending approval. We are reviewing your details and will notify you via email once your account has been activated.</p>
             <p>If you need immediate assistance, please contact our support team.</p>
             <div class="ui-content">
                 <div class="tooltip-list">
@@ -73,7 +99,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container-custom text-center">
-            <p>&copy; @DateTime.Now.Year SkillSwap. All rights reserved.</p>
+            <p>&copy; @DateTime.Now.Year Swapo. All rights reserved.</p>
         </div>
     </footer>
 

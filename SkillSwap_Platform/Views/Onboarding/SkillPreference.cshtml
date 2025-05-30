@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - SkillSwap</title>
+    <title>@ViewData["Title"] - Swapo</title>
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
@@ -64,6 +64,28 @@
                     color: #e74c3c;
                 }
 
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+        .header-logo.logo1 img {
+            border-radius: 14px;
+            width: 40px;
+            height: auto;
+        }
+
+        .header-logo.logo1 .logo-text {
+            font-family: monospace;
+            font-size: 22px;
+            letter-spacing: 1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -71,8 +93,11 @@
     <header class="header-nav">
         <div class="container-custom">
             <div class="logo">
-                <a href="index.html">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        Swapo<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
             <nav>
@@ -121,6 +146,13 @@
 
         <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
         <p class="mb-4 text-center">Enter the skill areas you want to offer. You can add multiple entries. Choose a category or select "Other" to specify a custom category.</p>
+        @if (ViewBag.StepReward != null)
+        {
+            var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+            <p class="text-center text-primary">
+                🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+            </p>
+        }
 
         @using (Html.BeginForm("SkillPreference", "Onboarding", FormMethod.Post))
         {
@@ -155,7 +187,7 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Skill Area <span class="text-danger">*</span></label>
+                                        <label class="form-label">Skill Set <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" name="skill[name][]" placeholder="e.g., UIUX Design" required />
                                     </div>
                                     <div class="col-lg-4">
@@ -174,6 +206,7 @@
                                                         <option value="Business">Business</option>
                                                         <option value="Lifestyle">Lifestyle</option>
                                                         <option value="Trending">Trending</option>
+                                                        <option value="Other">Other</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -203,7 +236,7 @@
 
                                     <div class="col-12 text-end">
                                         <a href="javascript:void(0);" class="ud-btn btn-white2 mb25 remove-entry d-none">
-                                            <i class="far fa-minus-circle me-2"></i> Remove
+                                            <i class="far fa-minus-circle me-2" style="transform:rotate(0deg)"></i> Remove
                                         </a>
                                     </div>
                                 </div>
@@ -234,13 +267,6 @@
                                 </button>
                                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
                             </div>
-                            @if (ViewBag.StepReward != null)
-                            {
-                                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
-                                <p class="text-center text-primary">
-                                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
-                                </p>
-                            }
                         </div>
                     </div>
                 </div>
@@ -280,140 +306,185 @@
 
     <!-- JavaScript (jQuery) to Clone Sections -->
     <script>
-        $(document).ready(function () {
-          // Update hidden input with comma-separated badges
-          function updateHiddenSkills(hiddenInput, container) {
-            const skills = container.find('.skill-badge')
-              .map((_, el) => $(el).text().replace('×', '').trim())
-              .get();
-            hiddenInput.val(skills.join(','));
+        $(function() {
+          // 1. Initialize any existing selectpickers
+          $('select.selectpicker').selectpicker();
+
+          // 2. Clone one Skill-Set row
+          function cloneEntry() {
+            const $template = $('#skillset-section .education-entry').first();
+            const $clone    = $template.clone();
+
+            // a) Strip out existing plugin markup
+            $clone.find('.bootstrap-select').each(function() {
+              $(this).replaceWith($(this).find('select'));
+            });
+
+            // b) Clear all text inputs
+            $clone.find('input[type="text"]').val('');
+            $clone.find('.custom-category-container')
+                  .hide()
+                  .find('input')
+                  .prop('required', false)
+                  .val('');
+
+            // c) Clear and re-init selects
+            $clone.find('select').each(function() {
+              $(this).val('');
+              $(this).selectpicker('destroy').selectpicker();
+            });
+
+            // d) Swap Add/Remove buttons
+            $clone.find('.add-entry').remove();
+            $clone.find('.remove-entry').removeClass('d-none');
+
+            // e) Append it
+            $('#skillset-section').append($clone);
           }
 
-          // Remove badges that no longer exist in the Skill Set
-          function checkOfferedSkills() {
-            const available = $("#skillset-section input[name='skill[name][]']")
-              .map((_, inp) => $(inp).val().toLowerCase().trim())
+          // 3. Add new row
+          $(document).on('click', '#skillset-section .add-entry', function(e) {
+            e.preventDefault();
+            cloneEntry();
+          });
+
+          // 4. Remove a row
+          $(document).on('click', '.remove-entry', function(e) {
+            e.preventDefault();
+            $(this).closest('.row').remove();
+            syncOfferedSkills();
+          });
+
+          // 5. Show/hide custom-category on change
+          $(document).on('changed.bs.select change', 'select.skill-category', function() {
+            const $row = $(this).closest('.row');
+            if ($(this).val() === 'Other') {
+              $row.find('.custom-category-container')
+                  .show()
+                  .find('input')
+                  .prop('required', true);
+            } else {
+              $row.find('.custom-category-container')
+                  .hide()
+                  .find('input')
+                  .prop('required', false)
+                  .val('');
+            }
+          });
+
+          // 6. ----- Offered/Willing Skills Logic -----
+
+          // Utility: update hidden input from badges
+          function updateHiddenSkills($hidden, $container) {
+            const list = $container.find('.skill-badge')
+              .map((i, el) => $(el).text().replace('×','').trim())
               .get();
-            $('#offeredSkillsContainer .skill-badge').each(function () {
-              const s = $(this).text().replace('×','').trim().toLowerCase();
-              if (!available.includes(s)) $(this).remove();
+            $hidden.val(list.join(','));
+          }
+
+          // Ensure offered badges still exist in Skill Set
+          function syncOfferedSkills() {
+            const available = $("#skillset-section input[name='skill[name][]']")
+              .map((i, inp) => $(inp).val().toLowerCase().trim())
+              .get();
+
+            $('#offeredSkillsContainer .skill-badge').each(function() {
+              const text = $(this).text().replace('×','').trim().toLowerCase();
+              if (!available.includes(text)) $(this).remove();
             });
+
             updateHiddenSkills($('#offeredSkillsHidden'), $('#offeredSkillsContainer'));
           }
 
-          // Core function to add a badge
-          function addSkillBadge(input, container, hidden, error) {
-            const val = $(input).val().trim();
-            const $cont = $(container), $hid = $(hidden), $err = $(error);
+          // Core: add a badge
+          function addSkillBadge($input, $container, $hidden, $error, validateAgainstSkillSet) {
+            const val = $input.val().trim();
             if (!val) return;
-            // duplicate?
-            if ($cont.find('.skill-badge').filter((_, b) =>
+
+            // optional: ensure val exists in Skill Set
+            if (validateAgainstSkillSet) {
+              const avail = $("#skillset-section input[name='skill[name][]']")
+                .map((i, inp) => $(inp).val().toLowerCase().trim())
+                .get();
+              if (!avail.includes(val.toLowerCase())) {
+                return $error.text(`"${$input.val()}" not in your Skill Set`);
+              }
+            }
+
+            // duplicates?
+            if ($container.find('.skill-badge').filter((i, b) =>
                   $(b).text().replace('×','').trim().toLowerCase() === val.toLowerCase()
                 ).length) {
-              $err.text('Already added.');
-              return $(input).val('');
+              $error.text('Already added.');
+              $input.val('');
+              return;
             }
-            // limit 5
-            if ($cont.find('.skill-badge').length >= 5) {
-              $err.text('Max 5 allowed.');
-              return $(input).val('');
+            // max 5
+            if ($container.find('.skill-badge').length >= 5) {
+              $error.text('Max 5 allowed.');
+              $input.val('');
+              return;
             }
-            $cont.append(`
+
+            // append badge
+            $container.append(`
               <span class="skill-badge">
                 ${val}
                 <i class="far fa-times remove-skill ms-2"></i>
-              </span>`);
-            updateHiddenSkills($hid, $cont);
-            $(input).val('');
-            $err.text('');
+              </span>
+            `);
+
+            updateHiddenSkills($hidden, $container);
+            $input.val('');
+            $error.text('');
           }
 
-          // ENTER + BLUR for both fields
-          ['#offeredSkillInput','#willingSkillInput'].forEach(selector => {
-            const isOffered = selector === '#offeredSkillInput';
-            const container = isOffered ? '#offeredSkillsContainer' : '#willingSkillsContainer';
-            const hidden    = isOffered ? '#offeredSkillsHidden'    : '#willingSkillsHidden';
-            const error     = isOffered ? '#offeredSkillError'      : '#willingSkillError';
-
+          // Bind Enter+Blur for both fields
+          [
+            { inp: '#offeredSkillInput', cont: '#offeredSkillsContainer', hid: '#offeredSkillsHidden', err: '#offeredSkillError', validate: true },
+            { inp: '#willingSkillInput', cont: '#willingSkillsContainer', hid: '#willingSkillsHidden', err: '#willingSkillError', validate: false }
+          ].forEach(cfg => {
             // Enter key
-            $(selector).on('keypress', e => {
+            $(cfg.inp).on('keypress', e => {
               if (e.which === 13) {
                 e.preventDefault();
-                // if offered, ensure skill exists in Skill Set
-                if (isOffered) {
-                  const skill = $(selector).val().trim().toLowerCase();
-                  const avail = $("#skillset-section input[name='skill[name][]']")
-                    .map((_, i) => $(i).val().toLowerCase().trim())
-                    .get();
-                  if (!avail.includes(skill)) {
-                    return $(error).text(`"${$(selector).val()}" not in your Skill Set`);
-                  }
-                }
-                addSkillBadge(selector, container, hidden, error);
+                addSkillBadge($(cfg.inp), $(cfg.cont), $(cfg.hid), $(cfg.err), cfg.validate);
               }
             });
-
-            // Blur event
-            $(selector).on('blur', () => {
-              if ($(selector).val().trim()) {
-                // same validation for offered
-                if (isOffered) {
-                  const skill = $(selector).val().trim().toLowerCase();
-                  const avail = $("#skillset-section input[name='skill[name][]']")
-                    .map((_, i) => $(i).val().toLowerCase().trim())
-                    .get();
-                  if (!avail.includes(skill)) {
-                    return $(error).text(`"${$(selector).val()}" not in your Skill Set`);
-                  }
-                }
-                addSkillBadge(selector, container, hidden, error);
+            // Blur
+            $(cfg.inp).on('blur', () => {
+              if ($(cfg.inp).val().trim()) {
+                addSkillBadge($(cfg.inp), $(cfg.cont), $(cfg.hid), $(cfg.err), cfg.validate);
               }
             });
           });
 
-          // Remove badge
-          $(document).on('click', '.remove-skill', function () {
+          // Remove a badge
+          $(document).on('click', '.remove-skill', function() {
             const $b = $(this).parent();
             const isOff = $b.parent().is('#offeredSkillsContainer');
             $b.remove();
-            updateHiddenSkills(isOff ? $('#offeredSkillsHidden') : $('#willingSkillsHidden'),
-                               isOff ? $('#offeredSkillsContainer') : $('#willingSkillsContainer'));
+            if (isOff) syncOfferedSkills();
+            updateHiddenSkills(
+              isOff ? $('#offeredSkillsHidden') : $('#willingSkillsHidden'),
+              isOff ? $('#offeredSkillsContainer') : $('#willingSkillsContainer')
+            );
           });
 
-          // Prevent empty submission
+          // Prevent empty form submission
           $('form').on('submit', e => {
-            if (!$('#offeredSkillsHidden').val().trim() ||
-                !$('#willingSkillsHidden').val().trim()) {
+            let ok = true;
+            if (!$('#offeredSkillsHidden').val().trim()) {
               $('#offeredSkillError').text('Add at least one Offered skill.');
-              $('#willingSkillError').text('Add at least one Willing skill.');
-              e.preventDefault();
+              ok = false;
             }
+            if (!$('#willingSkillsHidden').val().trim()) {
+              $('#willingSkillError').text('Add at least one Willing skill.');
+              ok = false;
+            }
+            if (!ok) e.preventDefault();
           });
 
-          // Clone/remove Skill Set entries
-          function cloneEntry(section) {
-            const $orig = $(section).find('.row:first');
-            const $cl   = $orig.clone(false, false);
-            $cl.find('input').val('');
-            $cl.find('.custom-category-container').hide();
-            $cl.find('.add-entry').remove();
-            $cl.find('.remove-entry').removeClass('d-none');
-            $(section).append($cl);
-          }
-          $(document).on('click', '.add-entry', function () {
-            cloneEntry($(this).closest('[id$="-section"]'));
-          });
-          $(document).on('click', '.remove-entry', function () {
-            $(this).closest('.row').remove();
-            checkOfferedSkills();
-          });
-
-          // Show/hide custom category
-          $(document).on('changed.bs.select', 'select[name="skill[category][]"]', function () {
-            const sel = $(this).val(), $cc = $(this).closest('.row').find('.custom-category-container');
-            if (sel === 'Other') $cc.show().find('input').attr('required', true);
-            else $cc.hide().find('input').val('').removeAttr('required');
-          });
         });
     </script>
     @* <script>

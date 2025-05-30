@@ -1,5 +1,7 @@
 ﻿@model SkillSwap_Platform.Models.ViewModels.ExchangeVM.ExchangeDashboardVM
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@using Microsoft.Extensions.Caching.Memory
+@inject IMemoryCache Cache
 
 @{
     ViewData["Title"] = "Exchange Details";
@@ -42,6 +44,21 @@
     </div>
 }
 
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <strong>Note for online meets:</strong><br />
+            <strong>Step 1:</strong> The host must click “Launch Online Meet” below and stay connected first.<br />
+            <strong>Step 2:</strong> Then your partner can click the same link and will be admitted immediately.
+        </div>
+        <div class="alert alert-info">
+            <strong>Note for in-person meetings:</strong><br />
+            <strong>Step 1:</strong> Click “Schedule In-Person Meet” below to pick date, time, and location.<br />
+            <strong>Step 2:</strong> Meet in person at the scheduled slot.<br />
+            <strong>Step 3:</strong> After you finish, click “Enter Meeting End Details” to confirm completion.
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-xl-12">
         <div class="ps-widget bgc-white bdrs4 p30 mb30 overflow-hidden position-relative">
@@ -69,9 +86,9 @@
                                                 <strong>Notice:</strong>
                                                 The offer <em>“@item.OfferTitle”</em> was removed by our moderator team.
                                                 If you haven’t yet completed or closed this exchange, please
-                                                <a href="mailto:skillswap360@gmail.com">contact our support team</a>.
+                                                <a href="mailto:swapoorg360@gmail.com">contact our support team</a>.
                                                 Otherwise, you can manage your remaining listings in
-                                                <a href="@Url.Action("Index", "ExchangeDashboard")">My Exchanges</a>.
+                                                <a href="@Url.Action("Index", "ExchangeDashboard")">My Active Exchanges</a>.
                                             </div>
                                         </td>
                                     </tr>
@@ -145,9 +162,9 @@
                                                 {
                                                     @if (item.CanLaunchMeeting)
                                                     {
-                                                        <a asp-controller="GoogleCalendar" asp-action="CreateEvent" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
-                                                           class="ud-btn btn-light-thm me-4"
-                                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                                        <a asp-controller="GoogleCalendar" asp-action="AuthorizeMeet" asp-route-exchangeId="@item.Exchange.ExchangeId" asp-route-otherUserId="@item.OtherUserId"
+                                                           class="ud-btn btn-light-thm"
+                                                           data-bs-toggle="tooltip" data-bs-placement="bottom"
                                                            title="Launch Online Meet (Session @(item.RecentMeetingLaunchCount + 1))">
                                                             Online Meet (S# @(item.RecentMeetingLaunchCount + 1)) <i class="fal fa-arrow-right-long"></i>
                                                         </a>
@@ -187,38 +204,52 @@
                                             item.ExchangeMode.Equals("in-person", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // For in-person mode, display a different button.
-                                                <a href="@Url.Action("ScheduleInPerson", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm me-4"
+                                                <a href="@Url.Action("ScheduleInPerson", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId, OtherUserId = item.OtherUserId })" class="ud-btn btn-light-thm"
                                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Schedule In-Person Meet">
                                                     In-Person Meet <i class="fal fa-arrow-right-long"></i>
                                                 </a>
 
-                                                @if (!string.IsNullOrWhiteSpace(item.ExchangeMode) &&
-                                               item.ExchangeMode.ToLower().Contains("in-person") &&
-                                               !item.IsMeetingEnded &&
-                                               item.MeetingScheduledDateTime.HasValue && item.InpersonMeetingDurationMinutes.HasValue)
+                                                @if (item.InPersonOwnerVerified && item.InPersonOtherPartyVerified && !item.IsMeetingEnded)
                                                 {
-                                                    // Calculate the expected meeting end time.
-                                                    DateTime scheduledTime = item.MeetingScheduledDateTime.Value; // assume stored in UTC
-                                                    int durationMinutes = item.InpersonMeetingDurationMinutes.Value;
-                                                    DateTime meetingEndTime = scheduledTime.AddMinutes(durationMinutes);
 
-                                                    // Define a threshold such as 10 minutes before the expected end.
-                                                    DateTime buttonThreshold = meetingEndTime.AddMinutes(-10);
+                                                    <a href="@Url.Action("EnterEndMeetingDetails", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId })"
+                                                       class="ud-btn btn-thm2 me-4"
+                                                       data-bs-toggle="tooltip" data-bs-placement="bottom" title="Enter The End Meeting Details">
+                                                        Meeting Details <i class="fal fa-arrow-right-long"></i>
+                                                    </a>
+                                                }
 
-                                                    // Check if the current time is at or after this threshold.
-                                                    if (DateTime.UtcNow >= buttonThreshold)
-                                                    {
-                                                        <a href="@Url.Action("EnterEndMeetingDetails", "ExchangeInPerson", new { exchangeId = item.Exchange.ExchangeId })"
-                                                           class="ud-btn btn-thm2 me-4"
-                                                           data-bs-toggle="tooltip" data-bs-placement="top" title="Enter End Meeting Details">
-                                                            Enter Meeting End Details <i class="fal fa-arrow-right-long"></i>
-                                                        </a>
-                                                    }
+                                                // show only in the ~5-minute window after the "30 min-before" reminder fires
+                                                bool showSnooze = false;
+                                                if (item.MeetingScheduledDateTime.HasValue)
+                                                {
+                                                    var leadUtc = item.MeetingScheduledDateTime.Value.ToUniversalTime().AddMinutes(-30);
+                                                    var nowUtc = DateTime.UtcNow;
+                                                    var windowEnd = leadUtc.AddMinutes(5);
+                                                    bool inWindow = nowUtc >= leadUtc && nowUtc <= windowEnd;
+
+                                                    bool snoozed = Cache.TryGetValue($"snooze-{item.Exchange.ExchangeId}", out _);
+                                                    showSnooze = inWindow && !snoozed && !item.IsMeetingEnded;
+                                                }
+
+                                                @if (showSnooze)
+                                                {
+                                                    <a asp-action="SnoozeReminder"
+                                                       asp-route-exchangeId="@item.Exchange.ExchangeId"
+                                                       class="ud-btn btn-outline-secondary mb10"
+                                                       title="Pause all reminders for 24 hours">
+                                                        💤 Snooze reminders for 24 h
+                                                    </a>
                                                 }
                                             }
                                         </td>
                                         @{
                                             var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                                            bool iAskedCancel = item.StatusChangeBy == currentUserId;
+                                            bool partnerAsked = item.StatusChangeBy != null && item.StatusChangeBy != currentUserId;
+                                            var isPendingCancel = item.Exchange.Status.Equals(
+                                            "Cancellation Requested", StringComparison.OrdinalIgnoreCase);
+
                                             bool isOfferOwner = currentUserId == item.Exchange.OfferOwnerId;
                                             bool hasConfirmed = isOfferOwner
                                             ? item.Exchange.IsCompletedByOfferOwner
@@ -232,24 +263,36 @@
                                             && item.IsMeetingEnded);
                                         }
                                         <td>
-                                            @if (meetingDone)
+                                            @if (isPendingCancel)
                                             {
+                                                <span class="badge bg-warning">
+                                                    Cancellation requested, waiting for partner…
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @* 2) Otherwise, show your normal “I’m Done” / “Waiting for partner” / “Completed” flow *@
                                                 @if (!hasConfirmed)
                                                 {
-                                                    <form action="@Url.Action("MarkExchangeCompleted", "ExchangeDashboard")" method="post" style="display:inline;">
+                                                    <form asp-action="MarkExchangeCompleted"
+                                                          asp-controller="ExchangeDashboard"
+                                                          method="post"
+                                                          style="display:inline;">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                        <button type="submit" class="ud-btn btn-thm2 me-4 mb10"
-                                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                        <button type="submit"
+                                                                class="ud-btn btn-thm2 mb10"
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top"
                                                                 title="Mark this exchange as completed">
-                                                            I’m Done <i class="fal fa-check" style="transform:rotate(0deg)"></i>
+                                                            I’m Done
                                                         </button>
                                                     </form>
                                                 }
                                                 else if (!bothConfirmed)
                                                 {
                                                     <span class="text-info">
-                                                        Waiting on the other party to confirm…
+                                                        Waiting for the other partner to confirm…
                                                     </span>
                                                 }
                                                 else
@@ -258,20 +301,84 @@
                                                         ✅ Completed
                                                     </span>
                                                 }
-                                                @if (!item.Exchange.IsCompleted)
-                                                {
-                                                    <form asp-action="CancelExchange" asp-controller="ExchangeDashboard" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="exchangeId" value="@item.Exchange.ExchangeId" />
-                                                        <button type="submit" class="ud-btn btn-danger" title="Cancel this exchange">
-                                                            Cancel Exchange <i class="fal fa-times" style="transform:rotate(0deg)"></i>
-                                                        </button>
-                                                    </form>
-                                                }
+
+                                                @* 3) And still allow them to “No, Cancel” if they change their mind *@
+                                                <button type="button"
+                                                        class="ud-btn btn-danger btn-request-cancel"
+                                                        data-exchange-id="@item.Exchange.ExchangeId">
+                                                    No, Cancel
+                                                </button>
+                                            }
+
+                                            @if (partnerAsked)
+                                            {
+                                                <div class="mt-2">
+                                                    <p><strong>Partner’s reason:</strong><br />@item.StatusChangeReason</p>
+                                                    <div class="d-flex">
+                                                        <form asp-action="CancelExchange" method="post" class="me-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
+                                                            <button type="submit" class="ud-btn btn-thm">Approve</button>
+                                                        </form>
+                                                        <form asp-action="DenyCancellation" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
+                                                            <button type="submit" class="ud-btn btn-light-thm" style="border:0">
+                                                                Deny
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                             }
                                         </td>
                                     </tr>
                                 }
+
+                                @*–– inside your foreach, after </tr> ––*@
+                                <div class="modal fade" id="cancelModal-@item.Exchange.ExchangeId" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form asp-action="CancelExchange" method="post">
+                                                @Html.AntiForgeryToken()
+
+                                                @* manually pass ExchangeId *@
+                                                <input type="hidden" name="ExchangeId" value="@item.Exchange.ExchangeId" />
+
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Request Cancellation for #@item.Exchange.ExchangeId</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="reason-@item.Exchange.ExchangeId" class="form-label">
+                                                            Why are you cancelling?
+                                                        </label>
+                                                        @* manually name the textarea Reason *@
+                                                        <textarea id="reason-@item.Exchange.ExchangeId"
+                                                                  name="Reason"
+                                                                  rows="4"
+                                                                  placeholder="Please explain why you need to cancel…" required></textarea>
+                                                        @* If you’d like client-side validation messages you can render:
+               <span asp-validation-for="Reason" class="text-danger"></span>
+               but for that you’ll need to inject the ValidationScripts partial and enable client validation. *@
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button type="button" class="ud-btn btn-light-thm"
+                                                            data-bs-dismiss="modal" style="border:0;">
+                                                        Back
+                                                    </button>
+                                                    <button type="submit" class="ud-btn btn-thm">
+                                                        Submit Cancellation Request
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
                             }
                         </tbody>
                     </table>
@@ -340,3 +447,12 @@
     </div>
 </div>
 </div>
+
+@section DynamicScript {
+    <script>
+        $(document).on('click', '.btn-request-cancel', function(){
+          var id = $(this).data('exchange-id');
+          $('#cancelModal-' + id).modal('show');
+        });
+    </script>
+}

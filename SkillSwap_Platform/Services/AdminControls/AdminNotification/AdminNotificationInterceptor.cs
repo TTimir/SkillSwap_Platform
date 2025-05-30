@@ -173,10 +173,10 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminNotification
         {
             var sb = new StringBuilder();
             sb.Append("<html><body>");
-            sb.Append("<h2>SkillSwap Admin Notification</h2>");
+            sb.Append("<h2>Swapo Admin Notification</h2>");
             sb.Append(innerHtml);
             sb.Append("<hr/><p><em>If you did not expect this, contact ");
-            sb.Append("<a href=\"mailto:skillswap360@gmail.com\">skillswap360@gmail.com</a>.</em></p>");
+            sb.Append("<a href=\"mailto:swapoorg360@gmail.com\">swapoorg360@gmail.com</a>.</em></p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }

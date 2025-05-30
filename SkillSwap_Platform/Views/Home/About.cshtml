@@ -55,11 +55,11 @@
             <div class="row">
                 <div class="col-lg-6">
                     <div class="main-title">
-                        <h2>Join the World’s Premier <br class="d-none d-lg-block"> SkillSwap Community</h2>
+                        <h2>Join the World’s Premier <br class="d-none d-lg-block"> Swapo Community</h2>
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <p class="text mb20">Tap into a global community of trusted professionals, matched to your needs. With secure escrow, 24/7 support, and flexible swap options (one-off or ongoing), SkillSwap delivers high-impact results, every time.</p>
+                    <p class="text mb20">Tap into a global community of trusted professionals, matched to your needs. With secure escrow, 24/7 support, and flexible swap options (one-off or ongoing), Swapo delivers high-impact results, every time.</p>
                     <div class="list-style2">
                         <ul class="mb25">
                             <li><i class="far fa-check"></i>Work only with proven SkillSwappers who deliver real impact.</li>
@@ -194,7 +194,7 @@
                             <div class="tab-pane fade" id="pills-1st" role="tabpanel" aria-labelledby="pills-1st-tab">
                                 <div class="testi-content text-center">
                                     <span class="icon fas fa-quote-left"></span>
-                                    <h4 class="testi-text">"As an early adopter, I posted my first swap in under five minutes, SkillSwap’s launch experience was flawless! "</h4>
+                                    <h4 class="testi-text">"As an early adopter, I posted my first swap in under five minutes, Swapo’s launch experience was flawless! "</h4>
                                     <h6 class="name">Jevin Talaviya</h6>
                                     <p class="design">Java Developer</p>
                                 </div>
@@ -226,7 +226,7 @@
                             <div class="tab-pane fade" id="pills-5th" role="tabpanel" aria-labelledby="pills-5th-tab">
                                 <div class="testi-content text-center">
                                     <span class="icon fas fa-quote-left"></span>
-                                    <h4 class="testi-text">"Posting and managing my first swap was so easy—huge kudos to SkillSwap for such a smooth launch! "</h4>
+                                    <h4 class="testi-text">"Posting and managing my first swap was so easy—huge kudos to Swapo for such a smooth launch! "</h4>
                                     <h6 class="name">Guatam Nakum</h6>
                                     <p class="design">Data Analytics</p>
                                 </div>
@@ -274,10 +274,10 @@
                                         </div>
                                         <div class="flex-grow-1 ml20">
                                             <a href="@Url.Action(
-      "PublicProfileByUsername",
-      "UserProfile",
-      new { username = user.Name }
-    )">
+                                                  "PublicProfileByUsername",
+                                                  "UserProfile",
+                                                  new { username = user.Name }
+                                                )">
                                                 @user.Name
                                             </a>
                                             <p class="fz14 mb-0">@user.Designation</p>
@@ -292,13 +292,13 @@
                             @if (topUser != null)
                             {
                                 <div class="freelancer-style1 about-page-style text-center d-none d-lg-block">
-                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle"><img class="rounded-circle mx-auto" src="@topUser.ProfileImage" alt="@topUser.Name" style="max-width:100%;"><span class="online"></span></div>
+                                    <div class="thumb w90 mb25 mx-auto position-relative rounded-circle"><img class="rounded-circle mx-auto" src="@topUser.ProfileImage" alt="@topUser.Name" style="max-width:100%;"></div>
                                     <div class="details">
                                         <a href="@Url.Action(
-      "PublicProfileByUsername",
-      "UserProfile",
-      new { username = topUser.Name }
-    )">
+                                              "PublicProfileByUsername",
+                                              "UserProfile",
+                                              new { username = topUser.Name }
+                                            )">
                                             @topUser.Name
                                         </a>
                                         <p class="mb-0">@topUser.Designation</p>
@@ -544,7 +544,7 @@
                     <div class="cta-style3">
                         <h2 class="cta-title">Need Expertise? Post Your Swap Today.</h2>
                         <p class="cta-text">
-                            Tell us what you need, and we’ll match you with top SkillSwappers
+                            Tell us what you need, and we’ll match you with top Swapopers
                             who’ll deliver securely and on your schedule.
                         </p>
                         @if (User.Identity?.IsAuthenticated == true)

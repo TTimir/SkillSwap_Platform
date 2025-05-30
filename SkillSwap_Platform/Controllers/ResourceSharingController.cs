@@ -367,6 +367,14 @@ namespace SkillSwap_Platform.Controllers
                     ReceivedResourcesTotalPages = (int)Math.Ceiling(totalReceivedResources / (double)pageSize)
                 };
 
+                viewModel.IsGrowthUser = await _dbContext.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == currentUserId
+                     && s.PlanName == "Growth"
+                     && (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 ViewData["ExchangeId"] = viewModel.ExchangeId;
                 ViewData["OfferId"] = viewModel.OfferId;
 

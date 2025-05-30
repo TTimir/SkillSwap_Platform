@@ -1,4 +1,5 @@
-﻿@using System.Text.RegularExpressions
+﻿@using Markdig
+@using System.Text.RegularExpressions
 @using System.Text.Encodings.Web
 @model SkillSwap_Platform.Services.Blogs.BlogDetailsVM
 
@@ -6,162 +7,76 @@
     ViewData["Title"] = Model.Post.Title;
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    string RenderContent(string text)
-    {
-        var encoded = HtmlEncoder.Default.Encode(text);
-        var urlPattern = new Regex(@"(https?://[^\s]+)", RegexOptions.IgnoreCase);
-        var paragraphs = encoded
-            .Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.None)
-            .Select(block =>
-            {
-                var linkified = urlPattern.Replace(block,
-                    "<a href=\"$1\" target=\"_blank\" rel=\"noopener\">$1</a>");
-                return $"<p>{linkified.Replace("\r\n", "<br/>").Replace("\n", "<br/>")}</p>";
-            });
-        return string.Concat(paragraphs);
-    }
+    string RenderContent(string mdText)
+        => Markdown.ToHtml(mdText ?? "");
 }
 
-<style>
-    .object-fit-cover {
-        object-fit: cover;
-    }
+<section class="breadcumb-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcumb-style1">
+                    <div class="breadcumb-list">
+                        <a href="@Url.Action("Index","Home")">Home</a>
+                        <a href="@Url.Action("Feed","Blog")">News &amp; Tips</a>
+                        <a>@Model.Post.Title</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    /* Article container */
-    .blog-article {
-        /* max-width: 720px; */
-        margin: 2rem auto;
-        padding: 1.5rem;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-    }
+<!-- Blog Section Area -->
+<section class="our-blog pt40">
+    <div class="container">
+        <div class="row wow fadeInUp" data-wow-delay="100ms">
+            <div class="col-lg-12">
+                <h2 class="blog-title">@Model.Post.Title</h2>
+                <div class="blog-single-meta">
+                    <div class="post-author d-sm-flex align-items-center">
+                        <img class="mr10 me-2" src="@(Url.Content("~/template_assets/images/SS-Dark.png"))" alt="@Model.Post.Title" style="max-width: 100%;width: 40px;border-radius: 100%;" />
+                        <a class="pr15 body-light-color" href="#">Swapo Author</a>
+                        <a class="ml15 pr15 body-light-color" href="#">
+                            @Model.Post.CreatedAt.ToLocalTime().ToString("MMMM d, yyyy")
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        /* Title */
-        .blog-article h1 {
-            margin-bottom: 0.75rem;
-            line-height: 1.2;
-        }
-
-        /* Meta line */
-        .blog-article .meta {
-            margin-bottom: 1.5rem;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-    /* Tag badges */
-    .blog-tags .badge {
-        display: inline-block;
-        margin: 0 4px 4px 0;
-        padding: 0.35em 0.75em;
-        font-size: 0.85em;
-        font-weight: 500;
-        color: #fff;
-        background: linear-gradient(135deg, #6c5ce7, #00b894);
-        border-radius: 12px;
-        transition: transform 0.15s, box-shadow 0.15s;
-        cursor: default;
-    }
-
-        .blog-tags .badge:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-    /* Content paragraphs */
-    .blog-content {
-        line-height: 1.75;
-        font-size: 1rem;
-    }
-
-        .blog-content p {
-            margin-bottom: 1rem;
-        }
-
-        .blog-content a {
-            color: #1d72b8;
-            text-decoration: underline;
-        }
-
-    /* Cover Image */
-    .blog-article .cover {
-        margin-bottom: 1.5rem;
-        border-radius: 6px;
-        overflow: hidden;
-    }
-
-        .blog-article .cover img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-</style>
-
-<div class="container py-5">
-    <div class="row gx-5">
-        <!-- Main article -->
-        <div class="col-lg-8">
-            <article class="blog-article">
-                @* Cover Image *@
+    <div class="mx-auto maxw1600 mt60 wow fadeInUp" data-wow-delay="300ms">
+        <div class="row">
+            <div class="col-lg-12">
                 @if (!string.IsNullOrEmpty(Model.Post.CoverImagePath))
                 {
-                    <div class="cover">
-                        <img src="@Model.Post.CoverImagePath"
+                    <div class="large-thumb">
+                        <img class="w-100 bdrs16" src="@Url.Content($"~/{Model.Post.CoverImagePath.TrimStart('/')}")"
                              alt="Cover for @Model.Post.Title" />
                     </div>
                 }
+            </div>
+        </div>
+    </div>
 
-                @* Title *@
-                <h1>@Model.Post.Title</h1>
-
-                @* Meta: Date + Tags *@
-                <div class="meta">
-                    @Model.Post.CreatedAt.ToLocalTime().ToString("MMMM d, yyyy")
-                    @if (Model.Post.Tags?.Count > 0)
-                    {
-                        <span class="blog-tags ms-3">
-                            @foreach (var tag in Model.Post.Tags)
-                            {
-                                <span class="badge">@tag</span>
-                            }
-                        </span>
-                    }
-                </div>
-
-                @* Content *@
-                <div class="blog-content">
+    <div class="container">
+        <div class="row wow fadeInUp" data-wow-delay="500ms">
+            <div class="col-xl-8 offset-xl-2">
+                <div class="ui-content mt45 mb60 blog-content">
                     @Html.Raw(RenderContent(Model.Post.Content))
                 </div>
-            </article>
-        </div>
 
-        <!-- Sidebar -->
-        <aside class="col-lg-4">
-            <div class="mb-4">
-                <h5 class="fw-bold">Recent Posts</h5>
-                <ul class="list-unstyled">
-                    @foreach (var recent in Model.RecentPosts)
-                    {
-                        <li class="d-flex mb-3">
-                            <a href="@Url.Action("Details","Blog", new { id = recent.Id })" class="me-2 flex-shrink-0" style="width:64px;height:64px;overflow:hidden;border-radius:4px;">
-                                <img src="@(recent.CoverImagePath ?? "/images/blog-placeholder.png")"
-                                     alt="@recent.Title"
-                                     class="w-100 h-100 object-fit-cover" />
-                            </a>
-                            <div>
-                                <a href="@Url.Action("Details","Blog", new { id = recent.Id })"
-                                   class="text-dark text-decoration-none">
-                                    <strong>@recent.Title</strong>
-                                </a>
-                                <div class="text-muted small">
-                                    @recent.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
-                                </div>
-                            </div>
-                        </li>
-                    }
-                </ul>
+                @if (Model.Post.Tags?.Any() == true)
+                {
+                    <div class="bsp_tags d-flex mb60">
+                        @foreach (var tag in Model.Post.Tags)
+                        {
+                            <a class="mr10" href="@Url.Action("Feed","Blog", new { tag = tag })">@tag</a>
+                        }
+                    </div>
+                }
             </div>
-        </aside>
+        </div>
     </div>
-</div>
+</section>

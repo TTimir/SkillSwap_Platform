@@ -12,6 +12,8 @@
         public int DeclinedTotalPages { get; set; }
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
+        public bool IsGrowthUser { get; set; }
+        public List<int> PurchasedCertificates { get; set; } = new();
     }
 
     public class ExchangeDashboardItemVM
@@ -43,5 +45,11 @@
         public bool IsMeetingEnded { get; set; }
         public DateTime? MeetingScheduledDateTime { get; set; }
         public int? InpersonMeetingDurationMinutes { get; set; }
+
+        public bool InPersonOwnerVerified { get; set; }
+        public bool InPersonOtherPartyVerified { get; set; }
+        public string? StatusChangeReason { get; set; }
+        public int? StatusChangeBy { get; set; }
+
     }
 }

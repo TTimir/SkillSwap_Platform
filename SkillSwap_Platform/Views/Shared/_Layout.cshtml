@@ -1,6 +1,8 @@
 ﻿@inject SkillSwap_Platform.Models.SkillSwapDbContext _db
 @inject SkillSwap_Platform.Services.DigitalToken.IDigitalTokenService TokenService
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +10,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="keywords" content="bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hiring, job board, job portal, job posting, jobs marketplace, peopleperhour, proposals, sell services, upwork">
-    <meta name="description" content="SkillSwap - Freelance Marketplace">
+    <meta name="description" content="Swapo - Swap. Share. SkillUp.">
     <meta name="CreativeLayers" content="ATFN">
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
@@ -27,7 +29,7 @@
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
-    <title>@ViewData["Title"] - SkillSwap</title>
+    <title>@ViewData["Title"] - Swapo</title>
     <!-- Favicon -->
     <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
     <!-- Apple Touch Icon -->
@@ -37,6 +39,14 @@
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
 
     <style>
+        .main-profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .header-logo.logo1 {
             display: inline-flex;
             align-items: center; /* vertical centering */
@@ -141,7 +151,7 @@
                                     <a class="header-logo logo1" href="@Url.Action("Index","Home")">
                                         <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
                                         <span class="logo-text">
-                                            SkillSwap<span style="color:#5BBB7B">.</span>
+                                            Swapo<span style="color:#5BBB7B">.</span>
                                         </span>
                                     </a>
                                 </div>
@@ -179,7 +189,8 @@
                                         </li>
                                         <li class="d-none d-sm-block">
                                             <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                                <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                                <span class="flaticon-mail"></span>
+                                                @await Component.InvokeAsync("NotificationBadge", new { type = "message" })
                                             </a>
                                             @await Component.InvokeAsync("MessageNotification")
                                         </li>
@@ -194,12 +205,14 @@
                                                 balance = await TokenService.GetBalanceAsync(userId);
                                             }
                                         }
-                                        <li class="d-none d-sm-block token-balance">
+                                        <li class="d-none d-sm-block token-balance mr5"
+                                            data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                            title="" data-bs-original-title="🟢 Mining in progress: once you meet our on-chain criteria, these tokens will be credited to your wallet.">
                                             <span id="mining-dot" class="mining-dot"></span>
                                             <img src="~/template_assets/images/SSDToken.png"
                                                  alt="Tokens"
                                                  width="32" height="32" />
-                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.####")</span>
+                                            <span id="token-balance" title="@balance.ToString("0.0000")">@balance.ToString("0.00")</span>
                                         </li>
                                         <li class="user_setting">
                                             <div class="dropdown">
@@ -228,7 +241,7 @@
                                                         }
                                                     }
                                                     <div>
-                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                        <img src="@Url.Content(src)" alt="Swapper Photo" class="main-profile-avatar" />
                                                     </div>
                                                 </a>
                                                 <div class="dropdown-menu">
@@ -244,13 +257,20 @@
 
                                                             </a>
                                                         }
+                                                        @{
+                                                            var PlusMember = (await AuthZ.AuthorizeAsync(User, "PlusPlan")).Succeeded;
+                                                            var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
+                                                        }
                                                         <a class="dropdown-item" href="@Url.Action("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
-                                                        <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                        @if (PlusMember)
+                                                        {
+                                                            <a class="dropdown-item" href="@Url.Action("Index","TrackNotifications")"><i class="flaticon-document mr10"></i>My Activity</a>
+                                                        }
                                                         <a class="dropdown-item" href="@Url.Action("Index","UserWishlist")"><i class="flaticon-like mr10"></i>Saved Swaps</a>
                                                         <a class="dropdown-item" href="@Url.Action("Conversation","Messaging")"><i class="flaticon-chat mr10"></i>Message</a>
                                                         <a class="dropdown-item" href="@Url.Action("MyOffers","UserReview")"><i class="flaticon-review-1 mr10"></i>Reviews</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Organize and Manage</p>
-                                                        <a class="dropdown-item" href="@Url.Action("Create","UserOfferManage")"><i class="flaticon-presentation mr10"></i>Create Swap Offer</a>
+                                                        <a class="dropdown-item" href="@Url.Action("Index","ExchangeDashboard")"><i class="flaticon-presentation mr10"></i>Active Exchanges</a>
                                                         <a class="dropdown-item" href="@Url.Action("OfferList","UserOfferManage")"><i class="flaticon-briefcase mr10"></i>Manage Swap Offers</a>
                                                         <p class="fz15 fw400 ff-heading mt30 pl30">Account</p>
                                                         <a class="dropdown-item active" href="@Url.ActionLink("Index","UserProfile")"><i class="flaticon-photo mr10"></i>My Profile</a>
@@ -425,9 +445,9 @@
                             <div class="footer-widget mb-4 mb-lg-5">
                                 <a class="footer-logo logo1 mb40" href="@Url.Action("Index","Home")">
                                     <img src="~/template_assets/images/header-logo-light.png"
-                                         alt="SkillSwap Logo" />
+                                         alt="Swapo Logo" />
                                     <span class="logo-text">
-                                        SkillSwap<span style="color:#FFF">.</span>
+                                        Swapo<span style="color:#FFF">.</span>
                                     </span>
                                 </a>
                                 <div class="row mb-4 mb-lg-5">
@@ -440,7 +460,7 @@
                                     <div class="col-auto">
                                         <div class="contact-info">
                                             <p class="info-title mb-2">Need live support?</p>
-                                            <h5 class="info-mail"><a class="text-white" href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a></h5>
+                                            <h5 class="info-mail"><a class="text-white" href="mailto:swapoorg360@gmail.com">swapoorg360@gmail.com</a></h5>
                                         </div>
                                     </div>
                                 </div>
@@ -492,7 +512,7 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="text-center text-lg-center">
-                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
+                                <p class="copyright-text mb-2 mb-md-0 text-white-light ff-heading">© Swapo. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         <!-- <div class="col-sm-6">

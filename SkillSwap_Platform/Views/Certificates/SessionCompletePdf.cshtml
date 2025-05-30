@@ -1,0 +1,195 @@
+﻿@model SkillSwap_Platform.Models.ViewModels.CertificateVM
+@{
+    Layout = null;
+    var dateText = Model.CompletedAt.ToString("dd MMMM, yyyy");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillSwap Certificate of Completion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5BBB7B;
+            --text-dark: #333;
+            --text-medium: #555;
+            --text-light: #777;
+            --bg-light: #f0f2f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg-light);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .certificate-container {
+            position: relative;
+            width: 1120px;
+            height: 792px;
+            margin: 40px auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 60px;
+        }
+
+            .certificate-container::before {
+                content: '';
+                position: absolute;
+                inset: -20%;
+                background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.04"><defs><pattern id="dot" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="%23000"/></pattern></defs><rect width="100%" height="100%" fill="url(%23dot)"/></svg>') no-repeat;
+                background-size: cover;
+                transform: scale(3);
+                z-index: 0;
+            }
+
+        .geo-shape {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(91,187,123,0.3), rgba(91,187,123,0));
+            clip-path: polygon(50% 0%, 100% 25%, 75% 100%, 25% 100%, 0% 25%);
+            top: -100px;
+            right: -150px;
+            z-index: 1;
+        }
+
+        .header {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+            .header img {
+                height: 60px;
+            }
+
+            .header h1 {
+                font-family: 'Merriweather', serif;
+                font-size: 48px;
+                color: var(--primary-color);
+                margin-top: 10px;
+            }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 80px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: var(--text-light);
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .recipient {
+            font-family: 'Merriweather', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .details {
+            font-size: 18px;
+            color: var(--text-medium);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 80px;
+            margin-top: auto;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+            .signature img {
+                height: 60px;
+                display: block;
+                margin: 0 auto;
+            }
+
+            .signature .name {
+                font-family: 'Merriweather', serif;
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--text-dark);
+                margin-top: 8px;
+            }
+
+            .signature .title {
+                font-size: 14px;
+                color: var(--text-light);
+            }
+
+        .seal {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: url('/template_assets/images/seal.png') no-repeat center/contain;
+            opacity: 0.2;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="geo-shape"></div>
+        <div class="header">
+            <img src="@Model.LogoUrl" alt="Swapo Logo" style="border-radius:16px;" />
+            <h1>Certificate of Completion</h1>
+        </div>
+        <div class="content">
+            <p class="subtitle">This certifies that</p>
+            <p class="recipient">@Model.RecipientName</p>
+            <p class="details">
+                has successfully completed the <strong>@Model.SessionTitle</strong><br />
+                on <strong>@dateText</strong>.
+            </p>
+        </div>
+        <div class="footer">
+            <div class="signature">
+                <img src="@Model.SignatureUrl" alt="Authorized Signature" />
+                <p class="name">Authorized Sign</p>
+            </div>
+            <div class="signature">
+                <p class="name">
+                    Excellence in Learning
+                </p>
+                <p class="title">
+                    Certified by Swapo
+                </p>
+            </div>
+        </div>
+        <div class="seal"></div>
+    </div>
+</body>
+</html>

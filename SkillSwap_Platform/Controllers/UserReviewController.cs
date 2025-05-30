@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Models;
 using SkillSwap_Platform.Models.ViewModels.ReviewReplyVm;
@@ -102,23 +103,71 @@ namespace SkillSwap_Platform.Controllers
                     await _context.SaveChangesAsync();
 
                     var owner = offer.User;
-                    var htmlBody = $@"
-                      <p>Hi {owner.UserName},</p>
-                      <p>Your swap offer “<strong>{offer.Title}</strong>” just received a <strong>{review.Rating}‑star</strong> review from {review.ReviewerName}.</p>
-                      <p>
-                        <a href=""{Url.Action("Index", "UserReview", new { offerId = offer.OfferId }, Request.Scheme)}"">
-                          View all reviews for this offer
-                        </a>
-                      </p>
-                      <p>Thanks for being part of SkillSwap!<br/>The SkillSwap Team</p>
-                    ";
+                    var htmlBodyNewReview = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        
+        <!-- Header -->
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo</h1>
+          </td>
+        </tr>
 
+        <!-- Main Heading -->
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">New Review Received</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{owner.UserName}</strong>,
+            </p>
+            <p style=""margin:0 0 15px;"">
+              Your swap offer “<strong>{offer.Title}</strong>” just received a 
+              <strong>{review.Rating}-star</strong> review from {review.ReviewerName}.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr>
+          <td style=""padding:0 20px;"">
+            <hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
                     await _emailService.SendEmailAsync(
                       owner.Email,
                       "You’ve got a new review on your swap!",
-                      htmlBody,
+                      htmlBodyNewReview,
                       isBodyHtml: true
                     );
+
 
                     // Update the user's statistics (job success and recommendation percentages).
                     await UpdateUserStats(user.UserId);
@@ -146,7 +195,9 @@ namespace SkillSwap_Platform.Controllers
             {
                 try
                 {
-                    var review = await _context.TblReviews.FindAsync(reviewId);
+                    var review = await _context.TblReviews
+                        .Include(r => r.Offer)
+                        .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
                     if (review == null)
                         return RedirectToAction("EP404", "EP");
 
@@ -167,21 +218,56 @@ namespace SkillSwap_Platform.Controllers
                     var replier = await _context.TblUsers.FindAsync(userId);
                     if (replier != null)
                     {
-                        var htmlBody = $@"
-                            <p>Hi {replier.UserName},</p>
-                            <p>You’ve successfully replied to the review on “<strong>{review.Offer.Title}</strong>”.</p>
-                            <blockquote style=""padding:.5rem;border-left:3px solid#ccc;"">
-                              {reply.Comments}
-                            </blockquote>
-                            <p>Thanks for keeping SkillSwap conversations going!<br/>The SkillSwap Team</p>
-                        ";
-
-                        await _emailService.SendEmailAsync(
-                            replier.Email,
-                            "Your reply was posted",
-                            htmlBody,
-                            isBodyHtml: true
-                        );
+                        var htmlBody1 = $@"
+                            <!DOCTYPE html>
+                            <html lang=""en"">
+                            <head>
+                              <meta charset=""UTF-8"">
+                              <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                            </head>
+                            <body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+                              <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+                                <tr><td align=""center"" style=""padding:20px;"">
+                                  <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+                                    <tr>
+                                      <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+                                        <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo.</h1>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style=""padding:20px;color:#333333;line-height:1.5;"">
+                                        <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Reply Posted!</h2>
+                                        <p style=""margin:0 0 10px;"">Hi <strong>{replier.UserName}</strong>,</p>
+                                        <p style=""margin:0 0 15px;"">
+                                          Your reply to “<strong>{review.Offer.Title}</strong>” was posted:
+                                        </p>
+                                        <blockquote style=""padding:.5rem;border-left:3px solid #ccc;margin:0 0 15px;"">
+                                          {reply.Comments}
+                                        </blockquote>
+                                        <p style=""margin:0;"">
+                                          Thanks for keeping Swapo conversations going!
+                                        </p>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+                                    </tr>
+                                    <tr>
+                                      <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+                                        <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+                                          Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
+                                        </p>
+                                        <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+                                          We appreciate you—keep sharing your skills and inspiring others.
+                                        </p>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td></tr>
+                              </table>
+                            </body>
+                            </html>";
+                        await _emailService.SendEmailAsync(replier.Email, "Your reply was posted", htmlBody1, isBodyHtml: true);
                     }
 
                     // Notify the original reviewer that you replied
@@ -195,7 +281,7 @@ namespace SkillSwap_Platform.Controllers
 
                     await tx.CommitAsync();
                     TempData["SuccessMessage"] = "Your response has been posted!";
-                    return View();
+                    return RedirectToAction("Index", "UserReview", new { offerId = review.OfferId });
                 }
                 catch (Exception ex)
                 {
@@ -215,12 +301,13 @@ namespace SkillSwap_Platform.Controllers
             {
                 var review = await _context.TblReviews
                                    .AsNoTracking()
+                                   .Include(r => r.Offer)
                                    .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
                 if (review == null) return NotFound();
 
                 int currentUserId = GetUserId();
 
-                if (review.UserId == currentUserId)
+                if (review.ReviewerId == currentUserId)
                     return BadRequest("You cannot flag your own review.");
 
                 review.IsFlagged = true;
@@ -243,25 +330,50 @@ namespace SkillSwap_Platform.Controllers
                         new { offerId = review.OfferId },
                         Request.Scheme);
 
-                    var htmlBody = $@"
-                        <p>Hi {flagger.UserName},</p>
-                        <p>Thanks for helping keep SkillSwap friendly. You’ve flagged review 
-                           <strong>#{review.ReviewId}</strong> on “<em>{review.Offer.Title}</em>.”</p>
-                        <p>We’ll review this content and take appropriate action within the next 24 hours.</p>
-                        
-                        <p>
-                            If you’d like to see all feedback on this swap, <a href=""{reviewUrl}"">click here</a>.
-                        </p>
-                        
-                        <p>Cheers,<br/>The SkillSwap Team</p>
-                    ";
-
-                    await _emailService.SendEmailAsync(
-                        flagger.Email,
-                        "Confirmation: You flagged a review",
-                        htmlBody,
-                        isBodyHtml: true
-                    );
+                    var htmlBody2 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo. Moderation</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Flag Received</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{flagger.UserName}</strong>, thanks for helping keep Swapo friendly.<br/>
+              You flagged review <strong>#{review.ReviewId}</strong> on “<em>{review.Offer.Title}</em>.”
+            </p>
+            <p style=""margin:0;"">
+              Our team will review it and take action within the next 24 hours.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(flagger.Email, "Confirmation: You flagged a review", htmlBody2, isBodyHtml: true);
                 }
 
                 // Notify moderation or the offer owner
@@ -319,23 +431,48 @@ namespace SkillSwap_Platform.Controllers
                 if (flaggerId != reply.ReplierUserId)
                 {
                     var author = await _context.TblUsers.FindAsync(reply.ReplierUserId);
-                    var htmlBody = $@"
-                      <p>Hi {author.UserName},</p>
-                      <p>Your reply (ID: {reply.ReplyId}) on the review “<strong>{reply.Review.Offer.Title}</strong>” has been flagged by another member for moderation.</p>
-                      <p>
-                        You can review all your flagged replies 
-                        <a href=""{Url.Action("Index", "UserReview", new { offerId = reply.Review.OfferId }, Request.Scheme)}"">
-                          here
-                        </a>.
-                      </p>
-                      <p>Thanks for helping keep SkillSwap a friendly community!<br/>—The SkillSwap Team</p>
-                    ";
-                    await _emailService.SendEmailAsync(
-                      author.Email,
-                      "One of your replies was flagged",
-                      htmlBody,
-                      isBodyHtml: true
-                    );
+                    var htmlBody3 = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
+        <tr>
+          <td style=""border-top:4px solid rgba(0,168,143,0.8);padding:20px;"">
+            <h1 style=""margin:0;font-size:24px;color:#00A88F;"">Swapo Moderation</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333333;line-height:1.5;"">
+            <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">Reply Flagged</h2>
+            <p style=""margin:0 0 15px;"">
+              Hi <strong>{author.UserName}</strong>,<br/>
+              Your reply (ID: {reply.ReplyId}) on “<strong>{reply.Review.Offer.Title}</strong>” has been flagged for moderation.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:0 20px;""><hr style=""border:none;border-top:1px solid #e0e0e0;margin:0;""/></td>
+        </tr>
+        <tr>
+          <td style=""background-color:#00A88F;padding:20px;text-align:center;"">
+            <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+              Thank you for being a valued member of <strong>Swapo</strong>. Your creativity and passion make our community thrive!
+            </p>
+            <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+              We appreciate you—keep sharing your skills and inspiring others.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(author.Email, "One of your replies was flagged", htmlBody3, isBodyHtml: true);
+
                 }
 
                 // Grab the offerId from the parent review
@@ -366,6 +503,20 @@ namespace SkillSwap_Platform.Controllers
             }
         }
         #endregion
+
+        public async Task<IActionResult> MyReviews()
+        {
+            var userId = GetUserId();
+            var myReviews = await _context.TblReviews
+        .Where(r => r.ReviewerId == userId)
+        .Include(r => r.Offer)                                  // so we can show offer.Title
+        .Include(r => r.TblReviewReplies!)                     // grab the replies
+            .ThenInclude(rr => rr.ReplierUser)                 // …and who replied
+        .OrderByDescending(r => r.CreatedDate)
+        .ToListAsync();
+
+            return View(myReviews);
+        }
 
         #region Helper Class
         /// <summary>

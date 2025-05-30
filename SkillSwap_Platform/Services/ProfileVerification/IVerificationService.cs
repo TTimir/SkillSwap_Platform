@@ -5,6 +5,8 @@ namespace SkillSwap_Platform.Services.ProfileVerification
 {
     public interface IVerificationService
     {
+        Task<bool> HasPendingAsync(string userId);
+        Task<bool> IsVerifiedAsync(string userId);
         Task SubmitAsync(string userId, SubmitRequestVm vm);
         Task<IList<AdminListVm>> GetPendingAsync();
         Task<AdminDetailsVm> GetDetailsAsync(long requestId);

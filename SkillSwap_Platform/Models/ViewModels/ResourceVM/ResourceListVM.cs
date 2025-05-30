@@ -8,6 +8,7 @@
         public int CurrentUserId { get; set; }
         public List<TblResource> MyResources { get; set; }
         public List<TblResource> ReceivedResources { get; set; }
+        public bool IsGrowthUser { get; set; }
 
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }

@@ -72,6 +72,12 @@
             <div class="card-header"><strong>Profile & Security</strong></div>
             <div class="card-body">
                 <dl class="row">
+                    <dt class="col-sm-4">UserName</dt>
+                    <dd class="col-sm-8">@Model.User.UserName</dd>
+
+                    <dt class="col-sm-4">Designation</dt>
+                    <dd class="col-sm-8">@Model.User.Designation</dd>
+
                     <dt class="col-sm-4">Email</dt>
                     <dd class="col-sm-8">@Model.User.Email</dd>
 
@@ -82,7 +88,16 @@
                     <dd class="col-sm-8">@(Model.User.IsHeld ? "Yes" : "No")</dd>
 
                     <dt class="col-sm-4">Held At</dt>
-                    <dd class="col-sm-8">@fmt(Model.User.HeldAt)</dd>
+                    <dd class="col-sm-8">@(fmt(Model.User.HeldAt) ?? "N/A")</dd>
+                    
+                    <dt class="col-sm-4">Held Reason</dt>
+                    <dd class="col-sm-8">@(Model.User.HeldReason ?? "N/A")</dd>
+
+                    <dt class="col-sm-4">Release At</dt>
+                    <dd class="col-sm-8">@(fmt(Model.User.ReleaseAt) ?? "N/A")</dd>
+
+                    <dt class="col-sm-4">Release Reason</dt>
+                    <dd class="col-sm-8">@(Model.User.ReleaseReason ?? "N/A")</dd>
 
                     <dt class="col-sm-4">Status</dt>
                     <dd class="col-sm-8">

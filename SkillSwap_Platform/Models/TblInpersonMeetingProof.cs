@@ -30,6 +30,4 @@ public partial class TblInpersonMeetingProof
     public string? EndMeetingNotes { get; set; }
 
     public DateTime? CreatedDate { get; set; }
-
-    public virtual TblExchange Exchange { get; set; } = null!;
 }

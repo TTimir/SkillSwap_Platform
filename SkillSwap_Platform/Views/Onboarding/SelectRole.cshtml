@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - SkillSwap</title>
+    <title>@ViewData["Title"] - Swapo</title>
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/template_assets/css/ace-responsive-menu.css">
@@ -33,14 +33,42 @@
     <link href="/template_assets/images/apple-touch-icon-72x72.png" sizes="72x72" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-114x114.png" sizes="114x114" rel="apple-touch-icon">
     <link href="/template_assets/images/apple-touch-icon-180x180.png" sizes="180x180" rel="apple-touch-icon">
+
+    <style>
+        .header-logo.logo1 {
+            display: inline-flex;
+            align-items: center; /* vertical centering */
+            justify-content: center; /* horizontal centering */
+            color: #222;
+            text-decoration: none;
+            gap: 6px; /* small space between img and text */
+        }
+
+            .header-logo.logo1 img {
+                border-radius: 14px;
+                width: 40px;
+                height: auto;
+            }
+
+            .header-logo.logo1 .logo-text {
+                font-family: monospace;
+                font-size: 22px;
+                letter-spacing: 1;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+    </style>
 </head>
 <body>
     <!-- Minimal Navigation Bar -->
     <header class="header-nav">
         <div class="container-custom">
             <div class="logo">
-                <a href="index.html">
-                    <img src="/template_assets/images/header-logo-dark.svg" alt="SkillSwap Logo">
+                <a class="header-logo logo1" href="/">
+                    <img src="/template_assets/images/header-logo-dark.png" alt="Header Logo">
+                    <span class="logo-text">
+                        Swapo<span style="color:#5BBB7B">.</span>
+                    </span>
                 </a>
             </div>
             <nav>
@@ -87,6 +115,13 @@
 
         <h2 class="mb-3 text-center">@ViewData["Title"]</h2>
         <p class="mb-4 text-center">Choose your role. You can change this later.</p>
+        @if (ViewBag.StepReward != null)
+        {
+            var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
+            <p class="text-center text-primary">
+                🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
+            </p>
+        }
 
         @using (Html.BeginForm("SelectRole", "Onboarding", FormMethod.Post))
         {
@@ -109,19 +144,19 @@
                 <div class="card-role" onclick="selectRole('Teacher', this)">
                     <input type="radio" name="SelectedRole" value="Teacher" @(Model.SelectedRole == "Teacher" ? "checked" : "") />
                     <img src="/template_assets/images/man_sitting.svg" alt="Teacher">
-                    <h5>Teacher</h5>
+                    <h5>Instructor/Teacher</h5>
                     <p>Offer your expertise to help others learn.</p>
                 </div>
                 <div class="card-role" onclick="selectRole('Student', this)">
                     <input type="radio" name="SelectedRole" value="Student" @(Model.SelectedRole == "Student" ? "checked" : "") />
                     <img src="/template_assets/images/Asset-8.svg" alt="Student">
-                    <h5>Student</h5>
+                    <h5>Apprentice/Learner</h5>
                     <p>Learn new skills and grow your knowledge.</p>
                 </div>
                 <div class="card-role" onclick="selectRole('Both', this)">
                     <input type="radio" name="SelectedRole" value="Both" @(Model.SelectedRole == "Both" ? "checked" : "") />
                     <img src="/template_assets/images/Right-bg-img.png" alt="Both">
-                    <h5>Both</h5>
+                    <h5>Instructor & Apprentice (Both)</h5>
                     <p>Offer your expertise while learning new skills.</p>
                 </div>
                 <span asp-validation-for="SelectedRole" class="text-danger"></span>
@@ -138,13 +173,6 @@
                 </button>
                 @* <button type="submit" name="action" value="Skip" class="custom-btn custom-btn-skip">Skip</button> *@
             </div>
-            @if (ViewBag.StepReward != null)
-            {
-                var reward = ((decimal)ViewBag.StepReward).ToString("0.##");
-                <p class="text-center text-primary">
-                    🎉 Complete this step now and snag <img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> <strong>@reward TK</strong>!
-                </p>
-            }
         }
     </div>
 
@@ -157,7 +185,7 @@
                     <img src="/template_assets/images/rocket-illustration.svg"
                          alt="Rocket"
                          style="width: 80px; margin-bottom: .5rem;">
-                    <h3 class="fw-bold mb-1">Welcome to SkillSwap! 👋</h3>
+                    <h3 class="fw-bold mb-1">Welcome to Swapo! 👋</h3>
                     <p class="mb-3 lead text-white-50">Complete all 6 steps to unlock your <strong>2.00 TK</strong> reward.</p>
                     <span class="badge bg-light text-dark fs-5 py-2 px-3"><img src="/template_assets/images/SSDToken.png" alt="Tokens" width="32" height="32"> 2.00 TK</span>
                 </div>

@@ -69,8 +69,8 @@ namespace SkillSwap_Platform.Controllers.AdminDashboard
             try
             {
                 var query = _db.OtpAttempts
-                               .Where(a => a.UserId == userId)
-                               .OrderByDescending(a => a.AttemptedAt);
+                       .Where(a => a.UserId == userId && !a.WasSuccessful)
+                       .OrderByDescending(a => a.AttemptedAt);
 
                 var total = await query.CountAsync();
                 var items = await query

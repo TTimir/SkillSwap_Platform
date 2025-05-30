@@ -9,6 +9,14 @@
 }
 
 <style>
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        /* border-radius: 50%; /* make them circles */ */
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
     /* 1) make our “equal-height” row a flex container */
     .row.equal-height {
         display: flex;
@@ -77,41 +85,39 @@
             margin-top: auto;
         }
 
-        /* Card hover lift + shadow */
-        .blog-card {
-            transition: transform .2s, box-shadow .2s;
-            border-radius: .5rem;
+    .blog-style1 {
+        display: flex;
+        flex-direction: column;
+        height: 100%; /* fill whatever parent col-height you’ve set */
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+        /* 2) Fix the image box height, hide overflow */
+        .blog-style1 .blog-img {
+            height: 200px; /* or whatever uniform height you like */
+            overflow: hidden;
         }
 
-            .blog-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            /* 3) Have the img fill that box and crop as needed */
+            .blog-style1 .blog-img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
             }
 
-        /* Ensure images cover the ratio box */
-        .object-fit-cover {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Tweak card body spacing */
-        .blog-card .card-body {
+        /* 4) Let the content area flex to fill the rest of the card */
+        .blog-style1 .blog-content {
+            flex: 1; /* push footer/text to bottom if you add more */
             padding: 1rem;
+            display: flex;
+            flex-direction: column;
         }
 
-        .blog-card .card-title {
-            font-size: 1.125rem;
-            line-height: 1.3;
-        }
-
-        .blog-card .card-text {
-            margin-bottom: 0;
-        }
-
-        .ud-btn:hover{
-            background-color: #5BBB7B;
-        }
+            /* 5) Push your summary/text down so titles line up */
+            .blog-style1 .blog-content .text {
+                flex: 1;
+            }
 </style>
 
 <!-- Home Banner Style V1 -->
@@ -404,51 +410,51 @@
 </section>
 
 <!-- Trending Services -->
-<section class="pt-0 pb100">
-    <div class="container">
-        <div class="row align-items-center wow fadeInUp">
-            <div class="col-lg-9">
-                <div class="main-title">
-                    <h2 class="title">Hot & Trending Swap Offers</h2>
-                    <p class="paragraph">See what everyone’s swapping right now</p>
+@if (Model.TrendingOffersByCategory != null && Model.TrendingOffersByCategory.Count > 0)
+{
+    <section class="pt-0 pb100">
+        <div class="container">
+            <div class="row align-items-center wow fadeInUp">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">Hot & Trending Swap Offers</h2>
+                        <p class="paragraph">See what everyone’s swapping right now</p>
+                    </div>
                 </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">All Swap Offers<i class="fal fa-arrow-right-long"></i></a>
+                <div class="col-lg-3">
+                    <div class="text-lg-end mb-3">
+                        <a href="@Url.Action("PublicOfferList", "UserOfferDetails")" class="ud-btn2">All Swap Offers<i class="fal fa-arrow-right-long"></i></a>
+                    </div>
                 </div>
-            </div>
-            <div class="col-xl-9">
-                <div class="navpill-style2 at-home9 mb50-lg">
-                    <ul class="nav nav-pills mb20 justify-content-xl-end" id="pills-tab" role="tablist">
-                        @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
-                        {
-                            var category = Model.TrendingOffersByCategory[i];
-                            bool isActive = (i == 0); // Make the first tab active by default
+                <div class="col-xl-9">
+                    <div class="navpill-style2 at-home9 mb50-lg">
+                        <ul class="nav nav-pills mb20 justify-content-xl-end" id="pills-tab" role="tablist">
+                            @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
+                            {
+                                var category = Model.TrendingOffersByCategory[i];
+                                bool isActive = (i == 0); // Make the first tab active by default
 
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link @(isActive ? "active" : "") fw500 dark-color"
-                                        id="pills-@category.CategorySlug-tab"
-                                        data-bs-toggle="pill"
-                                        data-bs-target="#pills-@category.CategorySlug"
-                                        type="button"
-                                        role="tab"
-                                        aria-controls="pills-@category.CategorySlug"
-                                        aria-selected="@isActive">
-                                    @category.CategoryName
-                                </button>
-                            </li>
-                        }
-                    </ul>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link @(isActive ? "active" : "") fw500 dark-color"
+                                            id="pills-@category.CategorySlug-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#pills-@category.CategorySlug"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="pills-@category.CategorySlug"
+                                            aria-selected="@isActive">
+                                        @category.CategoryName
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="row wow fadeInUp" data-wow-delay="300ms">
-            <div class="col-lg-12">
-                <div class="navpill-style2">
-                    <div class="tab-content" id="pills-tabContent">
-                        @if (Model.TrendingOffersByCategory != null && Model.TrendingOffersByCategory.Count > 0)
-                        {
+            <div class="row wow fadeInUp" data-wow-delay="300ms">
+                <div class="col-lg-12">
+                    <div class="navpill-style2">
+                        <div class="tab-content" id="pills-tabContent">
                             @for (int i = 0; i < Model.TrendingOffersByCategory.Count; i++)
                             {
                                 var category = Model.TrendingOffersByCategory[i];
@@ -573,10 +579,8 @@
                                                                 <!-- Example: Link to user profile -->
                                                                 <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })" target="_blank">
                                                                     <span class="position-relative mr10">
-                                                                        <img class="rounded-circle"
+                                                                        <img class="rounded-circle profile-avatar"
                                                                              src="@offer.UserProfileImage"
-                                                                             width="100"
-                                                                             style="max-width:25%"
                                                                              alt="Freelancer Photo" />
                                                                         <!-- Online status example (if you’re handling it) -->
                                                                         <!-- <span class="online-badge"></span> -->
@@ -608,17 +612,13 @@
 
                                 <!-- /.tab-pane -->
                             }
-                        }
-                        else
-                        {
-                            <p>No trending swap offers available.</p>
-                        }
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- CTA Banner -->
 <section class="p-0">
@@ -662,32 +662,33 @@
 </section>
 
 <!-- Highest Rated Freelancers -->
-<section class="pb90 pb30-md">
-    <div class="container">
-        <div class="row align-items-center wow fadeInUp">
-            <div class="col-lg-9">
-                <div class="main-title">
-                    <h2 class="title">Highest Rated Profile</h2>
-                    <p class="paragraph">Meet our community’s top-rated swappers</p>
+@if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
+{
+    <section class="pb90 pb30-md">
+        <div class="container">
+            <div class="row align-items-center wow fadeInUp">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">Highest Rated Profile</h2>
+                        <p class="paragraph">Meet our community’s top-rated swappers</p>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="text-lg-end mb-3">
+                        <a href="@Url.Action("PublicProfileList","UserProfileList")" class="ud-btn2">All Swappers <i class="fal fa-arrow-right-long"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-3">
-                <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("PublicProfileList","UserProfileList")" class="ud-btn2">All Swappers <i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="row wow fadeInUp swap-grid" data-wow-delay="300ms">
-            @if (Model.HighestRatedFreelancers != null && Model.HighestRatedFreelancers.Count > 0)
-            {
-                foreach (var freelancer in Model.HighestRatedFreelancers)
+            <div class="row wow fadeInUp swap-grid" data-wow-delay="300ms">
+
+                @foreach (var freelancer in Model.HighestRatedFreelancers)
                 {
                     <div class="col-sm-6 col-xl-3">
                         <div class="item">
                             <div class="listing-style1 text-center style3 offer-card hover-box-shadow">
                                 <div class="list-thumb">
                                     <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
-                                        <img class="rounded-circle mx-auto" src="@freelancer.ProfileImage" alt="@freelancer.Name" style="max-width:100%;" />
+                                        <img class="rounded-circle mx-auto profile-avatar" src="@freelancer.ProfileImage" alt="@freelancer.Name" />
                                         <vc:online-indicator user-id="@freelancer.UserId" />
                                     </div>
                                 </div>
@@ -698,7 +699,7 @@
                                         {
                                             <img src="~/template_assets/images/SSVerified.png"
                                                  alt="Verified"
-                                                 title="This user has been verified by SkillSwap"
+                                                 title="This user has been verified by Swapo"
                                                  class="ms-2"
                                                  style="width:20px; height:20px; cursor:help;"
                                                  data-bs-toggle="tooltip"
@@ -736,7 +737,7 @@
                                         </a>
                                         <a class="meta fw500 text-start">
                                             Exchange Success<br>
-                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess</span>
+                                            <span class="fz14 fw400"> @("%")@freelancer.JobSuccess?.ToString("0.##")</span>
                                         </a>
                                     </div>
                                     <div class="d-grid mt15">
@@ -749,16 +750,10 @@
                         </div>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="item">
-                    <p>No Swappers available.</p>
-                </div>
-            }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
 
 <!-- CTA -->
 <section class="bgc-dark">
@@ -785,8 +780,8 @@
             </div>
             <div class="col-xl-5">
                 <div class="position-relative wow fadeInLeft">
-                    <h2 class="text-white mb35">Join the World’s Premier <br class="d-none d-lg-block"> SkillSwap Community </h2>
-                    <p class="text text-white mb35">Tap into a global community of trusted professionals, matched to your needs. With secure escrow, 24/7 support, and flexible swap options (one-off or ongoing), SkillSwap delivers high-impact results, every time.</p>
+                    <h2 class="text-white mb35">Join the World’s Premier <br class="d-none d-lg-block"> Swapo Community </h2>
+                    <p class="text text-white mb35">Tap into a global community of trusted professionals, matched to your needs. With secure escrow, 24/7 support, and flexible swap options (one-off or ongoing), Swapo delivers high-impact results, every time.</p>
                     <div class="list-style2 light-style">
                         <ul class="mb30">
                             <li><i class="far fa-check"></i>Work only with proven SkillSwappers who deliver real impact.</li>
@@ -802,7 +797,7 @@
 </section>
 
 <!-- Learn With SkillSwap -->
-<section class="bgc-violet">
+<section class="bgc-violet mb50">
     <div class="container">
         <div class="row align-items-md-center">
             <div class="col-md-6 col-lg-8 mb30-md wow fadeInUp" data-wow-delay="100ms">
@@ -835,7 +830,7 @@
                                     <li><span>/</span></li>
                                     <li><div class="timer">5</div></li>
                                 </ul>
-                                <p class="text mb-0">Members rate each other's expertise on SkillSwap</p>
+                                <p class="text mb-0">Members rate each other's expertise on Swapo</p>
                             </div>
                         </div>
                     </div>
@@ -876,7 +871,7 @@
                             <div class="testimonial-content">
                                 <h4 class="title">Instant Swap Fun!</h4>
                                 <span class="icon fas fa-quote-left"></span>
-                                <h4 class="t_content">“As an early adopter, I posted my first swap in under five minutes, SkillSwap’s launch experience was flawless! ”</h4>
+                                <h4 class="t_content">“As an early adopter, I posted my first swap in under five minutes, Swapo’s launch experience was flawless! ”</h4>
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
@@ -948,7 +943,7 @@
                             <div class="testimonial-content">
                                 <h4 class="title">Smooth Start</h4>
                                 <span class="icon fas fa-quote-left"></span>
-                                <h4 class="t_content">“Posting and managing my first swap was so easy huge kudos to SkillSwap for such a smooth launch! ”</h4>
+                                <h4 class="t_content">“Posting and managing my first swap was so easy huge kudos to Swapo for such a smooth launch! ”</h4>
                             </div>
                             <div class="thumb d-flex align-items-center">
                                 <div class="flex-shrink-0">
@@ -971,79 +966,52 @@
 @if (Model.RecentBlogPosts?.Any() == true)
 {
     // take only the first 6 posts
-    var topSix = (Model.RecentBlogPosts ?? new List<BlogPost>()).Take(6).ToList();
-
-    // group into chunks of 3
-    var rows = topSix
-        .Select((post, index) => new { post, index })
-        .GroupBy(x => x.index / 3)
-        .Select(g => g.Select(x => x.post).ToList())
-        .ToList();
-
-    <section class="container py-5">
-        <div class="row align-items-center wow fadeInUp">
-            <div class="col-lg-9">
-                <div class="main-title">
-                    <h2 class="title">
-                        Insights & Stories
-                    </h2>
-                    <p class="paragraph">Get inspired by real tips and stories</p>
+    var topSix = Model.RecentBlogPosts.Take(6).ToList();
+    <section class="our-blog pt-0">
+        <div class="container">
+            <div class="row wow fadeInUp" data-wow-delay="100ms">
+                <div class="col-lg-9">
+                    <div class="main-title">
+                        <h2 class="title">
+                            Insights & Stories
+                        </h2>
+                        <p class="paragraph">Get inspired by real tips and stories</p>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="text-lg-end mb-3">
+                        <a href="@Url.Action("Feed","Blog")" class="ud-btn2">View All Posts <i class="fal fa-arrow-right-long"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-3">
-                <div class="text-lg-end mb-3">
-                    <a href="@Url.Action("Index","Blog")" class="ud-btn2">View All Posts <i class="fal fa-arrow-right-long"></i></a>
-                </div>
-            </div>
-        </div>
-        @foreach (var row in rows)
-        {
-            <div class="row g-4 mb-4">
-                @foreach (var post in row)
+            <div class="row g-4 mb-4 wow fadeInUp" data-wow-delay="300ms">
+                @foreach (var post in topSix)
                 {
-                    <div class="col-sm-6 col-lg-4">
-                        <div class="card h-100 shadow-sm border-0 rounded overflow-hidden position-relative blog-card" style="border-radius: 16px;">
-                            @* Cover image area *@
-                            <div class="card-img-top" style="
-                            background: url('@(post.CoverImagePath ?? "/images/blog-placeholder.png")') center/cover no-repeat;
-                            height: 260px; border-top-left-radius: 16px; border-top-right-radius: 16px;
-                                    "></div>
-
-                            <div class="card-body d-flex flex-column">
-                                @* Date badge *@
-                                <small class="badge bg-primary mb-3 align-self-start">
-                                    @post.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
-                                </small>
-
-                                @* Title *@
-                                <h5 class="card-title mb-4">
+                    <div class="col-sm-6 col-md-4 col-lg-4 col-xl-3">
+                        <div class="blog-style1" style="border-radius: 16px;">
+                            <div class="blog-img"><img class="w-100" src="@(post.CoverImagePath ?? "/images/blog-placeholder.png")" alt=""></div>
+                            <div class="blog-content">
+                                <a class="date" href="">@post.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</a>
+                                <h4 class="title mt-1">
                                     <a href="@Url.Action("Details","Blog", new { id = post.Id })"
-                                       class="stretched-link text-dark text-decoration-none">
+                                       class="stretched-link text-decoration-none">
                                         @post.Title
                                     </a>
-                                </h5>
-
-                                @* Summary excerpt *@
-                                <p class="card-text text-muted flex-grow-1 mb-4">
+                                </h4>
+                                <p class="text mb-0">
                                     @{
-                                        var summary = post.Summary?.Length > 120
-                                        ? post.Summary.Substring(0, 120) + "…"
+                                        var summary = post.Summary?.Length > 100
+                                        ? post.Summary.Substring(0, 100) + "…"
                                         : post.Summary;
                                     }
                                     @summary
                                 </p>
-
-                                @* Read more button *@
-                                <a href="@Url.Action("Details","Blog", new { id = post.Id })"
-                                   class="ud-btn btn-thm-border mt20 me-4">
-                                    Read more <i class="fal fa-arrow-right-long"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
                 }
             </div>
-        }
+        </div>
     </section>
 }
 

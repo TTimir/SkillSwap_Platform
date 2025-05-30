@@ -127,6 +127,13 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            if (string.IsNullOrWhiteSpace(req.BillingCycle) ||
+            !(req.BillingCycle.Equals("monthly", StringComparison.OrdinalIgnoreCase)
+              || req.BillingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest("Invalid billing cycle");
+            }
+
             try
             {
                 var result = await _rzp.CreateOrderAsync(req.Plan, req.BillingCycle);
@@ -134,28 +141,30 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Invalid plan in Checkout: {Plan}", req.Plan);
-                return BadRequest("Invalid plan");
+                _logger.LogWarning(ex, "Checkout failed: invalid plan or cycle ({Plan}, {Cycle})",
+                    req.Plan, req.BillingCycle);
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating Razorpay order");
-                return StatusCode(500, $"Order creation failed: {ex.Message}");
+                _logger.LogError(ex, "Checkout: unexpected error for plan {Plan}, cycle {Cycle}",
+                    req.Plan, req.BillingCycle);
+                return StatusCode(500, "Unable to create payment order. Please try again later.");
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> CancelAutoRenew([FromForm] string reason)
+        public async Task<IActionResult> CancelAutoRenew()
         {
             var userId = GetUserId() ?? throw new Exception("Not signed in");
-            if (string.IsNullOrWhiteSpace(reason))
-            {
-                ModelState.AddModelError(nameof(reason), "Please provide a reason");
-                return RedirectToAction("Index", "UserDashboard");
-            }
+            var user = await _db.TblUsers.FindAsync(userId)
+                          ?? throw new Exception("User not found");
+
+            var timestamp = DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+            var reason = $"Cancelled by \"{user.UserName}\" at \"{timestamp}\".";
 
             await _subs.CancelAutoRenewAsync(userId, reason);
-            TempData["Success"] = "Your subscription will not auto-renew.  Thanks for the feedback!";
+            TempData["Success"] = "Your subscription will not auto-renew. Thanks for being a valuable swapper";
             return RedirectToAction("Index", "UserDashboard");
         }
 
@@ -169,66 +178,60 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
                 resp.razorpay_signature
             );
             if (!ok)
-                return Json(new { success = false, message = "Payment verification failed." });
+                return Json(new { success = false, message = "Invalid payment signature." });
 
             if (await _paymentLog.HasProcessedAsync(resp.razorpay_order_id))
                 return Ok(new { success = true, message = "Already processed" });
 
-            // signature is valid → update the DB
-            var userId = GetUserId() ?? throw new Exception("Unauthenticated");
-            var now = DateTime.UtcNow;
-
-            var activeSub = await _subs.GetActiveAsync(userId);
-            DateTime newStart, newEnd;
-
-            // are we renewing an unexpired subscription of the same plan+cycle?
-            if (activeSub != null
-                && activeSub.PlanName.Equals(resp.planName, StringComparison.OrdinalIgnoreCase)
-                && activeSub.BillingCycle.Equals(resp.billingCycle, StringComparison.OrdinalIgnoreCase)
-                && activeSub.EndDate > now)
-            {
-                // extend from the *current* end date
-                newStart = activeSub.StartDate;          // you could also leave StartDate untouched
-                newEnd = activeSub.EndDate
-                             .AddMonths(resp.billingCycle == "yearly" ? 12 : 1);
-            }
-            else
-            {
-                // brand-new or expired → start today
-                newStart = now;
-                newEnd = now.AddYears(resp.billingCycle == "yearly" ? 1 : 0)
-                              .AddMonths(resp.billingCycle == "yearly" ? 0 : 1);
-            }
+            decimal paidAmount;
             try
             {
-
-                var sub = await _subs.GetActiveAsync(userId)
-                            ?? throw new InvalidOperationException("No subscription to attach order to");
-                sub.GatewayOrderId = resp.razorpay_order_id;
-                await _db.SaveChangesAsync();
-
-                // 6) Fetch the paid amount from Razorpay API
                 var client = new RazorpayClient(_rzp.Key, _rzp.Secret);
                 var payment = await Task.Run(() => client.Payment.Fetch(resp.razorpay_payment_id));
-                var amountInPaise = Convert.ToDecimal(payment["amount"]);
-                var paidAmount = amountInPaise / 100m;
+                paidAmount = Convert.ToDecimal(payment["amount"]) / 100m;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch payment details for {PaymentId}", resp.razorpay_payment_id);
+                return StatusCode(500, new { success = false, message = "Unable to confirm payment amount." });
+            }
 
-                // 7) Record payment + fire notifications
-                await _subs.RecordPaymentAsync(
-                    resp.razorpay_order_id,   // orderId
-                    resp.razorpay_payment_id, // paymentId
-                    paidAmount,               // paidAmount
-                    resp.planName,            // desiredPlanName
-                    resp.billingCycle         // billingCycle
-                );
+            // signature is valid → update the DB
+            var userId = GetUserId();
+            if (userId == null)
+                return Json(new { success = false, message = "User not authenticated." });
 
-                _logger.LogInformation("Payment {OrderId} applied to user {UserId}", resp.razorpay_order_id, userId);
+            var now = DateTime.UtcNow;
+            var start = now;
+            var end = resp.billingCycle.Equals("yearly", StringComparison.OrdinalIgnoreCase)
+                        ? now.AddYears(1)
+                        : now.AddMonths(1);
 
+            using var tx = await _db.Database.BeginTransactionAsync().ConfigureAwait(false); ;
+            try
+            {
+                await _subs.UpsertAsync(
+                    userId.Value,
+                    resp.planName,
+                    resp.billingCycle,
+                    start,
+                    end,
+                    resp.razorpay_order_id,
+                    resp.razorpay_payment_id,
+                    paidAmount,
+                    sendEmail: true
+                ).ConfigureAwait(false); ;
+
+                await _paymentLog.LogAsync(userId.Value, resp.razorpay_order_id, resp.razorpay_payment_id)
+                         .ConfigureAwait(false);
+
+                await tx.CommitAsync().ConfigureAwait(false);
                 // TODO: update user subscription, unlock features...
                 return Json(new { success = true, message = "Payment successful! Subscription updated." });
             }
             catch (Exception ex)
             {
+                await tx.RollbackAsync().ConfigureAwait(false);
                 _logger.LogError(ex, "Error processing payment {OrderId}", resp.razorpay_order_id);
                 return StatusCode(500, new { success = false, message = "Processing failed" });
             }
@@ -278,13 +281,22 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
                 };
             }).ToList();
 
+            bool isGrowthUser = await _db.Subscriptions
+                .AsNoTracking()
+                .AnyAsync(s =>
+                    s.UserId == userId.Value
+                 && s.PlanName == "Growth"
+                 && (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                );
+
             // 6) build and return VM
             var vm = new BillingHistoryVM
             {
                 BillingHistory = items,
                 Page = page,
                 PageSize = pageSize,
-                TotalItems = total
+                TotalItems = total,
+                IsGrowthUser = isGrowthUser
             };
 
             return View(vm);

@@ -71,7 +71,7 @@
                                         var sr = (Model.Page - 1) * Model.PageSize + i + 1;
                                         <tr>
                                             <td class="vam">@sr</td>
-                                            <td class="vam"><span class="fz15 fw400">@log.AttemptedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span></td>
+                                            <td class="vam"><span class="fz15 fw400">@log.AttemptedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss tt") IST</span></td>
                                             <td class="vam">
                                                 @log.UserName (ID @log.UserId)
                                             </td>
@@ -100,7 +100,8 @@
                                             @if (Model.Page > 1)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Details"
+                                                   asp-route-userId="@ViewBag.UserId"
                                                    asp-route-page="@(Model.Page - 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-left"></span>
@@ -123,7 +124,8 @@
                                                 else
                                                 {
                                                     <a class="page-link"
-                                                       asp-action="Manage"
+                                                       asp-action="Details"
+                                                       asp-route-userId="@ViewBag.UserId"
                                                        asp-route-page="@p"
                                                        asp-route-pageSize="@Model.PageSize">@p</a>
                                                 }
@@ -135,7 +137,8 @@
                                             @if (Model.Page < Model.TotalPages)
                                             {
                                                 <a class="page-link"
-                                                   asp-action="Manage"
+                                                   asp-action="Details"
+                                                   asp-route-userId="@ViewBag.UserId"
                                                    asp-route-page="@(Model.Page + 1)"
                                                    asp-route-pageSize="@Model.PageSize">
                                                     <span class="fas fa-angle-right"></span>

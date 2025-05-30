@@ -7,6 +7,14 @@
 }
 
 <style>
+    .pub-profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%; /* make them circles */
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
     /* 1) equal-height row = flex container */
     .row.equal-height {
         display: flex;
@@ -152,7 +160,7 @@
                         <div class="listing-style1 text-center style3 offer-card hover-box-shadow">
                             <div class="list-thumb">
                                 <div class="thumb w90 mb20 mt30 mx-auto position-relative rounded-circle">
-                                    <img class="rounded-circle mx-auto" src="@profile.ProfileImage" alt="@profile.UserName" style="max-width:100%;" />
+                                    <img class="rounded-circle mx-auto pub-profile-avatar" src="@profile.ProfileImage" alt="@profile.UserName" />
                                     <vc:online-indicator user-id="@profile.UserId" />
                                 </div>
                             </div>
@@ -163,7 +171,7 @@
                                     {
                                         <img src="~/template_assets/images/SSVerified.png"
                                              alt="Verified"
-                                             title="This user has been verified by SkillSwap"
+                                             title="This user has been verified by Swapo"
                                              class="ms-2"
                                              style="width:22px; height:22px; cursor:help;"
                                              data-bs-toggle="tooltip"

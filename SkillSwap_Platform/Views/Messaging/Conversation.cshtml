@@ -1,6 +1,8 @@
 ﻿@using Humanizer
 @using SkillSwap_Platform.Models.ViewModels
 @model SkillSwap_Platform.Models.ViewModels.MessagesVM.ConversationVM
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthZ
 
 @{
     ViewData["Title"] = "Conversations";
@@ -69,8 +71,8 @@
                         <div class="list-item pt5">
                             <a href="@Url.Action("Conversation", "Messaging", new { otherUserId = contact.UserID })">
                                 <div class="d-flex align-items-center position-relative">
-                                     <vc:online-indicator user-id="@contact.UserID" />
-                                    <img class="img-fluid float-start rounded-circle mr10" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
+                                    <vc:online-indicator user-id="@contact.UserID" />
+                                    <img class="img-fluid float-start rounded-circle mr10 con-profile-avatar" src="@(!string.IsNullOrEmpty(contact.ProfileImage) ? Url.Content(contact.ProfileImage) : Url.Content("~/template_assets/images/No_Profile_img.png"))" alt="@contact.UserName" />
                                     <div class="d-sm-flex">
                                         <div class="d-inline-block">
                                             <div class="fz15 fw500 dark-color ff-heading mb-0">@contact.UserName</div>
@@ -113,9 +115,9 @@
                 {
                     <div class="user_heading px-0 mx30">
                         <div class="wrap">
-                            <img class="img-fluid mr10 rounded-circle" src="@Model.OtherUserProfileImage" alt="Profile" style="width: 60px;" />
+                            <img class="img-fluid mr10 rounded-circle con-profile-avatar" src="@Model.OtherUserProfileImage" alt="Profile" />
                             <div class="meta d-sm-flex justify-content-sm-between align-items-center">
-                                <div class="authors">
+                                <div class="authors" style="padding-top:5px;">
                                     <h6 class="name mb-0">@Model.OtherUserName</h6>
                                     <p class="preview">@(Model.OtherUserIsOnline ? "Online" : "Offline")</p>
                                 </div>
@@ -129,7 +131,7 @@
                                             {
                                                 <div class="dropdown-item d-flex flex-column">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                       Active: <strong class="line-clamp2">@Model.LatestActiveOffer.Title</strong>
+                                                        Active: <strong class="line-clamp2">@Model.LatestActiveOffer.Title</strong>
                                                     </div>
                                                     <a href="@Url.Content(Model.LatestActiveOffer.CurrentStagePdfUrl)"
                                                        class="btn btn-sm btn-outline-primary mb-2"
@@ -137,7 +139,7 @@
                                                         <i class="fa fa-file-pdf"></i> View Stage PDF
                                                     </a>
                                                     <small class="text-muted">
-                                                        Contract ID: <code>@Model.LatestActiveOffer.ContractUniqueId</code> —
+                                                        Agreement ID: <code>@Model.LatestActiveOffer.ContractUniqueId</code> —
                                                         Status: <em>
                                                             <span class="badge
                                                                 @(Model.LatestActiveOffer.Status=="Completed" ? "bg-success"
@@ -199,11 +201,18 @@
                                                 }
                                             </div>
                                         </li>
-                                        <li>
-                                            <a class="dropdown-item" href="@Url.Action("Schedule", "Calendar")" title="Schedule a meeting on your calendar">
-                                                <i class="fa fa-calendar"></i> Calendar Schedule
-                                            </a>
-                                        </li>
+                                        @{
+                                            // synchronously evaluate once per render
+                                            var ProMember = (await AuthZ.AuthorizeAsync(User, "ProPlan")).Succeeded;
+                                        }
+                                        @if (ProMember)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Index", "GoogleCalendar")" title="Schedule a meeting on your calendar">
+                                                    <i class="fa fa-calendar"></i> Calendar Schedule
+                                                </a>
+                                            </li>
+                                        }
                                         <li>
                                             <form asp-action="DeleteConversation"
                                                   asp-controller="Messaging"
@@ -238,7 +247,7 @@
                     </div>
 
                     <!-- Place the Reply Preview Container here, above the message input -->
-                    <div id="replyPreviewContainer" style="display:none; border: 1px solid #ddd; padding: 5px; margin-bottom: 40px; background-color: #f9f9f9;">
+                    <div id="replyPreviewContainer" style="display:none; border: 1px solid #ddd; padding: 5px; margin-bottom: 72px; background-color: #f9f9f9;">
                         <span id="replyPreviewDisplay" style="font-style: italic;"></span>
                         <span class="icon-cancel" style="cursor: pointer; margin-left: 10px;">&times;</span>
                     </div>
@@ -281,7 +290,7 @@
                                         @if (offer.WillingSkills != null && offer.WillingSkills.Any())
                                         {
                                             <div>
-                                                <strong>Willing Skills: </strong>@string.Join(", ", offer.WillingSkills)
+                                                <strong>Want to learn about: </strong>@string.Join(", ", offer.WillingSkills)
                                             </div>
                                         }
                                     </div>
@@ -324,10 +333,15 @@
                                                 </label>
                                             </div>
                                             <div class="col-md-10">
-                                                <!-- Hidden file input supporting multiple selection -->
-                                                <input type="file" id="fileInput" name="attachments" multiple style="display:none" />
-                                                <!-- Main text input -->
-                                                <input type="text" id="messageInput" class="form-control" name="content" placeholder="Type a Message" aria-label="Message" style="height:50px;margin-bottom: 10px;" />
+                                                <div class="textarea-with-counter">
+                                                    <!-- 2) Full-width textarea with extra padding -->
+                                                    <textarea id="messageInput"
+                                                              class="form-control"
+                                                              placeholder="Type a message…"
+                                                              rows="3"></textarea>
+                                                    <!-- 3) Overlayed counter -->
+                                                    <span id="innerCharCount" class="char-count">0/200</span>
+                                                </div>
                                             </div>
                                             <div class="col-md-2">
                                                 <!-- Send button -->
@@ -432,195 +446,219 @@
         cursor: not-allowed;
         opacity: 0.65; /* Optional: to visually indicate disabled state */
     }
+
+    .textarea-with-counter {
+        position: relative;
+        display: inline-block; /* Shrinks to fit content if you like */
+        width: 100%; /* Or whatever width you need */
+    }
+
+        /* Ensure textarea fills the wrapper and has room for the counter */
+        .textarea-with-counter textarea {
+            width: 90%;
+            padding-right: 3.5em; /* space for counter on the right */
+            box-sizing: border-box; /* include padding in width */
+        }
+
+    /* This looks like placeholder text inside */
+    .char-count {
+        position: absolute;
+        bottom: 0.5em; /* adjust to sit just above the bottom padding */
+        right: 5em; /* align with the right padding */
+        font-size: 0.85em;
+        color: rgba(0,0,0,0.4);
+        pointer-events: none; /* clicks go through */
+        user-select: none;
+    }
 </style>
 
 @section DynamicScript {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        $(document).ready(function(){
-            // Reply button handler
-            $(document).on('click', '.icon-reply', function(){
-                var parentItem = $(this).closest('.message-item');
-                var previewText = parentItem.find('p').text().substring(0, 50);
-                var parentIdStr = parentItem.attr('id');
-                var parentId = parseInt(parentIdStr.split('-')[1], 10);
+            $(document).ready(function(){
+                // Reply button handler
+                $(document).on('click', '.icon-reply', function(){
+                    var parentItem = $(this).closest('.message-item');
+                    var previewText = parentItem.find('p').text().substring(0, 50);
+                    var parentIdStr = parentItem.attr('id');
+                    var parentId = parseInt(parentIdStr.split('-')[1], 10);
 
-                $('#replyPreview').val(previewText);
-                $('#replyMessageId').val(parentId);
-                $('#replyPreviewDisplay').text(previewText);
-                $('#replyPreviewContainer').show();
-                $('#replyPreviewContainer .icon-cancel').show();
-            });
+                    $('#replyPreview').val(previewText);
+                    $('#replyMessageId').val(parentId);
+                    $('#replyPreviewDisplay').text(previewText);
+                    $('#replyPreviewContainer').show();
+                    $('#replyPreviewContainer .icon-cancel').show();
+                });
 
-            $(document).on('click', '.icon-cancel', function(){
-                $('#replyPreview').val('');
-                $('#replyMessageId').val('');
-                $('#replyPreviewDisplay').text('');
-                $('#replyPreviewContainer').hide();
-                $(this).hide();
-            });
+                $(document).on('click', '.icon-cancel', function(){
+                    $('#replyPreview').val('');
+                    $('#replyMessageId').val('');
+                    $('#replyPreviewDisplay').text('');
+                    $('#replyPreviewContainer').hide();
+                    $(this).hide();
+                });
 
-            // Trigger file input when clicking the upload icon.
-            $('#fileInput').change(function(){
-                var previewContainer = $('#filePreview');
-                previewContainer.empty();
-                var files = this.files;
-                if(files.length > 0){
-                    $.each(files, function(index, file){
-                        if(file.type.startsWith("image/")){
-                            var reader = new FileReader();
-                            reader.onload = function(e){
+                // Trigger file input when clicking the upload icon.
+                $('#fileInput').change(function(){
+                    var previewContainer = $('#filePreview');
+                    previewContainer.empty();
+                    var files = this.files;
+                    if(files.length > 0){
+                        $.each(files, function(index, file){
+                            if(file.type.startsWith("image/")){
+                                var reader = new FileReader();
+                                reader.onload = function(e){
+                                    previewContainer.append(
+                                        '<div style="display:inline-block; margin-right:81%;">' +
+                                        '<img src="' + e.target.result + '" alt="' + file.name + '" style="max-width:100px; border:1px solid #ddd; border-radius:4px;" />' +
+                                        '</div>'
+                                    );
+                                }
+                                reader.readAsDataURL(file);
+                            } else {
                                 previewContainer.append(
-                                    '<div style="display:inline-block; margin-right:81%;">' +
-                                    '<img src="' + e.target.result + '" alt="' + file.name + '" style="max-width:100px; border:1px solid #ddd; border-radius:4px;" />' +
+                                    '<div style="display:inline-block; margin-right:81%; padding:10px; border:1px solid #ddd; border-radius:4px;">' +
+                                    '<i class="fa fa-file"></i> ' + file.name +
                                     '</div>'
                                 );
                             }
-                            reader.readAsDataURL(file);
-                        } else {
-                            previewContainer.append(
-                                '<div style="display:inline-block; margin-right:81%; padding:10px; border:1px solid #ddd; border-radius:4px;">' +
-                                '<i class="fa fa-file"></i> ' + file.name +
-                                '</div>'
-                            );
+                        });
+                    }
+                });
+
+                // Bind form submission once.
+                $('#messageForm').off('submit').on('submit', function(e){
+                    e.preventDefault();
+
+                    var $submitButton = $(this).find('button[type="submit"]');
+                    $submitButton.prop('disabled', true);
+
+                    var formData = new FormData(this);
+                    var $form = $(this);
+                    $form.find('button[type="submit"]').prop('disabled', true);
+
+                    $.ajax({
+                        url: $form.attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        headers: { "X-Requested-With": "XMLHttpRequest" },
+                        success: function(result){
+                            // Check if result is JSON with an error message.
+                            if (result.success === false) {
+                                // Instead of alerting, display error message in the error container
+                                $('#errorContainer').html(result.error).show();
+                            } else {
+                                $('#errorContainer').hide().html('');
+                                $('#chatContainer').append(result);
+                                // 1️⃣ reset only your user‐editable fields, not the entire form
+                                $('#messageInput').val('');
+                                $('#filePreview').empty();
+                                $('#replyPreviewContainer').hide();
+                                $('#replyPreview').val('');
+                                $('#replyMessageId').val('');
+
+                                // 2️⃣ hide & remove the offer preview AND the hidden input
+                                $("#offerPreviewWindow").hide();
+                                $("input[name='offerId']").remove();
+                                // Update the URL: remove "offerId" parameter while preserving "otherUserId"
+                                try {
+                                    var currentUrl = new URL(window.location.href);
+                                    currentUrl.searchParams.delete("offerId");
+                                    // If "otherUserId" is already in the URL, it remains unaffected.
+                                    window.history.replaceState({}, document.title, currentUrl.toString());
+                                } catch (error) {
+                                    console.error("Error updating URL:", error);
+                                }
+                            }
+                            $submitButton.prop('disabled', false);
+                        },
+                        error: function(xhr, status, error){
+                            console.error("Error details:", xhr.responseText);
+                            alert('Error sending message');
+                            $form.find('button[type="submit"]').prop('disabled', false);
                         }
                     });
+                });
+
+                // 1) Load your keywords from the server
+                var privacyKeywords = @Html.Raw(
+      Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
+    );
+
+                // 2) Declare the timer variable
+                let debounceTimer;
+
+                // 3) Move your existing logic into a function
+                function runSensitiveCheck() {
+                  var text = $('#messageInput').val().toLowerCase().replace(/\s+/g, '');
+                  var warningTriggered = privacyKeywords.some(function(keyword){
+                    return text.indexOf(keyword.toLowerCase().replace(/\s+/g,'')) !== -1;
+                  });
+
+                  if (warningTriggered) {
+                    $('#WarningInfo')
+                      .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+                      .fadeIn();
+                  } else {
+                    $('#WarningInfo').fadeOut();
+                  }
                 }
-            });
 
-            // Bind form submission once.
-            $('#messageForm').off('submit').on('submit', function(e){
-                e.preventDefault();
+                // 4) Debounced handler
+                $('#messageInput').off('keyup')   // unbind old handler if you had one
+                                 .on('keyup', function(){
+                                   clearTimeout(debounceTimer);
+                                   debounceTimer = setTimeout(runSensitiveCheck, 200);
+                                 });
 
-                var $submitButton = $(this).find('button[type="submit"]');
-                $submitButton.prop('disabled', true);
+                // // Load sensitive words from the server (via ViewBag).
+                // var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
 
-                var formData = new FormData(this);
-                var $form = $(this);
-                $form.find('button[type="submit"]').prop('disabled', true);
+                // // Monitor keyup events on the message input field.
+                // $('#messageInput').on('keyup', function() {
+                //     var text = $(this).val().toLowerCase();
+                //     // Normalize the input text by removing spaces.
+                //     var normalizedText = text.replace(/\s+/g, '');
+                //     var warningTriggered = false;
 
-                $.ajax({
-                    url: $form.attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    headers: { "X-Requested-With": "XMLHttpRequest" },
-                    success: function(result){
-                        // Check if result is JSON with an error message.
-                        if (result.success === false) {
-                            // Instead of alerting, display error message in the error container
-                            $('#errorContainer').html(result.error).show();
-                        } else {
-                            $('#errorContainer').hide().html('');
-                            $('#chatContainer').append(result);
-                            // 1️⃣ reset only your user‐editable fields, not the entire form
-                            $('#messageInput').val('');
-                            $('#filePreview').empty();
-                            $('#replyPreviewContainer').hide();
-                            $('#replyPreview').val('');
-                            $('#replyMessageId').val('');
+                //     // Log the normalized text.
+                //     console.log("Normalized input text:", normalizedText);
 
-                            // 2️⃣ hide & remove the offer preview AND the hidden input
-                            $("#offerPreviewWindow").hide();
-                            $("input[name='offerId']").remove();
-                            // Update the URL: remove "offerId" parameter while preserving "otherUserId"
-                            try {
-                                var currentUrl = new URL(window.location.href);
-                                currentUrl.searchParams.delete("offerId");
-                                // If "otherUserId" is already in the URL, it remains unaffected.
-                                window.history.replaceState({}, document.title, currentUrl.toString());
-                            } catch (error) {
-                                console.error("Error updating URL:", error);
-                            }
-                        }
-                        $submitButton.prop('disabled', false);
-                    },
-                    error: function(xhr, status, error){
-                        console.error("Error details:", xhr.responseText);
-                        alert('Error sending message');
-                        $form.find('button[type="submit"]').prop('disabled', false);
+                //     // Check if any normalized keyword exists in the normalized text.
+                //     privacyKeywords.forEach(function(keyword) {
+                //         var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
+                //         console.log("Checking for keyword:", normalizedKeyword);
+                //         if (normalizedText.indexOf(normalizedKeyword) !== -1) {
+                //             warningTriggered = true;
+                //         }
+                //     });
+
+                //     // Show or hide the warning accordingly.
+                //     if (warningTriggered) {
+                //         $('#WarningInfo')
+                //             .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
+                //             .fadeIn();
+                //     } else {
+                //         $('#WarningInfo').fadeOut();
+                //     }
+                // });
+
+                // Scroll to original message on reply preview click.
+                $(document).on('click', '.go-to-parent', function(){
+                    var parentId = $(this).data('parent-id');
+                    var target = $('#message-' + parentId);
+                    var container = $('#chatContainer');
+                    if(target.length && container.length){
+                        container.animate({
+                            scrollTop: container.scrollTop() + target.position().top
+                        }, 500);
+                    } else {
+                        alert('Original message not found.');
                     }
                 });
             });
-
-            // 1) Load your keywords from the server
-            var privacyKeywords = @Html.Raw(
-          Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>())
-        );
-
-            // 2) Declare the timer variable
-            let debounceTimer;
-
-            // 3) Move your existing logic into a function
-            function runSensitiveCheck() {
-              var text = $('#messageInput').val().toLowerCase().replace(/\s+/g, '');
-              var warningTriggered = privacyKeywords.some(function(keyword){
-                return text.indexOf(keyword.toLowerCase().replace(/\s+/g,'')) !== -1;
-              });
-
-              if (warningTriggered) {
-                $('#WarningInfo')
-                  .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
-                  .fadeIn();
-              } else {
-                $('#WarningInfo').fadeOut();
-              }
-            }
-
-            // 4) Debounced handler
-            $('#messageInput').off('keyup')   // unbind old handler if you had one
-                             .on('keyup', function(){
-                               clearTimeout(debounceTimer);
-                               debounceTimer = setTimeout(runSensitiveCheck, 200);
-                             });
-
-            // // Load sensitive words from the server (via ViewBag).
-            // var privacyKeywords = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SensitiveWords ?? new List<string>()));
-
-            // // Monitor keyup events on the message input field.
-            // $('#messageInput').on('keyup', function() {
-            //     var text = $(this).val().toLowerCase();
-            //     // Normalize the input text by removing spaces.
-            //     var normalizedText = text.replace(/\s+/g, '');
-            //     var warningTriggered = false;
-
-            //     // Log the normalized text.
-            //     console.log("Normalized input text:", normalizedText);
-
-            //     // Check if any normalized keyword exists in the normalized text.
-            //     privacyKeywords.forEach(function(keyword) {
-            //         var normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
-            //         console.log("Checking for keyword:", normalizedKeyword);
-            //         if (normalizedText.indexOf(normalizedKeyword) !== -1) {
-            //             warningTriggered = true;
-            //         }
-            //     });
-
-            //     // Show or hide the warning accordingly.
-            //     if (warningTriggered) {
-            //         $('#WarningInfo')
-            //             .html('<i class="fa fa-info-circle"></i> Warning: Sharing sensitive personal or financial information may compromise your privacy.')
-            //             .fadeIn();
-            //     } else {
-            //         $('#WarningInfo').fadeOut();
-            //     }
-            // });
-
-            // Scroll to original message on reply preview click.
-            $(document).on('click', '.go-to-parent', function(){
-                var parentId = $(this).data('parent-id');
-                var target = $('#message-' + parentId);
-                var container = $('#chatContainer');
-                if(target.length && container.length){
-                    container.animate({
-                        scrollTop: container.scrollTop() + target.position().top
-                    }, 500);
-                } else {
-                    alert('Original message not found.');
-                }
-            });
-        });
     </script>
     <script>
         $(document).ready(function () {
@@ -919,4 +957,36 @@
 
         });
     </script>
+    <script>
+        $(function(){
+          var $ta = $('#messageInput'),
+              $ct = $('#innerCharCount'),
+              max = 200;
+
+          function update(){
+            var len = $ta.val().length;
+            if (len > max) {
+              $ta.val($ta.val().slice(0, max));
+              len = max;
+            }
+            $ct.text(len + '/' + max);
+          }
+
+          // init
+          update();
+
+          // on input
+          $ta.on('input', update);
+        });
+    </script>
+
+    <style>
+        .con-profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+    </style>
     }

@@ -13,7 +13,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         private readonly ISubscriptionService _subs;
         public CertificateReviewService(
             SkillSwapDbContext db,
-            ILogger<CertificateReviewService> logger, 
+            ILogger<CertificateReviewService> logger,
             IEmailService emailService,
             ISubscriptionService subscription)
         {
@@ -45,6 +45,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         {
             var baseQuery = from cert in _db.TblUserCertificates
                             where cert.ApprovedDate == null
+                             && cert.RejectDate == null
                             join user in _db.TblUsers
                               on cert.UserId equals user.UserId
                             select new CertificateReviewDto
@@ -76,7 +77,8 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                                 CertificateName = cert.CertificateName,
                                 SubmittedDate = cert.SubmittedDate,
                                 IsApproved = cert.IsApproved,
-                                ApprovedDate = cert.ApprovedDate
+                                ApprovedDate = cert.ApprovedDate,
+                                Status = CertificateReviewDto.ReviewStatus.Approved
                             };
 
             return GetPagedAsync(baseQuery, page, pageSize);
@@ -85,7 +87,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
         public Task<PagedResult<CertificateReviewDto>> GetRejectedCertificatesAsync(int page, int pageSize)
         {
             var baseQuery = from cert in _db.TblUserCertificates
-                            where cert.ApprovedDate != null && cert.IsApproved == false
+                            where cert.RejectDate != null && cert.IsApproved == false
                             join user in _db.TblUsers
                               on cert.UserId equals user.UserId
                             select new CertificateReviewDto
@@ -96,7 +98,10 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                                 CertificateName = cert.CertificateName,
                                 SubmittedDate = cert.SubmittedDate,
                                 IsApproved = cert.IsApproved,
-                                ApprovedDate = cert.ApprovedDate
+                                ApprovedDate = cert.ApprovedDate,
+                                RejectDate = cert.RejectDate,
+                                Status = CertificateReviewDto.ReviewStatus.Rejected
+
                             };
 
             return GetPagedAsync(baseQuery, page, pageSize);
@@ -127,12 +132,16 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                             IsApproved = cert.IsApproved,
                             ApprovedDate = cert.ApprovedDate,
                             Status = cert.IsApproved
-                                        ? CertificateDetailDto.ReviewStatus.Approved
-                                        : (!string.IsNullOrEmpty(cert.RejectionReason)
-                                            ? CertificateDetailDto.ReviewStatus.Rejected
-                                            : CertificateDetailDto.ReviewStatus.Pending),
-                            ProcessedDateUtc = cert.ApprovedDate,
-                            RejectionReason = cert.RejectionReason
+                                ? CertificateDetailDto.ReviewStatus.Approved
+                                : cert.RejectDate != null
+                                    ? CertificateDetailDto.ReviewStatus.Rejected
+                                    : CertificateDetailDto.ReviewStatus.Pending,
+                            ProcessedDateUtc = cert.IsApproved
+                                    ? cert.ApprovedDate
+                                    : cert.RejectDate,
+                            RejectDate = cert.RejectDate,
+                            RejectionReason = cert.RejectionReason,
+                            CertificateFilePath = cert.CertificateFilePath
                         }
                     )
                     .FirstOrDefaultAsync();
@@ -173,24 +182,62 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] 🎉 Your Certificate Has Been Approved!";
-                    var body = $@"
-                        <p>Hi {user.FirstName},</p>
-                        <p>Great news! Your submission for <strong>“{cert.CertificateName}”</strong> was approved on <strong>{cert.ApprovedDate:dd MMM yyyy hh:mm tt} UTC</strong>.</p>
-                        <p>You can now confidently showcase this credential on your profile:</p>
-                        <p style=""text-align:center;"">
-                          <a href=""/UserProfile/EditProfile"" style=""padding:8px 12px; background:#28a745; color:white; text-decoration:none; border-radius:4px;"">
-                            View Certificates
-                          </a>
-                        </p>
-                        <p>If you have any questions, just reply to this email or reach out to 
-                           <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
-                        <p>Congratulations and happy swapping!<br/>— The SkillSwap Team</p>";
+                    var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI, sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        
+        <!-- header -->
+        <tr>
+          <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
+            Swapo
+          </td>
+        </tr>
+        
+        <!-- body -->
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <p>Hi <strong>{user.FirstName}</strong>,</p>
+            <p>Great news! Your submission for <strong>“{cert.CertificateName}”</strong> was approved on 
+               <strong>{cert.ApprovedDate:dd MMM yyyy hh:mm tt} UTC</strong>.</p>
+            <p>You can now confidently showcase this credential on your profile:</p>
+            <p style=""text-align:center;margin:20px 0;"">
+              <a href=""/UserProfile/EditProfile"" 
+                 style=""background:#28a745;color:#fff;padding:10px 16px;text-decoration:none;border-radius:4px;"">
+                View Certificates
+              </a>
+            </p>
+            <p>If you have any questions, reply to this email or contact 
+               <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
+          </td>
+        </tr>
+        
+        <!-- footer -->
+        <tr>
+          <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+            Congratulations and happy swapping! — The Swapo Team
+          </td>
+        </tr>
+      
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
 
                     await _emailService.SendEmailAsync(
-                        to: user.Email,
-                        subject: subject,
-                        body: body,
-                        isBodyHtml: true
+                      user.Email,
+                      subject,
+                      htmlBody,
+                      isBodyHtml: true
                     );
                 }
 
@@ -213,7 +260,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
                 // Flag it as reviewed but not approved
                 cert.IsApproved = false;
                 cert.ApprovedByAdminId = adminUserId;
-                cert.ApprovedDate = DateTime.UtcNow;
+                cert.RejectDate = DateTime.UtcNow;
                 cert.RejectionReason = reason;
 
                 _db.TblUserCertificates.Update(cert);
@@ -234,29 +281,59 @@ namespace SkillSwap_Platform.Services.AdminControls.Certificate
 
                     // 2) build a prefixed subject
                     var subject = $"[{supportLabel} · {sla}] Update on Your Certificate Submission";
-                    var body = $@"
-                        <p>Hi {user.FirstName},</p>
-                        <p>We’ve reviewed your submission for <strong>“{cert.CertificateName}”</strong>, and unfortunately our verification process was unable to confirm the authenticity of your <strong>“{cert.CertificateName}”</strong> certificate.</p>
-                        <hr/>
-                        <p><strong>Reason:</strong></p>
-                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em; margin:1em 0;"">
-                          {reason}
-                        </blockquote>
-                        <p>We encourage you to address the points above and resubmit. You can manage your certificates here:</p>
-                        <p style=""text-align:center;"">
-                          <a href=""/UserProfile/EditProfile"" style=""padding:8px 12px; background:#dc3545; color:white; text-decoration:none; border-radius:4px;"">
-                            View & Update
-                          </a>
-                        </p>
-                        <p>If you need more detail or assistance, simply hit reply or email us at 
-                            <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.</p>
-                        <p>Thank you for your understanding and keeping SkillSwap a trusted community.<br/>— The SkillSwap Team</p>";
+                    var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI, sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        
+        <!-- header -->
+        <tr>
+          <td style=""background:#00A88F;color:#fff;padding:15px;font-size:20px;text-align:center;"">
+            Swapo
+          </td>
+        </tr>
+        
+        <!-- body -->
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <p>Hi <strong>{user.FirstName}</strong>,</p>
+            <p>We’ve reviewed your submission for <strong>“{cert.CertificateName}”</strong>, and unfortunately we couldn’t confirm its authenticity.</p>
+            <hr style=""border:none;border-top:1px solid #e0e0e0;""/>
+            <p><strong>Reason:</strong></p>
+            <blockquote style=""border-left:4px solid #ccc;padding-left:1em;margin:1em 0;"">
+              {reason}
+            </blockquote>
+            <p>Please address the above and <a href=""/UserProfile/EditProfile""
+               style=""background:#dc3545;color:#fff;padding:10px 16px;text-decoration:none;border-radius:4px;"">
+               View & Update
+            </a> your certificate.</p>
+            <p>Questions? Reply to this email or <a href=""mailto:swapoorg360@gmail.com"">swapoorg360@gmail.com</a>.</p>
+          </td>
+        </tr>
+        
+        <!-- footer -->
+        <tr>
+          <td style=""background:#00A88F;color:#E0F7F1;padding:10px;text-align:center;font-size:12px;"">
+            Thank you for keeping Swapo a trusted community. — The Swapo Team
+          </td>
+        </tr>
+      
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+";
 
                     await _emailService.SendEmailAsync(
-                        to: user.Email,
-                        subject: subject,
-                        body: body,
-                        isBodyHtml: true
+                      user.Email,
+                      subject,
+                      htmlBody,
+                      isBodyHtml: true
                     );
                 }
 

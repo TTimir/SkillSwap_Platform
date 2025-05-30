@@ -47,8 +47,8 @@
             <div class="navtab-style1">
                 <nav>
                     <div class="nav nav-tabs mb30" id="nav-tab2" role="tablist">
-                        <a href="#!" class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Flagged Reviews</a>
-                        
+                        <a class="nav-link active fw500" id="nav-item2-tab" type="button" aria-selected="false">Active Flagged Reviews</a>
+                        <a href="@Url.ActionLink("History","OfferReview")" class="nav-link fw500" id="nav-item2-tab" type="button" aria-selected="false">Flag History</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -81,12 +81,18 @@
                                             <td class="vam"><span class="fz15 fw400">@f.EntityType</span></td>
                                             <td class="vam"><span class="fz15 fw400">@f.EntityId</span></td>
                                             <td class="vam">
+                                                @{
+                                                    // limit to 10 chars + “…” if longer
+                                                    var displayTitle = f.OfferTitle.Length > 10
+                                                    ? f.OfferTitle.Substring(0, 10) + "…"
+                                                    : f.OfferTitle;
+                                                }
                                                 <a asp-controller="UserOfferDetails"
                                                    asp-action="OfferDetails"
                                                    asp-route-offerId="@f.OfferId"
                                                    target="_blank"
                                                    class="fz15 fw400 text-decoration-none">
-                                                    @f.OfferTitle
+                                                    @displayTitle
                                                     <small class="text-muted">(ID @f.OfferId)</small>
                                                 </a>
                                             </td>

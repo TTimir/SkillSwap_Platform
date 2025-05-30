@@ -31,17 +31,17 @@
                                                     var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
                                                 }
                                                 <form asp-controller="UserWishlist"
-                                                      asp-action="@(isSaved ? "Remove" : "Add")"
-                                                      method="post"
-                                                      class="position-absolute"
-                                                      style="top:8px; right:8px;">
+                                                asp-action="@(isSaved ? "Remove" : "Add")"
+                                                method="post"
+                                                class="position-absolute"
+                                                style="top:8px; right:8px;">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="offerId" value="@offer.OfferId" />
 
                                                     <button type="submit"
-                                                            class="border-0 listing-fav fz12"
-                                                            data-bs-toggle="tooltip"
-                                                            title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                                    class="border-0 listing-fav fz12"
+                                                    data-bs-toggle="tooltip"
+                                                    title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
                                                         <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
                                                     </button>
                                                 </form>
@@ -77,17 +77,17 @@
                                         var removeUrl = Url.Action("RemoveFromWishlist", "Wishlist");
                                     }
                                     <form asp-controller="UserWishlist"
-                                          asp-action="@(isSaved ? "Remove" : "Add")"
-                                          method="post"
-                                          class="position-absolute"
-                                          style="top:8px; right:8px;">
+                                    asp-action="@(isSaved ? "Remove" : "Add")"
+                                    method="post"
+                                    class="position-absolute"
+                                    style="top:8px; right:8px;">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="offerId" value="@offer.OfferId" />
 
                                         <button type="submit"
-                                                class="border-0 listing-fav fz12"
-                                                data-bs-toggle="tooltip"
-                                                title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
+                                        class="border-0 listing-fav fz12"
+                                        data-bs-toggle="tooltip"
+                                        title="@(isSaved ? "Remove from wishlist" : "Add to wishlist")">
                                             <span class="@(isSaved ? "fas fa-heart text-danger" : "far fa-heart")"></span>
                                         </button>
                                     </form>
@@ -105,13 +105,13 @@
                             <div class="list-meta d-flex justify-content-between align-items-center mt15">
                                 <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                     <span class="position-relative mr10">
-                                        <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
+                                        <img class="rounded-circle profile-avatar" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
                                         <span class="online-badge"></span>
                                     </span>
                                     <span class="fz14">@offer.UserName</span>
                                 </a>
                                 <div class="budget">
-                                    <p class="mb-0 body-color">Time<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
+                                    <p class="mb-0 body-color" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Time Commitment" data-bs-original-title="Tooltip on bottom"><span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
                                 </div>
                             </div>
                         </div>
@@ -120,4 +120,8 @@
             }
         </div>
     </div>
+}
+else
+{
+    <p>No swap offers are present near you.</p>
 }

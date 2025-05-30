@@ -411,7 +411,7 @@ namespace SkillSwap_Platform.Controllers
                     .Where(c =>
                         (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
                         (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
-                    .Include(c => c.Offer)
+                    .Include(c => c.Offer)  
                     .OrderByDescending(c => c.CreatedDate)
                     .ToListAsync();
 
@@ -445,7 +445,7 @@ namespace SkillSwap_Platform.Controllers
                         (c.SenderUserId == currentUserId && c.ReceiverUserId == otherUserId) ||
                         (c.SenderUserId == otherUserId && c.ReceiverUserId == currentUserId))
                     .Where(c => c.Status != "Declined")           // only “active” ones
-                    .OrderByDescending(c => c.UpdatedDate)        // or CreatedDate if you prefer
+                    .OrderByDescending(c => c.CreatedDate)        // CreatedDate if you prefer
                     .FirstOrDefaultAsync();
 
                 if (latestContract != null)
@@ -648,16 +648,56 @@ namespace SkillSwap_Platform.Controllers
                         Request.Host.ToString()
                     );
 
-                    string htmlBody = $@"
-                        <p>Hi {receiver.UserName},</p>
-                        <p>You have a new message from <strong>{User.Identity.Name}</strong>:</p>
-                        <blockquote>{System.Net.WebUtility.HtmlEncode(content)}</blockquote>
-                        <p>
-                          <a href=""{conversationUrl}"">View it on SkillSwap</a>
-                        </p>
-                        <p>— SkillSwap Team</p>
-                    ";
+                    var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Segoe UI,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
 
+      <!-- Header -->
+      <tr>
+        <td style=""background:#00A88F;color:#ffffff;padding:15px;text-align:center;font-size:20px;font-weight:bold;"">
+          Swapo
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p style=""margin:0 0 15px;"">Hi <strong>{receiver.UserName}</strong>,</p>
+          <p style=""margin:0 0 15px;"">
+            You have a new message from <strong>{User.Identity.Name}</strong>:
+          </p>
+          <blockquote style=""margin:0 0 20px;padding-left:1em;border-left:3px solid #ccc;color:#555;"">
+            {System.Net.WebUtility.HtmlEncode(content)}
+          </blockquote>
+          <p style=""margin:0 0 20px;"">
+            <a href=""{conversationUrl}"" style=""color:#00A88F;text-decoration:underline;"">
+              View it on Swapo
+            </a>
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          Have questions? <a href=""mailto:swapoorg360@gmail.com"" style=""color:#ffffff;text-decoration:underline;"">Contact Support</a>.
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                    // 3) send it
                     await _emailService.SendEmailAsync(
                         to: receiver.Email,
                         subject: $"New message from {User.Identity.Name}",

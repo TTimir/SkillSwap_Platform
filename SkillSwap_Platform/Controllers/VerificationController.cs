@@ -34,13 +34,26 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Submit(SubmitRequestVm vm)
         {
+            var userId = GetCurrentUserId().ToString();
+
+            if (await _svc.IsVerifiedAsync(userId))
+            {
+                TempData["SuccessMessage"] = "You’re already verified!";
+                return RedirectToAction(nameof(ThankYou));
+            }
+
+            if (await _svc.HasPendingAsync(userId))
+            {
+                ModelState.AddModelError("", "You already have a pending request in review.");
+                return View(vm);
+            }
+
             if (!ModelState.IsValid)
                 return View(vm);
 
             try
             {
-                var userId = GetCurrentUserId();
-                await _svc.SubmitAsync(userId.ToString(), vm);
+                await _svc.SubmitAsync(userId, vm);
                 TempData["SuccessMessage"] = "We’ve received your details and will review them within 48 hours.";
                 return RedirectToAction(nameof(ThankYou));
             }

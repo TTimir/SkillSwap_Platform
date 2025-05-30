@@ -22,6 +22,4 @@ public partial class TblBlogPost
     public string? CoverImagePath { get; set; }
 
     public string? Tags { get; set; }
-
-    public virtual TblUser Author { get; set; } = null!;
 }

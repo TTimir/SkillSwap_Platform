@@ -61,10 +61,20 @@
                                         <div class="freelancer-style1 p-0 mb-0 box-shadow-none">
                                             <div class="d-lg-flex align-items-lg-center">
                                                 <div class="thumb w60 position-relative rounded-circle mb15-md">
-                                                    <img class="mx-auto"
-                                                         src="@( !string.IsNullOrEmpty(offer.OfferImageUrl) ? offer.OfferImageUrl : "/template_assets/images/default-offer.png" )"
-                                                         alt="@offer.OfferTitle"
-                                                         style="max-width:100%" />
+                                                    @{
+                                                        var defaults = new[]
+                                                        {
+                                                             Url.Content("~/template_assets/images/listings/No_Offer_img_1.jpg"),
+                                                             Url.Content("~/template_assets/images/listings/No_Offer_img_2.jpg")
+                                                        };
+                                                        // use ExchangeId so it’s always the same for a given offer
+                                                        int idx = offer.ExchangeId % defaults.Length;
+                                                        var fallback = defaults[idx];
+                                                        var imgSrc = !string.IsNullOrEmpty(offer.OfferImageUrl)
+                                                        ? Url.Content(offer.OfferImageUrl)
+                                                        : fallback;
+                                                    }
+                                                    <img src="@imgSrc" alt="Offer Thumbnail" class="mx-auto" style="max-width:120%" />
                                                 </div>
                                                 <div class="details ml15 ml0-md mb15-md">
                                                     <small>@offer.Category</small>
@@ -76,7 +86,20 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <td class="vam"><span class="pending-style style2">@offer.Status</span></td>
+                                    <td class="vam">
+                                        @if (offer.Status == "Finalized")
+                                        {
+                                            <span class="pending-style style1">@offer.Status</span>
+                                        }
+                                        else if (offer.Status == "Cancelled")
+                                        {
+                                            <span class="pending-style style3">@offer.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pending-style style2">@offer.Status</span>
+                                        }
+                                    </td>
                                     <td class="vam">
                                         <a asp-controller="ResourceSharing" asp-action="Create" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Share a Resource" class="table-action fz15 fw500 text-thm2"><span class="flaticon-rocket me-2 vam" style="transform:rotate(-45deg)"></span> Share</a>
                                         <a asp-controller="ResourceSharing" asp-action="List" asp-route-exchangeId="@offer.ExchangeId" asp-route-offerId="@offer.OfferId" data-bs-toggle="tooltip" data-bs-placement="top" title="Shared Resources" class="table-action fz15 fw500 text-thm2"><span class="flaticon-file-1 me-2 vam"></span> Resources</a>

@@ -21,7 +21,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Message
             if (page < 1) page = 1;
             var query = _ctx.TblMessages
                             .AsNoTracking()
-                            .Where(m => m.IsFlagged && !m.IsApproved)
+                            .Where(m => m.IsFlagged && !m.IsApproved && m.ApprovedDate == null)
                             .Include(m => m.SenderUser)
                             .Include(m => m.ReceiverUser)
                             .OrderBy(m => m.SentDate);
@@ -198,8 +198,10 @@ namespace SkillSwap_Platform.Services.AdminControls.Message
                           ?? throw new KeyNotFoundException($"Message {messageId} not found.");
 
                 // clear the flag, leave it “unapproved”, and replace the content
-                msg.IsFlagged = false;
+                msg.IsFlagged = true;
                 msg.IsApproved = false;
+                msg.ApprovedByAdminId = adminId;
+                msg.ApprovedDate = DateTime.UtcNow;
 
                 _ctx.TblMessages.Update(msg);
                 await _ctx.SaveChangesAsync();

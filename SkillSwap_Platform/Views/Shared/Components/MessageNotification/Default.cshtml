@@ -18,8 +18,7 @@
                    asp-route-otherUserId="@msg.SenderUserId"
                    class="d-flex align-items-start py-2 text-decoration-none">
                     <img src="@Url.Content(msg.ProfileImageUrl)"
-                         class="rounded-circle me-2"
-                         width="40"
+                         class="rounded-circle me-2 trc-profile-avatar"
                          alt="@msg.SenderName" />
                     <div class="flex-grow-1">
                         <div>
@@ -44,3 +43,14 @@
         </li>
     }
 </ul>
+
+
+<style>
+    .trc-profile-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%; /* make them circles */
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+</style>

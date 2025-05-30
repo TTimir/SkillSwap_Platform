@@ -12,6 +12,4 @@ public partial class UserMiningProgress
     public decimal EmittedToday { get; set; }
 
     public bool IsMiningAllowed { get; set; }
-
-    public virtual TblUser User { get; set; } = null!;
 }

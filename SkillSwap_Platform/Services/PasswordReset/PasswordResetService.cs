@@ -19,7 +19,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
             SkillSwapDbContext db,
             IUserServices userService,
             IEmailService emailService,
-            ILogger<PasswordResetService> logger, 
+            ILogger<PasswordResetService> logger,
             INotificationService notif)
         {
             _db = db;
@@ -57,11 +57,11 @@ namespace SkillSwap_Platform.Services.PasswordReset
                     <p>We received a request to reset your password. Click the link below to choose a new one:</p>
                     <p><a href=""{resetLink}"">Reset your password</a></p>
                     <p>This link will expire in 2 hours. If you didn't request this, you can safely ignore this email.</p>
-                    <p>— The SkillSwap Team</p>";
+                    <p>— The Swapo Team</p>";
 
                 await _emailService.SendEmailAsync(
                     to: user.Email,
-                    subject: "SkillSwap Password Reset",
+                    subject: "Swapo Password Reset",
                     body: htmlBody,
                     isBodyHtml: true
                 );
@@ -88,6 +88,8 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
             // 2) load the user
             var user = await _db.TblUsers
+                .IgnoreQueryFilters()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == resetEntry.UserId);
 
             if (user == null)
@@ -124,7 +126,7 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
                 await trx.CommitAsync();
 
-                var htmlBody = @"
+                var htmlBody = $@"
                     <!DOCTYPE html>
                     <html lang=""en"">
                     <head>
@@ -138,11 +140,11 @@ namespace SkillSwap_Platform.Services.PasswordReset
                             <!-- Main Card Container -->
                             <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background-color:#ffffff;border-collapse:collapse;"">
                               
-                              <!-- Header (glassy green bar + SkillSwap text) -->
+                              <!-- Header (glassy green bar + Swapo text) -->
                               <tr>
                                 <td style=""border-top:4px solid rgba(0, 168, 143, 0.8);padding:20px 20px 10px;"">
                                   <h1 style=""margin:0;font-size:24px;color:#00A88F;font-family:Arial,sans-serif;"">
-                                    SkillSwap
+                                    Swapo
                                   </h1>
                                 </td>
                               </tr>
@@ -151,19 +153,19 @@ namespace SkillSwap_Platform.Services.PasswordReset
                               <tr>
                                 <td style=""padding:20px;color:#333333;line-height:1.5;"">
                                   <h2 style=""margin:0 0 15px;font-size:22px;font-weight:normal;"">
-                                    Your SkillSwap Password Has Changed
+                                    Your Swapo Password Has Changed
                                   </h2>
                                   <p style=""margin:0 0 10px;"">
-                                    Dear <strong>{userName}</strong>,
+                                    Dear <strong>{user.UserName}</strong>,
                                   </p>
                                   <p style=""margin:0 0 15px;"">
-                                    We wanted to let you know that your SkillSwap password was successfully changed on
-                                    <strong>{DateTime.UtcNow:MMMM d, yyyy 'at' h:mm tt} UTC</strong>.
+                                    We wanted to let you know that your Swapo password was successfully changed on
+                                    <strong>{DateTime.UtcNow.ToLocalTime().ToString("MMMM d, yyyy hh:m tt")} IST</strong>.
                                   </p>
                                   <p style=""margin:0 0 15px;"">
                                     If you did not request this change, please
                                     <p style=""color:#00A88F;text-decoration:none;font-weight:bold;"">
-                                      contact our support team
+                                      contact our support team (swapoorg360@gmail.com)
                                     </p>
                                     immediately.
                                   </p>
@@ -177,16 +179,17 @@ namespace SkillSwap_Platform.Services.PasswordReset
                                 </td>
                               </tr>
                     
-                              <!-- Footer Links (SkillSwap green) -->
+                              <!-- Footer Links (Swapo green) -->
                               <!-- Legal / Trademark Text -->
                               <tr>
                                 <td style=""background-color:#00A88F;padding:10px 20px;color:#e0f7f1;font-size:11px;line-height:1.4;text-align:center;"">
-                                  <p style=""margin:5px 0;"">
-                                    SkillSwap and the SkillSwap logo are trademarks of SkillSwap Inc. All other trademarks are the property of their respective owners.
-                                  </p>
-                                  <p style=""margin:5px 0;"">
-                                    Registered Office: by SkillSwap.
-                                  </p>
+                                  <p style=""margin:10px 0;color:#e0f7f1;font-size:14px;"">
+                                      Thank you for being a valued member of <strong>Swapo</strong>. 
+                                      Your creativity and passion make our community thrive!
+                                    </p>
+                                    <p style=""margin:5px 0;color:#e0f7f1;font-size:13px;"">
+                                      We appreciate you—keep sharing your skills and inspiring others.
+                                    </p>
                                 </td>
                               </tr>
                     
@@ -200,8 +203,8 @@ namespace SkillSwap_Platform.Services.PasswordReset
 
                 await _emailService.SendEmailAsync(
                     to: user.Email,
-                    subject: "Your SkillSwap password has changed",
-                    body    : htmlBody,
+                    subject: "Your Swapo password has changed",
+                    body: htmlBody,
                     isBodyHtml: true
                 );
 
@@ -213,6 +216,40 @@ namespace SkillSwap_Platform.Services.PasswordReset
                 _logger.LogError(ex, "Error resetting password for token {Token}", token);
                 return (false, "An unexpected error occurred. Please try again.");
             }
+        }
+
+        public async Task<int?> GetUserIdByTokenAsync(string token)
+        {
+            var now = DateTime.UtcNow;
+            var entry = await _db.TblPasswordResetTokens
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(t => t.Token == token && t.Expiration > now && !t.IsUsed);
+            return entry?.UserId;
+        }
+
+        public async Task<bool> IsPasswordInUseAsync(string newPassword, int excludingUserId)
+        {
+            var allUsers = await _db.TblUsers
+                .Where(u => u.UserId != excludingUserId)
+                .Select(u => new { u.Salt, u.PasswordHash })
+                .ToListAsync();
+
+            foreach (var row in allUsers)
+            {
+                try
+                {
+                    var candidateHash = PasswordHelper.HashPassword(newPassword, row.Salt);
+                    if (candidateHash == row.PasswordHash)
+                        return true;
+                }
+                catch (FormatException)
+                {
+                    // row.Salt wasn’t Base64 – skip
+                    continue;
+                }
+            }
+
+            return false;
         }
     }
 }

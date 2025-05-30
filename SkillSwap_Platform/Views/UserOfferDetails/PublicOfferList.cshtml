@@ -12,7 +12,14 @@
 }
 
 <style>
-    * 1) make the row a flex container */
+    .profile-avatar {
+        width: 45px;
+        height: 45px;
+        object-fit: cover; /* crop to fill without distortion */
+        display: inline-block; /* or block/inline-block as needed */
+    }
+
+    /* 1) make the row a flex container */
     .row.equal-height {
         display: flex;
         flex-wrap: wrap;
@@ -72,7 +79,6 @@
         </div>
     </div>
 </section>
-<!-- Breadcumb Sections -->
 <section class="breadcumb-section pt-0">
     <div class="cta-service-v1 cta-banner mx-auto maxw1700 pt120 pb120 bdrs16 position-relative overflow-hidden d-flex align-items-center mx20-lg px30-lg">
         <img class="left-top-img wow zoomIn" src="/template_assets/images/vector-img/left-top.png" alt="">
@@ -86,7 +92,7 @@
                         <p class="text mb30">All live skill exchanges and find your next learning opportunity.</p>
                         @* <div class="d-flex align-items-center">
                             <a class="video-btn mr10 popup-iframe popup-youtube" href="https://www.youtube.com/watch?v=7EHnQ0VM4KY"><i class="fal fa-play"></i></a>
-                            <h6 class="mb-0">How SkillSwap Works</h6>
+                            <h6 class="mb-0">How Swapo Works</h6>
                         </div> *@
                     </div>
                 </div>
@@ -447,13 +453,13 @@
                             <div class="list-meta d-flex justify-content-between align-items-center mt15">
                                 <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                     <span class="position-relative mr10">
-                                        <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
-                                        <span class="online-badge"></span>
+                                        <img class="rounded-circle profile-avatar" src="@offer.UserProfileImage" alt="Freelancer Photo">
+                                        <vc:online-indicator user-id="@offer.UserId" />
                                     </span>
                                     <span class="fz14">@offer.UserName</span>
                                 </a>
                                 <div class="budget">
-                                    <p class="mb-0 body-color">Time<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
+                                    <p class="mb-0 body-color" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Time Commitment" data-bs-original-title="Tooltip on bottom"><span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
                                 </div>
                             </div>
                         </div>
@@ -468,7 +474,7 @@
             {
                 @if (Model != null)
                 {
-                    <section class="mb-1">
+                    <section class="mb-1" style="padding:50px 0;">
                         <h3>Offers Near You</h3>
                         <div id="nearbyOffers">
                             <p>Hang tight, finding swap offers near you…</p>
@@ -581,13 +587,13 @@
                                 <div class="list-meta d-flex justify-content-between align-items-center mt15">
                                     <a href="@Url.Action("PublicProfileByUsername", "UserProfile", new { username = offer.UserName })">
                                         <span class="position-relative mr10">
-                                            <img class="rounded-circle" src="@offer.UserProfileImage" alt="Freelancer Photo" width="100" style="max-width:20%">
-                                            <span class="online-badge"></span>
+                                            <img class="rounded-circle profile-avatar" src="@offer.UserProfileImage" alt="Freelancer Photo">
+                                            <vc:online-indicator user-id="@offer.UserId" />
                                         </span>
                                         <span class="fz14">@offer.UserName</span>
                                     </a>
                                     <div class="budget">
-                                        <p class="mb-0 body-color">Time<span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
+                                        <p class="mb-0 body-color" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Time Commitment" data-bs-original-title="Tooltip on bottom"><span class="fz17 fw500 dark-color ms-1">@offer.TimeCommitmentDays Days</span></p>
                                     </div>
                                 </div>
                             </div>

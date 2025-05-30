@@ -74,8 +74,8 @@
                               method="post"
                               onsubmit="return confirm('Delete this post?');">
                             <button type="submit"
-                                    class="ud-btn btn-light-thm btn-sm">
-                                <i class="fal fa-trash" style="transform:rotate(0deg); border:0;"></i> Delete
+                                    class="ud-btn btn-light-thm btn-sm" style="border:0;">
+                                <i class="fal fa-trash" style="transform:rotate(0deg);"></i> Delete
                             </button>
                         </form>
                     </div>
@@ -86,7 +86,7 @@
 </div>
 @{
     var page = Model.Page;
-    var totalPages = Model.TotalPages;
+    var totalPages = (int)Math.Ceiling(Model.TotalItems / (double)Model.PageSize);
 }
 @if (totalPages > 1)
 {

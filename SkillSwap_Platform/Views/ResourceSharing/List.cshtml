@@ -1,4 +1,5 @@
-﻿@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceListVM
+﻿@using System.IO
+@model SkillSwap_Platform.Models.ViewModels.ResourceVM.ResourceListVM
 
 @{
     ViewData["Title"] = "Resource Exchanges";
@@ -58,60 +59,137 @@
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane fade show active" id="nav-item1" role="tabpanel" aria-labelledby="nav-item1-tab">
+                        <script>
+                            window.isGrowthUser = @Model.IsGrowthUser.ToString().ToLower();
+                        </script>
                         <div class="packages_table table-responsive">
                             @if (Model.ReceivedResources != null && Model.ReceivedResources.Any())
                             {
-                                <table class="table-style3 table at-savesearch">
-                                    <thead class="t-head">
-                                        <tr>
-                                            <th scope="col">Title</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">Received Date</th>
-                                            <th scope="col">File/Link</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody class="t-body">
-                                        @foreach (var resource in Model.ReceivedResources)
-                                        {
+                                @if (Model.IsGrowthUser)
+                                {
+                                    <table id="receivedTable" class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
                                             <tr>
-                                                <th class="dashboard-img-service" scope="row">
-                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
-                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                            <h6 class="list-title mb-0">@resource.Title</h6>
-                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
-                                                                <li>@resource.Description</li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </th>
-                                                <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
-                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
-                                                <td class="align-top">
-                                                    <div class="d-flex">
-                                                        @if (resource.ResourceType.ToLower() == "link")
-                                                        {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
-                                                        }
-                                                        else if (resource.ResourceType.ToLower() == "image")
-                                                        {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
-                                                        }
-                                                        else
-                                                        {
-                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
-                                                        }
-                                                    </div>
-                                                </td>
+                                                <th scope="col">Title</th>
+                                                <th scope="col">Type</th>
+                                                <th scope="col">Received Date</th>
+                                                <th scope="col">File/Link</th>
                                             </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </thead>
+
+                                        <tbody class="t-body">
+                                            @foreach (var resource in Model.ReceivedResources)
+                                            {
+                                                <tr>
+                                                    <th class="dashboard-img-service" scope="row">
+                                                        <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                            <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                                <h6 class="list-title mb-0">@resource.Title</h6>
+                                                                <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                    <li>@resource.Description</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                    <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
+                                                    <td class="align-top"
+                                                        data-export="@(resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase)
+                   ? resource.FilePath
+                   : System.IO.Path.GetFileName(resource.FilePath))">
+                                                        <div class="d-flex align-items-center">
+                                                            @* hidden export text *@
+                                                            <span class="export-text visually-hidden">
+                                                                @(resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase)
+                                                                    ? resource.FilePath
+                                                                    : System.IO.Path.GetFileName(resource.FilePath))
+                                                            </span>
+
+                                                            @* the clickable icon *@
+                                                            @if (resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="Open link">
+                                                                    <span class="flaticon-website"></span>
+                                                                </a>
+                                                            }
+                                                            else if (resource.ResourceType.Equals("image", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="View image">
+                                                                    <span class="flaticon-images"></span>
+                                                                </a>
+                                                            }
+                                                            else if (resource.ResourceType.Equals("video", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource Video/download"><span class="flaticon-video-file"></span></a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="@Url.Action("Download","ResourceSharing",new{resourceId=resource.ResourceId})" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="Download file">
+                                                                    <span class="flaticon-document"></span>
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <table class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
+                                            <tr>
+                                                <th scope="col">Title</th>
+                                                <th scope="col">Type</th>
+                                                <th scope="col">Received Date</th>
+                                                <th scope="col">File/Link</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody class="t-body">
+                                            @foreach (var resource in Model.ReceivedResources)
+                                            {
+                                                <tr>
+                                                    <th class="dashboard-img-service" scope="row">
+                                                        <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                            <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                                <h6 class="list-title mb-0">@resource.Title</h6>
+                                                                <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                    <li>@resource.Description</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                    <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
+                                                    <td class="align-top">
+                                                        <div class="d-flex">
+                                                            @if (resource.ResourceType.ToLower() == "link")
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
+                                                            }
+                                                            else if (resource.ResourceType.ToLower() == "image")
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
                             }
                             else
                             {
                                 <p>No resources have been shared by the opposite party.</p>
                             }
+
                             @if (Model.CurrentPage > 1)
                             {
                                 <div class="mbp_pagination text-center mt30">
@@ -173,56 +251,129 @@
                         <div class="packages_table table-responsive">
                             @if (Model.MyResources != null && Model.MyResources.Any())
                             {
-                                <table class="table-style3 table at-savesearch">
-                                    <thead class="t-head">
-                                        <tr>
-                                            <th scope="col">Title</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">Received Date</th>
-                                            <th scope="col">File/Link</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="t-body">
-
-                                        @foreach (var resource in Model.MyResources)
-                                        {
+                                @if (Model.IsGrowthUser)
+                                {
+                                    <table id="sharedTable" class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
                                             <tr>
-                                                <th class="dashboard-img-service" scope="row">
-                                                    <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
-                                                        <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
-                                                            <h6 class="list-title mb-0">@resource.Title</h6>
-                                                            <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
-                                                                <li>@resource.Description</li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </th>
-                                                <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
-                                                <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
-                                                <td class="align-top">
-                                                    <div class="d-flex">
-                                                        @if (resource.ResourceType.ToLower() == "link")
-                                                        {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
-                                                        }
-                                                        else if (resource.ResourceType.ToLower() == "image")
-                                                        {
-                                                            <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
-                                                        }
-                                                        else if (resource.ResourceType.ToLower() == "video")
-                                                        {
-                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource Video/download"><span class="flaticon-video-file"></span></a>
-                                                        }
-                                                        else
-                                                        {
-                                                            <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
-                                                        }
-                                                    </div>
-                                                </td>
+                                                <th scope="col">Title</th>
+                                                <th scope="col">Type</th>
+                                                <th scope="col">Received Date</th>
+                                                <th scope="col">File/Link</th>
                                             </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody class="t-body">
+
+                                            @foreach (var resource in Model.MyResources)
+                                            {
+                                                <tr>
+                                                    <th class="dashboard-img-service" scope="row">
+                                                        <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                            <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                                <h6 class="list-title mb-0">@resource.Title</h6>
+                                                                <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                    <li>@resource.Description</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                    <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
+                                                    <td class="align-top"
+                                                        data-export="@(resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase)
+                   ? resource.FilePath
+                   : System.IO.Path.GetFileName(resource.FilePath))">
+                                                        <div class="d-flex align-items-center">
+                                                            @* hidden export text *@
+                                                            <span class="export-text visually-hidden">
+                                                                @(resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase)
+                                                                    ? resource.FilePath
+                                                                    : System.IO.Path.GetFileName(resource.FilePath))
+                                                            </span>
+
+                                                            @* the clickable icon *@
+                                                            @if (resource.ResourceType.Equals("link", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="Open link">
+                                                                    <span class="flaticon-website"></span>
+                                                                </a>
+                                                            }
+                                                            else if (resource.ResourceType.Equals("image", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="View image">
+                                                                    <span class="flaticon-images"></span>
+                                                                </a>
+                                                            }
+                                                            else if (resource.ResourceType.Equals("video", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource Video/download"><span class="flaticon-video-file"></span></a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="@Url.Action("Download","ResourceSharing",new{resourceId=resource.ResourceId})" target="_blank" class="icon me-2" data-bs-toggle="tooltip" title="Download file">
+                                                                    <span class="flaticon-document"></span>
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <table class="table-style3 table at-savesearch">
+                                        <thead class="t-head">
+                                            <tr>
+                                                <th scope="col">Title</th>
+                                                <th scope="col">Type</th>
+                                                <th scope="col">Received Date</th>
+                                                <th scope="col">File/Link</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="t-body">
+
+                                            @foreach (var resource in Model.MyResources)
+                                            {
+                                                <tr>
+                                                    <th class="dashboard-img-service" scope="row">
+                                                        <div class="listing-style1 list-style d-block d-xl-flex align-items-start border-0 mb-0">
+                                                            <div class="list-content flex-grow-1 py-0 pl15 pl0-lg">
+                                                                <h6 class="list-title mb-0">@resource.Title</h6>
+                                                                <ul class="list-style-type-bullet ps-3 dashboard-style mb-0">
+                                                                    <li>@resource.Description</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <td class="align-top"><span class="fz15 fw400">@resource.ResourceType</span></td>
+                                                    <td class="align-top"><span class="fz14 fw400">@resource.CreatedDate.ToLocalTime().ToString("MMMM dd, yyyy")</span></td>
+                                                    <td class="align-top">
+                                                        <div class="d-flex">
+                                                            @if (resource.ResourceType.ToLower() == "link")
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Link"><span class="flaticon-website"></span></a>
+                                                            }
+                                                            else if (resource.ResourceType.ToLower() == "image")
+                                                            {
+                                                                <a href="@resource.FilePath" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/Img"><span class="flaticon-images"></span></a>
+                                                            }
+                                                            else if (resource.ResourceType.ToLower() == "video")
+                                                            {
+                                                                <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource Video/download"><span class="flaticon-video-file"></span></a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="@Url.Action("Download", "ResourceSharing", new { resourceId = resource.ResourceId })" target="_blank" class="icon me-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Resource File/download"><span class="flaticon-document"></span></a>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
                             }
                             else
                             {
@@ -291,3 +442,43 @@
     </div>
 </div>
 </div>
+
+@section DynamicScript {
+    <script>
+        $(function(){
+          if (!window.isGrowthUser) return;
+
+          function makeOpts(title){
+            return {
+              dom: 'Bfrtip',
+              buttons: [
+                'copy',
+                { extend:'excelHtml5', title: title },
+                { extend:'pdfHtml5',
+                  title: title,
+                  orientation: 'landscape',
+                  pageSize: 'A4'
+                },
+                'print'
+              ],
+              pageLength: 10,
+              order: [[2,'desc']],  // sort by date
+              exportOptions: {
+                // pull from data-export if present
+                format: {
+                  body: function(data, row, col, node){
+                    return $(node).attr('data-export') || data;
+                  }
+                }
+              }
+            };
+          }
+
+          // Received
+          $('#receivedTable').DataTable(makeOpts('Received_Resources'));
+
+          // Shared
+          $('#sharedTable').DataTable(makeOpts('Shared_Resources'));
+        });
+    </script>
+}

@@ -126,7 +126,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="keywords" content="bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hiring, job board, job portal, job posting, jobs marketplace, peopleperhour, proposals, sell services, upwork">
-    <meta name="description" content="SkillSwap - Freelance Marketplace">
+    <meta name="description" content="Swapo - Swap. Share. SkillUp.">
     <meta name="CreativeLayers" content="ATFN">
     <!-- css file -->
     <link rel="stylesheet" href="/template_assets/css/bootstrap.min.css">
@@ -146,7 +146,7 @@
     <!-- Responsive stylesheet -->
     <link rel="stylesheet" href="/template_assets/css/responsive.css">
     <!-- Title -->
-    <title>SkillSwap - Your Skills, Your Community</title>
+    <title>Swapo - Your Skills, Your Community</title>
     <!-- Favicon -->
     <link href="/template_assets/images/favicon.ico" sizes="128x128" rel="shortcut icon" type="image/x-icon" />
     <!-- Apple Touch Icon -->
@@ -158,6 +158,14 @@
         var cursorUrl = Url.Content("~/template_assets/images/SSDToken.png");
     }
     <style>
+        .main-profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px; /* make them circles */
+            object-fit: cover; /* crop to fill without distortion */
+            display: inline-block; /* or block/inline-block as needed */
+        }
+
         .token-balance {
             display: flex;
             align-items: center;
@@ -226,7 +234,7 @@
                                 <a class="header-logo logo1" href="@Url.Action("Index","Home")">
                                     <img src="~/template_assets/images/header-logo-dark.png" alt="Header Logo" />
                                     <span class="logo-text">
-                                        SkillSwap<span style="color:#5BBB7B">.</span>
+                                        Swapo<span style="color:#5BBB7B">.</span>
                                     </span>
                                 </a>
                             </div>
@@ -235,10 +243,10 @@
                             </div>
                             <a class="login-info d-block d-xl-none ml40 vam" data-bs-toggle="modal" href="#exampleModalToggle" role="button"><span class="flaticon-loupe"></span></a>
                             <div class="ml40 d-none d-xl-block">
-                                <div class="search_area dashboard-style">
+                               @*  <div class="search_area dashboard-style">
                                     <input type="text" class="form-control border-0" placeholder="What service are you looking for today?">
                                     <label><span class="flaticon-loupe"></span></label>
-                                </div>
+                                </div> *@
                             </div>
                         </div>
                     </div>
@@ -251,7 +259,8 @@
                                 </li>
                                 <li class="d-none d-sm-block">
                                     <a class="text-center mr5 text-thm2 dropdown-toggle fz20" type="button" data-bs-toggle="dropdown" href="">
-                                        <span class="flaticon-mail"></span>@await Component.InvokeAsync("NotificationBadge", new { type = "action" })
+                                        <span class="flaticon-mail"></span>
+                                        @await Component.InvokeAsync("NotificationBadge", new { type = "message" })
                                     </a>
                                     @await Component.InvokeAsync("MessageNotification")
                                 </li>
@@ -307,13 +316,13 @@
                                                 }
                                             }
                                             <div>
-                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="rounded" width="100" style="max-width:50%;" />
+                                                <img src="@Url.Content(src)" alt="Swapper Photo" class="main-profile-avatar" />
                                             </div>
                                         </a>
                                         <div class="dropdown-menu">
                                             <div class="user_setting_content">
                                                 <p class="fz15 fw400 ff-heading mb10 pl30">Action   </p>
-                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Skill-Swap</a>
+                                                <a class="dropdown-item" href="@Url.ActionLink("Index","Home")"><i class="flaticon-home mr10"></i>Back to Swapo</a>
                                                 <a class="dropdown-item" href="@Url.ActionLink("Index","UserDashboard")"><i class="flaticon-home mr10"></i>Dashboard</a>
                                                 <form asp-action="Logout" asp-controller="Home" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()
@@ -548,7 +557,7 @@
                             <p class="fz15 fw400 ff-heading pl30 mt30">Billings & Cancellations</p>
                             <div class="sidebar_list_item">
                                 <a href="@Url.ActionLink("Dashboard","AdminBilling", new { area = "Admin" })"
-                                   class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Index" ? "-is-active" : "")">
+                                   class="d-flex items-center @(currentController=="AdminBilling" && currentAction=="Dashboard" ? "-is-active" : "")">
                                     <i class="flaticon-pay-day mr15"></i>
                                     Billing Dashboard
                                 </a>
@@ -597,7 +606,7 @@
                             <p class="fz15 fw400 ff-heading pl30 mt30">Escrow & Transactions</p>
                             <div class="sidebar_list_item">
                                 <a href="@Url.ActionLink("Dashboard","Escrow", new { area = "Admin" })"
-                                   class="d-flex items-center @(currentController=="Escrow" && currentAction=="InDashboarddex" ? "-is-active" : "")">
+                                   class="d-flex items-center @(currentController=="Escrow" && currentAction=="Dashboard" ? "-is-active" : "")">
                                     <i class="flaticon-pay-day mr15"></i>
                                     Escrow Statement
                                 </a>
@@ -906,7 +915,7 @@
                     <div class="row align-items-center justify-content-center justify-content-md-end">
                         <div class="col-auto">
                             <div class="copyright-widget">
-                                <p class="mb-md-0">© SkillSwap. 2025 DsignGrid. All rights reserved.</p>
+                                <p class="mb-md-0">© Swapo. 2025 DsignGrid. All rights reserved.</p>
                             </div>
                         </div>
                         @* <div class="col-auto">

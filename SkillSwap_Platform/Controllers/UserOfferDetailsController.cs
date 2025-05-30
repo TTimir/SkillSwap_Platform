@@ -177,7 +177,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     // Fetch comparable offers from the database (raw data without processing)
                     var comparableOfferEntities = await _context.TblOffers
-                        .Where(o => o.OfferId != offerId && o.Category == offer.Category)
+                        .Where(o => o.OfferId != offerId && o.Category == offer.Category && o.IsActive && !o.IsDeleted)
                         .Include(o => o.User)
                         .OrderByDescending(o => o.JobSuccessRate)
                         .ThenByDescending(o => o.TokenCost)
@@ -352,6 +352,7 @@ namespace SkillSwap_Platform.Controllers
                     SkillNames = skillNames,
                     Device = offer.Device,
                     Tools = offer.Tools,
+                    AssistanceRounds = offer.AssistanceRounds ?? 0,
                     UserRating = userRating,
                     ReviewCount = reviewCount,
                     RecommendedPercentage = recommendedPercentage,  // e.g., "75.00"
@@ -566,7 +567,10 @@ namespace SkillSwap_Platform.Controllers
 
                 // Build time commitment ranges dynamically.
                 var timeCommitmentRanges = new List<SelectListItem>();
-                int maxDays = await _context.TblOffers.MaxAsync(o => o.TimeCommitmentDays);
+                int maxDays = await _context.TblOffers
+                    .Select(o => (int?)o.TimeCommitmentDays)
+                    .MaxAsync()
+                    ?? 0;
                 int step = 10;
                 for (int i = 0; i < maxDays; i += step)
                 {

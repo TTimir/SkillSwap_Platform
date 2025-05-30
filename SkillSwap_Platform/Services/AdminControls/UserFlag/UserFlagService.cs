@@ -73,18 +73,47 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                         };
 
                         // 2) prefix the subject
-                        var subject = $"[{label} · {sla}] Your SkillSwap profile has been reported";
-                        var body = $@"
-                            Hello {reported.FirstName},<br/><br/>
-                            We wanted to let you know that a member of our community has reported your profile for the following reason:<br/>
-                            <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
-                                {reason}
-                            </blockquote>
-                            Our moderation team is reviewing this report. If you have any questions or would like to provide additional context, please reply to this email or contact us at 
-                            <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.<br/><br/>
-                            Thank you for being part of SkillSwap—we appreciate your contributions!<br/><br/>
-                            — The SkillSwap Support Team";
-                        await _emailService.SendEmailAsync(reported.Email, subject, body);
+                        var subject = $"[{label} · {sla}] Your Swapo profile has been reported";
+                        var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hello <strong>{reported.FirstName}</strong>,</p>
+          <p>A member of our community has reported your profile for the following reason:</p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {reason}
+          </blockquote>
+          <p>Our moderation team is reviewing this report now. If you’d like to provide additional context, simply reply to this email or contact us at 
+             <a href=""mailto:swapoorg360@gmail.com"" style=""color:#E76F51;"">swapoorg360@gmail.com</a>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          Thank you for being part of Swapo—we appreciate your contributions!
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                        await _emailService.SendEmailAsync(
+                            to: reported.Email,
+                            subject: subject,
+                            body: htmlBody,
+                            isBodyHtml: true
+                        );
                     }
                 }
                 catch (Exception mailEx)
@@ -111,16 +140,45 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
 
                         // 2) prefix subject
                         var subject = $"[{label} · {sla}] Thanks for reporting a profile";
-                        var body = $@"
-                            Hi {reporter.FirstName},<br/><br/>
-                            We’ve received your report against user <strong>{flaggedUserId}</strong> with the following details:<br/>
-                            <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
-                                {reason}
-                            </blockquote>
-                            Our moderation team will review it and take appropriate action. We’ll let you know once the review is complete.<br/><br/>
-                            Thanks for helping keep SkillSwap safe!<br/><br/>
-                            — The SkillSwap Support Team";
-                        await _emailService.SendEmailAsync(reporter.Email, subject, body);
+                        var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hi <strong>{reporter.FirstName}</strong>,</p>
+          <p>We’ve received your report against user <strong>{flaggedUserId}</strong> with the following details:</p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {reason}
+          </blockquote>
+          <p>Our moderation team will review it and take appropriate action. We’ll let you know once the review is complete.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          Thanks for helping keep Swapo safe!
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                        await _emailService.SendEmailAsync(
+                            to: reporter.Email,
+                            subject: subject,
+                            body: htmlBody,
+                            isBodyHtml: true
+                        );
                     }
                 }
                 catch (Exception mailEx)
@@ -208,14 +266,45 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                 };
 
                 var subject = $"[{label} · {sla}] Your profile report has been dismissed";
-                var body = $@"
-                    Hello {reported.FirstName},<br/><br/>
-                    Our moderation team has reviewed the report filed against your profile and found no violation.<br/>
-                    <strong>Moderator’s note:</strong><br/>
-                    <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">{adminReason}</blockquote>
-                    Thanks for being part of SkillSwap!<br/><br/>
-                    — The SkillSwap Support Team";
-                await _emailService.SendEmailAsync(reported.Email, subject, body);
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hello <strong>{reported.FirstName}</strong>,</p>
+          <p>Our moderation team has reviewed the report filed against your profile and found no violation.</p>
+          <p><strong>Moderator’s note:</strong></p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {adminReason}
+          </blockquote>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          Thanks for being part of Swapo!
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                await _emailService.SendEmailAsync(
+                    to: reported.Email,
+                    subject: subject,
+                    body: htmlBody,
+                    isBodyHtml: true
+                );
             }
 
             var reporter = await _userService.GetUserByIdAsync(flag.FlaggedByUserId ?? 0);
@@ -234,14 +323,46 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
 
                 // 2) prefix subject
                 var subject = $"[{label} · {sla}] Thank you for your report";
-                var body = $@"
-            Hi {reporter.FirstName},<br/><br/>
-            We’ve completed our review of the report you submitted and decided to dismiss it.<br/>
-            <strong>Moderator’s note:</strong><br/>
-            <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">{adminReason}</blockquote>
-            Your help keeps SkillSwap safe—thank you!<br/><br/>
-            — The SkillSwap Support Team";
-                await _emailService.SendEmailAsync(reporter.Email, subject, body);
+                var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hi <strong>{reporter.FirstName}</strong>,</p>
+          <p>We’ve completed our review of the report you submitted and decided to dismiss it.</p>
+          <p><strong>Moderator’s note:</strong></p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {adminReason}
+          </blockquote>
+          <p>Your help keeps Swapo safe—thank you!</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          — The Swapo Support Team
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                await _emailService.SendEmailAsync(
+                    to: reporter.Email,
+                    subject: subject,
+                    body: htmlBody,
+                    isBodyHtml: true
+                );
             }
         }
 
@@ -285,49 +406,81 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     if (warnCount == 0)
                     {
                         subject = "Notice: A report against your profile was reviewed";
-                        body = $@"
-                        Hello {reported.FirstName},<br/><br/>
-
-                        Our moderation team reviewed a report against your profile and found no violation this time.<br/>
-                        <strong>Moderator’s note:</strong><br/>
-                        <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
-                            {adminReason}
-                        </blockquote>
-
-                        This is an official warning—no action is required now, but please ensure your future behavior aligns with our 
-                        <a href=""/CommunityGuidelines"">Community Guidelines</a>.<br/><br/>
-
-                        Note: Even though this report was dismissed, your profile remains under observation. Continued reports may lead 
-                        to stricter action.<br/><br/>
-
-                        If you have any questions or believe there’s a misunderstanding, just reply to this email or contact us at 
-                        <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.<br/><br/>
-
-                        Thank you for being part of SkillSwap!<br/><br/>
-                        — The SkillSwap Support Team";
+                        var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hello <strong>{reported.FirstName}</strong>,</p>
+          <p>Our moderation team reviewed a report against your profile and found no violation this time.</p>
+          <p><strong>Moderator’s note:</strong></p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {adminReason}
+          </blockquote>
+          <p>This is an official warning—no action is required now, but please ensure your future behavior aligns with our 
+             <a href=""/CommunityGuidelines"" style=""color:#E76F51;text-decoration:underline;"">Community Guidelines</a>.</p>
+          <p>Note: Your profile remains under observation; continued reports may lead to stricter action.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          Thank you for being part of Swapo!
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+                        await _emailService.SendEmailAsync(reported.Email, subject, htmlBody, isBodyHtml: true);
                     }
                     else
                     {
                         subject = "Final Warning: Another report against your profile was reviewed";
-                        body = $@"
-                        Hello {reported.FirstName},<br/><br/>
-                        
-                        We’ve reviewed a second report against your profile and are issuing a final warning.<br/>
-                        <strong>Moderator’s note:</strong><br/>
-                        <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
-                            {adminReason}
-                        </blockquote>
-                        
-                        Continued concerns may lead to suspension of your account.<br/><br/>
-                        
-                        Important: We’ve also shared these reports with external networks (LinkedIn, Twitter, etc.) where your 
-                        public profile appears—they’re reviewing these concerns as well.<br/><br/>
-                        
-                        If you’d like to discuss this decision or provide context, please reply to this email or reach us at 
-                        <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a>.<br/><br/>
-                        
-                        Regards,<br/>
-                        <em>The SkillSwap Support Team</em>";
+                        var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hello <strong>{reported.FirstName}</strong>,</p>
+          <p>We’ve reviewed a second report against your profile and are issuing a final warning.</p>
+          <p><strong>Moderator’s note:</strong></p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {adminReason}
+          </blockquote>
+          <p>Continued concerns may lead to suspension of your account.</p>
+          <p>Important: We’ve also shared these reports with external networks where your public profile appears—they’re reviewing them as well.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          If you’d like to discuss this decision, reply or contact support at <a href=""mailto:swapoorg360@gmail.com"" style=""color:#fff;text-decoration:underline;"">swapoorg360@gmail.com</a>.
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+                        await _emailService.SendEmailAsync(reported.Email, subject, htmlBody, isBodyHtml: true);
                     }
                 }
                 else
@@ -351,34 +504,47 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     };
 
                     subject = $"[{label} · {sla}] Account Deactivated: Multiple Reports Reviewed";
-                    body = $@"
-                        Hello {reported.FirstName},<br/><br/>
-
-                        After reviewing a third report against your profile—and issuing two prior warnings—we have deactivated your SkillSwap account.<br/>
-                        <strong>Moderator’s note:</strong><br/>
-                        <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
-                            {adminReason}
-                        </blockquote>
-
-                        This action is final. We have also shared these reports with external networks  
-                        (LinkedIn, Twitter, etc.) where your public profile appears; they are reviewing these concerns on their end as well.<br/><br/>
-
-                        If you believe this decision is in error or wish to appeal, please reply to this email or contact us at 
-                        <a href=""mailto:skillswap360@gmail.com"">skillswap360@gmail.com</a> within the next <strong>7 days</strong>.  
-                        After that period, reactivation requests will no longer be considered.<br/><br/>
-
-                        We regret that it has come to this, and we thank you for the time you spent with SkillSwap.<br/><br/>
-
-                        Regards,<br/>
-                        <em>The SkillSwap Support Team</em>";
+                    var htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hello <strong>{reported.FirstName}</strong>,</p>
+          <p>After reviewing a third report—and issuing two prior warnings—we have deactivated your Swapo account.</p>
+          <p><strong>Moderator’s note:</strong></p>
+          <blockquote style=""margin:0 0 1em;padding-left:1em;border-left:3px solid #ccc;"">
+            {adminReason}
+          </blockquote>
+          <p>This action is final. We’ve shared these reports with external networks; they’re reviewing them as well.</p>
+          <p>If you believe this decision is in error or wish to appeal, reply or contact us at 
+             <a href=""mailto:swapoorg360@gmail.com"" style=""color:#E76F51;text-decoration:underline;"">swapoorg360@gmail.com</a> within 7 days.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          We regret it has come to this, and we thank you for the time you spent with Swapo.
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+                    await _emailService.SendEmailAsync(reported.Email, subject, htmlBody, isBodyHtml: true);
                 }
 
                 // 4) Persist the new warning/removal entry
                 await _repo.AddAsync(entry);
                 await _ctx.SaveChangesAsync();
-
-                // 5) Email the reported user
-                await _emailService.SendEmailAsync(reported.Email, subject, body);
 
                 // 6) Optionally thank the original reporter
                 var reporter = await _userService.GetUserByIdAsync(original.FlaggedByUserId ?? 0);
@@ -395,11 +561,41 @@ namespace SkillSwap_Platform.Services.AdminControls.UserFlag
                     };
 
                     var repSubject = $"[{label} · {sla}] Thank you for your report";
-                    var repBody = $@"
-                         Hi {reporter.FirstName},<br/><br/>
-                         We’ve {(warnCount < 2 ? "issued a warning on" : "deactivated")} the account you reported (<strong>{reported.UserName}</strong>).<br/><br/>
-                         — The SkillSwap Support Team";
-                    await _emailService.SendEmailAsync(reporter.Email, repSubject, repBody);
+                    var repHtmlBody = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <tr>
+        <td style=""border-top:4px solid #E76F51;padding:20px;"">
+          <h1 style=""margin:0;color:#E76F51;font-size:24px;"">Swapo Support</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style=""padding:20px;color:#333;line-height:1.5;"">
+          <p>Hi <strong>{reporter.FirstName}</strong>,</p>
+          <p>We’ve {(warnCount < 2 ? "issued a warning on" : "deactivated")} the account you reported (<strong>{reported.UserName}</strong>).</p>
+        </td>
+      </tr>
+      <tr>
+        <td style=""background:#E76F51;padding:15px;text-align:center;color:#fff;font-size:14px;"">
+          — The Swapo Support Team
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
+";
+
+                    await _emailService.SendEmailAsync(
+                        to: reporter.Email,
+                        subject: repSubject,
+                        body: repHtmlBody,
+                        isBodyHtml: true
+                    );
                 }
             }
         }

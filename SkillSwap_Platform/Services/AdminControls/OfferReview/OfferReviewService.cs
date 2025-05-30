@@ -407,21 +407,42 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Update on your review for “{review.Offer.Title}”";
                 var body = $@"
-                Hello {author.FirstName},<br/><br/>
-
-                We’ve completed our review of the report on your review for<br/>
-                <strong>“{review.Offer.Title}”</strong>.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                No further action is required. Thanks for being a valued member of our community!<br/><br/>
-
-                Warm regards,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <!-- header -->
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            Swapo Update
+          </td>
+        </tr>
+        <!-- message -->
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hello {author.FirstName},</h2>
+            <p>We’ve completed our review of the report on your review for<br/>
+               <strong>“{review.Offer.Title}”</strong>.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>No further action is required. Thanks for being a valued member of our community!</p>
+          </td>
+        </tr>
+        <!-- footer -->
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The Swapo Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
             }
 
@@ -431,21 +452,39 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(reporter.UserId);
                 var subject = $"[{label} · {sla}] Result of your report on “{review.Offer.Title}”";
                 var body = $@"
-                Hi {reporter.FirstName},<br/><br/>
-
-                Thank you for bringing this to our attention. We’ve reviewed the report on the review for<br/>
-                <strong>“{review.Offer.Title}”</strong> and found no violation.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                We appreciate your help maintaining a respectful marketplace!<br/><br/>
-
-                Sincerely,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            Swapo Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+            <p>Thank you for bringing this to our attention. We’ve reviewed the report on<br/>
+               <strong>“{review.Offer.Title}”</strong> and found no violation.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>We appreciate your help maintaining a respectful marketplace!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The Swapo Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
             }
         }
@@ -498,20 +537,38 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Update on your reply (ID: {replyId})";
                 var body = $@"
-                Hello {author.FirstName},<br/><br/>
-
-                We’ve reviewed the report on your reply under review “{reply.Review.Comments}” and found no violation.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                Thank you for contributing positively to our community!<br/><br/>
-
-                Best regards,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            Swapo Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hello {author.FirstName},</h2>
+            <p>We’ve reviewed the report on your reply and found no violation.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>Thank you for contributing positively to our community!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The Swapo Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
             }
 
@@ -521,21 +578,38 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 var (label, sla) = GetPrefix(author.UserId);
                 var subject = $"[{label} · {sla}] Result of your report on a reply";
                 var body = $@"
-                Hi {reporter.FirstName},<br/><br/>
-
-                Thank you for reporting a reply that you felt violated our guidelines.  
-                We’ve carefully reviewed it and found that no action was necessary.<br/><br/>
-
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">
-                  {notes}
-                </blockquote><br/>
-
-                We appreciate your vigilance in keeping SkillSwap respectful!<br/><br/>
-
-                Sincerely,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
+<!DOCTYPE html>
+<html lang=""en""><head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr><td align=""center"" style=""padding:20px;"">
+      <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+        <tr>
+          <td style=""background:#00796B;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+            Swapo Update
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:20px;color:#333;line-height:1.5;"">
+            <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+            <p>Thank you for reporting a reply. We’ve carefully reviewed it and found no action was necessary.</p>
+            <p><strong>Moderator’s note:</strong></p>
+            <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+              {notes}
+            </blockquote>
+            <p>We appreciate your vigilance in keeping Swapo respectful!</p>
+          </td>
+        </tr>
+        <tr>
+          <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#e0f7f1;font-size:12px;"">
+            — The Swapo Support Team
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>";
                 await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
             }
         }
@@ -576,8 +650,15 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 await _db.SaveChangesAsync();
 
                 var author = await _db.TblUsers.FindAsync(review.ReviewerId);
-                // prefix again
-                (string label, string sla) = _subs.GetActiveAsync(author.UserId).Result.PlanName switch
+
+                // 1) fetch the subscription async
+                var activeSub = await _subs.GetActiveAsync(author.UserId);
+
+                // 2) null‐coalesce the PlanName to “Free” if none exists
+                var planName = activeSub?.PlanName ?? "Free";
+
+                // 3) map into label/SLA
+                (string label, string sla) = planName switch
                 {
                     "Plus" => ("Plus Support", "72h SLA"),
                     "Pro" => ("Pro Support", "48h SLA"),
@@ -589,17 +670,49 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 if (author != null)
                 {
                     var subject = $"[{label} · {sla}] Notice: Your review has been removed";
-                    var body = $@"
-                        <p>Hi {author.FirstName},</p>
-                        <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
-                        <p><strong>Moderator’s note:</strong></p>
-                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                          {moderationNote}
-                        </blockquote>
-                        <p>If you’d like to appeal or learn more, just reply to this email.</p>
-                        <p>— The SkillSwap Support Team</p>
-                    ";
-                    await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
+                    var bodyRemovedReview = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Red for removal -->
+          <tr>
+            <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              Swapo Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {author.FirstName},</h2>
+              <p>We’ve removed your review because it didn’t meet our Community Guidelines.</p>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>If you’d like to appeal or learn more, just reply to this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The Swapo Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(author.Email, subject, bodyRemovedReview, isBodyHtml: true);
                 }
 
                 // 3b) Thank & inform the reporter
@@ -623,21 +736,53 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
                         // 3) prefix your subject
                         var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
-                        var body = $@"
-                            <p>Hi {reporter.FirstName},</p>
-                            <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
-                            <p><strong>Removed review:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {review.Comments}
-                            </blockquote>
-                            <p><strong>Moderator’s note:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {moderationNote}
-                            </blockquote>
-                            <p>Your help makes SkillSwap safer for everyone—thank you!</p>
-                            <p>— The SkillSwap Support Team</p>
-                        ";
-                        await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
+                        var bodyThankReview = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Green for thank-you -->
+          <tr>
+            <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              Swapo Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+              <p>Thanks for reporting that review. We’ve investigated and removed it.</p>
+              <p><strong>Removed review:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {review.Comments}
+              </blockquote>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>Your help makes Swapo safer for everyone—thank you!</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The Swapo Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                        await _emailService.SendEmailAsync(reporter.Email, subject, bodyThankReview, isBodyHtml: true);
                     }
                 }
             }
@@ -682,17 +827,49 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                 if (author != null)
                 {
                     var subject = $"[{label} · {sla}] Notice: Your reply has been removed";
-                    var body = $@"
-                        <p>Hi {author.FirstName},</p>
-                        <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
-                        <p><strong>Moderator’s note:</strong></p>
-                        <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                          {moderationNote}
-                        </blockquote>
-                        <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
-                        <p>— The SkillSwap Support Team</p>
-                    ";
-                    await _emailService.SendEmailAsync(author.Email, subject, body, isBodyHtml: true);
+                    var bodyRemovedReply = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Red -->
+          <tr>
+            <td style=""background:#D32F2F;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              Swapo Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {author.FirstName},</h2>
+              <p>We’ve removed your reply because it didn’t follow our Community Guidelines.</p>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>If you believe this was a mistake or want to learn more, just reply to this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The Swapo Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(author.Email, subject, bodyRemovedReply, isBodyHtml: true);
                 }
 
                 // 3b) Thank & inform the reporter
@@ -716,21 +893,53 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
 
                         // 3) prefix your subject
                         var subject = $"[{reportLabel} · {reportSla}] Thank you: your report helped us take action";
-                        var body = $@"
-                            <p>Hi {reporter.FirstName},</p>
-                            <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
-                            <p><strong>Removed reply content:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {reply.Comments}
-                            </blockquote>
-                            <p><strong>Moderator’s note:</strong></p>
-                            <blockquote style=""border-left:4px solid #ccc; padding-left:1em;"">
-                              {moderationNote}
-                            </blockquote>
-                            <p>Your help keeps SkillSwap safe—thank you!</p>
-                            <p>— The SkillSwap Support Team</p>
-                        ";
-                        await _emailService.SendEmailAsync(reporter.Email, subject, body, isBodyHtml: true);
+                        var bodyThankReply = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""UTF-8"">
+  <meta name=""viewport"" content=""width=device-width,initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
+    <tr>
+      <td align=""center"" style=""padding:20px;"">
+        <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
+          <!-- Header: Green -->
+          <tr>
+            <td style=""background:#388E3C;padding:15px;color:#ffffff;text-align:center;font-size:18px;font-weight:bold;"">
+              Swapo Moderation
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style=""padding:20px;color:#333333;line-height:1.5;"">
+              <h2 style=""margin-top:0;"">Hi {reporter.FirstName},</h2>
+              <p>Thanks for reporting that reply. We’ve reviewed and removed it.</p>
+              <p><strong>Removed reply content:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {reply.Comments}
+              </blockquote>
+              <p><strong>Moderator’s note:</strong></p>
+              <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+                {moderationNote}
+              </blockquote>
+              <p>Your help keeps Swapo safe—thank you!</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+              — The Swapo Support Team
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+                        await _emailService.SendEmailAsync(reporter.Email, subject, bodyThankReply, isBodyHtml: true);
                     }
                 }
             }
@@ -752,85 +961,102 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
                     EntityId = r.ReviewId,
                     OfferId = r.OfferId,
                     OfferTitle = r.Offer.Title,
-
-                    // the person who wrote it
                     ReviewAuthorUserName = r.ReviewerName,
-                    // who reported it
                     FlaggedByUserName = _db.TblUsers
-                                           .Where(u => u.UserId == r.FlaggedByUserId)
-                                           .Select(u => u.UserName)
-                                           .FirstOrDefault() ?? "Unknown",
-
-                    AdminAction = "Flagged",
-                    FlaggedDate = r.FlaggedDate!.Value,
-
-                    // no admin yet
+                                                .Where(u => u.UserId == r.FlaggedByUserId)
+                                                .Select(u => u.UserName)
+                                                .FirstOrDefault() ?? "Unknown",
                     AdminUserName = null,
+                    AdminAction = "Flagged",
                     AdminReason = null,
-                    AdminActionDate = null
+                    AdminActionDate = null,
+                    FlaggedDate = r.FlaggedDate!.Value
                 })
                 .ToListAsync();
 
             // 2) Initial flag events on replies
-            var replyFlags = await _db.TblReviewReplies
+            var replyFlags = (await _db.TblReviewReplies
                 .Where(rr => rr.FlaggedDate != null)
                 .Include(rr => rr.Review).ThenInclude(r => r.Offer)
-                .Select(rr => new FlagHistoryVm
-                {
-                    EntityType = "Reply",
-                    EntityId = rr.ReplyId,
-                    OfferId = rr.Review.OfferId,
-                    OfferTitle = rr.Review.Offer.Title,
+                .Include(rr => rr.ReplierUser)
+                .ToListAsync())
+              .Select(rr => new FlagHistoryVm
+              {
+                  EntityType = "Reply",
+                  EntityId = rr.ReplyId,
+                  OfferId = rr.Review.OfferId,
+                  OfferTitle = rr.Review.Offer.Title,
+                  ReviewAuthorUserName = rr.ReplierUser.UserName,
+                  FlaggedByUserName = _db.TblUsers
+                                             .Where(u => u.UserId == rr.FlaggedByUserId)
+                                             .Select(u => u.UserName)
+                                             .FirstOrDefault() ?? "Unknown",
+                  AdminUserName = null,
+                  AdminAction = "Flagged",
+                  AdminReason = null,
+                  AdminActionDate = null,
+                  FlaggedDate = rr.FlaggedDate!.Value
+              })
+              .ToList();
 
-                    ReviewAuthorUserName = rr.ReplierUser.UserName,
-                    FlaggedByUserName = _db.TblUsers
-                                           .Where(u => u.UserId == rr.FlaggedByUserId)
-                                           .Select(u => u.UserName)
-                                           .FirstOrDefault() ?? "Unknown",
 
-                    AdminAction = "Flagged",
-                    FlaggedDate = rr.FlaggedDate!.Value,
+            // 3a) Moderation logs for **reviews** (ReplyId == null)
+            var reviewMod = from h in _db.TblReviewModerationHistories.AsNoTracking()
+                            where h.ReplyId == null
+                            join admin in _db.TblUsers.AsNoTracking()
+                                 on h.AdminId equals admin.UserId into admins
+                            from a in admins.DefaultIfEmpty()
+                            join r in _db.TblReviews
+                                       .Include(r => r.Offer)
+                                       .AsNoTracking()
+                                 on h.ReviewId equals r.ReviewId
+                            select new FlagHistoryVm
+                            {
+                                EntityType = "Review",
+                                EntityId = r.ReviewId,
+                                OfferId = r.OfferId,
+                                OfferTitle = r.Offer.Title,
+                                ReviewAuthorUserName = r.ReviewerName,
+                                FlaggedByUserName = null,
+                                AdminUserName = a.UserName,
+                                AdminAction = h.Action,
+                                AdminReason = h.Notes,
+                                AdminActionDate = h.CreatedAt,
+                                FlaggedDate = h.CreatedAt
+                            };
 
-                    AdminUserName = null,
-                    AdminReason = null,
-                    AdminActionDate = null
-                })
-                .ToListAsync();
+            // 3b) Moderation logs for **replies** (ReplyId != null)
+            var replyMod = from h in _db.TblReviewModerationHistories.AsNoTracking()
+                           where h.ReplyId != null
+                           join admin in _db.TblUsers.AsNoTracking()
+                                on h.AdminId equals admin.UserId into admins
+                           from a in admins.DefaultIfEmpty()
+                           join rr in _db.TblReviewReplies
+                                       .Include(rr => rr.Review).ThenInclude(r => r.Offer)
+                                       .Include(rr => rr.ReplierUser)
+                                       .AsNoTracking()
+                                on h.ReplyId equals rr.ReplyId
+                           select new FlagHistoryVm
+                           {
+                               EntityType = "Reply",
+                               EntityId = rr.ReplyId,
+                               OfferId = rr.Review.OfferId,
+                               OfferTitle = rr.Review.Offer.Title,
+                               ReviewAuthorUserName = rr.ReplierUser.UserName,
+                               FlaggedByUserName = null,
+                               AdminUserName = a.UserName,
+                               AdminAction = h.Action,
+                               AdminReason = h.Notes,
+                               AdminActionDate = h.CreatedAt,
+                               FlaggedDate = h.CreatedAt
+                           };
 
-            // 3) Moderation history entries (dismissals/deletions)
-            var modLogs = await _db.TblReviewModerationHistories
-                .Include(h => h.Admin)
-                .Include(h => h.Review).ThenInclude(r => r.Offer)
-                .Include(h => h.Reply).ThenInclude(rr => rr.Review).ThenInclude(r => r.Offer)
-                .Select(h => new FlagHistoryVm
-                {
-                    EntityType = h.ReplyId != null ? "Reply" : "Review",
-                    EntityId = h.ReplyId ?? h.ReviewId,
-                    OfferId = (h.ReplyId != null
-                                          ? h.Reply.Review.OfferId
-                                          : h.Review.OfferId),
-                    OfferTitle = (h.ReplyId != null
-                                          ? h.Reply.Review.Offer.Title
-                                          : h.Review.Offer.Title),
+            var modLogs = (await reviewMod
+                                .Union(replyMod)
+                                .OrderByDescending(x => x.FlaggedDate)
+                                .ToListAsync());
 
-                    // who originally wrote it
-                    ReviewAuthorUserName = (h.ReplyId != null
-                                          ? h.Reply.ReplierUser.UserName
-                                          : h.Review.ReviewerName),
-
-                    // admin who took this action
-                    AdminUserName = h.Admin.UserName,
-                    AdminAction = h.Action,           // e.g. "DismissedFlag", "DeletedReview"…
-                    AdminReason = h.Notes,
-                    AdminActionDate = h.CreatedAt,
-
-                    // for a moderation log we leave Reporter empty
-                    FlaggedByUserName = null,
-                    FlaggedDate = h.CreatedAt
-                })
-                .ToListAsync();
-
-            // 4) Merge, sort, and page
+            // 4) Merge everything & page
             var all = reviewFlags
                 .Concat(replyFlags)
                 .Concat(modLogs)
@@ -845,7 +1071,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Offer_and_Review
             return new PagedResult<FlagHistoryVm>
             {
                 Items = pagedItems,
-                TotalCount = all.Count(),
+                TotalCount = all.Count,
                 Page = page,
                 PageSize = pageSize
             };

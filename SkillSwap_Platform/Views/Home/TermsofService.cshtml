@@ -1,194 +1,114 @@
-﻿
-@{
-    Layout = null;
+﻿@{
+    ViewData["Title"] = "Terms of Service";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkillSwap Terms of Service</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter',sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #fff;
-            color: #333;
-        }
-
-        header {
-            background: #16a085;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
-
-        nav {
-            background: #f9f9f0;
-            border-bottom: 1px solid #ddd;
-        }
-
-            nav ul {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-            }
-
-            nav a {
-                padding: 12px 18px;
-                text-decoration: none;
-                color: #555;
-                font-weight: 600;
-            }
-
-                nav a.active, nav a:hover {
-                    color: #16a085;
-                }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2rem;
-            color: #16a085;
-        }
-
-        h2 {
-            margin-top: 2.5rem;
-            font-size: 1.5rem;
-            color: #16a085;
-        }
-
-        h3 {
-            margin-top: 1.8rem;
-            font-size: 1.2rem;
-            color: #16a085;
-        }
-
-        p, ul, ol {
-            margin: 1rem 0;
-            line-height: 1.6;
-        }
-
-        .short-version {
-            background: #f0f4f8;
-            padding: 15px;
-            border-radius: 5px;
-        }
-
-            .short-version h2 {
-                margin-top: 0;
-            }
-
-        footer {
-            text-align: center;
-            margin: 50px 0;
-            font-size: 0.9rem;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>Terms of Service</h1>
-        <p>Last updated: May 14, 2025</p>
-    </header>
-
-    <nav>
-        <ul>
-            <li><a href="#short" class="active">Short Version</a></li>
-            <li><a href="#1">1. Acceptance</a></li>
-            <li><a href="#2">2. Accounts</a></li>
-            <li><a href="#3">3. Tokens & Payments</a></li>
-            <li><a href="#4">4. Cancellations</a></li>
-            <li><a href="#5">5. Conduct</a></li>
-            <li><a href="#6">6. Liability</a></li>
-            <li><a href="#7">7. Governing Law</a></li>
-            <li><a href="#8">8. Contact</a></li>
-        </ul>
-    </nav>
-
+<section class="our-terms">
     <div class="container">
-
-        <!-- Short Version -->
-        <section id="short" class="short-version">
-            <h2>The Short Version</h2>
-            <p><strong>Use of SkillSwap:</strong> By accessing SkillSwap you agree to these Terms—please read them carefully.</p>
-            <p><strong>Accounts:</strong> You’re responsible for your login, activity, and keeping your information accurate.</p>
-            <p><strong>Tokens:</strong> SkillSwap tokens (TK) are required for booking sessions; non-refundable except as specified.</p>
-            <p><strong>Cancellations:</strong> ≥24 hrs notice → full TK refund; < 24 hrs → no refund unless tutor permits.</p>
-            <p><strong>Liability:</strong> Services are “as is”; liability capped at TK spent in prior six months.</p>
-        </section>
-
-        <!-- 1. Acceptance -->
-        <section id="1">
-            <h2>1. Acceptance of Terms</h2>
-            <p>These Terms constitute a binding agreement. If you do not agree, please do not use our services.</p>
-        </section>
-
-        <!-- 2. Accounts -->
-        <section id="2">
-            <h2>2. Accounts</h2>
-            <p>When registering, you must provide accurate information and keep your password secure. You’re responsible for all activity under your account.</p>
-        </section>
-
-        <!-- 3. Tokens & Payments -->
-        <section id="3">
-            <h2>3. Tokens & Payments</h2>
-            <p>SkillSwap tokens (TK) are the only currency. Purchase via credit/debit or supported gateways. Tokens cannot be redeemed for cash except as required by law.</p>
-        </section>
-
-        <!-- 4. Cancellations -->
-        <section id="4">
-            <h2>4. Session Cancellations</h2>
-            <p>If you cancel at least 24 hours before a booked session, you receive a full TK refund. Cancellations within 24 hours are non-refundable unless the tutor agrees otherwise.</p>
-        </section>
-
-        <!-- 5. Conduct -->
-        <section id="5">
-            <h2>5. User Conduct</h2>
-            <p>You agree not to misuse the platform—no unlawful behavior, harassment, or intellectual-property infringement. Violation may result in account suspension.</p>
-        </section>
-
-        <!-- 6. Liability -->
-        <section id="6">
-            <h2>6. Limitation of Liability</h2>
-            <p>SkillSwap is provided “as is.” Our liability for any claim related to the service is limited to the total TK you’ve spent in the past six months.</p>
-        </section>
-
-        <!-- 7. Governing Law -->
-        <section id="7">
-            <h2>7. Governing Law</h2>
-            <p>These Terms are governed by Indian law. Any disputes will be resolved in the courts of Bengaluru, India.</p>
-        </section>
-
-        <!-- 8. Contact -->
-        <section id="8">
-            <h2>8. Contact Information</h2>
-            <p>Questions or concerns? Please email <a href="mailto:skillswap360@gmail.com">skillswap360@gmail.com</a>. </p>
-        </section>
-
-        <footer>&copy; 2025 SkillSwap. All rights reserved.</footer>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="main-title">
+                    <h2>Terms of Service</h2>
+                    <p class="text">Last updated: May 14, 2025</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3 col-lg-3 col-xl-2">
+                <div class="terms_condition_widget mb30-sm">
+                    <div class="widget_list">
+                        <nav>
+                            <div class="nav nav-tabs text-start" id="nav-tab" role="tablist">
+                                <button class="nav-link text-start active" id="nav-summary-tab" data-bs-toggle="tab" data-bs-target="#nav-summary" type="button" role="tab" aria-controls="nav-summary" aria-selected="true">Executive Summary</button>
+                                <button class="nav-link text-start" id="nav-acceptance-tab" data-bs-toggle="tab" data-bs-target="#nav-acceptance" type="button" role="tab" aria-controls="nav-acceptance" aria-selected="false">Acceptance</button>
+                                <button class="nav-link text-start" id="nav-legal-tab" data-bs-toggle="tab" data-bs-target="#nav-legal" type="button" role="tab" aria-controls="nav-legal" aria-selected="false">Account Responsibilities</button>
+                                <button class="nav-link text-start" id="nav-tokens-tab" data-bs-toggle="tab" data-bs-target="#nav-tokens" type="button" role="tab" aria-controls="nav-tokens" aria-selected="false">Tokens & Payments</button>
+                                <button class="nav-link text-start" id="nav-sharing-tab" data-bs-toggle="tab" data-bs-target="#nav-sharing" type="button" role="tab" aria-controls="nav-sharing" aria-selected="false">Cancellations & Refunds</button>
+                                <button class="nav-link text-start" id="nav-data-tab" data-bs-toggle="tab" data-bs-target="#nav-data" type="button" role="tab" aria-controls="nav-data" aria-selected="false">User Conduct</button>
+                                <button class="nav-link text-start" id="nav-disclaimer-tab" data-bs-toggle="tab" data-bs-target="#nav-disclaimer" type="button" role="tab" aria-controls="nav-disclaimer" aria-selected="false">Disclaimers & Limitation</button>
+                                <button class="nav-link text-start" id="nav-law-tab" data-bs-toggle="tab" data-bs-target="#nav-law" type="button" role="tab" aria-controls="nav-law" aria-selected="false">Governing Law</button>
+                                <button class="nav-link text-start" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Contact & Modifications</button>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-9 col-xl-9 offset-xl-1">
+                <div class="terms_condition_grid text-start">
+                    <div class="tab-content" id="nav-tabContent">
+                        <div class="tab-pane fade show active" id="nav-summary" role="tabpanel" aria-labelledby="nav-summary-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Executive Summary</h4>
+                                <p class="mb25 text fz15">By accessing or using Swapo, you agree to abide by these Terms of Service. Please read them carefully. Your continued use of the platform constitutes acceptance of all provisions herein. If you do not agree, please discontinue use immediately.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">2. Account Security</h4>
+                                <p class="mb25 text fz15">You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">3. Tokens</h4>
+                                <p class="mb25 text fz15">Swapo tokens (TK) are the exclusive medium of exchange. Token purchases are final and non-refundable except as expressly provided in Section 4.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">4. Cancellations</h4>
+                                <p class="mb25 text fz15">Sessions canceled at least 24 hours before start receive a full token refund. Cancellations under 24 hours may be refunded only at the tutor’s discretion.</p>
+                            </div>
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">5. Liability</h4>
+                                <p class="mb25 text fz15">The Service is provided “as is.” Our maximum liability for any claim is capped at the tokens you have spent in the preceding six months.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-acceptance" role="tabpanel" aria-labelledby="nav-acceptance-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Acceptance of Terms</h4>
+                                <p class="mb25 text fz15">These Terms of Service (“Terms”) form a binding legal contract between you and Swapo Inc. (“Swapo,” “we,” “us,” or “our”). By accessing, browsing, or using the platform, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree with any provision of these Terms, you must immediately cease all use of the Services.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-legal" role="tabpanel" aria-labelledby="nav-legal-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Account Responsibilities</h4>
+                                <p class="mb25 text fz15">To access certain features of the Services, you must register for an account and provide accurate and complete information. You are solely responsible for maintaining the confidentiality of your password and for any and all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account or any other security breach. We reserve the right to suspend or terminate your account if any information provided by you is found to be inaccurate, misleading, or in violation of these Terms.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-tokens" role="tabpanel" aria-labelledby="nav-tokens-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Tokens & Payments</h4>
+                                <p class="mb25 text fz15">Swapo operates on a token-based system. All transactions for booking sessions or purchasing in-platform services require Swapo tokens (“TK”). Tokens may be purchased via our approved payment methods, including credit/debit cards and authorized third-party payment processors. All token purchases are final and non-refundable unless otherwise specified in these Terms or required by applicable law. Swapo does not guarantee any specific outcome or benefit from token purchases.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-sharing" role="tabpanel" aria-labelledby="nav-sharing-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Cancellations & Refunds</h4>
+                                <p class="mb25 text fz15">To cancel a booked session and receive a refund of tokens, you must do so at least twenty-four (24) hours before the scheduled start time. If you cancel less than 24 hours in advance, you will forfeit the tokens unless the tutor consents to a refund. In the event of a tutor-initiated cancellation, you will receive a full token refund automatically. All refund requests must be submitted through the platform’s cancellation interface. Refunds will be issued in tokens and reflected in your account within 48 hours.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-data" role="tabpanel" aria-labelledby="nav-data-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. User Conduct & Prohibited Activities</h4>
+                                <p class="mb25 text fz15">You agree to use Swapo in a lawful, ethical, and respectful manner. Prohibited conduct includes, but is not limited to: harassment, discrimination, hate speech, uploading harmful or infringing content, impersonation, and any activity that violates applicable laws or third-party rights. We reserve the right to suspend or terminate your access and to report illegal activities to law enforcement authorities. You remain solely responsible for your own conduct and content you post.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-disclaimer" role="tabpanel" aria-labelledby="nav-disclaimer-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Disclaimers & Limitation of Liability</h4>
+                                <p class="mb25 text fz15">THE SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE,” WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. SKILLSWAP DISCLAIMS ALL WARRANTIES, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, SKILLSWAP’S TOTAL LIABILITY FOR ANY AND ALL CLAIMS RELATED TO THE SERVICES SHALL NOT EXCEED THE TOTAL NUMBER OF TOKENS YOU HAVE SPENT ON THE PLATFORM DURING THE SIX (6) MONTHS PRIOR TO THE CLAIM.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-law" role="tabpanel" aria-labelledby="nav-law-tab">
+                            <div class="grids mb90 mb40-md">
+                                <h4 class="title">1. Governing Law & Dispute Resolution</h4>
+                                <p class="mb25 text fz15">These Terms and any disputes arising out of or related to them shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles. You agree that exclusive jurisdiction and venue for any dispute shall reside in the courts of Bengaluru, India, and you hereby consent to personal jurisdiction in such courts.</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+                            <div class="grids mb90 mb40-md">
+                                <p>If you have questions about these Terms or require further assistance, please contact us at <a href="mailto:swapoorg360@gmail.com">swapoorg360@gmail.com</a>. We reserve the right to modify these Terms at any time by posting a revised version on our website. The “Last updated” date at the top indicates when changes become effective. Your continued use of the Services following any updates constitutes acceptance of the revised Terms.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</section>
 
-    <script>
-        document.querySelectorAll('nav a').forEach(link => {
-          link.addEventListener('click', e => {
-            document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
-            e.target.classList.add('active');
-          });
-        });
-    </script>
-</body>
-</html>

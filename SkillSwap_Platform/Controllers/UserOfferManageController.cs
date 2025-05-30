@@ -68,7 +68,7 @@ namespace SkillSwap_Platform.Controllers
                 // Create device options (you can add more as needed)
                 var deviceOptions = new List<SelectListItem>
                 {
-                    new SelectListItem { Value = "Desktop", Text = "Desktop" },
+                    new SelectListItem { Value = "Desktop or Laptop", Text = "Desktop or Laptop" },
                     new SelectListItem { Value = "Mobile", Text = "Mobile" },
                     new SelectListItem { Value = "iOS", Text = "iOS" },
                     new SelectListItem { Value = "Linux", Text = "Linux" }
@@ -131,13 +131,30 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OfferCreateVM model)
         {
+
             if (string.IsNullOrWhiteSpace(model.Address)
                  && (!model.Latitude.HasValue || !model.Longitude.HasValue))
             {
-                ModelState.AddModelError(
-                    nameof(model.Address),
-                    "Please either type in your address or click the location button to fetch your GPS coordinates."
-                );
+                ViewBag.ErrorMessage = "Please either type in your address or click the location button to fetch your GPS coordinates.";
+            }
+
+            if (model.Faqs == null
+     || !model.Faqs.Any(f =>
+          !string.IsNullOrWhiteSpace(f.Question) &&
+          !string.IsNullOrWhiteSpace(f.Answer)))
+            {
+                ViewBag.ErrorMessage = "Please add at least one FAQ with both a question and an answer.";
+            }
+
+            var filledFaqCount = model.Faqs?
+    .Count(f =>
+        !string.IsNullOrWhiteSpace(f.Question) &&
+        !string.IsNullOrWhiteSpace(f.Answer)
+    ) ?? 0;
+
+            if (filledFaqCount < 2)
+            {
+                ViewBag.ErrorMessage = "Please add at least two FAQs, each with both a question and an answer.";
             }
 
             ModelState.Remove("UserSkills");
@@ -246,19 +263,6 @@ namespace SkillSwap_Platform.Controllers
                         offer.Portfolio = Newtonsoft.Json.JsonConvert.SerializeObject(portfolioUrls);
                         await _context.SaveChangesAsync();
 
-                        if (model.Faqs == null || !model.Faqs.Any())
-                        {
-                            // tell the user they forgot to add at least one FAQ
-                            ViewBag.ErrorMessage = "Please add at least one question & answer pair in the FAQ section.";
-
-                            // re-populate all your dropdowns, etc.
-                            var userId = GetUserId();
-                            PopulateDropdowns(model, userId);
-
-                            // short-circuit: render the same view with the error message
-                            return View(model);
-                        }
-
                         //  — save FAQs —
                         if (model.Faqs != null && model.Faqs.Any())
                         {
@@ -285,14 +289,14 @@ namespace SkillSwap_Platform.Controllers
                     {
                         UserId = GetUserId(),
                         Title = "Swap Created",
-                        Message = "You successfully created and published your offer.",
+                        Message = "You successfully created and published your swap offer.",
                         Url = Url.Action("OfferList", "UserOfferManage"),
                     });
 
                     // Commit the transaction when all steps succeed.
                     await transaction.CommitAsync();
 
-                    TempData["SuccessMessage"] = "Offer created successfully.";
+                    TempData["SuccessMessage"] = "Swap offer created successfully.";
                     return RedirectToAction("Create", "UserOfferManage");
                 }
                 catch (Exception ex)
@@ -415,6 +419,7 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(OfferEditVM model)
         {
+
             if (string.IsNullOrWhiteSpace(model.Address)
                 && (!model.Latitude.HasValue || !model.Longitude.HasValue))
             {
@@ -423,6 +428,26 @@ namespace SkillSwap_Platform.Controllers
                     "Please either type in your address or click the location button to fetch your GPS coordinates."
                 );
             }
+
+            if (model.Faqs == null
+     || !model.Faqs.Any(f =>
+          !string.IsNullOrWhiteSpace(f.Question) &&
+          !string.IsNullOrWhiteSpace(f.Answer)))
+            {
+                ViewBag.ErrorMessage = "Please add at least one FAQ with both a question and an answer.";
+            }
+
+            var filledFaqCount = model.Faqs?
+    .Count(f =>
+        !string.IsNullOrWhiteSpace(f.Question) &&
+        !string.IsNullOrWhiteSpace(f.Answer)
+    ) ?? 0;
+
+            if (filledFaqCount < 2)
+            {
+                ViewBag.ErrorMessage = "Please add at least two FAQs, each with both a question and an answer.";
+            }
+
             ModelState.Remove("UserSkills");
             ModelState.Remove("UserLanguages");
             ModelState.Remove("CategoryOptions");
@@ -581,13 +606,6 @@ namespace SkillSwap_Platform.Controllers
                         .ToList();
                     removed.ForEach(f => f.IsDeleted = true);
 
-                    if (model.Faqs == null || !model.Faqs.Any())
-                    {
-                        ViewBag.ErrorMessage = "Please add at least one question & answer pair in the FAQ section.";
-                        PopulateDropdownsForEdit(model, GetUserId());
-                        return View(model);
-                    }
-
                     // 3) add or update each posted FAQ
                     foreach (var vm in model.Faqs)
                     {
@@ -668,6 +686,7 @@ namespace SkillSwap_Platform.Controllers
                     TimeCommitmentDays = offer.TimeCommitmentDays,
                     Category = offer.Category,
                     FreelanceType = offer.FreelanceType,
+                    CollaborationMethod = offer.CollaborationMethod,
                     CreatedDate = offer.CreatedDate,
                     // Optionally, include first portfolio image (if available)
                     ThumbnailUrl = !string.IsNullOrWhiteSpace(offer.Portfolio)
@@ -784,12 +803,20 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = totalPages
                 };
 
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching deleted offers for user {UserId}", userId);
-                TempData["ErrorMessage"] = "An error occurred while loading deleted offers.";
+                ViewBag.ErrorMessage = "An error occurred while loading deleted offers.";
                 return RedirectToAction("EP500", "EP");
             }
         }
@@ -800,6 +827,18 @@ namespace SkillSwap_Platform.Controllers
         public async Task<IActionResult> Restore(int offerId)
         {
             int userId = GetUserId();
+
+            // 1) Check current active offers
+            var activeCount = await _context.TblOffers
+                                .CountAsync(o => o.UserId == userId && !o.IsDeleted);
+
+            if (activeCount >= 5)
+            {
+                TempData["ErrorMessage"] =
+                    "You already have 5 active swap offers.  Please delete one before restoring another.";
+                return RedirectToAction("DeletedOffers", "UserOfferManage");
+            }
+
             // Wrap the multi-step process in a transaction.
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
@@ -843,7 +882,7 @@ namespace SkillSwap_Platform.Controllers
                 {
                     _logger.LogError(ex, "Error restoring offer {OfferId} for user {UserId}", offerId, userId);
                     await transaction.RollbackAsync();
-                    TempData["ErrorMessage"] = "An error occurred while restoring the offer.";
+                    ViewBag.ErrorMessage = "An error occurred while restoring the offer.";
                     return RedirectToAction("EP500", "EP");
                 }
             }
@@ -860,7 +899,7 @@ namespace SkillSwap_Platform.Controllers
             try
             {
                 int userId = GetUserId();
-                int pageSize = 5; // 5 offers per page
+                int pageSize = 5;
 
                 var totalOffers = await _context.TblOffers.Where(o => o.UserId == userId && !o.IsDeleted).CountAsync();
                 var totalPages = (int)Math.Ceiling((double)totalOffers / pageSize);
@@ -878,8 +917,17 @@ namespace SkillSwap_Platform.Controllers
                 {
                     Offers = offers,
                     CurrentPage = page,
-                    TotalPages = totalPages
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
                 };
+
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
 
                 return View(viewModel);
             }
@@ -924,6 +972,14 @@ namespace SkillSwap_Platform.Controllers
                     TotalPages = totalPages
                 };
 
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -962,6 +1018,14 @@ namespace SkillSwap_Platform.Controllers
                     CurrentPage = page,
                     TotalPages = totalPages
                 };
+
+                viewModel.IsGrowthUser = await _context.Subscriptions
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.UserId == userId &&
+                        s.PlanName == "Growth" &&
+                        (s.EndDate == null || s.EndDate > DateTime.UtcNow)
+                    );
 
                 return View(viewModel);
             }

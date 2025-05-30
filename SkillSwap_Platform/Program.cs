@@ -119,6 +119,7 @@ builder.Services.AddScoped<BadgeService>();
 builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IPaymentLogService, PaymentLogService>();
+builder.Services.AddHostedService<MeetingReminderHostedService>();
 
 
 // Admin Services
@@ -242,6 +243,7 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 
@@ -264,6 +266,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();  // 🔴 Must be before Authorization
 app.UseAuthorization();
+
 app.UseMiddleware<UpdateLastActiveMiddleware>();
 
 app.MapControllers();

@@ -11,14 +11,17 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
     {
         private readonly IRazorpayService _rzp;
         private readonly ISubscriptionService _subsSvc;
+        private readonly IPaymentLogService _log;
         private readonly ILogger<PaymentWebhookController> _logger;
         public PaymentWebhookController(
         IRazorpayService rzp,
         ISubscriptionService subsSvc,
+        IPaymentLogService log,
         ILogger<PaymentWebhookController> logger)
         {
             _rzp = rzp;
             _subsSvc = subsSvc;
+            _log = log;
             _logger = logger;
         }
 
@@ -37,7 +40,7 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             }
 
             // 3) Parse event
-            var json = JsonDocument.Parse(payload);
+            using var json = JsonDocument.Parse(payload);
             var evt = json.RootElement.GetProperty("event").GetString();
             if (evt != "payment.captured")
                 return Ok();  // we only care about successful payments
@@ -57,21 +60,23 @@ namespace SkillSwap_Platform.Controllers.Payment_Gatway
             // 4) Update your subscription record
             try
             {
-                await _subsSvc.RecordPaymentAsync(
-                    orderId,
-                    paymentId,
-                    amount,
-                    plan,
-                    cycle
-                );
+                if (!await _log.HasProcessedAsync(orderId))
+                {
+                    await _subsSvc.RecordPaymentAsync(
+                        orderId,
+                        paymentId,
+                        amount,
+                        plan,
+                        cycle
+                    );
+                }
+                return Ok();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording payment for order {OrderId}", orderId);
                 return StatusCode(500);
             }
-
-            return Ok();
         }
     }
 }

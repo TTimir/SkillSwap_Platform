@@ -42,6 +42,4 @@ public partial class TblMeeting
     public int MeetingSessionNumber { get; set; }
 
     public int? MeetingRating { get; set; }
-
-    public virtual TblExchange Exchange { get; set; } = null!;
 }

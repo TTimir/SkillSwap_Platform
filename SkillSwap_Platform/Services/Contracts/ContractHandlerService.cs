@@ -29,8 +29,6 @@ namespace SkillSwap_Platform.Services.Contracts
 
         public async Task<(bool Success, string ErrorMessage)> CreateContractAsync(ContractCreationVM model)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
                 // Set required fields
@@ -71,8 +69,9 @@ namespace SkillSwap_Platform.Services.Contracts
                     // only consider “real” contracts (not declined, not children of other contracts)
                     && c.ParentContractId == null
                     // only if it’s still live or being reviewed
-                    && c.Status != "Declined"
-                    && c.Status != "Expired"
+                    && (c.Status == "Pending" || c.Status == "Review")
+                    && c.Status == "Declined"
+                    && c.Status == "Expired"
                 );
 
                 if (baseContractExists)
@@ -239,13 +238,11 @@ namespace SkillSwap_Platform.Services.Contracts
                 contract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
                 return (true, null);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error creating contract.");
                 return (false, "An unexpected error occurred while creating the contract.");
             }

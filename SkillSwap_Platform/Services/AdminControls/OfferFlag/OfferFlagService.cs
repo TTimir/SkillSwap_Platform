@@ -75,44 +75,71 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     };
 
                     // --- flagged‐owner email ---
-                    var subject = $"[{label} · {sla}] Notice: Your SkillSwap offer “{offer.Title}” has been reported";
-                    var body = $@"
-                        Hi {owner.FirstName},<br/><br/>
-
-                        We wanted to let you know that a member of our community on our platform has flagged your swap offer “<strong>{offer.Title}</strong>”<br/>
-                        for the following reason:<br/>
-                        <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:3px solid #ccc;"">{reason}</blockquote>
-
-                        Our moderation team is already reviewing this report to ensure everyone has a safe experience and will get back to you within 24 hours with any next steps.
-                        No action is required from you right now, if you feel this was a mistake or wish to add any context, simply reply to this email.<br/><br/>
-
-                        Thank you for being part of SkillSwap — we appreciate your contributions!<br/><br/>
-
-                        Cheers,<br/>
-                        <em>The SkillSwap Support Team</em>
-                    ";
-                    await _emailService.SendEmailAsync(owner.Email, subject, body);
+                    var subjectOfferReported = $"[{label} · {sla}] Notice: Your Swapo offer “{offer.Title}” has been reported";
+                    var bodyOfferReported = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <!-- Header: Orange -->
+      <tr><td style=""background:#FB8C00;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+        Swapo Moderation
+      </td></tr>
+      <!-- Body -->
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <h2 style=""margin-top:0;"">Hi {owner.FirstName},</h2>
+        <p>A community member has flagged your swap offer:</p>
+        <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
+          “{offer.Title}”<br/>{reason}
+        </blockquote>
+        <p>Our moderation team will follow up within 24 hours. No action is required from you right now—simply reply if you’d like to provide context.</p>
+      </td></tr>
+      <!-- Footer -->
+      <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+        — The Swapo Support Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                    await _emailService.SendEmailAsync(owner.Email, subjectOfferReported, bodyOfferReported, isBodyHtml: true);
 
                     // acknowledge the flagger
                     var flagger = await _userService.GetUserByIdAsync(userId);
                     if (flagger != null)
                     {
-                        var subjectFlagger = $"[{label} · {sla}] Thanks for reporting “{offer.Title}”";
-                        var bodyFlagger = $@"
-                            Hi {flagger.FirstName},<br/><br/>
-
-                            Thanks for helping keep SkillSwap safe. We’ve received your report for the swap offer<br/>
-                            <strong>“{offer.Title}”</strong><br/><br/>
-                            <strong>Your remark:</strong><br/>
-                            <blockquote style=""margin:0;padding:0 1em;border-left:3px solid #ccc;color:#555;"">{reason}</blockquote>
-
-                            Our moderation team will review it and take appropriate action. We’ll let you know as soon as it’s been handled.
-                            Feel free to reply if you have more information to share.<br/><br/>
-
-                            Thank you for helping keep SkillSwap safe!<br/>
-                            <em>The SkillSwap Support Team</em>
-                        ";
-                        await _emailService.SendEmailAsync(flagger.Email, subjectFlagger, bodyFlagger);
+                        var subjectThankFlagger = $"[{label} · {sla}] Thanks for reporting “{offer.Title}”";
+                        var bodyThankFlagger = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <!-- Header: Green -->
+      <tr><td style=""background:#388E3C;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+        Swapo Moderation
+      </td></tr>
+      <!-- Body -->
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <h2 style=""margin-top:0;"">Hi {flagger.FirstName},</h2>
+        <p>Thanks for helping keep Swapo safe. We’ve received your report for:</p>
+        <blockquote style=""margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;color:#555;"">
+          “{offer.Title}”<br/>{reason}
+        </blockquote>
+        <p>We’ll let you know as soon as it’s been handled.</p>
+      </td></tr>
+      <!-- Footer -->
+      <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+        — The Swapo Support Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                        await _emailService.SendEmailAsync(flagger.Email, subjectThankFlagger, bodyThankFlagger, isBodyHtml: true);
                     }
                 }
             }
@@ -210,23 +237,38 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     _ => ("Free Support", "72h SLA")
                 };
 
-                var subject = $"[{label} · {sla}] Update: Report on your offer “{flag.Offer.Title}” has been dismissed";
-                var body = $@"
-                    Hello {owner.FirstName},<br/><br/>
+                var subjectOfferDismissed = $"[{label} · {sla}] Update: Report on your offer “{flag.Offer.Title}” has been dismissed";
+                var bodyOfferDismissed = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <!-- Header: Gray -->
+      <tr><td style=""background:#757575;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+        Swapo Moderation
+      </td></tr>
+      <!-- Body -->
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <h2 style=""margin-top:0;"">Hello {owner.FirstName},</h2>
+        <p>Our team reviewed the report against your offer <strong>{flag.Offer.Title}</strong> and found no violation.</p>
+        <p><strong>Reason:</strong></p>
+        <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
+          {reason}
+        </blockquote>
+        <p>No further action is needed—thanks for keeping Swapo great!</p>
+      </td></tr>
+      <!-- Footer -->
+      <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+        — The Swapo Support Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                await _emailService.SendEmailAsync(owner.Email, subjectOfferDismissed, bodyOfferDismissed, isBodyHtml: true);
 
-                    Thanks for helping keep SkillSwap a safe and welcoming place. Our team has reviewed of the report against your swap offer {flag.Offer.Title}. and found it does not violate our guidelines.<br/>
-                    <strong>Outcome:</strong> We’ve dismissed the flag.<br/>
-                    We’ve decided to <strong>dismiss</strong> the flag for this reason:<br/>
-                    <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:3px solid #ccc;"">{reason}</blockquote>
-
-                    No further action is needed on your part. Thanks for your understanding and for contributing to our community.<br/><br/>
-
-                    Thank you for helping keep our community safe. If you still have concerns, just reply to this email.<br/><br/>
-
-                    Best,<br/>
-                    <em>The SkillSwap Support Team</em>
-                ";
-                await _emailService.SendEmailAsync(owner.Email, subject, body);
             }
 
             // email the flagger
@@ -242,18 +284,37 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     _ => ("Free Support", "72h SLA")
                 };
 
-                var subject = $"[{lblF} · {slaF}] Your report on “{flag.Offer.Title}” has been reviewed";
-                var body = $@"
-                Hi {flagger.FirstName},<br/><br/>
-                We’ve completed our review of the report you submitted for “<strong>{offerOwner.Title}</strong>” and found no violations.<br/>
-                <strong>Moderator’s note:</strong><br/>
-                <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">{reason}</blockquote>
-                Thank you for helping us maintain a respectful marketplace. We appreciate your participation!<br/><br/>
-                
-                Sincerely,<br/>
-                <em>The SkillSwap Support Team</em>
-            ";
-                await _emailService.SendEmailAsync(flagger.Email, subject, body);
+                var subjectFlaggerDismiss = $"[{lblF} · {slaF}] Your report on “{flag.Offer.Title}” has been reviewed";
+                var bodyFlaggerDismiss = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#fff;border-collapse:collapse;"">
+      <!-- Header: Green -->
+      <tr><td style=""background:#388E3C;padding:15px;color:#fff;text-align:center;font-size:18px;font-weight:bold;"">
+        Swapo Moderation
+      </td></tr>
+      <!-- Body -->
+      <tr><td style=""padding:20px;color:#333;line-height:1.5;"">
+        <h2 style=""margin-top:0;"">Hi {flagger.FirstName},</h2>
+        <p>We’ve completed our review of your report on <strong>{offerOwner.Title}</strong> and found no violations.</p>
+        <p><strong>Moderator’s note:</strong></p>
+        <blockquote style=""margin:0 0 1em 0;padding-left:1em;border-left:4px solid #ccc;"">
+          {reason}
+        </blockquote>
+        <p>Thank you for helping maintain a respectful marketplace! We appreciate your participation.</p>
+      </td></tr>
+      <!-- Footer -->
+      <tr><td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+        — The Swapo Support Team
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                await _emailService.SendEmailAsync(flagger.Email, subjectFlaggerDismiss, bodyFlaggerDismiss, isBodyHtml: true);
             }
         }
 
@@ -289,26 +350,47 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     _ => ("Free Support", "72h SLA")
                 };
 
-                var subject = $"[{label} · {sla}] Action Taken: Your offer “{offer.Title}” has been removed";
-                var body = $@"
-                    Hi {owner.FirstName},<br/><br/>
+                var subjectRemovedOwner = $"[{label} · {sla}] Action Taken: Your offer “{offer.Title}” has been removed";
+                var bodyRemovedOwner = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
 
-                    Following our review of the report on your swap offer<br/> we wanted to let you know that your swap offer “<strong>{offer.Title}</strong>” has been removed by our moderation team.<br/>
-                    our moderation team has removed it for the reason below:<br/>
-                    <blockquote style=""color:#555;margin:0 0 1em 0;padding:0 1em;border-left:3px solid #ccc;"">{reason}</blockquote>
+      <!-- Header: Red -->
+      <tr>
+        <td style=""background:#D32F2F;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
+          Swapo Moderation
+        </td>
+      </tr>
 
-                    <strong>Token update:</strong>  
-                    Any tokens locked in pending exchanges for this offer will be automatically
-                    released and refunded to the appropriate accounts within 24 hours.  
-                    If you or the other party still see tokens held or need them released sooner,
-                    just contact to this email or <a href=""mailto:skillswap360@gmail.com"">contact our support team</a>.<br/><br/>
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333333;line-height:1.5;"">
+          <h2 style=""margin-top:0;"">Hi {owner.FirstName},</h2>
+          <p>Following our review of the report on your swap offer, we have removed:</p>
+          <blockquote style=""color:#555555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
+            “{offer.Title}”<br/>{reason}
+          </blockquote>
+          <p><strong>Token update:</strong> Any tokens locked in pending exchanges for this offer will be automatically released and refunded within 24 hours. If you still see held tokens or need them released sooner, please reply or <a href=""mailto:swapoorg360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
+          <p>We understand this may be disappointing. If you believe this was a mistake or would like more information, simply reply to this email and we’ll assist you.</p>
+        </td>
+      </tr>
 
-                    We understand this may be disappointing. If you believe this was in error or would like more information, simply reply to this email and we'll be happy to assist.<br/>
+      <!-- Footer: Green -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          — The Swapo Support Team
+        </td>
+      </tr>
 
-                    Thank you for your cooperation,<br/>
-                    <em>The SkillSwap Support Team</em>
-                ";
-                await _emailService.SendEmailAsync(owner.Email, subject, body);
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                await _emailService.SendEmailAsync(owner.Email, subjectRemovedOwner, bodyRemovedOwner, isBodyHtml: true);
             }
 
             // email the flagger
@@ -324,25 +406,47 @@ namespace SkillSwap_Platform.Services.AdminControls.OfferFlag
                     _ => ("Free Support", "72h SLA")
                 };
 
-                var subject = $"[{lblF} · {slaF}] Thank you: “{offer.Title}” has been removed";
-                var body = $@"
-                    Hi {flagger.FirstName},<br/><br/>
-                    Thank you for your report on “<strong>{offer.Title}</strong>”. We’ve reviewed it and removed the offer.<br/>
-                    <strong>Moderator’s note:</strong><br/>
-                    <blockquote style=""border-left:3px solid #ccc; padding-left:1em;"">{reason}</blockquote>
+                var subjectRemovedFlagger = $"[{lblF} · {slaF}] Thank you: “{offer.Title}” has been removed";
+                var bodyRemovedFlagger = $@"
+<!DOCTYPE html>
+<html lang=""en"">
+<head><meta charset=""UTF-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""><tr><td align=""center"" style=""padding:20px;"">
+    <table width=""600"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background:#ffffff;border-collapse:collapse;"">
 
-                    <strong>Token update:</strong>  
-                    Any tokens locked in pending exchanges for this offer will be automatically
-                    released and refunded to the appropriate accounts within 24 hours.  
-                    If you still see any held tokens or need a faster refund,
-                    simply contact to this email or <a href=""mailto:skillswap360@gmail.com"">contact our support team</a>.<br/><br/>
+      <!-- Header: Green (gratitude) -->
+      <tr>
+        <td style=""background:#388E3C;padding:15px;text-align:center;color:#ffffff;font-size:18px;font-weight:bold;"">
+          Swapo Moderation
+        </td>
+      </tr>
 
-                    Your help keeps our community strong and secure!<br/><br/>
+      <!-- Body -->
+      <tr>
+        <td style=""padding:20px;color:#333333;line-height:1.5;"">
+          <h2 style=""margin-top:0;"">Hi {flagger.FirstName},</h2>
+          <p>Thank you for your report on:</p>
+          <blockquote style=""color:#555555;margin:0 0 1em 0;padding:0 1em;border-left:4px solid #ccc;"">
+            “{offer.Title}”<br/>{reason}
+          </blockquote>
+          <p>We’ve reviewed and removed the offer. Any tokens previously locked will be refunded within 24 hours. If you still see any held tokens or need them released sooner, please reply or <a href=""mailto:swapoorg360@gmail.com"" style=""color:#00A88F;text-decoration:underline;"">contact support</a>.</p>
+          <p>Your help keeps our community strong and secure—thank you!</p>
+        </td>
+      </tr>
 
-                    Warm regards,<br/>
-                    <em>The SkillSwap Support Team</em>
-                ";
-                await _emailService.SendEmailAsync(flagger.Email, subject, body);
+      <!-- Footer: Green -->
+      <tr>
+        <td style=""background:#00A88F;padding:10px 20px;text-align:center;color:#E0F7F1;font-size:12px;"">
+          — The Swapo Support Team
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body>
+</html>";
+                await _emailService.SendEmailAsync(flagger.Email, subjectRemovedFlagger, bodyRemovedFlagger, isBodyHtml: true);
             }
         }
 

@@ -261,21 +261,21 @@
     async function startPayment(plan) {
       // at this point, we know user *is* authenticated
       let clientPlan = plan === "Premium" ? "Plus" : plan;
-      const isYearly   = document.getElementById('billingToggle').checked;
-      const clientCycle= isYearly ? 'yearly' : 'monthly';
+      const isYearly    = document.getElementById('billingToggle').checked;
+      const billingCycle = isYearly ? 'yearly' : 'monthly';
       try {
         const res = await fetch('/Billing/Checkout', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ plan, billingCycle: clientCycle })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan, billingCycle })
         });
         if (!res.ok) throw new Error(await res.text());
-        const { key, orderId, amount, currency, planName, billingCycle: serverCycle } = await res.json();
+        const { key, orderId, amount, currency } = await res.json();
 
         const options = {
           key, amount, currency,
-          name: 'SkillSwap',
-          description: `${planName} Plan (${serverCycle})`,
+          name: 'Swapo',
+          description: `${plan} Plan (${billingCycle})`,
           order_id: orderId,
           handler(response) {
             fetch('/Billing/Verify',{
@@ -285,8 +285,8 @@
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id:   response.razorpay_order_id,
                 razorpay_signature:  response.razorpay_signature,
-                planName,
-                billingCycle: serverCycle
+                planName:            plan,
+                billingCycle:        billingCycle
               })
             })
             .then(r => r.json())
@@ -296,18 +296,18 @@
               if (j.success) {
                 msgDiv.classList.add('alert-success');
                 msgDiv.textContent = '🎉 Payment successful! Redirecting…';
-                setTimeout(() => window.location.href='/UserDashboard',3000);
+                setTimeout(() => window.location.href='/UserDashboard',2000);
               } else {
-                msgDiv.classList.add('alert-danger');
-                msgDiv.textContent = j.message
-                  || 'Payment succeeded but we couldn’t update your plan.';
-              }
+                  msgDiv.classList.add('alert-danger');
+                  msgDiv.textContent = j.message || '❌ Payment succeeded but processing failed.';
+                }
             })
             .catch(() => {
-              const msgDiv = document.getElementById('paymentMessage');
-              msgDiv.classList.add('alert-success');
-              msgDiv.textContent = '✅ Payment successful! Redirecting…';
-              setTimeout(() => window.location.href='/UserDashboard',3000);
+                console.error('Verify error:', err);
+                const msgDiv = document.getElementById('paymentMessage');
+                msgDiv.classList.remove('d-none');
+                msgDiv.classList.add('alert-danger');
+                msgDiv.textContent = '❌ Payment was successful, but we couldn’t confirm it on our end. Please contact support.';
             });
           },
           modal:{ ondismiss:()=>console.log('Checkout closed') }

@@ -6,12 +6,16 @@
         public int UserId { get; set; }
         public string UserName { get; set; } = "";
         public string Email { get; set; } = "";
+        public string Designation { get; set; } = "";
         public DateTime CreatedDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
         public bool IsActive { get; set; }
         public bool IsVerified { get; set; }
         public bool IsHeld { get; set; }
         public DateTime? HeldAt { get; set; }
+        public string? HeldReason { get; set; }
+        public DateTime? ReleaseAt { get; set; }
+        public string? ReleaseReason { get; set; }
         public int FailedOtpAttempts { get; set; }
 
         // 2) Flags summary

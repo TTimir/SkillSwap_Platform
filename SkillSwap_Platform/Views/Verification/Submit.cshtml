@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Apply for Verification";
-    ViewData["SubTitle"] = "Confirm your identity and credentials to build trust on SkillSwap.";
+    ViewData["SubTitle"] = "Confirm your identity and credentials to build trust on Swapo.";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -86,7 +86,8 @@
                                         <input asp-for="GovernmentIdDocument"
                                                type="file"
                                                accept=".jpg,.jpeg,.png,.pdf"
-                                               style="display: none;" />
+                                               style="display: none;"
+                                               required />
                                     </div>
                                     <span asp-validation-for="GovernmentIdDocument" class="text-danger"></span>
                                     <p class="text mb-0 mx-3">
@@ -131,7 +132,8 @@
                                                 <input asp-for="Certificates[@i].CertificateFile"
                                                        type="file"
                                                        accept=".jpg,.jpeg,.png,.pdf"
-                                                       style="display: none;" />
+                                                       style="display: none;"
+                                                       required />
                                             </div>
                                             <span asp-validation-for="Certificates[@i].CertificateFile"
                                                   class="text-danger"></span>
@@ -187,7 +189,8 @@
                                                 <input asp-for="EducationRecords[@i].EduProofFile"
                                                        type="file"
                                                        accept=".jpg,.jpeg,.png,.pdf"
-                                                       style="display: none;" />
+                                                       style="display: none;"
+                                                       required />
                                             </div>
                                             <span asp-validation-for="EducationRecords[@i].EduProofFile"
                                                   class="text-danger"></span>
@@ -244,7 +247,8 @@
                                                 <input asp-for="ExperienceRecords[@i].ExpProofFile"
                                                        type="file"
                                                        accept=".jpg,.jpeg,.png,.pdf"
-                                                       style="display: none;" />
+                                                       style="display: none;"
+                                                       required />
                                             </div>
                                             <span asp-validation-for="ExperienceRecords[@i].ExpProofFile"
                                                   class="text-danger"></span>
@@ -341,45 +345,54 @@
                 }
             }
 
-            // File-preview handler (images, PDFs, text)
+            // File‐preview handler (images, PDFs, text)
             document.addEventListener('change', function(e) {
                 var input = e.target;
                 if (!input.matches('input[type="file"]')) return;
 
-                var profile = input.closest('.profile-content');
-                if (!profile) return;
-
-                var preview = profile.querySelector('.preview-container');
+                var preview = input.closest('.profile-content')?.querySelector('.preview-container');
                 if (!preview) return;
+
                 preview.innerHTML = '';
 
                 Array.from(input.files).forEach(function(file) {
+                    // size check (1 048 576 bytes = 1 MB)
+                    if (file.size > 1048576) {
+                        alert(`“${file.name}” is too large (max 1 MB).`);
+                        input.value = '';
+                        return;
+                    }
+                    // extension/type check
+                    var ext = file.name.split('.').pop().toLowerCase();
+                    if (!['jpg','jpeg','png','pdf'].includes(ext)) {
+                        alert(`“${file.name}” must be a JPG, PNG or PDF.`);
+                        input.value = '';
+                        return;
+                    }
+
+                    // preview
                     var url = URL.createObjectURL(file);
                     if (file.type.startsWith('image/')) {
                         var img = document.createElement('img');
                         img.src = url;
-                        img.style.maxWidth  = '200px';
+                        img.style.maxWidth = '200px';
                         img.style.maxHeight = '200px';
                         img.classList.add('img-thumbnail','me-2','mb-2');
                         preview.appendChild(img);
-                    } else if (file.type === 'application/pdf') {
+                    } else { // PDF fallback
                         var link = document.createElement('a');
                         link.href = url;
                         link.textContent = file.name;
                         link.target = '_blank';
                         link.classList.add('d-block','mb-2');
                         preview.appendChild(link);
-                    } else {
-                        var span = document.createElement('span');
-                        span.textContent = file.name;
-                        span.classList.add('d-block','mb-2');
-                        preview.appendChild(span);
                     }
                 });
             });
 
-            // Wire up "+ Add" buttons
+            // Wire up "+ Add" buttons & form submit
             document.addEventListener('DOMContentLoaded', function() {
+                // map add-buttons to their containers
                 var mapping = {
                     addCertificate: 'certificates',
                     addEducation:  'educations',
@@ -395,9 +408,54 @@
                     }
                 });
 
-                // HTML5 fallback for pages without jQuery validation
-                var form = document.querySelector('form[enctype*="multipart/form-data"]');
-                if (form && !window.jQuery) {
+                // form validation on submit
+                var form = document.querySelector('form[enctype]');
+                form.addEventListener('submit', function(e) {
+                    // 1) Must upload gov-ID
+                    var gov = this.querySelector('input[name="GovernmentIdDocument"]');
+                    if (!gov.files.length) {
+                        alert('Please upload your government-issued ID before submitting.');
+                        gov.focus();
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // 2) Must upload all other required file inputs
+                    var requiredFiles = this.querySelectorAll('input[type="file"][required]');
+                    for (var input of requiredFiles) {
+                        if (!input.files.length) {
+                            var label = input.closest('.profile-content')
+                                             ?.querySelector('label[for="' + input.id + '"]')
+                                             ?.innerText.replace(/Upload\s?/, '')
+                                         || 'required document';
+                            alert(`Please upload your ${label} before submitting.`);
+                            input.focus();
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+
+                    // 3) Re-validate all sizes/types one more time
+                    var allFiles = this.querySelectorAll('input[type="file"]');
+                    for (var inp of allFiles) {
+                        for (var file of inp.files) {
+                            if (file.size > 1048576) {
+                                alert(`“${file.name}” is too large (max 1 MB).`);
+                                e.preventDefault();
+                                return;
+                            }
+                            var ext = file.name.split('.').pop().toLowerCase();
+                            if (!['jpg','jpeg','png','pdf'].includes(ext)) {
+                                alert(`“${file.name}” must be a JPG, PNG or PDF.`);
+                                e.preventDefault();
+                                return;
+                            }
+                        }
+                    }
+                });
+
+                // HTML5 fallback if no jQuery validator
+                if (!window.jQuery) {
                     form.addEventListener('submit', function(evt) {
                         if (!form.checkValidity()) {
                             evt.preventDefault();

@@ -126,11 +126,9 @@ public partial class TblUser
 
     public virtual ICollection<MiningLog> MiningLogs { get; set; } = new List<MiningLog>();
 
-    public virtual ICollection<OtpAttempt> OtpAttempts { get; set; } = new List<OtpAttempt>();
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
-    public virtual ICollection<PaymentLog> PaymentLogs { get; set; } = new List<PaymentLog>();
-
-    public virtual ICollection<TblBlogPost> TblBlogPosts { get; set; } = new List<TblBlogPost>();
+    public virtual ICollection<TblCertificatePurchase> TblCertificatePurchases { get; set; } = new List<TblCertificatePurchase>();
 
     public virtual ICollection<TblContract> TblContractReceiverUsers { get; set; } = new List<TblContract>();
 
@@ -168,8 +166,6 @@ public partial class TblUser
 
     public virtual ICollection<TblPasswordResetToken> TblPasswordResetTokens { get; set; } = new List<TblPasswordResetToken>();
 
-    public virtual ICollection<TblReview> TblReviewDeletedByAdmins { get; set; } = new List<TblReview>();
-
     public virtual ICollection<TblReviewModerationHistory> TblReviewModerationHistories { get; set; } = new List<TblReviewModerationHistory>();
 
     public virtual ICollection<TblReviewReply> TblReviewReplies { get; set; } = new List<TblReviewReply>();
@@ -177,8 +173,6 @@ public partial class TblUser
     public virtual ICollection<TblReview> TblReviewReviewees { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblReview> TblReviewReviewers { get; set; } = new List<TblReview>();
-
-    public virtual ICollection<TblReview> TblReviewUsers { get; set; } = new List<TblReview>();
 
     public virtual ICollection<TblSupportTicket> TblSupportTicketAssignedAdmins { get; set; } = new List<TblSupportTicket>();
 
@@ -213,8 +207,6 @@ public partial class TblUser
     public virtual ICollection<TblUserWishlist> TblUserWishlists { get; set; } = new List<TblUserWishlist>();
 
     public virtual ICollection<TblWorkingTime> TblWorkingTimes { get; set; } = new List<TblWorkingTime>();
-
-    public virtual UserMiningProgress? UserMiningProgress { get; set; }
 
     public virtual ICollection<UserSensitiveWord> UserSensitiveWords { get; set; } = new List<UserSensitiveWord>();
 

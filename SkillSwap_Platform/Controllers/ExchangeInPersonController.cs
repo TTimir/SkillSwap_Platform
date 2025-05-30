@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using SkillSwap_Platform.Services.NotificationTrack;
 using Google.Apis.Calendar.v3.Data;
 using System.Text;
+using Hangfire;
+using SkillSwap_Platform.Services.InPersonMeetReminder;
 
 namespace SkillSwap_Platform.Controllers
 {
@@ -45,6 +47,7 @@ namespace SkillSwap_Platform.Controllers
                 ScheduledDateTime = DateTime.UtcNow.AddHours(1), // default value
                 MeetingDurationMinutes = 60
             };
+
             return View(model);
         }
 
@@ -127,6 +130,28 @@ namespace SkillSwap_Platform.Controllers
                 _context.TblExchangeHistories.Add(schedulingHistory);
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
+
+                var endTime = model.ScheduledDateTime
+                    .AddMinutes(model.MeetingDurationMinutes)
+                    .AddMinutes(5); // give them a 5-minute grace period
+
+                // 1) 30-minute-before reminder:
+                BackgroundJob.Schedule<IReminderService>(
+                    svc => svc.SendEndMeetingReminder(model.ExchangeId),
+                    model.ScheduledDateTime.AddMinutes(-30)
+                );
+
+                // 2) first “forgot proof” nudge:
+                BackgroundJob.Schedule<IReminderService>(
+                    svc => svc.SendMissingEndProofReminder(model.ExchangeId, false),
+                    endTime
+                );
+
+                // 3) final “last nudge” (e.g. 2 days later):
+                BackgroundJob.Schedule<IReminderService>(
+                    svc => svc.SendMissingEndProofReminder(model.ExchangeId, true),
+                    endTime.AddDays(2)
+                );
 
                 // log notification:
                 await _notif.AddAsync(new TblNotification
@@ -477,6 +502,15 @@ namespace SkillSwap_Platform.Controllers
                 proofRecord.EndProofDateTime = model.EndMeetingDateTime;
                 proofRecord.EndProofLocation = model.EndProofLocation;
                 //meetingRecord.EndMeetingNotes = model.EndMeetingNotes;
+
+                var meeting = await _context.TblInPersonMeetings
+                    .FirstOrDefaultAsync(m => m.ExchangeId == model.ExchangeId);
+                if (meeting != null)
+                {
+                    meeting.IsInpersonMeetingVerifiedByOfferOwner = true;
+                    meeting.IsInpersonMeetingVerifiedByOtherParty = true;
+                    meeting.IsMeetingEnded = true;
+                }
 
                 // update the parent exchange record’s flag if you are still using it.
                 var exchangeRecord = await _context.TblExchanges.FirstOrDefaultAsync(e => e.ExchangeId == model.ExchangeId);

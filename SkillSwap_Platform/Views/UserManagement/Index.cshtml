@@ -5,6 +5,8 @@
     ViewData["Title"] = "Held Users";
     ViewData["SubTitle"] = "Review and release accounts currently on hold.";
     Layout = "~/Views/Shared/AdminLayout/_AdminDashboardLayout.cshtml";
+
+    var term = ViewBag.Term as string ?? "";
 }
 
 @if (TempData["Success"] != null)
@@ -34,11 +36,25 @@
     </div>
 }
 
-<div class="col-lg-9">
+<div class="col-lg-8">
     <div class="dashboard_title_area">
         <h2>@ViewData["Title"]</h2>
         <p class="text">@ViewData["SubTitle"]</p>
     </div>
+</div>
+<div class="col-xl-4 text-end">
+    <form asp-action="Index" method="get" class="position-relative">
+        <input type="hidden" name="page" value="1" />
+        <input type="text"
+               name="term"
+               value="@term"
+               class="form-control bdrs4 pe-5"
+               placeholder="Search by username or email…" />
+        <button type="submit"
+                class="position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent p-2">
+            <span class="far fa-magnifying-glass"></span>
+        </button>
+    </form>
 </div>
 </div>
 <div class="row">
@@ -94,12 +110,15 @@
                                                     string heldAtLocal = u.HeldAt.HasValue
                                                     ? u.HeldAt.Value.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")
                                                     : "—";
-                                                    string heldUntilLocal = u.HeldUntil.HasValue
+                                                    string heldUntilLocal =
+                                                    u.HeldUntil.HasValue
                                                     ? u.HeldUntil.Value.ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")
+                                                    : u.HeldAt.HasValue
+                                                    ? u.HeldAt.Value.AddMonths(1).ToLocalTime().ToString("dd MMMM, yyyy hh:mm tt")
                                                     : "—";
                                                 }
                                                 <span class="fz15 fw400">
-                                                    <u>@heldAtLocal</u> <i>‘Until’</i> <u>@heldUntilLocal</u>
+                                                   @heldAtLocal <i><u>‘Until’</u></i> @heldUntilLocal
                                                 </span>
                                             </td>
                                             <td>

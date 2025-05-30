@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using SkillSwap_Platform.Models;
 
 namespace SkillSwap_Platform.Services.Blogs
@@ -21,31 +22,132 @@ namespace SkillSwap_Platform.Services.Blogs
 
         public async Task<PagedResult<BlogPost>> ListAsync(int page, int pageSize)
         {
-            var total = await _db.TblBlogPosts.CountAsync();
-            var items = await _db.TblBlogPosts
-                .AsNoTracking()
-                .OrderByDescending(x => x.CreatedAt)
+            if (page < 1) page = 1;
+
+            var query = _db.TblBlogPosts.AsNoTracking();
+
+            var totalItems = await query.CountAsync();
+            var entities = await query
+                .OrderByDescending(p => p.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(x => MapToDto(x))
                 .ToListAsync();
+
+            var models = entities.Select(MapEntity).ToList();
 
             return new PagedResult<BlogPost>
             {
-                Items = items,
+                Items = models,
+                TotalItems = totalItems,
                 Page = page,
-                PageSize = pageSize,
-                TotalItems = total
+                PageSize = pageSize
             };
         }
 
-        public async Task<BlogPost> GetByIdAsync(int id)
+        public async Task<PagedResult<BlogPost>> ListByTagAsync(string tag, int page, int pageSize)
         {
-            var entity = await _db.TblBlogPosts
+            if (page < 1) page = 1;
+
+            // 1) Grab all posts (only the columns we need)
+            var raw = await _db.TblBlogPosts
                 .AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Id == id);
-            return entity == null ? null : MapToDto(entity);
+                .Select(e => new {
+                    e.Id,
+                    e.Title,
+                    e.Summary,
+                    e.CreatedAt,
+                    e.CoverImagePath,
+                    e.Tags             // comma-delimited
+                })
+                .ToListAsync();
+
+            // 2) Split & trim each Tags field, then filter
+            var matching = raw
+                .Select(e => new {
+                    e.Id,
+                    e.Title,
+                    e.Summary,
+                    e.CreatedAt,
+                    e.CoverImagePath,
+                    TagList = string.IsNullOrWhiteSpace(e.Tags)
+                        ? Array.Empty<string>()
+                        : e.Tags
+                             .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(t => t.Trim())
+                             .ToArray()
+                })
+                .Where(e => e.TagList
+                             .Any(t =>
+                                 t.Equals(tag, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            // 3) Remember the total for pagination
+            var totalItems = matching.Count;
+
+            // 4) Page that filtered list in memory
+            var pageItems = matching
+                .OrderByDescending(e => e.CreatedAt)   // keep the same default sort
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // 5) Map into your BlogPost DTO
+            var models = pageItems
+                .Select(e => new BlogPost
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Summary = e.Summary,
+                    CreatedAt = e.CreatedAt,
+                    CoverImagePath = e.CoverImagePath,
+                    Tags = e.TagList.ToList()
+                })
+                .ToList();
+
+            return new PagedResult<BlogPost>
+            {
+                Items = models,
+                TotalItems = totalItems,
+                Page = page,
+                PageSize = pageSize
+            };
         }
+
+        public Task<BlogPost?> GetByIdAsync(int id)
+        {
+            return _db.TblBlogPosts
+                .Where(e => e.Id == id)
+                .Select(e => new BlogPost
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Summary = e.Summary,
+                    CreatedAt = e.CreatedAt,
+                    CoverImagePath = e.CoverImagePath,
+                    Tags = string.IsNullOrWhiteSpace(e.Tags)
+                        ? new List<string>()
+                        : e.Tags
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim())
+                            .ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        // map EF entity → your DTO/model
+        private static BlogPost MapEntity(TblBlogPost e) => new BlogPost
+        {
+            Id = e.Id,
+            Title = e.Title,
+            Summary = e.Summary,
+            CreatedAt = e.CreatedAt,
+            CoverImagePath = e.CoverImagePath,
+            Tags = string.IsNullOrWhiteSpace(e.Tags)
+                               ? new List<string>()
+                               : e.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                       .Select(t => t.Trim())
+                                       .ToList()
+        };
 
         public async Task<BlogPost> CreateAsync(CreateBlogPostDto dto)
         {

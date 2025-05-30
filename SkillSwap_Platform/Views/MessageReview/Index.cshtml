@@ -86,7 +86,10 @@
                                                         <input type="hidden" name="id" value="@msg.MessageId" />
                                                         <button class="ud-btn btn-thm" type="submit">Approve</button>
                                                     </form>
-                                                    <form asp-action="Dismiss" method="post" class="ms-1">
+                                                    <form asp-action="Dismiss"
+                                                          method="post"
+                                                          class="ms-1"
+                                                          onsubmit="return confirm('Are you sure you want to dismiss this message?');">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@msg.MessageId" />
                                                         <button class="ud-btn btn-light-thm" style="border:0;" type="submit">Dismiss</button>

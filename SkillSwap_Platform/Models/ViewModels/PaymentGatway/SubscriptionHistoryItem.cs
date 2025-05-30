@@ -15,6 +15,7 @@
     {
         public IList<SubscriptionHistoryItem> BillingHistory { get; set; }
             = Array.Empty<SubscriptionHistoryItem>();
+        public bool IsGrowthUser { get; set; }
 
         public int Page { get; set; }
         public int PageSize { get; set; }

@@ -1,10 +1,20 @@
 ﻿@model int
+
 @if (Model > 0)
 {
-    <!--
-      position‑absolute + translate‑middle puts it top‑right of the parent <a>.
-      You can tweak the .p‑1 (padding) or .bg-success to your taste.
-    -->
-    <span class="position-absolute top-0 start-100
-                 p-1 bg-success border border-light rounded-circle" style="transform:translate(-1850%,90%) !important;"></span>
+    <!-- you can also show the raw count if you like -->
+    <span class="message-badge-dot"></span>
 }
+
+<style>
+    .message-badge-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #5BBB7B; /* green */
+        border-radius: 50%;
+        position: relative;
+        top: -12px;
+        right: 10px;
+    }
+</style>
