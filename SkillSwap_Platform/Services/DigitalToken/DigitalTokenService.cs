@@ -30,7 +30,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         public async Task HoldTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
@@ -48,7 +47,33 @@ namespace SkillSwap_Platform.Services.DigitalToken
                               ?? throw new KeyNotFoundException($"Offer owner not found.");
 
                 var cost = ex.TokensPaid;
-                if (cost <= 0) throw new InvalidOperationException("Nothing to hold.");
+                if (cost <= 0)
+                {
+                    // just mark held & notify
+                    ex.TokensHeld = true;
+                    ex.TokenHoldDate = DateTime.UtcNow;
+                    _db.TblExchanges.Update(ex);
+                    await _db.SaveChangesAsync(ct);
+
+                    // in‐app notifications
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = buyer.UserId,
+                        Title = "Exchange initiated",
+                        Message = $"Exchange #{exchangeId} has been initiated (no tokens required).",
+                        Url = $"/UserDashboard/Exchanges/{exchangeId}"
+                    });
+                    await _notif.AddAsync(new TblNotification
+                    {
+                        UserId = seller.UserId,
+                        Title = "You’ve been invited to swap",
+                        Message = $"Exchange #{exchangeId} has been initiated (no tokens required).",
+                        Url = $"/UserDashboard/Exchanges/{exchangeId}"
+                    });
+
+                    return;
+                }
+
                 if (buyer.DigitalTokenBalance < cost)
                     throw new InvalidOperationException("Insufficient balance.");
 
@@ -81,7 +106,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(ex);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -199,7 +223,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error holding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -207,7 +230,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         public async Task ReleaseTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 var ex = await _db.TblExchanges
@@ -244,7 +266,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(ex);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
 
                 var subject = $"Funds released for exchange #{exchangeId}";
                 var htmlBody = $@"
@@ -352,7 +373,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
             catch (Exception exn)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(exn, "Error releasing tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }
@@ -461,7 +481,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
 
         public async Task RefundTokensAsync(int exchangeId, CancellationToken ct = default)
         {
-            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             try
             {
                 // 1) Find the original “hold” transaction
@@ -516,7 +535,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
                 _db.TblExchanges.Update(exchange);
 
                 await _db.SaveChangesAsync(ct);
-                await tx.CommitAsync(ct);
 
                 await _notif.AddAsync(new TblNotification
                 {
@@ -572,7 +590,6 @@ namespace SkillSwap_Platform.Services.DigitalToken
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync(ct);
                 _logger.LogError(ex, "Error refunding tokens for exchange {ExchangeId}", exchangeId);
                 throw;
             }

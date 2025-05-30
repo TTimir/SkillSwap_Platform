@@ -476,7 +476,7 @@ namespace SkillSwap_Platform.Services.AdminControls.Escrow
       <!-- Body -->
       <tr>
         <td style=""padding:20px;color:#333333;line-height:1.5;"">
-          <h2 style=""margin-top:0;"">Hi {{Party}},</h2>
+          <h2 style=""margin-top:0;"">Hi {{ {{PartyName}} }},</h2>
           <p>We’ve created an escrow for your <strong>Exchange #{escrow.ExchangeId}</strong> on the offer 
             <strong>{{ {{OfferTitle}} }}</strong>:</p>
           <ul style=""padding-left:1em;margin:0;"">

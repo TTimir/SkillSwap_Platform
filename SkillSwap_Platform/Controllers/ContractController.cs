@@ -641,6 +641,7 @@ namespace SkillSwap_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignContract(int contractId, [FromForm] string partySignature, [FromForm] string partyPlace, [FromForm] string OfferedSkill, [FromForm] bool finalSignConfirmed = false)
         {
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 var originalContract = await _context.TblContracts.FindAsync(contractId);
@@ -1013,6 +1014,7 @@ namespace SkillSwap_Platform.Controllers
                     newFinalContract.ContractDocument = $"/contracts/{subFolder}/{fileName}";
 
                     await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
 
                     // log notification:
                     await _notif.AddAsync(new TblNotification
@@ -1029,6 +1031,7 @@ namespace SkillSwap_Platform.Controllers
                 }
                 else
                 {
+                    await tx.RollbackAsync();
                     // It's some other status => maybe we can't sign it again
                     TempData["ErrorMessage"] = "Cannot sign this agreement/ contract in its current state.";
                     return RedirectToAction("Review", new { contractId });
