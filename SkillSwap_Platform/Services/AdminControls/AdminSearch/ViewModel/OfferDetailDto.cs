@@ -138,6 +138,16 @@
         public DateTime? ActualEndTime { get; set; }
         public string? MeetingNotes { get; set; }
         public int? MeetingRating { get; set; }
+
+        public string? StartProofImageUrl { get; set; }
+        public DateTime? StartProofDateTime { get; set; }
+        public string? StartProofLocation { get; set; }
+
+        public string? EndProofImageUrl { get; set; }
+        public DateTime? EndProofDateTime { get; set; }
+        public string? EndProofLocation { get; set; }
+
+        public string? EndMeetingNotes { get; set; }
     }
 
     public class ResourceShareDto

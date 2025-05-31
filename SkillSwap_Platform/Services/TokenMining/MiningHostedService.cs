@@ -79,7 +79,9 @@ namespace SkillSwap_Platform.Services.TokenMining
                     user => user.UserId,
                     (prog, user) => new { prog, user })
                 .Where(x => !x.user.IsEscrowAccount
-                            && !x.user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                            && !x.user.Role.Equals("Admin") 
+                            && !x.user.Role.Equals("Moderator")
+                            && !x.user.IsSupportAgent)
                   .Select(x => x.prog)
                 .ToListAsync(ct);
 
@@ -106,8 +108,8 @@ namespace SkillSwap_Platform.Services.TokenMining
                         continue;
                     }
 
-                    if (user.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                        || user.IsEscrowAccount)
+                    if (user.Role.Equals("Admin") || user.Role.Equals("Moderator") || user.IsSupportAgent
+                        || user.IsEscrowAccount || user.IsSystemReserveAccount)
                     {
                         _logger.LogInformation("⏭️ Skipped mining for {UserId}: Admin or Escrow", prog.UserId);
                         continue;

@@ -16,9 +16,9 @@ namespace SkillSwap_Platform.Controllers
         public MiningApiController(SkillSwapDbContext db) => _db = db;
 
         [HttpGet("status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<MiningStatusDto>> Status(CancellationToken ct)
         {
             try
@@ -43,7 +43,7 @@ namespace SkillSwap_Platform.Controllers
                     .FirstOrDefaultAsync(ct);
 
                 if (data == null)
-                    return Unauthorized(); // or NotFound("User not found");
+                    return Unauthorized();
 
 
                 return Ok(new MiningStatusDto

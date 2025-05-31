@@ -360,6 +360,12 @@
                         <th>Actual End</th>
                         <th>Notes</th>
                         <th>Rating</th>
+
+                        <th>Start Proof</th>
+                        <th>Start Location</th>
+                        <th>End Proof</th>
+                        <th>End Location</th>
+                        <th>End Meeting Notes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -376,6 +382,62 @@
                             <td>@fmtDate(m.ActualEndTime)</td>
                             <td>@m.MeetingNotes</td>
                             <td>@(m.MeetingRating?.ToString() ?? "-")</td>
+
+                            <td>
+                                @if (!string.IsNullOrEmpty(m.StartProofImageUrl))
+                                {
+                                    <a href="@m.StartProofImageUrl" target="_blank">
+                                        <img src="@m.StartProofImageUrl"
+                                             style="max-height:50px; max-width:50px; object-fit:cover;"
+                                             alt="Start Proof" />
+                                    </a>
+                                    <br />
+                                    <small class="text-muted">@fmtDate(m.StartProofDateTime)</small>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">No Start Proof</span>
+                                }
+                            </td>
+
+                            <!-- ── START LOCATION ──────────────────────────────────────── -->
+                            <td>
+                                @(!string.IsNullOrEmpty(m.StartProofLocation)
+                                    ? m.StartProofLocation
+                                    : "-")
+                            </td>
+
+                            <!-- ── END PROOF ───────────────────────────────────────────── -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(m.EndProofImageUrl))
+                                {
+                                    <a href="@m.EndProofImageUrl" target="_blank">
+                                        <img src="@m.EndProofImageUrl"
+                                             style="max-height:50px; max-width:50px; object-fit:cover;"
+                                             alt="End Proof" />
+                                    </a>
+                                    <br />
+                                    <small class="text-muted">@fmtDate(m.EndProofDateTime)</small>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">No End Proof</span>
+                                }
+                            </td>
+
+                            <!-- ── END LOCATION ────────────────────────────────────────── -->
+                            <td>
+                                @(!string.IsNullOrEmpty(m.EndProofLocation)
+                                    ? m.EndProofLocation
+                                    : "-")
+                            </td>
+
+                            <!-- ── END MEETING NOTES ──────────────────────────────────── -->
+                            <td>
+                                @(!string.IsNullOrEmpty(m.EndMeetingNotes)
+                                    ? m.EndMeetingNotes
+                                    : "-")
+                            </td>
                         </tr>
                     }
                 </tbody>
