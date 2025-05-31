@@ -197,22 +197,48 @@ namespace SkillSwap_Platform.Services.AdminControls.AdminSearch
                         ActualStartTime = m.ActualStartTime,
                         ActualEndTime = m.ActualEndTime,
                         MeetingNotes = m.MeetingNotes,
-                        MeetingRating = m.MeetingRating
+                        MeetingRating = m.MeetingRating,
+
+                        StartProofImageUrl = null,
+                        StartProofDateTime = null,
+                        StartProofLocation = null,
+
+                        EndProofImageUrl = null,
+                        EndProofDateTime = null,
+                        EndProofLocation = null,
+
+                        EndMeetingNotes = null,
                     })
                     .ToListAsync();
 
-                var inPersonMeetings = await _db.TblInPersonMeetings.AsNoTracking()
-                    .Where(ip => ip.Exchange.OfferId == offerId)
-                    .Select(ip => new MeetingDto
-                    {
-                        MeetingId = ip.InPersonMeetingId,
-                        MeetingStartTime = ip.MeetingScheduledDateTime ?? default(DateTime),
-                        MeetingEndTime = (ip.MeetingScheduledDateTime ?? DateTime.MinValue)
+                var inPersonMeetings = await (
+            from ip in _db.TblInPersonMeetings.AsNoTracking()
+            join proof in _db.TblInpersonMeetingProofs.AsNoTracking()
+                on ip.ExchangeId equals proof.ExchangeId into proofGroup
+            from pr in proofGroup.DefaultIfEmpty()    // LEFT JOIN
+
+            where ip.Exchange.OfferId == offerId
+
+            select new MeetingDto
+            {
+                MeetingId = ip.InPersonMeetingId,
+                MeetingStartTime = ip.MeetingScheduledDateTime ?? default(DateTime),
+                MeetingEndTime = (ip.MeetingScheduledDateTime ?? DateTime.MinValue)
                                             .AddMinutes((double)ip.InpersonMeetingDurationMinutes),
-                        DurationMinutes = ip.InpersonMeetingDurationMinutes.Value,
-                        MeetingLink = "—",  // not applicable
-                        MeetingNotes = ip.MeetingNotes,
-                    })
+                DurationMinutes = ip.InpersonMeetingDurationMinutes.Value,
+                MeetingLink = "—",  // not applicable
+                MeetingNotes = ip.MeetingNotes,
+
+                StartProofImageUrl = pr != null ? pr.StartProofImageUrl : null,
+                StartProofDateTime = pr != null ? pr.StartProofDateTime : null,
+                StartProofLocation = pr != null ? pr.StartProofLocation : null,
+
+                EndProofImageUrl = pr != null ? pr.EndProofImageUrl : null,
+                EndProofDateTime = pr != null ? pr.EndProofDateTime : null,
+                EndProofLocation = pr != null ? pr.EndProofLocation : null,
+
+                EndMeetingNotes = pr != null ? pr.EndMeetingNotes : null,
+            })
                     .ToListAsync();
 
                 dto.Meetings = onlineMeetings

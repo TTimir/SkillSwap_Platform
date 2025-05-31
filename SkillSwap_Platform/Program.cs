@@ -45,6 +45,8 @@ using SkillSwap_Platform.Services.Blogs;
 using SkillSwap_Platform.Services.AdminControls.AdminNotification;
 using Microsoft.AspNetCore.Authentication;
 using SkillSwap_Platform.HelperClass;
+using Azure.Identity;
+using SkillSwap_Platform.Services.InPersonMeetReminder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,6 +109,7 @@ builder.Services.AddScoped<INewsletterService, NewsletterService>();
 builder.Services.AddScoped<IDigitalTokenService, DigitalTokenService>();
 builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
 builder.Services.AddScoped<IVerificationService, VerificationService>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
 
 builder.Services
     .AddTransient<IEmailService, SmtpEmailService>();
@@ -244,6 +247,10 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddSession(); // ✅ Ensure session is enabled
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddApplicationInsightsTelemetry(new Microsoft.ApplicationInsights.AspNetCore.Extensions.ApplicationInsightsServiceOptions
+{
+    ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+});
 
 var app = builder.Build();
 

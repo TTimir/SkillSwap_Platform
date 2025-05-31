@@ -53,7 +53,8 @@ Tag:  bidding, fiverr, freelance marketplace, freelancers, freelancing, gigs, hi
 /*=================================
    Theme Based
 ==================================*/
-@import url("/template_assets/css2");
+@import url("~/template_assets/css2");
+
 /* Mixins */
 /* Variables */
 :root {
